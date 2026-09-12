@@ -20,8 +20,8 @@ import { MobileNav } from '@/widgets/app-header/MobileNav';
 export function MainLayout() {
   return (
     <div
-      className="min-h-screen selection:bg-[var(--palette-cyan-200)] selection:text-[var(--palette-cyan-900)]"
-      style={{ backgroundColor: 'var(--surface-page)', color: 'var(--text-primary)', fontFamily: 'var(--tenant-font-body)' }}
+      className="min-h-screen selection:bg-cyan-500/30 selection:text-cyan-200 bg-slate-950 text-slate-100"
+      style={{ fontFamily: 'var(--tenant-font-body)' }}
     >
       {/* ── Sticky Header ── */}
       <AppHeader />

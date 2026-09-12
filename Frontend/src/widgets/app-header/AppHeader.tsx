@@ -19,10 +19,10 @@ export function AppHeader() {
 
   return (
     <header
-      className="sticky top-0 z-[var(--z-sticky)]
-                 bg-[var(--tenant-nav-bg,var(--nav-bg))] backdrop-blur
-                 border-b border-[var(--tenant-nav-border,var(--nav-border))]
-                 shadow-[var(--shadow-xs)]"
+      className="sticky top-0 z-40
+                 bg-slate-950/85 backdrop-blur-2xl
+                 border-b border-slate-800/80
+                 shadow-xl shadow-black/30"
     >
       <div className="max-w-7xl mx-auto px-4 h-[var(--nav-height)] flex items-center justify-between gap-4">
 

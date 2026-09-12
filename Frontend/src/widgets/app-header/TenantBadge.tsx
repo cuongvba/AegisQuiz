@@ -21,9 +21,9 @@ export function TenantBadge() {
         onClick={() => navigate('/admin')}
         aria-label="Vào trang Quản trị"
         className="hidden sm:flex items-center gap-1.5
-                   bg-[var(--brand-gradient)] text-[var(--action-primary-text)]
-                   text-xs font-bold px-4 py-2 rounded-[var(--tenant-radius-button)]
-                   shadow-[var(--tenant-shadow-primary)]
+                   bg-gradient-to-r from-purple-600 to-indigo-600 text-white
+                   text-xs font-black px-3.5 py-1.5 rounded-xl
+                   shadow-md shadow-purple-500/20
                    transition-transform active:scale-95 cursor-pointer
                    hover:brightness-110"
       >
@@ -39,10 +39,10 @@ export function TenantBadge() {
         aria-label="Vào Ngân hàng Câu hỏi & Đề thi Cấp Nhóm"
         className="hidden sm:flex items-center gap-1.5
                    bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950
-                   text-xs font-black px-3.5 py-2 rounded-[var(--tenant-radius-button)]
+                   text-xs font-black px-3 py-1.5 rounded-xl
                    shadow-md shadow-amber-500/20
                    transition-transform active:scale-95 cursor-pointer
-                   hover:brightness-110"
+                   hover:brightness-110 whitespace-nowrap"
       >
         📝 Đề thi Nhóm
       </button>
