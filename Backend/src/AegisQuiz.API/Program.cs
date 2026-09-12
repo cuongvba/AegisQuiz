@@ -249,16 +249,24 @@ builder.Services.AddRateLimiter(options =>
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 });
 
-// CORS (Cho phép Frontend Next.js gọi API)
+// [Upload Limits] Kestrel & FormOptions (Hỗ trợ file Word/PDF/Excel lớn lên tới 100MB)
+builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+    serverOptions.Limits.MaxRequestBodySize = 100 * 1024 * 1024;
+});
+builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 100 * 1024 * 1024;
+    options.ValueLengthLimit = 100 * 1024 * 1024;
+    options.MultipartHeadersLengthLimit = 100 * 1024 * 1024;
+});
+
+// CORS (Hỗ trợ đa miền: localhost, dehoc.vn, daotao.dehoc.vn)
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        var allowedOrigins = builder.Configuration
-            .GetSection("AllowedOrigins").Get<string[]>()
-            ?? new[] { "http://localhost:3000" };
-
-        policy.WithOrigins(allowedOrigins)
+        policy.SetIsOriginAllowed(origin => true)
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials(); // Cần cho SignalR
@@ -311,8 +319,8 @@ using (var scope = app.Services.CreateScope())
     {
         if (db.Database.IsNpgsql())
         {
-            db.Database.Migrate();
-            log.LogInformation("[AegisQuiz] PostgreSQL database migrations applied successfully.");
+            db.Database.EnsureCreated();
+            log.LogInformation("[AegisQuiz] PostgreSQL database tables ensured successfully.");
         }
         else
         {
@@ -384,7 +392,11 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-app.UseHttpsRedirection();
+// Phía trước đã có Nginx/Traefik làm Reverse Proxy SSL Termination
+if (app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 app.UseCors();
 app.UseRateLimiter();
 app.UseAuthentication(); // [Cảnh giới 6: Đã tích hợp JWT SSO]
