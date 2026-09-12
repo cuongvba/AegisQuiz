@@ -51,15 +51,58 @@ Có 2 cách triển khai siêu nhanh trên Coolify:
 
 ---
 
-### Cách 2: Triển khai Liên kết Qua Git Repository (Tự động CI/CD)
+### Cách 2: Triển khai Liên kết Qua Git Repository (Tự động CI/CD) — KHUYÊN DÙNG
 
-Nếu mã nguồn dự án của bạn đã được push lên GitHub hoặc GitLab:
+Phương án này giúp bạn kết nối trực tiếp Coolify với GitHub. Mỗi khi bạn cập nhật code và `git push`, Coolify sẽ tự động build lại và cập nhật hệ thống `dehoc.vn` mà không cần thao tác thủ công.
 
-1. Tại Coolify `panel.dehoc.vn/projects` -> Bấm **`+ New`** -> Chọn **`Git Repository`** (GitHub / Private Repository).
-2. Chọn repository `AegisQuiz` và branch `main`.
-3. Chọn kiểu build: **`Docker Compose`** và chỉ định tệp `docker-compose.prod.yml`.
-4. Điền domain: `https://dehoc.vn`.
-5. Bấm **Deploy**. Mỗi khi bạn `git push` code mới, Coolify sẽ tự động build và cập nhật phiên bản mới nhất mà không gián đoạn dịch vụ!
+#### Bước 2.1: Đẩy mã nguồn lên GitHub (`cuongvba/AegisQuiz`)
+
+Kho lưu trữ cục bộ tại máy của bạn đã được khởi tạo và commit đầy đủ mã nguồn (`Initial commit`). Bạn chỉ cần xuất bản lên GitHub theo 1 trong 2 cách cực nhanh sau:
+
+* **Lựa chọn A (1-Click qua GitHub Desktop - Siêu tiện lợi)**:
+  1. Mở ứng dụng **GitHub Desktop** trên máy của bạn.
+  2. Chọn menu **File** -> **Add Local Repository...** (hoặc phím tắt `Ctrl + O`).
+  3. Chọn thư mục: `D:\Cuong\DuAn\mybank\AegisQuiz`.
+  4. Bấm nút **`Publish repository`** ở thanh trên cùng.
+  5. Đặt tên: `AegisQuiz`, tích chọn `Keep this code private` (để bảo mật mã nguồn doanh nghiệp).
+  6. Bấm nút xanh **`Publish Repository`** -> Toàn bộ mã nguồn sẽ được đồng bộ lên `https://github.com/cuongvba/AegisQuiz`.
+
+* **Lựa chọn B (Qua trình duyệt Web & dòng lệnh Git)**:
+  1. Truy cập [https://github.com/new](https://github.com/new).
+  2. Repository name: `AegisQuiz`.
+  3. Chọn: **Private**.
+  4. *Không* tích chọn bất kỳ mục nào khác (README, .gitignore - vì máy bạn đã có sẵn).
+  5. Bấm **Create repository**.
+  6. Mở PowerShell và chạy lệnh sau để đẩy code:
+     ```powershell
+     & "C:\Users\cuongnguyenviet8.CORP\AppData\Local\GitHubDesktop\app-3.6.5\resources\app\git\cmd\git.exe" push -u origin main
+     ```
+
+---
+
+#### Bước 2.2: Kết nối Git Repository trên Coolify (`panel.dehoc.vn`)
+
+1. **Ủy quyền Coolify truy cập GitHub**:
+   - Tại Coolify (`https://panel.dehoc.vn`), vào menu **Sources** (hoặc **Keys & Tokens** -> **Git Sources**).
+   - Chọn **Add GitHub App**: Bấm nút liên kết với tài khoản GitHub `cuongvba` và cấp quyền cho repo `AegisQuiz`.
+   *(Hoặc nếu dùng Deploy Key: Coolify sẽ cung cấp một SSH Public Key, bạn chỉ cần copy và paste vào GitHub Repo -> Settings -> Deploy Keys).*
+
+2. **Tạo Application từ Git**:
+   - Vào dự án của bạn trên Coolify -> Bấm **`+ New`** -> Chọn **`Git Repository`**.
+   - Chọn repository: **`cuongvba/AegisQuiz`** và branch: **`main`**.
+   - **Build Pack**: Chọn **`Docker Compose`**.
+   - **Docker Compose Location**: Nhập `/docker-compose.prod.yml` (hoặc để mặc định nếu tệp ở thư mục gốc).
+
+3. **Cấu hình Domain & Port**:
+   - Trong danh sách các service của Compose:
+     - Chọn service **`frontend`**.
+     - Tại mục **Domains**: nhập `https://dehoc.vn, https://www.dehoc.vn`.
+     - Cổng dịch vụ (Port): nhập `80`.
+   - Bấm **Save**.
+
+4. **Kích hoạt Auto-Deploy (Tự động triển khai khi Push code)**:
+   - Tích chọn mục **`Auto-deploy`** (hoặc Webhook).
+   - Bấm nút **`Deploy`** màu tím để tiến hành build và khởi chạy phiên bản đầu tiên! Coolify sẽ tự động xin chứng chỉ SSL Let's Encrypt cho `dehoc.vn`.
 
 ---
 
