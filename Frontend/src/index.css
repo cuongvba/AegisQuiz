@@ -1,0 +1,120 @@
+/**
+ * ╔══════════════════════════════════════════════════════════════════╗
+ * ║  AEGISQUIZ — GLOBAL STYLESHEET ENTRY POINT                     ║
+ * ║  Thứ tự import QUAN TRỌNG — cascade theo đúng thứ bậc         ║
+ * ╚══════════════════════════════════════════════════════════════════╝
+ */
+
+/* ── Step 1: Tailwind CSS ──────────────────────────────────────────── */
+@import "tailwindcss";
+
+/* ── Step 2: Design Token System (3 tiers — thứ tự bắt buộc) ─────── */
+@import "@/shared/design-system/tokens/primitive.css";   /* Tier 1: Raw values   */
+@import "@/shared/design-system/tokens/semantic.css";    /* Tier 2: Semantic      */
+@import "@/shared/design-system/tokens/tenant.css";      /* Tier 3: Tenant overrides */
+
+/* ── Step 3: Animations Library ───────────────────────────────────── */
+@import "@/shared/design-system/animations.css";
+
+/* ══════════════════════════════════════════════════════════════════
+ * GLOBAL RESETS & BASE STYLES
+ * ══════════════════════════════════════════════════════════════════ */
+
+@layer base {
+  /* Box sizing */
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  /* Root font & smoothing */
+  html {
+    font-family:              var(--tenant-font-body, var(--font-sans));
+    font-size:                var(--text-base);
+    line-height:              var(--leading-normal);
+    -webkit-font-smoothing:   antialiased;
+    -moz-osx-font-smoothing:  grayscale;
+    text-rendering:           optimizeLegibility;
+    /* RTL support — direction set by I18nProvider via dir attribute */
+    direction:                ltr;
+  }
+
+  /* Body */
+  body {
+    margin:           0;
+    background-color: var(--surface-page);
+    color:            var(--text-primary);
+    font-family:      var(--tenant-font-body, var(--font-sans));
+  }
+
+  /* Focus visible — accessibility */
+  :focus-visible {
+    outline:        2px solid var(--border-focus);
+    outline-offset: 2px;
+    border-radius:  var(--radius-sm);
+  }
+
+  /* Remove focus for mouse users */
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  /* Selection */
+  ::selection {
+    background-color: var(--palette-cyan-200);
+    color:            var(--palette-cyan-900);
+  }
+
+  /* Scrollbar — thin & branded */
+  ::-webkit-scrollbar {
+    width:  6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--palette-slate-100);
+  }
+  ::-webkit-scrollbar-thumb {
+    background:    var(--palette-slate-300);
+    border-radius: var(--radius-full);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--palette-slate-400);
+  }
+
+  /* Headings use tenant font */
+  h1, h2, h3, h4, h5, h6 {
+    font-family:  var(--tenant-font-heading, var(--font-sans));
+    font-weight:  var(--font-bold);
+    line-height:  var(--leading-tight);
+    color:        var(--text-primary);
+  }
+
+  /* Links */
+  a {
+    color:           var(--text-link);
+    text-decoration: none;
+  }
+  a:hover {
+    color: var(--text-link-hover);
+  }
+
+  /* Images */
+  img, video {
+    max-width: 100%;
+    height:    auto;
+  }
+
+  /* Buttons reset */
+  button {
+    cursor:     pointer;
+    font-family: inherit;
+  }
+
+  /* Logical properties for RTL — inline utilities */
+  .ms-auto  { margin-inline-start: auto; }
+  .me-auto  { margin-inline-end:   auto; }
+  .ps-4     { padding-inline-start: var(--spacing-4); }
+  .pe-4     { padding-inline-end:   var(--spacing-4); }
+  .text-start { text-align: start; }
+  .text-end   { text-align: end; }
+}
+

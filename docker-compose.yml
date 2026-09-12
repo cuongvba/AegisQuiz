@@ -1,0 +1,114 @@
+# AegisQuiz - Docker Compose (Chạy toàn bộ hệ thống cục bộ)
+# Lệnh khởi động: cp .env.example .env && docker compose up -d
+# [CG2: Cảm biến Đe dọa] Mọi credential đọc từ .env — KHÔNG hardcode!
+# [CG6: Định danh Tuyệt đối] Thêm Keycloak IdP chuẩn OIDC/OAuth2
+
+services:
+  # ===== BACKEND (C# .NET 10) =====
+  backend:
+    build: ./Backend
+    ports:
+      - "8080:8080"
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=aegisquiz;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      - ConnectionStrings__Redis=redis:6379
+      - Gemini__ApiKey=${GEMINI_API_KEY}
+      - Webhook__SecretKey=${WEBHOOK_SECRET}
+      - Jwt__Secret=${JWT_SECRET}
+      - Oidc__Authority=http://keycloak:8080/realms/dehoc
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Development}
+      # [Phase C] IRT/CAT Engine URL
+      - IrtService__BaseUrl=http://irt-service:8001
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      keycloak:
+        condition: service_started
+      irt-service:
+        condition: service_healthy
+    restart: on-failure
+
+  # ===== IRT/CAT ENGINE (Python FastAPI) =====
+  irt-service:
+    build: ./irt-service
+    ports:
+      - "8001:8001"
+    environment:
+      - LOG_LEVEL=info
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: on-failure
+
+  # ===== FRONTEND (Vite + React 19) =====
+  frontend:
+    build:
+      context: ./Frontend
+      args:
+        VITE_API_URL: ""
+        VITE_AUTH_HUB_URL: http://localhost:3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+  # ===== DATABASE (PostgreSQL) =====
+  postgres:
+    image: postgres:17-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-aegisquiz}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-aegisquiz}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # ===== CACHE (Redis) =====
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ===== [CG6: Định danh Tuyệt đối] KEYCLOAK IdP (OAuth2/OIDC) =====
+  keycloak:
+    image: quay.io/keycloak/keycloak:25.0
+    command: start-dev
+    ports:
+      - "8180:8080"
+    environment:
+      - KC_DB=postgres
+      - KC_DB_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB:-aegisquiz}
+      - KC_DB_USERNAME=${POSTGRES_USER:-postgres}
+      - KC_DB_PASSWORD=${POSTGRES_PASSWORD}
+      - KC_BOOTSTRAP_ADMIN_USERNAME=${KC_ADMIN_USER:-admin}
+      - KC_BOOTSTRAP_ADMIN_PASSWORD=${KC_ADMIN_PASSWORD}
+      - KC_HOSTNAME=localhost
+      - KC_HTTP_PORT=8080
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: on-failure
+    volumes:
+      - keycloak_data:/opt/keycloak/data
+
+volumes:
+  pgdata:
+  keycloak_data:

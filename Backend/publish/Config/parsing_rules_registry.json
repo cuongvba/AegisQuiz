@@ -1,0 +1,393 @@
+{
+  "version": "2.0.0",
+  "lastUpdated": "2026-09-04T13:48:00Z",
+  "releaseNote": "Giai đoạn 5 — Thêm 5 bộ quy tắc Quốc Tế: Gaokao (TQ), Suneung (HQ), JCEE (Nhật), Baccalauréat (Pháp), IELTS/TOEFL.",
+  "rules": [
+    {
+      "ruleCode": "VN_STANDARD_MULTIPLE_CHOICE",
+      "ruleName": "Trắc Nghiệm Đơn Tiêu Chuẩn (A/B/C/D)",
+      "targetExamType": "GENERAL",
+      "language": "vi",
+      "priority": 10,
+      "isActive": true,
+      "description": "Nhận diện câu hỏi trắc nghiệm truyền thống 4 phương án A, B, C, D.",
+      "anchorSpec": {
+        "regexPattern": "^(?:Câu|Question|Item|Bài|Q)\\s*(\\d+)[\\.\\:\\s\\-]+",
+        "questionNumberGroupIndex": 1,
+        "sectionMarkers": ["PHẦN I", "PART I", "PHẦN 1"]
+      },
+      "stimulusSpec": {
+        "supportMathTypeWmf": true,
+        "supportVectorSvg": true,
+        "extractInlineImages": true,
+        "readingPassageStartRegex": "^(?:Read\\s+(?:the\\s+)?(?:following\\s+)?passage|Đọc\\s+đoạn\\s+văn\\s+sau)",
+        "readingPassageRangeRegex": "\\b(?:from|từ)\\s*(\\d+)\\s*(?:to|đến)\\s*(\\d+)\\b"
+      },
+      "interactionSpec": {
+        "defaultQuestionType": "SINGLE",
+        "optionRegexPattern": "^(?:([A-D])|[(]([A-D])[)])[\\.\\:\\s\\-]+(.*)$",
+        "optionLabelGroupIndex": 1,
+        "optionContentGroupIndex": 3
+      },
+      "evaluationSpec": {
+        "answerRegexPattern": "^(?:ĐÁP\\s*ÁN|ANSWER|KEY|CHỌN)[\\.\\:\\s\\-]+([A-D0-9a-d\\,\\s]+)",
+        "answerGroupIndex": 1,
+        "explanationRegexPattern": "^(?:Lời\\s*giải|Hướng\\s*dẫn|HD|Giải\\s*thích|Explanation|Căn\\s*cứ)\\b",
+        "criticalQuestionMarkerRegex": "(?:\\[\\s*ĐIỂM\\s*LIỆT\\s*\\]|⚠️|TỬ\\s*THẦN)",
+        "scoreStrategy": "ALL_OR_NOTHING"
+      }
+    },
+    {
+      "ruleCode": "VN_GDPT_2025_TRUE_FALSE_MATRIX",
+      "ruleName": "Trắc Nghiệm Đúng / Sai Đa Mệnh Đề (GDPT 2025)",
+      "targetExamType": "GDPT_2025",
+      "language": "vi",
+      "priority": 20,
+      "isActive": true,
+      "description": "Nhận diện Phần II đề thi tốt nghiệp THPT mới với 4 ý a, b, c, d Đúng/Sai.",
+      "anchorSpec": {
+        "regexPattern": "^(?:Câu|Question)\\s*(\\d+)[\\.\\:\\s\\-]+",
+        "questionNumberGroupIndex": 1,
+        "sectionMarkers": ["PHẦN II", "PART II", "PHẦN 2", "TRẮC NGHIỆM ĐÚNG SAI"]
+      },
+      "stimulusSpec": {
+        "supportMathTypeWmf": true,
+        "supportVectorSvg": true,
+        "extractInlineImages": true
+      },
+      "interactionSpec": {
+        "defaultQuestionType": "TRUE_FALSE",
+        "optionRegexPattern": "^(?:([a-d])|[(]([a-d])[)])[\\.\\:\\)\\s\\-]+(.*)$",
+        "optionLabelGroupIndex": 1,
+        "optionContentGroupIndex": 3,
+        "trueFalseSubItemRegex": "^(?:([a-d])|[(]([a-d])[)])[\\.\\:\\)\\s\\-]+(.*)$"
+      },
+      "evaluationSpec": {
+        "answerRegexPattern": "^(?:ĐÁP\\s*ÁN|ANSWER|KEY)[\\.\\:\\s\\-]+([a-d\\:\\sĐSđsTFtf\\,\\;]+)",
+        "answerGroupIndex": 1,
+        "explanationRegexPattern": "^(?:Lời\\s*giải|Hướng\\s*dẫn|HD|Giải\\s*thích)\\b",
+        "scoreStrategy": "PARTIAL_CREDIT"
+      }
+    },
+    {
+      "ruleCode": "VN_GDPT_2025_SHORT_ANSWER",
+      "ruleName": "Trắc Nghiệm Trả Lời Ngắn / Điền Số (GDPT 2025)",
+      "targetExamType": "GDPT_2025",
+      "language": "vi",
+      "priority": 30,
+      "isActive": true,
+      "description": "Nhận diện Phần III đề thi tốt nghiệp THPT: thí sinh tự điền kết quả số học.",
+      "anchorSpec": {
+        "regexPattern": "^(?:Câu|Question)\\s*(\\d+)[\\.\\:\\s\\-]+",
+        "questionNumberGroupIndex": 1,
+        "sectionMarkers": ["PHẦN III", "PART III", "PHẦN 3", "TRẢ LỜI NGẮN"]
+      },
+      "stimulusSpec": {
+        "supportMathTypeWmf": true,
+        "supportVectorSvg": true,
+        "extractInlineImages": true
+      },
+      "interactionSpec": {
+        "defaultQuestionType": "SHORT_ANSWER",
+        "optionRegexPattern": "^(?:([A-D])|[(]([A-D])[)])[\\.\\:\\s\\-]+(.*)$",
+        "shortAnswerPromptRegex": "^(?:Trả\\s*lời|Kết\\s*quả|Đáp\\s*số)[\\.\\:\\s\\-]+"
+      },
+      "evaluationSpec": {
+        "answerRegexPattern": "^(?:ĐÁP\\s*ÁN|ANSWER|KEY|KẾT\\s*QUẢ)[\\.\\:\\s\\-]+([\\-\\+]?\\d+[\\,\\.]?\\d*)",
+        "answerGroupIndex": 1,
+        "explanationRegexPattern": "^(?:Lời\\s*giải|Hướng\\s*dẫn|HD|Giải\\s*thích)\\b",
+        "scoreStrategy": "ALL_OR_NOTHING"
+      }
+    },
+    {
+      "ruleCode": "GPLX_NATIONAL_DRIVING_TEST",
+      "ruleName": "Sát Hạch Lái Xe Quốc Gia (GPLX 600 Câu & Điểm Liệt)",
+      "targetExamType": "GPLX",
+      "language": "vi",
+      "priority": 15,
+      "isActive": true,
+      "description": "Nhận diện đề thi giấy phép lái xe, tự động phát hiện câu điểm liệt tử thần.",
+      "anchorSpec": {
+        "regexPattern": "^(?:Câu|Question)\\s*(\\d+)[\\.\\:\\s\\-]+",
+        "questionNumberGroupIndex": 1,
+        "sectionMarkers": ["SÁT HẠCH LÁI XE", "GPLX", "600 CÂU HỎI"]
+      },
+      "stimulusSpec": {
+        "supportMathTypeWmf": false,
+        "supportVectorSvg": true,
+        "extractInlineImages": true
+      },
+      "interactionSpec": {
+        "defaultQuestionType": "SINGLE",
+        "optionRegexPattern": "^(?:([1-4])|([A-D]))[\\.\\:\\s\\-]+(.*)$",
+        "optionLabelGroupIndex": 1,
+        "optionContentGroupIndex": 3
+      },
+      "evaluationSpec": {
+        "answerRegexPattern": "^(?:ĐÁP\\s*ÁN|CHỌN)[\\.\\:\\s\\-]+([1-4A-D])",
+        "answerGroupIndex": 1,
+        "explanationRegexPattern": "^(?:Giải\\s*thích|Khẩu\\s*quyết|Căn\\s*cứ|Mẹo)\\b",
+        "criticalQuestionMarkerRegex": "(?:\\[\\s*(?:ĐIỂM\\s*LIỆT|CÂU\\s*LIỆT)\\s*\\]|⚠️|\\*\\s*LIỆT\\s*\\*)",
+        "scoreStrategy": "FATAL_LOCK"
+      }
+    },
+    {
+      "ruleCode": "INTERNATIONAL_SAT_LOGIC",
+      "ruleName": "Khảo Thí Quốc Tế SAT / GRE Logic (Format Không Dấu Chấm)",
+      "targetExamType": "SAT",
+      "language": "en",
+      "priority": 5,
+      "isActive": true,
+      "description": "Nhận diện đề thi quốc tế định dạng Task #[0-9] và [Option] không cần sửa code.",
+      "anchorSpec": {
+        "regexPattern": "^(?:Task|Problem)\\s*#?(\\d+)[\\:\\s\\-]+",
+        "questionNumberGroupIndex": 1,
+        "sectionMarkers": ["SECTION SAT", "MODULE LOGIC"]
+      },
+      "stimulusSpec": {
+        "supportMathTypeWmf": true,
+        "supportVectorSvg": true,
+        "extractInlineImages": true
+      },
+      "interactionSpec": {
+        "defaultQuestionType": "SINGLE",
+        "optionRegexPattern": "^\\[([A-D])\\]\\s*(.*)$",
+        "optionLabelGroupIndex": 1,
+        "optionContentGroupIndex": 2
+      },
+      "evaluationSpec": {
+        "answerRegexPattern": "^\\[(?:Key|Truth|Answer)\\s*\\:\\s*([A-D])\\]",
+        "answerGroupIndex": 1,
+        "explanationRegexPattern": "^\\[(?:Rationale|Explanation)\\]",
+        "scoreStrategy": "ALL_OR_NOTHING"
+      }
+    },
+    {
+      "ruleCode": "CHINA_GAOKAO_STANDARD",
+      "ruleName": "Cao Khảo Trung Quốc (高考 Gaokao — Tiêu Chuẩn Toàn Quốc)",
+      "targetExamType": "GAOKAO",
+      "language": "zh",
+      "priority": 4,
+      "isActive": true,
+      "description": "Nhận diện đề thi cao khảo Trung Quốc, format số thứ tự đề bằng số Trung văn hoặc số Ả Rập, phương án ABCD không có dấu ngoặc.",
+      "anchorSpec": {
+        "regexPattern": "^(?:第|题目)\\s*(\\d+)[．。\\.\\s]+",
+        "questionNumberGroupIndex": 1,
+        "sectionMarkers": ["第一部分", "第二部分", "阅读理解", "选择题"]
+      },
+      "stimulusSpec": {
+        "supportMathTypeWmf": true,
+        "supportVectorSvg": true,
+        "extractInlineImages": true,
+        "readingPassageStartRegex": "^(?:阅读下面|请阅读|Read the following)",
+        "readingPassageRangeRegex": "\\b(\\d+)[-–](\\d+)\\b"
+      },
+      "interactionSpec": {
+        "defaultQuestionType": "SINGLE",
+        "optionRegexPattern": "^([ABCD])[．。\\.\\s]+(.+)$",
+        "optionLabelGroupIndex": 1,
+        "optionContentGroupIndex": 2
+      },
+      "evaluationSpec": {
+        "answerRegexPattern": "^(?:答案|正确答案|Answer)[：:]\\s*([ABCD])",
+        "answerGroupIndex": 1,
+        "explanationRegexPattern": "^(?:解析|解题过程|Explanation)[：:]",
+        "scoreStrategy": "ALL_OR_NOTHING"
+      }
+    },
+    {
+      "ruleCode": "KOREA_SUNEUNG_STANDARD",
+      "ruleName": "Đại Học Tu Học Năng Lực Hàn Quốc (수능 — CSAT Suneung)",
+      "targetExamType": "SUNEUNG",
+      "language": "ko",
+      "priority": 4,
+      "isActive": true,
+      "description": "Nhận diện đề thi Suneung Hàn Quốc — kỳ thi đại học quốc gia chuẩn với phương án ①②③④⑤ dùng số vòng tròn đặc trưng.",
+      "anchorSpec": {
+        "regexPattern": "^(\\d+)[\\. ]+",
+        "questionNumberGroupIndex": 1,
+        "sectionMarkers": ["듣기", "읽기", "쓰기", "문법", "SECTION"]
+      },
+      "stimulusSpec": {
+        "supportMathTypeWmf": true,
+        "supportVectorSvg": true,
+        "extractInlineImages": true,
+        "readingPassageStartRegex": "^(?:다음\\s*글|다음\\s*을\\s*읽고|Read the following)",
+        "readingPassageRangeRegex": "\\b(\\d+)번[-–~](\\d+)번\\b"
+      },
+      "interactionSpec": {
+        "defaultQuestionType": "SINGLE",
+        "optionRegexPattern": "^([①②③④⑤]|[1-5][\\.\\)]?)\\s*(.+)$",
+        "optionLabelGroupIndex": 1,
+        "optionContentGroupIndex": 2
+      },
+      "evaluationSpec": {
+        "answerRegexPattern": "^(?:정답|Answer|正解)[：:\\s]*([①②③④⑤1-5])",
+        "answerGroupIndex": 1,
+        "explanationRegexPattern": "^(?:해설|풀이|解説|Explanation)[：:]",
+        "scoreStrategy": "ALL_OR_NOTHING"
+      }
+    },
+    {
+      "ruleCode": "JAPAN_JCEE_STANDARD",
+      "ruleName": "Kỳ Thi Tuyển Sinh Đại Học Nhật Bản (大学入学共通テスト — JCEE)",
+      "targetExamType": "JCEE",
+      "language": "ja",
+      "priority": 4,
+      "isActive": true,
+      "description": "Nhận diện đề thi JCEE (kế thừa Center Test) Nhật Bản. Phương án dùng số vòng tròn ①②③④ hoặc chữ số katakana ア・イ・ウ・エ.",
+      "anchorSpec": {
+        "regexPattern": "^(?:問|もん|No\\.?)\\s*(\\d+)[\\. 　]+",
+        "questionNumberGroupIndex": 1,
+        "sectionMarkers": ["第１問", "第２問", "第３問", "SECTION", "問題"]
+      },
+      "stimulusSpec": {
+        "supportMathTypeWmf": true,
+        "supportVectorSvg": true,
+        "extractInlineImages": true,
+        "readingPassageStartRegex": "^(?:次の文章|次の英文|以下の文)",
+        "readingPassageRangeRegex": "\\b(\\d+)[-–](\\d+)\\b"
+      },
+      "interactionSpec": {
+        "defaultQuestionType": "SINGLE",
+        "optionRegexPattern": "^([①②③④⑤⑥]|[ア-エ])[\\s　]*(.+)$",
+        "optionLabelGroupIndex": 1,
+        "optionContentGroupIndex": 2
+      },
+      "evaluationSpec": {
+        "answerRegexPattern": "^(?:正解|答え|Answer)[：:\\s]*([①②③④⑤⑥ア-エ])",
+        "answerGroupIndex": 1,
+        "explanationRegexPattern": "^(?:解説|説明|Explanation)[：:]",
+        "scoreStrategy": "ALL_OR_NOTHING"
+      }
+    },
+    {
+      "ruleCode": "FRANCE_BACCALAUREAT_STANDARD",
+      "ruleName": "Kỳ Thi Tú Tài Pháp (Baccalauréat — BAC)",
+      "targetExamType": "BACCALAUREAT",
+      "language": "fr",
+      "priority": 4,
+      "isActive": true,
+      "description": "Nhận diện đề thi Baccalauréat Pháp — kỳ thi tú tài quốc gia chuẩn. Phương án dùng A., B., C., D. hoặc a), b), c), d). Có mệnh đề Vrai/Faux (Đúng/Sai).",
+      "anchorSpec": {
+        "regexPattern": "^(?:(?:Question|Exercice|Partie)\\s*)?(\\d+)[\\.\\.\\s—–-]+",
+        "questionNumberGroupIndex": 1,
+        "sectionMarkers": ["EXERCICE", "PARTIE", "PROBLÈME", "SECTION"]
+      },
+      "stimulusSpec": {
+        "supportMathTypeWmf": true,
+        "supportVectorSvg": true,
+        "extractInlineImages": true,
+        "readingPassageStartRegex": "^(?:Lisez le texte|Lire le passage|Read the following)",
+        "readingPassageRangeRegex": "\\b(?:lignes?|questions?)\\s*(\\d+)\\s*[àa]\\s*(\\d+)\\b"
+      },
+      "interactionSpec": {
+        "defaultQuestionType": "SINGLE",
+        "optionRegexPattern": "^([A-Da-d])[\\.\\)\\s]+(.+)$",
+        "optionLabelGroupIndex": 1,
+        "optionContentGroupIndex": 2
+      },
+      "evaluationSpec": {
+        "answerRegexPattern": "^(?:Réponse|Réponse correcte|Answer)[\\s:]+([A-Da-d])",
+        "answerGroupIndex": 1,
+        "explanationRegexPattern": "^(?:Explication|Justification|Correction)[\\s:]",
+        "scoreStrategy": "ALL_OR_NOTHING"
+      }
+    },
+    {
+      "ruleCode": "INTERNATIONAL_IELTS_TOEFL",
+      "ruleName": "Luyện Thi Quốc Tế IELTS / TOEFL Academic (Reading & Listening)",
+      "targetExamType": "IELTS_TOEFL",
+      "language": "en",
+      "priority": 4,
+      "isActive": true,
+      "description": "Nhận diện cấu trúc đề thi IELTS và TOEFL với các dạng: Multiple Choice, True/False/Not Given, Matching Headings, Fill-in-the-blank.",
+      "anchorSpec": {
+        "regexPattern": "^(?:Question|Q\\.?|Item)\\s+(\\d+)[-\\.:\\s]+",
+        "questionNumberGroupIndex": 1,
+        "sectionMarkers": ["READING PASSAGE", "SECTION", "PART", "LISTENING SECTION"]
+      },
+      "stimulusSpec": {
+        "supportMathTypeWmf": false,
+        "supportVectorSvg": true,
+        "extractInlineImages": true,
+        "readingPassageStartRegex": "^(?:Read(?:ing)?\\s+Passage|The following passage)",
+        "readingPassageRangeRegex": "\\bquestions\\s+(\\d+)[-–](\\d+)\\b"
+      },
+      "interactionSpec": {
+        "defaultQuestionType": "SINGLE",
+        "optionRegexPattern": "^([A-Da-d])[\\.\\)\\s]+(.+)$",
+        "optionLabelGroupIndex": 1,
+        "optionContentGroupIndex": 2
+      },
+      "evaluationSpec": {
+        "answerRegexPattern": "^(?:Answer|Key|Correct Answer)[:\\s]+([A-Da-dTFNG]+)",
+        "answerGroupIndex": 1,
+        "explanationRegexPattern": "^(?:Explanation|Rationale|Script)[:\\s]",
+        "scoreStrategy": "ALL_OR_NOTHING"
+      }
+    },
+    {
+      "ruleCode": "GERMANY_ABITUR_STANDARD",
+      "ruleName": "Kỳ Thi Tú Tài Quốc Gia Đức (Abitur Prüfungen)",
+      "targetExamType": "ABITUR",
+      "language": "de",
+      "priority": 4,
+      "isActive": true,
+      "description": "Nhận diện đề thi tốt nghiệp trung học Đức (Abitur) với cấu trúc Aufgabe / Frage và Lösung / Erklärung.",
+      "anchorSpec": {
+        "regexPattern": "^(?:Aufgabe|Frage)\\s+(\\d+)[\\.\\:\\s\\-]+",
+        "questionNumberGroupIndex": 1,
+        "sectionMarkers": ["TEIL A", "TEIL B", "PFLICHTTEIL", "WAHLTEIL"]
+      },
+      "stimulusSpec": {
+        "supportMathTypeWmf": true,
+        "supportVectorSvg": true,
+        "extractInlineImages": true
+      },
+      "interactionSpec": {
+        "defaultQuestionType": "SINGLE",
+        "optionRegexPattern": "^([A-Da-d])[\\.\\)\\s]+(.+)$",
+        "optionLabelGroupIndex": 1,
+        "optionContentGroupIndex": 2
+      },
+      "evaluationSpec": {
+        "answerRegexPattern": "^(?:Lösung|Antwort|Richtige\\s+Antwort)[\\s:]+([A-Da-d])",
+        "answerGroupIndex": 1,
+        "explanationRegexPattern": "^(?:Erklärung|Lösungsweg|Begründung)[\\s:]",
+        "scoreStrategy": "ALL_OR_NOTHING"
+      }
+    },
+    {
+      "ruleCode": "CAMBRIDGE_A_LEVELS_STANDARD",
+      "ruleName": "Khảo Thí Cambridge Quốc Tế (Cambridge A/AS Levels & IGCSE)",
+      "targetExamType": "CAMBRIDGE",
+      "language": "en",
+      "priority": 4,
+      "isActive": true,
+      "description": "Nhận diện chuẩn đề thi Cambridge International Examinations với cấu trúc Question X và Mark scheme / Guidance.",
+      "anchorSpec": {
+        "regexPattern": "^(?:Question|Problem)\\s*(\\d+)[\\.\\:\\s\\-]+",
+        "questionNumberGroupIndex": 1,
+        "sectionMarkers": ["PAPER 1", "PAPER 2", "SECTION A", "SECTION B"]
+      },
+      "stimulusSpec": {
+        "supportMathTypeWmf": true,
+        "supportVectorSvg": true,
+        "extractInlineImages": true
+      },
+      "interactionSpec": {
+        "defaultQuestionType": "SINGLE",
+        "optionRegexPattern": "^[(]?([a-d]|[A-D])[)][\\.\\s]+(.+)$",
+        "optionLabelGroupIndex": 1,
+        "optionContentGroupIndex": 2
+      },
+      "evaluationSpec": {
+        "answerRegexPattern": "^(?:Answer|Mark scheme|Key)[\\s:]+[(]?([a-d]|[A-D])[)]?",
+        "answerGroupIndex": 1,
+        "explanationRegexPattern": "^(?:Guidance|Examiner(?:'s)? Report|Note)[\\s:]",
+        "scoreStrategy": "ALL_OR_NOTHING"
+      }
+    }
+  ]
+}

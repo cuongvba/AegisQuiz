@@ -1,0 +1,126 @@
+# =============================================================================
+# AegisQuiz — Production Docker Compose (Deploy via Coolify or VPS)
+# Domain: https://dehoc.vn
+# =============================================================================
+
+services:
+  # ===== FRONTEND (Production Build + Nginx SPA) =====
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile.prod
+      args:
+        VITE_API_URL: ""
+        VITE_AUTH_HUB_URL: "https://dehoc.vn"
+    ports:
+      - "3000:80"
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      - backend
+    restart: always
+
+  # ===== BACKEND (.NET 9 Web API) =====
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=aegisquiz;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-AegisQuizSecured2026!}
+      - ConnectionStrings__Redis=redis:6379
+      - Gemini__ApiKey=${GEMINI_API_KEY:-}
+      - Webhook__SecretKey=${WEBHOOK_SECRET:-aegis_super_secret_webhook_key_2026}
+      - Jwt__Secret=${JWT_SECRET:-SuperSecretJwtKeyForAegisQuizPlatform2026DehocVn!}
+      - Oidc__Authority=https://dehoc.vn/auth/realms/dehoc
+      - ASPNETCORE_ENVIRONMENT=Production
+      - IrtService__BaseUrl=http://irt-service:8001
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      irt-service:
+        condition: service_healthy
+    restart: always
+
+  # ===== IRT/CAT ADAPTIVE TESTING ENGINE (Python FastAPI) =====
+  irt-service:
+    build:
+      context: ./irt-service
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      - LOG_LEVEL=info
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: always
+
+  # ===== DATABASE (PostgreSQL 17 Alpine) =====
+  postgres:
+    image: postgres:17-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-aegisquiz}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-AegisQuizSecured2026!}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-aegisquiz}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: always
+
+  # ===== CACHE & REALTIME ENGINE (Redis 7 Alpine) =====
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: always
+
+  # ===== KEYCLOAK IDENTITY PROVIDER (OAuth2 / OIDC) =====
+  keycloak:
+    image: quay.io/keycloak/keycloak:25.0
+    command: start --optimized
+    ports:
+      - "8180:8080"
+    environment:
+      - KC_DB=postgres
+      - KC_DB_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB:-aegisquiz}
+      - KC_DB_USERNAME=${POSTGRES_USER:-postgres}
+      - KC_DB_PASSWORD=${POSTGRES_PASSWORD:-AegisQuizSecured2026!}
+      - KC_BOOTSTRAP_ADMIN_USERNAME=${KC_ADMIN_USER:-admin}
+      - KC_BOOTSTRAP_ADMIN_PASSWORD=${KC_ADMIN_PASSWORD:-AdminDehoc2026!Keycloak}
+      - KC_HOSTNAME=dehoc.vn
+      - KC_HOSTNAME_PATH=/auth
+      - KC_HTTP_ENABLED=true
+      - KC_PROXY_HEADERS=xforwarded
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - keycloak_data:/opt/keycloak/data
+    restart: always
+
+volumes:
+  pgdata:
+  redisdata:
+  keycloak_data:

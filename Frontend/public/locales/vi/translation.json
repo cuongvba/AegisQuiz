@@ -1,0 +1,85 @@
+{
+  "common": {
+    "loading": "Đang tải...",
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "delete": "Xóa",
+    "edit": "Chỉnh sửa",
+    "create": "Tạo mới",
+    "search": "Tìm kiếm",
+    "filter": "Lọc",
+    "export": "Xuất",
+    "import": "Nhập",
+    "submit": "Nộp bài",
+    "next": "Tiếp theo",
+    "previous": "Trước đó",
+    "finish": "Hoàn thành",
+    "back": "Quay lại",
+    "close": "Đóng",
+    "confirm": "Xác nhận",
+    "yes": "Có",
+    "no": "Không",
+    "error": "Đã xảy ra lỗi",
+    "success": "Thành công",
+    "noData": "Không có dữ liệu"
+  },
+  "nav": {
+    "dashboard": "Bảng điều khiển",
+    "quiz": "Kiểm tra",
+    "practice": "Luyện tập",
+    "leaderboard": "Bảng xếp hạng",
+    "achievements": "Thành tích",
+    "learningPaths": "Lộ trình học",
+    "admin": "Quản trị",
+    "profile": "Hồ sơ",
+    "logout": "Đăng xuất"
+  },
+  "quiz": {
+    "startExam": "Bắt đầu thi",
+    "submitAnswer": "Nộp đáp án",
+    "timeRemaining": "Còn lại: {{time}}",
+    "questionOf": "Câu {{current}} / {{total}}",
+    "correctAnswer": "Đúng rồi!",
+    "wrongAnswer": "Sai. Đáp án đúng là: {{answer}}",
+    "score": "Điểm: {{score}}/{{total}}",
+    "accuracy": "Độ chính xác: {{percent}}%",
+    "examComplete": "Hoàn thành bài thi",
+    "viewResults": "Xem kết quả",
+    "retake": "Làm lại",
+    "explanation": "Giải thích",
+    "aiAnalysis": "Phân tích AI",
+    "generating": "Đang phân tích bằng AI..."
+  },
+  "auth": {
+    "login": "Đăng nhập",
+    "logout": "Đăng xuất",
+    "loginWithKeycloak": "Đăng nhập SSO tổ chức",
+    "loginWithPKI": "Đăng nhập USB Token (PKI)",
+    "welcome": "Chào mừng trở lại, {{name}}",
+    "sessionExpired": "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại."
+  },
+  "admin": {
+    "questions": "Quản lý câu hỏi",
+    "topics": "Quản lý chủ đề",
+    "users": "Quản lý người dùng",
+    "analytics": "Phân tích dữ liệu",
+    "settings": "Cài đặt",
+    "importExcel": "Nhập từ Excel",
+    "importDocx": "Nhập từ Word",
+    "generateAI": "Tạo bằng AI",
+    "totalQuestions": "Tổng câu hỏi",
+    "questionBank": "Ngân hàng câu hỏi"
+  },
+  "achievements": {
+    "unlocked": "Mở khóa thành tích!",
+    "xpEarned": "+{{xp}} XP",
+    "yourAchievements": "Thành tích của bạn",
+    "noAchievements": "Chưa có thành tích. Hãy bắt đầu học để nhận huy hiệu!"
+  },
+  "errors": {
+    "notFound": "Không tìm thấy tài nguyên",
+    "unauthorized": "Bạn không có quyền truy cập tài nguyên này",
+    "serverError": "Lỗi máy chủ. Vui lòng thử lại sau.",
+    "networkError": "Lỗi mạng. Vui lòng kiểm tra kết nối."
+  }
+}

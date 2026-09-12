@@ -1,0 +1,206 @@
+/**
+ * ╔══════════════════════════════════════════════════════════════════╗
+ * ║  AEGISQUIZ — TIER 1: PRIMITIVE TOKENS                          ║
+ * ║  Immutable raw values. KHÔNG dùng trực tiếp trong component.   ║
+ * ║  Chỉ được tham chiếu bởi semantic.css & tenant.css             ║
+ * ╚══════════════════════════════════════════════════════════════════╝
+ */
+
+:root {
+
+  /* ══════════════════════════════════════════════════
+   * COLOR PALETTE
+   * ══════════════════════════════════════════════════ */
+
+  /* Cyan — Brand Primary */
+  --palette-cyan-50:  #ecfeff;
+  --palette-cyan-100: #cffafe;
+  --palette-cyan-200: #a5f3fc;
+  --palette-cyan-300: #67e8f9;
+  --palette-cyan-400: #22d3ee;
+  --palette-cyan-500: #06b6d4;
+  --palette-cyan-600: #0891b2;
+  --palette-cyan-700: #0e7490;
+  --palette-cyan-800: #155e75;
+  --palette-cyan-900: #164e63;
+
+  /* Blue — Brand Secondary */
+  --palette-blue-50:  #eff6ff;
+  --palette-blue-100: #dbeafe;
+  --palette-blue-400: #60a5fa;
+  --palette-blue-500: #3b82f6;
+  --palette-blue-600: #2563eb;
+  --palette-blue-700: #1d4ed8;
+
+  /* Indigo — Deep accent */
+  --palette-indigo-400: #818cf8;
+  --palette-indigo-500: #6366f1;
+  --palette-indigo-600: #4f46e5;
+
+  /* Purple — Premium / VIP */
+  --palette-purple-400: #c084fc;
+  --palette-purple-500: #a855f7;
+  --palette-purple-600: #9333ea;
+
+  /* Amber — Accent / Gold / Arena */
+  --palette-amber-100: #fef3c7;
+  --palette-amber-300: #fcd34d;
+  --palette-amber-400: #fbbf24;
+  --palette-amber-500: #f59e0b;
+  --palette-amber-600: #d97706;
+
+  /* Emerald — Success */
+  --palette-emerald-100: #d1fae5;
+  --palette-emerald-400: #34d399;
+  --palette-emerald-500: #10b981;
+  --palette-emerald-600: #059669;
+
+  /* Rose — Danger / Error */
+  --palette-rose-100: #ffe4e6;
+  --palette-rose-400: #fb7185;
+  --palette-rose-500: #f43f5e;
+  --palette-rose-600: #e11d48;
+
+  /* Slate — Neutral / Text */
+  --palette-slate-50:  #f8fafc;
+  --palette-slate-100: #f1f5f9;
+  --palette-slate-200: #e2e8f0;
+  --palette-slate-300: #cbd5e1;
+  --palette-slate-400: #94a3b8;
+  --palette-slate-500: #64748b;
+  --palette-slate-600: #475569;
+  --palette-slate-700: #334155;
+  --palette-slate-800: #1e293b;
+  --palette-slate-900: #0f172a;
+  --palette-slate-950: #020617;
+
+  /* White / Black */
+  --palette-white: #ffffff;
+  --palette-black: #000000;
+
+  /* ══════════════════════════════════════════════════
+   * SPACING SCALE (base-4 rem system)
+   * ══════════════════════════════════════════════════ */
+  --spacing-px:   1px;
+  --spacing-0:    0;
+  --spacing-0-5:  0.125rem;   /*  2px */
+  --spacing-1:    0.25rem;    /*  4px */
+  --spacing-1-5:  0.375rem;   /*  6px */
+  --spacing-2:    0.5rem;     /*  8px */
+  --spacing-2-5:  0.625rem;   /* 10px */
+  --spacing-3:    0.75rem;    /* 12px */
+  --spacing-3-5:  0.875rem;   /* 14px */
+  --spacing-4:    1rem;       /* 16px */
+  --spacing-5:    1.25rem;    /* 20px */
+  --spacing-6:    1.5rem;     /* 24px */
+  --spacing-7:    1.75rem;    /* 28px */
+  --spacing-8:    2rem;       /* 32px */
+  --spacing-10:   2.5rem;     /* 40px */
+  --spacing-12:   3rem;       /* 48px */
+  --spacing-14:   3.5rem;     /* 56px */
+  --spacing-16:   4rem;       /* 64px */
+  --spacing-20:   5rem;       /* 80px */
+  --spacing-24:   6rem;       /* 96px */
+  --spacing-32:   8rem;       /* 128px */
+
+  /* ══════════════════════════════════════════════════
+   * TYPOGRAPHY
+   * ══════════════════════════════════════════════════ */
+
+  /* Font Families */
+  --font-sans:    'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: 'Inter', system-ui, sans-serif;
+  --font-mono:    'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+
+  /* Font Sizes */
+  --text-xs:   0.75rem;    /* 12px */
+  --text-sm:   0.875rem;   /* 14px */
+  --text-base: 1rem;       /* 16px */
+  --text-lg:   1.125rem;   /* 18px */
+  --text-xl:   1.25rem;    /* 20px */
+  --text-2xl:  1.5rem;     /* 24px */
+  --text-3xl:  1.875rem;   /* 30px */
+  --text-4xl:  2.25rem;    /* 36px */
+  --text-5xl:  3rem;       /* 48px */
+
+  /* Font Weights */
+  --font-normal:    400;
+  --font-medium:    500;
+  --font-semibold:  600;
+  --font-bold:      700;
+  --font-extrabold: 800;
+  --font-black:     900;
+
+  /* Line Heights */
+  --leading-none:    1;
+  --leading-tight:   1.25;
+  --leading-snug:    1.375;
+  --leading-normal:  1.5;
+  --leading-relaxed: 1.625;
+  --leading-loose:   2;
+
+  /* ══════════════════════════════════════════════════
+   * BORDER RADIUS
+   * ══════════════════════════════════════════════════ */
+  --radius-none: 0;
+  --radius-sm:   0.25rem;   /*  4px */
+  --radius-md:   0.375rem;  /*  6px */
+  --radius-lg:   0.5rem;    /*  8px */
+  --radius-xl:   0.75rem;   /* 12px */
+  --radius-2xl:  1rem;      /* 16px */
+  --radius-3xl:  1.5rem;    /* 24px */
+  --radius-full: 9999px;
+
+  /* ══════════════════════════════════════════════════
+   * SHADOWS
+   * ══════════════════════════════════════════════════ */
+  --shadow-xs:  0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-sm:  0 1px 3px 0 rgb(0 0 0 / 0.10), 0 1px 2px -1px rgb(0 0 0 / 0.10);
+  --shadow-md:  0 4px 6px -1px rgb(0 0 0 / 0.10), 0 2px 4px -2px rgb(0 0 0 / 0.10);
+  --shadow-lg:  0 10px 15px -3px rgb(0 0 0 / 0.10), 0 4px 6px -4px rgb(0 0 0 / 0.10);
+  --shadow-xl:  0 20px 25px -5px rgb(0 0 0 / 0.10), 0 8px 10px -6px rgb(0 0 0 / 0.10);
+  --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+
+  /* Glow effects — for Arena / gamification */
+  --shadow-glow-cyan:   0 0 20px rgb(6 182 212 / 0.40);
+  --shadow-glow-amber:  0 0 20px rgb(245 158 11 / 0.40);
+  --shadow-glow-purple: 0 0 20px rgb(168 85 247 / 0.40);
+  --shadow-glow-emerald:0 0 20px rgb(16 185 129 / 0.40);
+
+  /* ══════════════════════════════════════════════════
+   * TRANSITIONS & ANIMATIONS
+   * ══════════════════════════════════════════════════ */
+  --duration-75:  75ms;
+  --duration-100: 100ms;
+  --duration-150: 150ms;
+  --duration-200: 200ms;
+  --duration-300: 300ms;
+  --duration-500: 500ms;
+  --duration-700: 700ms;
+  --duration-1000: 1000ms;
+
+  --ease-linear:      linear;
+  --ease-in:          cubic-bezier(0.4, 0, 1, 1);
+  --ease-out:         cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out:      cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring:      cubic-bezier(0.34, 1.56, 0.64, 1);  /* Overshoot spring */
+  --ease-bounce:      cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+  /* ══════════════════════════════════════════════════
+   * Z-INDEX SCALE
+   * ══════════════════════════════════════════════════ */
+  --z-below:    -1;
+  --z-base:      0;
+  --z-raised:   10;
+  --z-dropdown: 20;
+  --z-sticky:   30;
+  --z-overlay:  40;
+  --z-modal:    50;
+  --z-toast:    60;
+  --z-tooltip:  70;
+
+  /* ══════════════════════════════════════════════════
+   * BREAKPOINTS (reference only — use in JS/TS)
+   * ══════════════════════════════════════════════════ */
+  /* sm: 640px | md: 768px | lg: 1024px | xl: 1280px | 2xl: 1536px */
+}

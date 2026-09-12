@@ -1,0 +1,130 @@
+/**
+ * ╔══════════════════════════════════════════════════════════════════╗
+ * ║  AEGISQUIZ — TIER 3: TENANT OVERRIDE TOKENS                    ║
+ * ║  Runtime-injected CSS Custom Properties per Tenant.            ║
+ * ║  Được TenantProvider.tsx inject vào document.documentElement.  ║
+ * ║                                                                  ║
+ * ║  Zero full-page reload — switch tenant = update CSS vars only.  ║
+ * ╚══════════════════════════════════════════════════════════════════╝
+ *
+ * Dependency: primitive.css + semantic.css phải được import trước.
+ *
+ * HOW IT WORKS:
+ *   1. TenantProvider.tsx fetch tenant config từ API
+ *   2. Gọi applyTenantTheme(config) → setProperty trên :root
+ *   3. Component dùng var(--tenant-brand-primary) thay vì hardcode màu
+ */
+
+/* ──────────────────────────────────────────────────────────────────
+ * DEFAULT TENANT — AegisQuiz / LearnerQuest Brand
+ * Đây là fallback khi chưa có tenant config từ API
+ * ────────────────────────────────────────────────────────────────── */
+:root {
+  /* Brand Identity */
+  --tenant-brand-primary:      var(--palette-cyan-500);
+  --tenant-brand-primary-dark: var(--palette-cyan-600);
+  --tenant-brand-primary-light:var(--palette-cyan-100);
+  --tenant-brand-secondary:    var(--palette-blue-500);
+  --tenant-brand-accent:       var(--palette-amber-500);
+  --tenant-brand-gradient:     linear-gradient(135deg, var(--palette-cyan-500), var(--palette-blue-600));
+
+  /* Typography */
+  --tenant-font-heading:       var(--font-sans);
+  --tenant-font-body:          var(--font-sans);
+
+  /* Shape */
+  --tenant-radius-button:      var(--radius-full);
+  --tenant-radius-card:        var(--radius-2xl);
+  --tenant-radius-input:       var(--radius-xl);
+
+  /* Assets */
+  --tenant-logo-width:         auto;
+  --tenant-logo-height:        2rem;
+
+  /* App Identity */
+  --tenant-app-name:           'AegisQuiz';
+  --tenant-primary-nav-items:  5;           /* Số item nav hiển thị */
+
+  /* Shadows với brand color */
+  --tenant-shadow-primary:     0 4px 14px rgb(6 182 212 / 0.30);
+  --tenant-shadow-card:        var(--shadow-md);
+
+  /* Nav overrides */
+  --tenant-nav-bg:             rgba(255, 255, 255, 0.90);
+  --tenant-nav-border:         var(--palette-cyan-100);
+}
+
+/* ──────────────────────────────────────────────────────────────────
+ * TENANT PRESET: BANKING / FINTECH (reference example)
+ * Applied when TenantProvider sets data-tenant="banking"
+ * ────────────────────────────────────────────────────────────────── */
+[data-tenant="banking"] {
+  --tenant-brand-primary:      #006633;
+  --tenant-brand-primary-dark: #004d26;
+  --tenant-brand-primary-light:#e6f4ec;
+  --tenant-brand-secondary:    #004d26;
+  --tenant-brand-accent:       #ffcc00;
+  --tenant-brand-gradient:     linear-gradient(135deg, #006633, #004d26);
+  --tenant-radius-button:      var(--radius-lg);
+  --tenant-radius-card:        var(--radius-xl);
+  --tenant-shadow-primary:     0 4px 14px rgb(0 102 51 / 0.25);
+  --tenant-nav-border:         #e6f4ec;
+}
+
+/* ──────────────────────────────────────────────────────────────────
+ * TENANT PRESET: ENTERPRISE / CORPORATE
+ * Applied when TenantProvider sets data-tenant="enterprise"
+ * ────────────────────────────────────────────────────────────────── */
+[data-tenant="enterprise"] {
+  --tenant-brand-primary:      var(--palette-indigo-600);
+  --tenant-brand-primary-dark: var(--palette-indigo-700);
+  --tenant-brand-primary-light:#eef2ff;
+  --tenant-brand-secondary:    var(--palette-slate-700);
+  --tenant-brand-accent:       var(--palette-amber-500);
+  --tenant-brand-gradient:     linear-gradient(135deg, var(--palette-indigo-600), var(--palette-slate-700));
+  --tenant-radius-button:      var(--radius-md);
+  --tenant-radius-card:        var(--radius-lg);
+  --tenant-shadow-primary:     0 4px 14px rgb(79 70 229 / 0.25);
+}
+
+/* ──────────────────────────────────────────────────────────────────
+ * TENANT PRESET: EDUCATION / SCHOOL
+ * Applied when TenantProvider sets data-tenant="education"
+ * ────────────────────────────────────────────────────────────────── */
+[data-tenant="education"] {
+  --tenant-brand-primary:      var(--palette-blue-600);
+  --tenant-brand-primary-dark: var(--palette-blue-700);
+  --tenant-brand-primary-light:var(--palette-blue-50);
+  --tenant-brand-secondary:    var(--palette-indigo-500);
+  --tenant-brand-accent:       var(--palette-amber-400);
+  --tenant-brand-gradient:     linear-gradient(135deg, var(--palette-blue-500), var(--palette-indigo-600));
+  --tenant-shadow-primary:     0 4px 14px rgb(37 99 235 / 0.25);
+}
+
+/* ──────────────────────────────────────────────────────────────────
+ * RTL SUPPORT — Applied by I18nProvider when dir="rtl"
+ * Logical properties handle layout mirroring automatically.
+ * ────────────────────────────────────────────────────────────────── */
+[dir="rtl"] {
+  --text-align-start: right;
+  --text-align-end:   left;
+}
+
+[dir="ltr"] {
+  --text-align-start: left;
+  --text-align-end:   right;
+}
+
+/* ──────────────────────────────────────────────────────────────────
+ * DARK MODE OVERRIDE (Planned — Phase 5)
+ * ────────────────────────────────────────────────────────────────── */
+/* [data-theme="dark"] {
+  --surface-page:     var(--palette-slate-950);
+  --surface-primary:  var(--palette-slate-900);
+  --surface-secondary:var(--palette-slate-800);
+  --text-primary:     var(--palette-slate-100);
+  --text-secondary:   var(--palette-slate-400);
+  --border-default:   var(--palette-slate-700);
+  --nav-bg:           rgba(15, 23, 42, 0.90);
+  --nav-border:       var(--palette-slate-800);
+} */

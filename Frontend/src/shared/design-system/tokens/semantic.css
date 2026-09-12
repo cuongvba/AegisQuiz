@@ -1,0 +1,168 @@
+/**
+ * ╔══════════════════════════════════════════════════════════════════╗
+ * ║  AEGISQUIZ — TIER 2: SEMANTIC TOKENS                           ║
+ * ║  Purpose-driven tokens. Components PHẢI tham chiếu layer này.  ║
+ * ║  Không tham chiếu primitive.css trực tiếp từ component.        ║
+ * ╚══════════════════════════════════════════════════════════════════╝
+ *
+ * Dependency: primitive.css phải được import trước file này.
+ */
+
+:root {
+
+  /* ══════════════════════════════════════════════════
+   * SURFACE — Background layers
+   * ══════════════════════════════════════════════════ */
+  --surface-page:        var(--palette-slate-50);     /* Page background */
+  --surface-primary:     var(--palette-white);         /* Cards, panels */
+  --surface-secondary:   var(--palette-slate-100);    /* Nested sections */
+  --surface-tertiary:    var(--palette-cyan-50);      /* Highlighted areas */
+  --surface-overlay:     rgba(15, 23, 42, 0.60);      /* Modal backdrop */
+  --surface-elevated:    var(--palette-white);         /* Dropdowns, tooltips */
+  --surface-sunken:      var(--palette-slate-100);    /* Input backgrounds */
+  --surface-inverse:     var(--palette-slate-900);    /* Dark panels */
+
+  /* ══════════════════════════════════════════════════
+   * BRAND — Core brand identity (default AegisQuiz)
+   * ══════════════════════════════════════════════════ */
+  --brand-primary:         var(--palette-cyan-500);
+  --brand-primary-hover:   var(--palette-cyan-600);
+  --brand-primary-light:   var(--palette-cyan-100);
+  --brand-secondary:       var(--palette-blue-500);
+  --brand-secondary-hover: var(--palette-blue-600);
+  --brand-accent:          var(--palette-amber-500);
+  --brand-accent-light:    var(--palette-amber-100);
+
+  /* Gradient shortcuts */
+  --brand-gradient:        linear-gradient(135deg, var(--palette-cyan-500), var(--palette-blue-600));
+  --brand-gradient-hover:  linear-gradient(135deg, var(--palette-cyan-600), var(--palette-blue-700));
+  --brand-gradient-gold:   linear-gradient(135deg, var(--palette-amber-400), var(--palette-amber-600));
+  --brand-gradient-vip:    linear-gradient(135deg, var(--palette-purple-500), var(--palette-cyan-500));
+
+  /* ══════════════════════════════════════════════════
+   * TEXT — Typography semantic tokens
+   * ══════════════════════════════════════════════════ */
+  --text-primary:   var(--palette-slate-800);   /* Main body text */
+  --text-secondary: var(--palette-slate-500);   /* Supporting text */
+  --text-muted:     var(--palette-slate-400);   /* Placeholders, disabled */
+  --text-inverse:   var(--palette-white);        /* Text on dark bg */
+  --text-brand:     var(--palette-cyan-600);    /* Brand-colored text */
+  --text-link:      var(--palette-cyan-600);    /* Hyperlinks */
+  --text-link-hover:var(--palette-cyan-700);
+  --text-danger:    var(--palette-rose-600);    /* Error messages */
+  --text-success:   var(--palette-emerald-600); /* Success messages */
+  --text-warning:   var(--palette-amber-600);   /* Warning messages */
+
+  /* ══════════════════════════════════════════════════
+   * INTERACTIVE — Action elements
+   * ══════════════════════════════════════════════════ */
+
+  /* Primary button */
+  --action-primary-bg:       var(--brand-gradient);
+  --action-primary-bg-hover: var(--brand-gradient-hover);
+  --action-primary-text:     var(--palette-white);
+  --action-primary-shadow:   0 4px 14px rgb(6 182 212 / 0.30);
+
+  /* Secondary button */
+  --action-secondary-bg:       var(--palette-white);
+  --action-secondary-bg-hover: var(--palette-slate-50);
+  --action-secondary-text:     var(--palette-slate-700);
+  --action-secondary-border:   var(--palette-slate-200);
+
+  /* Danger button */
+  --action-danger-bg:       var(--palette-rose-600);
+  --action-danger-bg-hover: var(--palette-rose-500);
+  --action-danger-text:     var(--palette-white);
+
+  /* Ghost button */
+  --action-ghost-bg:       transparent;
+  --action-ghost-bg-hover: var(--palette-slate-100);
+  --action-ghost-text:     var(--palette-slate-600);
+
+  /* ══════════════════════════════════════════════════
+   * BORDER — Dividers and outlines
+   * ══════════════════════════════════════════════════ */
+  --border-default:   var(--palette-slate-200);
+  --border-subtle:    var(--palette-slate-100);
+  --border-emphasis:  var(--palette-slate-300);
+  --border-brand:     var(--palette-cyan-400);
+  --border-focus:     var(--palette-cyan-500);
+  --border-danger:    var(--palette-rose-400);
+  --border-success:   var(--palette-emerald-400);
+
+  /* ══════════════════════════════════════════════════
+   * NAVIGATION
+   * ══════════════════════════════════════════════════ */
+  --nav-height:          var(--spacing-16);  /* 64px */
+  --nav-bg:              rgba(255, 255, 255, 0.90);
+  --nav-border:          var(--palette-cyan-100);
+  --nav-item-active-bg:  var(--palette-cyan-100);
+  --nav-item-active-text:var(--palette-cyan-700);
+  --nav-item-text:       var(--palette-slate-500);
+  --nav-item-hover-bg:   var(--palette-slate-100);
+  --nav-item-hover-text: var(--palette-slate-900);
+
+  /* ══════════════════════════════════════════════════
+   * FORM ELEMENTS
+   * ══════════════════════════════════════════════════ */
+  --input-bg:           var(--palette-white);
+  --input-border:       var(--palette-slate-300);
+  --input-border-focus: var(--palette-cyan-500);
+  --input-border-error: var(--palette-rose-500);
+  --input-text:         var(--palette-slate-800);
+  --input-placeholder:  var(--palette-slate-400);
+  --input-radius:       var(--radius-xl);
+  --input-shadow-focus: 0 0 0 3px rgb(6 182 212 / 0.20);
+
+  /* ══════════════════════════════════════════════════
+   * FEEDBACK STATES
+   * ══════════════════════════════════════════════════ */
+  --state-success-bg:   var(--palette-emerald-100);
+  --state-success-text: var(--palette-emerald-600);
+  --state-warning-bg:   var(--palette-amber-100);
+  --state-warning-text: var(--palette-amber-600);
+  --state-danger-bg:    var(--palette-rose-100);
+  --state-danger-text:  var(--palette-rose-600);
+  --state-info-bg:      var(--palette-cyan-100);
+  --state-info-text:    var(--palette-cyan-700);
+
+  /* ══════════════════════════════════════════════════
+   * GAMIFICATION — Quiz & Arena specific
+   * ══════════════════════════════════════════════════ */
+  --game-correct-bg:    var(--palette-emerald-100);
+  --game-correct-border:var(--palette-emerald-400);
+  --game-correct-text:  var(--palette-emerald-600);
+  --game-wrong-bg:      var(--palette-rose-100);
+  --game-wrong-border:  var(--palette-rose-400);
+  --game-wrong-text:    var(--palette-rose-600);
+  --game-selected-bg:   var(--palette-cyan-100);
+  --game-selected-border:var(--palette-cyan-400);
+  --game-selected-text: var(--palette-cyan-700);
+  --game-timer-warn:    var(--palette-amber-500);
+  --game-timer-danger:  var(--palette-rose-600);
+  --game-score-gold:    var(--palette-amber-400);
+  --game-neon-glow:     var(--shadow-glow-cyan);
+
+  /* ══════════════════════════════════════════════════
+   * ADMIN PANEL
+   * ══════════════════════════════════════════════════ */
+  --admin-sidebar-bg:     var(--palette-slate-900);
+  --admin-sidebar-text:   var(--palette-slate-300);
+  --admin-sidebar-active: var(--palette-cyan-400);
+  --admin-sidebar-hover:  rgba(255, 255, 255, 0.08);
+  --admin-header-bg:      var(--palette-white);
+  --admin-table-header:   var(--palette-slate-50);
+  --admin-table-border:   var(--palette-slate-200);
+  --admin-table-row-hover:var(--palette-cyan-50);
+
+  /* ══════════════════════════════════════════════════
+   * COMPONENT RADIUS — Semantic aliases
+   * ══════════════════════════════════════════════════ */
+  --radius-button:  var(--radius-full);
+  --radius-card:    var(--radius-2xl);
+  --radius-modal:   var(--radius-3xl);
+  --radius-badge:   var(--radius-full);
+  --radius-avatar:  var(--radius-full);
+  --radius-tag:     var(--radius-full);
+  --radius-input:   var(--radius-xl);
+}

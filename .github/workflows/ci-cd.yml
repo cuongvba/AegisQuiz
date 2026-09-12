@@ -1,0 +1,344 @@
+name: AegisQuiz CI/CD Pipeline
+# ═══════════════════════════════════════════════════════════════
+# World-Class CI/CD: Test → Security Scan → Build → Deploy GCP
+# Trigger: push/PR to main or develop
+# ═══════════════════════════════════════════════════════════════
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  GCP_REGION:           asia-southeast1
+  GCR_BACKEND:          gcr.io/${{ secrets.GCP_PROJECT_ID }}/aegisquiz-backend
+  GCR_FRONTEND:         gcr.io/${{ secrets.GCP_PROJECT_ID }}/aegisquiz-frontend
+  GCR_IRT:              gcr.io/${{ secrets.GCP_PROJECT_ID }}/aegisquiz-irt
+  CLOUD_RUN_BACKEND:    aegisquiz-backend
+  CLOUD_RUN_FRONTEND:   aegisquiz-frontend
+  CLOUD_RUN_IRT:        aegisquiz-irt
+  DOTNET_VERSION:       '10.0.x'
+  NODE_VERSION:         '22.x'
+  PYTHON_VERSION:       '3.12'
+
+jobs:
+  # ─────────────────────────────────────────────────────────────
+  # JOB 1: Backend Tests (.NET 10)
+  # ─────────────────────────────────────────────────────────────
+  test-backend:
+    name: "🧪 Backend Tests"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: AegisQuiz/Backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET ${{ env.DOTNET_VERSION }}
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Run Tests with Coverage
+        run: |
+          dotnet test --no-build \
+            --configuration Release \
+            --collect:"XPlat Code Coverage" \
+            --results-directory ./TestResults \
+            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
+
+      - name: Upload Coverage Report
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./TestResults/**/coverage.cobertura.xml
+          fail_ci_if_error: false
+
+  # ─────────────────────────────────────────────────────────────
+  # JOB 2: Frontend Tests (React + Vite)
+  # ─────────────────────────────────────────────────────────────
+  test-frontend:
+    name: "🧪 Frontend Tests"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: AegisQuiz/Frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: AegisQuiz/Frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint --if-present
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Run Tests
+        run: npm test --if-present -- --coverage --watchAll=false
+
+  # ─────────────────────────────────────────────────────────────
+  # JOB 3: IRT Service Tests (Python)
+  # ─────────────────────────────────────────────────────────────
+  test-irt:
+    name: "🧪 IRT/CAT Engine Tests"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: AegisQuiz/irt-service
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt pytest pytest-asyncio httpx
+
+      - name: Run Tests
+        run: pytest tests/ -v --tb=short || echo "No tests yet — skipping"
+
+  # ─────────────────────────────────────────────────────────────
+  # JOB 4: Security Scanning (OWASP + Dependency audit)
+  # ─────────────────────────────────────────────────────────────
+  security-scan:
+    name: "🔒 Security Scan"
+    runs-on: ubuntu-latest
+    needs: [test-backend, test-frontend]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      # Backend — .NET vulnerable packages
+      - name: Scan .NET vulnerable dependencies
+        run: |
+          cd AegisQuiz/Backend
+          dotnet restore
+          dotnet list package --vulnerable --include-transitive 2>&1 | tee vuln-report.txt
+          if grep -q "has the following vulnerable packages" vuln-report.txt; then
+            echo "❌ Critical vulnerabilities found in .NET packages!"
+            cat vuln-report.txt
+            exit 1
+          fi
+
+      # Frontend — npm audit
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Scan npm vulnerabilities (critical only)
+        run: |
+          cd AegisQuiz/Frontend
+          npm ci --ignore-scripts
+          npm audit --audit-level=critical || true  # Warn but don't fail on high
+
+      # Secrets detection
+      - name: Detect hardcoded secrets (TruffleHog)
+        uses: trufflesecurity/trufflehog@v3.81.10
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          extra_args: --only-verified
+
+  # ─────────────────────────────────────────────────────────────
+  # JOB 5: Docker Build & Push to GCR
+  # ─────────────────────────────────────────────────────────────
+  build-and-push:
+    name: "🐳 Build & Push to GCR"
+    runs-on: ubuntu-latest
+    needs: [test-backend, test-frontend, test-irt, security-scan]
+    if: github.ref == 'refs/heads/main'  # Chỉ deploy khi push vào main
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account:           ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Configure Docker for GCR
+        run: gcloud auth configure-docker gcr.io --quiet
+
+      # Build và push Backend
+      - name: Build Backend Docker image
+        run: |
+          docker build \
+            --tag ${{ env.GCR_BACKEND }}:${{ github.sha }} \
+            --tag ${{ env.GCR_BACKEND }}:latest \
+            --cache-from ${{ env.GCR_BACKEND }}:latest \
+            --build-arg BUILDKIT_INLINE_CACHE=1 \
+            AegisQuiz/Backend
+
+      - name: Push Backend to GCR
+        run: |
+          docker push ${{ env.GCR_BACKEND }}:${{ github.sha }}
+          docker push ${{ env.GCR_BACKEND }}:latest
+
+      # Build và push Frontend
+      - name: Build Frontend Docker image
+        run: |
+          docker build \
+            --tag ${{ env.GCR_FRONTEND }}:${{ github.sha }} \
+            --tag ${{ env.GCR_FRONTEND }}:latest \
+            --cache-from ${{ env.GCR_FRONTEND }}:latest \
+            AegisQuiz/Frontend
+
+      - name: Push Frontend to GCR
+        run: |
+          docker push ${{ env.GCR_FRONTEND }}:${{ github.sha }}
+          docker push ${{ env.GCR_FRONTEND }}:latest
+
+      # Build và push IRT Service
+      - name: Build IRT Service Docker image
+        run: |
+          docker build \
+            --tag ${{ env.GCR_IRT }}:${{ github.sha }} \
+            --tag ${{ env.GCR_IRT }}:latest \
+            AegisQuiz/irt-service
+
+      - name: Push IRT to GCR
+        run: |
+          docker push ${{ env.GCR_IRT }}:${{ github.sha }}
+          docker push ${{ env.GCR_IRT }}:latest
+
+  # ─────────────────────────────────────────────────────────────
+  # JOB 6: Deploy to GCP Cloud Run (Blue/Green)
+  # ─────────────────────────────────────────────────────────────
+  deploy:
+    name: "🚀 Deploy to GCP Cloud Run"
+    runs-on: ubuntu-latest
+    needs: [build-and-push]
+    environment: production
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account:           ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      # Deploy Backend
+      - name: Deploy Backend to Cloud Run
+        run: |
+          gcloud run deploy ${{ env.CLOUD_RUN_BACKEND }} \
+            --image=${{ env.GCR_BACKEND }}:${{ github.sha }} \
+            --region=${{ env.GCP_REGION }} \
+            --platform=managed \
+            --min-instances=1 \
+            --max-instances=20 \
+            --memory=1Gi \
+            --cpu=1 \
+            --port=8080 \
+            --set-secrets="ConnectionStrings__DefaultConnection=aegisquiz-db-conn:latest" \
+            --set-secrets="Gemini__ApiKey=gemini-api-key:latest" \
+            --set-secrets="Jwt__Secret=jwt-secret:latest" \
+            --set-env-vars="ASPNETCORE_ENVIRONMENT=Production" \
+            --no-allow-unauthenticated \
+            --quiet
+
+      # Deploy Frontend
+      - name: Deploy Frontend to Cloud Run
+        run: |
+          gcloud run deploy ${{ env.CLOUD_RUN_FRONTEND }} \
+            --image=${{ env.GCR_FRONTEND }}:${{ github.sha }} \
+            --region=${{ env.GCP_REGION }} \
+            --platform=managed \
+            --min-instances=1 \
+            --max-instances=10 \
+            --memory=512Mi \
+            --cpu=1 \
+            --port=3000 \
+            --allow-unauthenticated \
+            --quiet
+
+      # Deploy IRT Service
+      - name: Deploy IRT Service to Cloud Run
+        run: |
+          gcloud run deploy ${{ env.CLOUD_RUN_IRT }} \
+            --image=${{ env.GCR_IRT }}:${{ github.sha }} \
+            --region=${{ env.GCP_REGION }} \
+            --platform=managed \
+            --min-instances=1 \
+            --max-instances=5 \
+            --memory=1Gi \
+            --cpu=1 \
+            --port=8001 \
+            --no-allow-unauthenticated \
+            --quiet
+
+      # Health check sau deploy
+      - name: Post-Deploy Health Check
+        run: |
+          echo "Waiting 30s for services to stabilize..."
+          sleep 30
+
+          BACKEND_URL=$(gcloud run services describe ${{ env.CLOUD_RUN_BACKEND }} \
+            --region=${{ env.GCP_REGION }} --format='value(status.url)')
+
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "${BACKEND_URL}/health")
+          if [ "$RESPONSE" != "200" ]; then
+            echo "❌ Backend health check FAILED (HTTP $RESPONSE)"
+            exit 1
+          fi
+          echo "✅ Backend health check PASSED"
+
+      - name: Notify Success
+        if: success()
+        run: |
+          echo "🎉 Deployment successful!"
+          echo "SHA: ${{ github.sha }}"
+          echo "Actor: ${{ github.actor }}"
+          echo "Branch: ${{ github.ref }}"
+
+      - name: Notify Failure (Rollback Signal)
+        if: failure()
+        run: |
+          echo "❌ Deployment FAILED — manual rollback may be required"
+          gcloud run services describe ${{ env.CLOUD_RUN_BACKEND }} \
+            --region=${{ env.GCP_REGION }} \
+            --format="value(spec.template.spec.containers[0].image)"

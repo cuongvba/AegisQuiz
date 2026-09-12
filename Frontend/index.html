@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="vi" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- ── Favicon ──────────────────────────────────────────────── -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <!-- ── SEO ──────────────────────────────────────────────────── -->
+    <title>AegisQuiz — Nền Tảng Khảo Thí & Đấu Trường Gameshow Enterprise AI</title>
+    <meta name="description"
+          content="Nền tảng luyện thi thông minh với AI Adaptive Testing (IRT 3-PL), 6 Gameshow kinh điển và kiến trúc Multi-Tenant Enterprise. Dành cho cá nhân, tổ chức và tập đoàn." />
+    <meta name="keywords"
+          content="khảo thí, luyện thi, adaptive testing, IRT, gameshow, AegisQuiz, đào tạo, ngân hàng" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://aegisquiz.vn/" />
+
+    <!-- ── OpenGraph ─────────────────────────────────────────────── -->
+    <meta property="og:type"        content="website" />
+    <meta property="og:url"         content="https://aegisquiz.vn/" />
+    <meta property="og:title"       content="AegisQuiz — Nền Tảng Khảo Thí Enterprise AI" />
+    <meta property="og:description" content="Luyện thi thông minh với AI Adaptive Testing và 6 Gameshow kinh điển." />
+    <meta property="og:image"       content="/og-image.png" />
+    <meta property="og:locale"      content="vi_VN" />
+
+    <!-- ── Twitter Card ─────────────────────────────────────────── -->
+    <meta name="twitter:card"        content="summary_large_image" />
+    <meta name="twitter:title"       content="AegisQuiz — Nền Tảng Khảo Thí Enterprise AI" />
+    <meta name="twitter:description" content="Luyện thi thông minh với AI Adaptive Testing và 6 Gameshow kinh điển." />
+    <meta name="twitter:image"       content="/og-image.png" />
+
+    <!-- ── Performance: Font Preconnect ─────────────────────────── -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Inter font — Primary brand typeface -->
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" />
+
+    <!-- ── Theme color for mobile browsers ──────────────────────── -->
+    <meta name="theme-color" content="#06b6d4" />
+    <meta name="color-scheme" content="light" />
+
+    <!-- ── Inline critical: prevent FOUC before providers mount ─── -->
+    <script>
+      // Apply stored tenant theme instantly to prevent flash
+      try {
+        var cfg = localStorage.getItem('tenant_config');
+        if (cfg) {
+          var t = JSON.parse(cfg).theme;
+          if (t) {
+            var r = document.documentElement;
+            if (t.brandPrimary)   r.style.setProperty('--tenant-brand-primary',   t.brandPrimary);
+            if (t.brandSecondary) r.style.setProperty('--tenant-brand-secondary', t.brandSecondary);
+            if (t.tenantId)       r.setAttribute('data-tenant', t.tenantId);
+            if (t.isRTL)          r.dir = 'rtl';
+            if (t.locale)         r.lang = t.locale;
+          }
+        }
+      } catch(e) {}
+    </script>
+  </head>
+  <body>
+    <!-- ── Skip to main content (Accessibility) ─────────────────── -->
+    <a
+      href="#main-content"
+      class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:start-4
+             focus:z-[9999] focus:px-4 focus:py-2
+             focus:bg-white focus:text-cyan-700 focus:font-bold
+             focus:rounded-full focus:shadow-lg focus:outline-2"
+      style="text-decoration:none"
+    >
+      Chuyển đến nội dung chính
+    </a>
+
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+
