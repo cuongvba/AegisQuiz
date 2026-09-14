@@ -459,11 +459,13 @@ using (var scope = app.Services.CreateScope())
                 }
 
                 // Root Admin
-                var adminHash = AegisQuiz.Application.Common.Security.PasswordSecurityHelper.HashPassword("Admin@Dehoc2026!");
+                var adminEmail = builder.Configuration["ADMIN_INITIAL_EMAIL"] ?? "admin@dehoc.vn";
+                var adminPassword = builder.Configuration["ADMIN_INITIAL_PASSWORD"] ?? "Admin@Dehoc2026!";
+                var adminHash = AegisQuiz.Application.Common.Security.PasswordSecurityHelper.HashPassword(adminPassword);
                 var adminUser = new AegisQuiz.Domain.Entities.UserAccount
                 {
                     Id = Guid.NewGuid(),
-                    Email = "admin@dehoc.vn",
+                    Email = adminEmail.Trim().ToLowerInvariant(),
                     FullName = "Quản Trị Viên Hệ Thống",
                     PasswordHash = adminHash,
                     Role = AegisQuiz.Domain.Entities.AppRoles.TenantAdmin,

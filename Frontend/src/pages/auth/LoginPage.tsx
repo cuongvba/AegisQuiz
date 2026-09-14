@@ -153,13 +153,6 @@ export function LoginPage() {
     window.location.href = authUrl;
   };
 
-  const quickFillCredential = (fillEmail: string, fillPass: string) => {
-    setEmail(fillEmail);
-    setPassword(fillPass);
-    setShowSsoModal(false);
-    setError(null);
-  };
-
   return (
     <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans select-none">
       {/* Dynamic Background Glows */}
@@ -317,83 +310,68 @@ export function LoginPage() {
                 Liên kết Định danh Hệ sinh thái dehoc.vn
               </h2>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Máy chủ Single Sign-On (OIDC / SAML 2.0 / Keycloak) đang trong tiến trình đồng bộ bảo mật liên cơ quan. Quý Cán bộ và Học viên có thể sử dụng các tài khoản định danh chuẩn đã cấp bên dưới:
+                Hạ tầng Đăng nhập Một lần (OpenID Connect / SAML 2.0 / Keycloak) đang trong lộ trình tích hợp đồng bộ bảo mật với Cổng thông tin tập trung <strong className="text-slate-200">dehoc.vn</strong>.
               </p>
             </div>
 
-            {/* Pre-provisioned Enterprise Accounts */}
-            <div className="space-y-2 pt-1">
+            {/* Official Authentication Options */}
+            <div className="space-y-3 pt-1">
               <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                Chọn vai trò để tự động điền & đăng nhập ngay:
+                Phương thức xác thực chính thức:
               </div>
 
-              {/* Admin */}
+              {/* Option 1: Standard Credentials */}
               <button
                 type="button"
-                onClick={() => quickFillCredential('admin@dehoc.vn', 'Admin@Dehoc2026!')}
-                className="w-full p-3 bg-slate-800/80 hover:bg-slate-750 border border-slate-700/80 hover:border-purple-500/50 rounded-2xl flex items-center justify-between text-left transition-all group active:scale-[0.99]"
-              >
-                <div className="space-y-0.5">
-                  <div className="text-xs font-bold text-purple-300 flex items-center gap-1.5">
-                    👑 Quản Trị Viên Hệ Thống (Tenant Admin)
-                  </div>
-                  <div className="text-[11px] text-slate-400">admin@dehoc.vn (Toàn quyền quản trị & ngân hàng đề)</div>
-                </div>
-                <Sparkles size={16} className="text-purple-400 group-hover:scale-110 transition-transform" />
-              </button>
-
-              {/* Team Leader */}
-              <button
-                type="button"
-                onClick={() => quickFillCredential('teamlead@dehoc.vn', 'Lead@Dehoc2026!')}
-                className="w-full p-3 bg-slate-800/80 hover:bg-slate-750 border border-slate-700/80 hover:border-blue-500/50 rounded-2xl flex items-center justify-between text-left transition-all group active:scale-[0.99]"
+                onClick={() => setShowSsoModal(false)}
+                className="w-full p-3.5 bg-slate-800/80 hover:bg-slate-750 border border-slate-700/80 hover:border-blue-500/50 rounded-2xl flex items-center justify-between text-left transition-all group active:scale-[0.99]"
               >
                 <div className="space-y-0.5">
                   <div className="text-xs font-bold text-blue-300 flex items-center gap-1.5">
-                    💼 Trưởng Nhóm Khảo Thí (TeamLeader)
+                    <Mail size={14} className="text-blue-400" /> Đăng nhập bằng Email & Mật khẩu
                   </div>
-                  <div className="text-[11px] text-slate-400">teamlead@dehoc.vn (Quản lý phòng thi & giám sát AI)</div>
+                  <div className="text-[11px] text-slate-400">
+                    Sử dụng tài khoản Quản trị, Giảng viên hoặc Học viên đã được cấp phát.
+                  </div>
                 </div>
-                <Sparkles size={16} className="text-blue-400 group-hover:scale-110 transition-transform" />
+                <ArrowRight size={16} className="text-blue-400 group-hover:translate-x-0.5 transition-transform" />
               </button>
 
-              {/* VIP Learner */}
-              <button
-                type="button"
-                onClick={() => quickFillCredential('student.vip@dehoc.vn', 'Vip@Dehoc2026!')}
-                className="w-full p-3 bg-slate-800/80 hover:bg-slate-750 border border-slate-700/80 hover:border-amber-500/50 rounded-2xl flex items-center justify-between text-left transition-all group active:scale-[0.99]"
-              >
-                <div className="space-y-0.5">
-                  <div className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
-                    🌟 Học Viên VIP (AI Adaptive CAT)
-                  </div>
-                  <div className="text-[11px] text-slate-400">student.vip@dehoc.vn (Mở khóa toàn bộ tính năng VIP)</div>
-                </div>
-                <Sparkles size={16} className="text-amber-400 group-hover:scale-110 transition-transform" />
-              </button>
-            </div>
-
-            {/* Hardware PKI Option */}
-            <div className="pt-2 border-t border-slate-800 flex items-center justify-between gap-3">
+              {/* Option 2: Hardware PKI */}
               <button
                 type="button"
                 onClick={() => {
                   setShowSsoModal(false);
                   handlePkiLogin();
                 }}
-                className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 flex items-center gap-1.5 py-1.5 transition-colors"
+                className="w-full p-3.5 bg-slate-800/80 hover:bg-slate-750 border border-slate-700/80 hover:border-emerald-500/50 rounded-2xl flex items-center justify-between text-left transition-all group active:scale-[0.99]"
               >
-                <Lock size={13} /> Đăng nhập bằng USB Token PKI
+                <div className="space-y-0.5">
+                  <div className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
+                    <Lock size={14} className="text-emerald-400" /> Xác thực Chữ ký số USB Token PKI
+                  </div>
+                  <div className="text-[11px] text-slate-400">
+                    Tiêu chuẩn bảo mật phần cứng cấp cao nhất cho Cán bộ & Trưởng ban khảo thí.
+                  </div>
+                </div>
+                <ArrowRight size={16} className="text-emerald-400 group-hover:translate-x-0.5 transition-transform" />
               </button>
+            </div>
+
+            {/* Bottom info & Keycloak experimental redirect */}
+            <div className="pt-2 border-t border-slate-800 flex items-center justify-between gap-3">
+              <span className="text-[11px] text-slate-500">
+                Cần cấp tài khoản? Liên hệ quản trị viên cơ quan.
+              </span>
 
               <button
                 type="button"
                 onClick={() => {
                   directRedirectToKeycloak();
                 }}
-                className="text-[11px] text-slate-500 hover:text-slate-300 transition-colors underline"
+                className="text-[11px] text-slate-500 hover:text-purple-300 transition-colors underline"
               >
-                Chuyển hướng Keycloak gốc &rarr;
+                Kết nối Keycloak IdP &rarr;
               </button>
             </div>
           </div>

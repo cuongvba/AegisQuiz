@@ -285,6 +285,38 @@ namespace AegisQuiz.API.Controllers
         }
 
         /// <summary>
+        /// Đổi mật khẩu tài khoản an toàn với xác thực mật khẩu cũ (PBKDF2/SHA-256).
+        /// </summary>
+        [Authorize]
+        [HttpPost("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.OldPassword) || string.IsNullOrWhiteSpace(request.NewPassword))
+                return BadRequest(new { message = "Vui lòng nhập đầy đủ mật khẩu cũ và mật khẩu mới." });
+
+            if (request.NewPassword.Length < 6)
+                return BadRequest(new { message = "Mật khẩu mới phải có tối thiểu 6 ký tự." });
+
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
+                return Unauthorized(new { message = "Phiên đăng nhập không hợp lệ." });
+
+            var user = await _db.UserAccounts.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null || !user.IsActive)
+                return Unauthorized(new { message = "Tài khoản không tồn tại hoặc đã bị khóa." });
+
+            if (!PasswordSecurityHelper.VerifyPassword(request.OldPassword, user.PasswordHash))
+                return BadRequest(new { message = "Mật khẩu hiện tại không chính xác." });
+
+            user.PasswordHash = PasswordSecurityHelper.HashPassword(request.NewPassword);
+            user.UpdatedAt = DateTime.UtcNow;
+            await _db.SaveChangesAsync();
+
+            _logger.LogInformation("[Security] Người dùng {Email} ({Role}) đã đổi mật khẩu thành công.", user.Email, user.Role);
+            return Ok(new { message = "Đổi mật khẩu thành công. Mật khẩu mới có hiệu lực ngay lập tức." });
+        }
+
+        /// <summary>
         /// [CG5 FIX] Sau khi webhook xác nhận payment → Cấp JWT mới với isPremium=true
         /// </summary>
         [HttpPost("refresh-premium")]
@@ -482,5 +514,11 @@ namespace AegisQuiz.API.Controllers
         public string Code { get; set; } = string.Empty;
         public string CodeVerifier { get; set; } = string.Empty;
         public string? RedirectUri { get; set; }
+    }
+
+    public class ChangePasswordRequest
+    {
+        public string OldPassword { get; set; } = string.Empty;
+        public string NewPassword { get; set; } = string.Empty;
     }
 }
