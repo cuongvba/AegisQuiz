@@ -118,3 +118,32 @@ Sau khi Coolify báo trạng thái xanh lá cây `Healthy` / `Running`:
    - Kiểm tra giao diện Quản lý ngân hàng câu hỏi của Team (`/admin/questions?scope=TEAM`) và nút Luyện thi cùng Team.
 3. **Kiểm tra Nạp Câu Hỏi Bằng AI (UCIS v3.0)**:
    - Tải thử file Word/Excel vào ngân hàng câu hỏi, kiểm tra hệ thống tự động sinh mã chủ đề SSAE ngắn gọn và lưu trữ thành công.
+4. **Kiểm tra Real-time Hubs & Healthcheck**:
+   - Truy cập: `https://dehoc.vn/health` -> Trả về `Healthy`.
+   - Vào phòng thi `https://dehoc.vn/quiz/secure-exam/practice` hoặc đấu trường `https://dehoc.vn/arena` -> Kiểm tra kết nối SignalR WebSockets thông suốt (không bị gián đoạn hay fallback SPA).
+
+---
+
+## 4. Công Cụ Kiểm Toán Pre-Flight Tự Động Trước Khi Push Code
+
+Trước khi push mã nguồn hoặc bấm Deploy trên Coolify, bạn có thể chạy kịch bản kiểm toán tự động 1-Click:
+
+- **Trên Windows (PowerShell)**:
+  ```powershell
+  powershell -ExecutionPolicy Bypass -File scripts/verify-golive.ps1
+  ```
+- **Trên Linux / VPS**:
+  ```bash
+  chmod +x scripts/verify-golive.sh
+  ./scripts/verify-golive.sh
+  ```
+
+Kịch bản sẽ tự động xác minh:
+- Nginx Reverse Proxy (`/hubs/`, `/health`, WebSocket Upgrades)
+- File cấu hình bảo mật `appsettings.Production.json`
+- Đầy đủ Healthchecks và ports trong `docker-compose.prod.yml`
+- 100% Bộ kiểm thử Unit Tests backend (142/142 tests)
+- Gói biên dịch Release Backend .NET 10
+- Gói bundle Frontend React 19 + Vite
+- Cấu trúc IRT Adaptive Testing Service
+

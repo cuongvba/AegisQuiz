@@ -223,7 +223,7 @@ namespace AegisQuiz.API.Controllers
                         Description = t.Description,
                         DomainCode = t.DomainCode,
                         Scope = t.Scope,
-                        MaterializedPath = t.MaterializedPath,
+                        MaterializedPath = t.MaterializedPath ?? "",
                         DepthLevel = t.DepthLevel,
                         ParentId = t.ParentId,
                         Enabled = t.Enabled,

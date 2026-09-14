@@ -929,6 +929,43 @@ namespace AegisQuiz.API.Controllers
             }
             catch (Exception ex)
             {
+                // [Kỳ tích Tự chữa lành Runtime] Nếu gặp lỗi thiếu cột DepthLevel (42703), tự động bổ sung cột vào PostgreSQL và thử lại ngay lập tức!
+                if (ex.Message.Contains("42703") || ex.Message.Contains("DepthLevel") || ex.InnerException?.Message.Contains("42703") == true || ex.InnerException?.Message.Contains("DepthLevel") == true)
+                {
+                    try
+                    {
+                        await _db.Database.ExecuteSqlRawAsync(@"
+                            ALTER TABLE ""BankTopics"" ADD COLUMN IF NOT EXISTS ""DepthLevel"" integer NOT NULL DEFAULT 0;
+                            ALTER TABLE ""BankTopics"" ADD COLUMN IF NOT EXISTS ""MaterializedPath"" text NULL;
+                            ALTER TABLE ""BankTopics"" ADD COLUMN IF NOT EXISTS ""Scope"" text NOT NULL DEFAULT 'COMMUNITY';
+                            ALTER TABLE ""BankTopics"" ADD COLUMN IF NOT EXISTS ""DomainCode"" text NOT NULL DEFAULT 'GENERAL';
+                            ALTER TABLE ""BankTopics"" ADD COLUMN IF NOT EXISTS ""DisplayOrder"" integer NOT NULL DEFAULT 0;
+                            ALTER TABLE ""BankTopics"" ADD COLUMN IF NOT EXISTS ""QuestionCountCached"" integer NOT NULL DEFAULT 0;
+                            ALTER TABLE ""BankTopics"" ADD COLUMN IF NOT EXISTS ""Urn"" text NULL;
+                            ALTER TABLE ""BankTopics"" ADD COLUMN IF NOT EXISTS ""ParentId"" uuid NULL;
+                            ALTER TABLE ""BankTopics"" ADD COLUMN IF NOT EXISTS ""AllowedTenantIds"" text[] NOT NULL DEFAULT '{}';
+                            ALTER TABLE ""BankTopics"" ADD COLUMN IF NOT EXISTS ""TenantId"" uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000';
+                            
+                            ALTER TABLE ""Questions"" ADD COLUMN IF NOT EXISTS ""ContextId"" uuid NULL;
+                            ALTER TABLE ""Questions"" ADD COLUMN IF NOT EXISTS ""DomainCode"" text NOT NULL DEFAULT 'EDUCATION';
+                            ALTER TABLE ""Questions"" ADD COLUMN IF NOT EXISTS ""IsCritical"" boolean NOT NULL DEFAULT false;
+                            ALTER TABLE ""Questions"" ADD COLUMN IF NOT EXISTS ""SubCategory"" text NULL;
+                            ALTER TABLE ""Questions"" ADD COLUMN IF NOT EXISTS ""Tags"" text[] NOT NULL DEFAULT '{}';
+                            ALTER TABLE ""Questions"" ADD COLUMN IF NOT EXISTS ""TenantId"" uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000';
+                        ");
+
+                        // Xóa các entity bị lỗi khỏi ChangeTracker trước khi thử lại
+                        _db.ChangeTracker.Clear();
+
+                        // Thử lại lần 2 sau khi DB đã được tự động chữa lành cột
+                        return await ConfirmImportQuestionsDocx(items);
+                    }
+                    catch (Exception retryEx)
+                    {
+                        return StatusCode(500, new { message = $"Lỗi lưu câu hỏi (sau khi tự chữa lành): {retryEx.Message}" });
+                    }
+                }
+
                 return StatusCode(500, new { message = $"Lỗi lưu câu hỏi: {ex.Message}" });
             }
         }
@@ -1188,7 +1225,7 @@ namespace AegisQuiz.API.Controllers
                     var topicName = topic?.Name ?? topicCode;
 
                     var sampleContents = group.Select(q => q.Content).Take(20).ToList();
-                    var sampleRefs = group.Select(q => q.Explanation).Where(e => !string.IsNullOrWhiteSpace(e)).Take(20).ToList();
+                    var sampleRefs = group.Select(q => q.Explanation).Where(e => !string.IsNullOrWhiteSpace(e)).Select(e => e!).Take(20).ToList();
 
                     var taxonomy = UniversalCoordinateTaxonomyEngine.SniffCoordinates(
                         topicName,

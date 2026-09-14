@@ -12,15 +12,18 @@ services:
       args:
         VITE_API_URL: ""
         VITE_AUTH_HUB_URL: "https://dehoc.vn"
+    ports:
+      - "${PORT:-80}:80"
     expose:
       - "80"
     environment:
       - NODE_ENV=production
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     restart: always
 
-  # ===== BACKEND (.NET 9 Web API) =====
+  # ===== BACKEND (.NET 10 Web API) =====
   backend:
     build:
       context: ./Backend
@@ -36,6 +39,7 @@ services:
       - Oidc__Authority=https://dehoc.vn/auth/realms/dehoc
       - ASPNETCORE_ENVIRONMENT=Production
       - IrtService__BaseUrl=http://irt-service:8001
+      - EnableSwagger=${ENABLE_SWAGGER:-false}
     depends_on:
       postgres:
         condition: service_healthy
@@ -43,6 +47,12 @@ services:
         condition: service_started
       irt-service:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     restart: always
 
   # ===== IRT/CAT ADAPTIVE TESTING ENGINE (Python FastAPI) =====

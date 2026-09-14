@@ -5,6 +5,7 @@ using System.Text.Json;
 using AegisQuiz.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -13,9 +14,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace AegisQuiz.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(AegisQuizDbContext))]
-    partial class AegisQuizDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260912112239_AddHierarchyAndDynamicDomains")]
+    partial class AddHierarchyAndDynamicDomains
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

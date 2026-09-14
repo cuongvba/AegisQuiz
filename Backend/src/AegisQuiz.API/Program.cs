@@ -266,10 +266,21 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.SetIsOriginAllowed(origin => true)
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials(); // Cần cho SignalR
+        var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+        if (builder.Environment.IsDevelopment() || allowedOrigins.Length == 0 || allowedOrigins.Contains("*"))
+        {
+            policy.SetIsOriginAllowed(_ => true)
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials(); // Cần cho SignalR
+        }
+        else
+        {
+            policy.WithOrigins(allowedOrigins)
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials(); // Cần cho SignalR
+        }
     });
 });
 
@@ -279,7 +290,9 @@ builder.Services.AddProblemDetails();
 var app = builder.Build();
 
 // ===== MIDDLEWARE PIPELINE =====
-if (app.Environment.IsDevelopment())
+bool enableSwagger = app.Environment.IsDevelopment() ||
+                     builder.Configuration.GetValue<bool>("EnableSwagger", false);
+if (enableSwagger)
 {
     app.UseSwagger();
     app.UseSwaggerUI();
@@ -319,8 +332,75 @@ using (var scope = app.Services.CreateScope())
     {
         if (db.Database.IsNpgsql())
         {
-            db.Database.EnsureCreated();
-            log.LogInformation("[AegisQuiz] PostgreSQL database tables ensured successfully.");
+            // [BƯỚC 1: AUTO-HEALING DDL CHẠY TRƯỚC TIÊN] Đảm bảo 100% các cột mới (DepthLevel, MaterializedPath,...) và bảng mới luôn tồn tại
+            try
+            {
+                db.Database.ExecuteSqlRaw(@"
+                    -- 1. BẢNG BankTopics: Đảm bảo đầy đủ các cột cây phân cấp 2026
+                    ALTER TABLE ""BankTopics"" ADD COLUMN IF NOT EXISTS ""DepthLevel"" integer NOT NULL DEFAULT 0;
+                    ALTER TABLE ""BankTopics"" ADD COLUMN IF NOT EXISTS ""MaterializedPath"" text NULL;
+                    ALTER TABLE ""BankTopics"" ADD COLUMN IF NOT EXISTS ""Scope"" text NOT NULL DEFAULT 'COMMUNITY';
+                    ALTER TABLE ""BankTopics"" ADD COLUMN IF NOT EXISTS ""DomainCode"" text NOT NULL DEFAULT 'GENERAL';
+                    ALTER TABLE ""BankTopics"" ADD COLUMN IF NOT EXISTS ""DisplayOrder"" integer NOT NULL DEFAULT 0;
+                    ALTER TABLE ""BankTopics"" ADD COLUMN IF NOT EXISTS ""QuestionCountCached"" integer NOT NULL DEFAULT 0;
+                    ALTER TABLE ""BankTopics"" ADD COLUMN IF NOT EXISTS ""Urn"" text NULL;
+                    ALTER TABLE ""BankTopics"" ADD COLUMN IF NOT EXISTS ""ParentId"" uuid NULL;
+                    ALTER TABLE ""BankTopics"" ADD COLUMN IF NOT EXISTS ""AllowedTenantIds"" text[] NOT NULL DEFAULT '{}';
+                    ALTER TABLE ""BankTopics"" ADD COLUMN IF NOT EXISTS ""TenantId"" uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000';
+                    
+                    -- 2. BẢNG Questions: Đảm bảo đầy đủ toạ độ tri thức
+                    ALTER TABLE ""Questions"" ADD COLUMN IF NOT EXISTS ""ContextId"" uuid NULL;
+                    ALTER TABLE ""Questions"" ADD COLUMN IF NOT EXISTS ""DomainCode"" text NOT NULL DEFAULT 'EDUCATION';
+                    ALTER TABLE ""Questions"" ADD COLUMN IF NOT EXISTS ""IsCritical"" boolean NOT NULL DEFAULT false;
+                    ALTER TABLE ""Questions"" ADD COLUMN IF NOT EXISTS ""SubCategory"" text NULL;
+                    ALTER TABLE ""Questions"" ADD COLUMN IF NOT EXISTS ""Tags"" text[] NOT NULL DEFAULT '{}';
+                    ALTER TABLE ""Questions"" ADD COLUMN IF NOT EXISTS ""TenantId"" uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000';
+
+                    -- 3. BẢNG DynamicDomains (nếu chưa có)
+                    CREATE TABLE IF NOT EXISTS ""DynamicDomains"" (
+                        ""Code"" text NOT NULL,
+                        ""Name"" text NOT NULL,
+                        ""Description"" text,
+                        ""Icon"" text NOT NULL DEFAULT 'Layers',
+                        ""ColorBadge"" text NOT NULL DEFAULT '#0284c7',
+                        ""IsSystemStandard"" boolean NOT NULL DEFAULT true,
+                        ""TenantId"" uuid NULL,
+                        ""ParentDomainCode"" text NULL,
+                        ""IsActive"" boolean NOT NULL DEFAULT true,
+                        ""DisplayOrder"" integer NOT NULL DEFAULT 0,
+                        ""CreatedAt"" timestamp with time zone NOT NULL DEFAULT now(),
+                        CONSTRAINT ""PK_DynamicDomains"" PRIMARY KEY (""Code"")
+                    );
+
+                    -- Nạp các ngành chuẩn
+                    INSERT INTO ""DynamicDomains"" (""Code"", ""ColorBadge"", ""CreatedAt"", ""Description"", ""DisplayOrder"", ""Icon"", ""IsActive"", ""IsSystemStandard"", ""Name"", ""ParentDomainCode"", ""TenantId"")
+                    VALUES 
+                      ('EDUCATION', '#2563eb', now(), 'Khảo thí đại học, phổ thông, học thuật tổng quát', 1, 'GraduationCap', TRUE, TRUE, 'Giáo dục & Học thuật', NULL, NULL),
+                      ('BANKING', '#059669', now(), 'Nghiệp vụ tín dụng, thanh toán, ngân quỹ, quản trị rủi ro', 2, 'Landmark', TRUE, TRUE, 'Tài chính - Ngân hàng', NULL, NULL),
+                      ('HEALTHCARE', '#dc2626', now(), 'Y học, dược lâm sàng, quy trình điều dưỡng, kiểm soát nhiễm khuẩn', 3, 'HeartPulse', TRUE, TRUE, 'Y tế - Sức khỏe', NULL, NULL),
+                      ('HSE', '#d97706', now(), 'An toàn vệ sinh lao động, PCCC, quy chuẩn ISO 45001', 4, 'HardHat', TRUE, TRUE, 'An toàn - Môi trường LĐ', NULL, NULL),
+                      ('GOV_DRIVING', '#7c3aed', now(), 'Bộ 600 câu GPLX Bộ GTVT, 60 câu điểm liệt, sa hình AI', 5, 'Car', TRUE, TRUE, 'Sát hạch Lái xe Quốc gia', NULL, NULL),
+                      ('IT_SECURITY', '#0284c7', now(), 'Bảo mật an ninh mạng, kiến trúc hệ thống, chứng chỉ CISSP/CompTIA', 6, 'ShieldCheck', TRUE, TRUE, 'An toàn TT & CNTT', NULL, NULL),
+                      ('GENERAL', '#4b5563', now(), 'Kiến thức đại cương, kỹ năng mềm, văn hóa doanh nghiệp', 7, 'Layers', TRUE, TRUE, 'Tổng hợp / Đại cương', NULL, NULL)
+                    ON CONFLICT (""Code"") DO NOTHING;
+                ");
+                log.LogInformation("[AegisQuiz] Auto-healing DDL executed successfully. All columns and tables guaranteed.");
+            }
+            catch (Exception exDdl)
+            {
+                log.LogWarning(exDdl, "[AegisQuiz] Auto-healing DDL warning: {Message}", exDdl.Message);
+            }
+
+            // [BƯỚC 2: TIẾN HÀNH MIGRATIONS]
+            try
+            {
+                db.Database.Migrate();
+                log.LogInformation("[AegisQuiz] PostgreSQL database migrations applied successfully.");
+            }
+            catch (Exception exMigrate)
+            {
+                log.LogInformation("[AegisQuiz] EF migration notice: {Message}", exMigrate.Message);
+            }
         }
         else
         {
@@ -329,8 +409,14 @@ using (var scope = app.Services.CreateScope())
         }
 
         // Tự động nạp bộ câu hỏi toán thực tế từ DeToanGiaiChiTiet.docx nếu có
-        string sampleDocx = @"D:\Cuong\DuAn\mybank\AegisQuiz\DeToanGiaiChiTiet.docx";
-        if (File.Exists(sampleDocx) && db.Questions.Count() <= 10)
+        string[] candidateDocxPaths =
+        [
+            Path.Combine(AppContext.BaseDirectory, "DeToanGiaiChiTiet.docx"),
+            Path.Combine(Directory.GetCurrentDirectory(), "DeToanGiaiChiTiet.docx"),
+            @"D:\Cuong\DuAn\mybank\AegisQuiz\DeToanGiaiChiTiet.docx"
+        ];
+        string? sampleDocx = candidateDocxPaths.FirstOrDefault(File.Exists);
+        if (!string.IsNullOrEmpty(sampleDocx) && db.Questions.Count() <= 10)
         {
             try
             {
