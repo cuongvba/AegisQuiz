@@ -630,6 +630,20 @@ app.UseMiddleware<AegisQuiz.Infrastructure.Services.TenantMiddleware>();
 
 app.MapControllers();
 
+// [Health Checks & Liveness Probes cho Docker / Coolify / Traefik]
+app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    ResultStatusCodes =
+    {
+        [Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Healthy] = StatusCodes.Status200OK,
+        [Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Degraded] = StatusCodes.Status200OK,
+        [Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Unhealthy] = StatusCodes.Status503ServiceUnavailable
+    }
+}).AllowAnonymous();
+
+app.MapGet("/health/live", () => Results.Ok(new { status = "Healthy", service = "AegisQuiz.API", timestamp = DateTime.UtcNow })).AllowAnonymous();
+app.MapGet("/ping", () => Results.Ok("pong")).AllowAnonymous();
+
 // [World-Class Upgrade] SignalR Proctoring Hub (học từ quiz-service)
 app.MapHub<ExamProctoringHub>("/hubs/proctoring");
 // [Aegis Arena] Real-time Gameshow Arena Hub

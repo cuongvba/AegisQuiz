@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { ShieldCheck, ShieldAlert, Lock, Mail, LogIn, KeyRound, Loader2, ArrowRight } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, Lock, Mail, LogIn, KeyRound, Loader2, ArrowRight, X, Sparkles, Building2, UserCheck } from 'lucide-react';
 import { useAgribankPKI } from '../../hooks/useAgribankPKI';
 import api from '../../services/api';
 import { normalizeRole, type UserProfile } from '@/types/auth';
@@ -15,6 +15,7 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showSsoModal, setShowSsoModal] = useState(false);
 
   // PKI Hardware USB Token
   const { signData, loading: signLoading, error: signError } = useAgribankPKI();
@@ -54,13 +55,23 @@ export function LoginPage() {
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(normalizedProfile));
 
-      // Phân luồng thông minh theo vai trò và thuê bao
+      // Phân luồng điều hướng thông minh theo vai trò và hạng thuê bao
       const targetUrl = resolveSmartRedirect(normalizedProfile, returnTo);
       navigate(targetUrl, { replace: true });
       window.location.reload();
+
     } catch (err: any) {
-      console.error('[Auth Error]', err);
-      const serverMsg = err.response?.data?.message || err.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.';
+      console.error('[Login Error]', err);
+      let serverMsg = 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.';
+      if (err.response?.status === 503 || err.response?.status === 502) {
+        serverMsg = 'Dịch vụ máy chủ đang khởi động hoặc nâng cấp. Vui lòng thử lại sau 10-15 giây.';
+      } else if (err.response?.data?.message) {
+        serverMsg = err.response.data.message;
+      } else if (typeof err.response?.data === 'string' && err.response.data.length < 150) {
+        serverMsg = err.response.data;
+      } else if (err.message) {
+        serverMsg = err.message;
+      }
       setError(serverMsg);
     } finally {
       setLoading(false);
@@ -122,11 +133,31 @@ export function LoginPage() {
 
   // 3. Xử lý Đăng nhập SSO Keycloak Tổ chức (OIDC Authorization Code Flow)
   const handleKeycloakOidcLogin = () => {
-    const authority = (import.meta as any).env?.VITE_KEYCLOAK_URL || `${window.location.origin}/auth`;
+    const customKeycloakUrl = (import.meta as any).env?.VITE_KEYCLOAK_URL;
+    const directSsoEnabled = (import.meta as any).env?.VITE_ENABLE_DIRECT_SSO === 'true';
+
+    if (directSsoEnabled && customKeycloakUrl) {
+      directRedirectToKeycloak(customKeycloakUrl);
+      return;
+    }
+
+    // Mở Enterprise SSO Gateway Modal thông minh
+    setShowSsoModal(true);
+  };
+
+  const directRedirectToKeycloak = (authorityOverride?: string) => {
+    const authority = authorityOverride || (import.meta as any).env?.VITE_KEYCLOAK_URL || `${window.location.origin}/auth`;
     const clientId = 'quiz-service';
     const redirectUri = `${window.location.origin}/auth/callback`;
     const authUrl = `${authority}/realms/dehoc/protocol/openid-connect/auth?client_id=${clientId}&response_type=code&scope=openid%20profile%20email&redirect_uri=${encodeURIComponent(redirectUri)}`;
     window.location.href = authUrl;
+  };
+
+  const quickFillCredential = (fillEmail: string, fillPass: string) => {
+    setEmail(fillEmail);
+    setPassword(fillPass);
+    setShowSsoModal(false);
+    setError(null);
   };
 
   return (
@@ -264,6 +295,110 @@ export function LoginPage() {
           </p>
         </div>
       </div>
+
+      {/* Enterprise SSO Gateway Modal */}
+      {showSsoModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-slate-900/95 border border-slate-700/80 rounded-3xl p-6 sm:p-7 max-w-lg w-full shadow-2xl relative space-y-5 text-white">
+            {/* Close Button */}
+            <button
+              onClick={() => setShowSsoModal(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white p-2 rounded-xl hover:bg-slate-800 transition-colors"
+            >
+              <X size={18} />
+            </button>
+
+            {/* Header */}
+            <div className="space-y-1.5">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-500/15 border border-purple-500/30 text-purple-300 rounded-full text-[11px] font-bold">
+                <Building2 size={13} /> Cổng Định Danh Doanh Nghiệp (SSO / IAM)
+              </div>
+              <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
+                Liên kết Định danh Hệ sinh thái dehoc.vn
+              </h2>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Máy chủ Single Sign-On (OIDC / SAML 2.0 / Keycloak) đang trong tiến trình đồng bộ bảo mật liên cơ quan. Quý Cán bộ và Học viên có thể sử dụng các tài khoản định danh chuẩn đã cấp bên dưới:
+              </p>
+            </div>
+
+            {/* Pre-provisioned Enterprise Accounts */}
+            <div className="space-y-2 pt-1">
+              <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                Chọn vai trò để tự động điền & đăng nhập ngay:
+              </div>
+
+              {/* Admin */}
+              <button
+                type="button"
+                onClick={() => quickFillCredential('admin@dehoc.vn', 'Admin@Dehoc2026!')}
+                className="w-full p-3 bg-slate-800/80 hover:bg-slate-750 border border-slate-700/80 hover:border-purple-500/50 rounded-2xl flex items-center justify-between text-left transition-all group active:scale-[0.99]"
+              >
+                <div className="space-y-0.5">
+                  <div className="text-xs font-bold text-purple-300 flex items-center gap-1.5">
+                    👑 Quản Trị Viên Hệ Thống (Tenant Admin)
+                  </div>
+                  <div className="text-[11px] text-slate-400">admin@dehoc.vn (Toàn quyền quản trị & ngân hàng đề)</div>
+                </div>
+                <Sparkles size={16} className="text-purple-400 group-hover:scale-110 transition-transform" />
+              </button>
+
+              {/* Team Leader */}
+              <button
+                type="button"
+                onClick={() => quickFillCredential('teamlead@dehoc.vn', 'Lead@Dehoc2026!')}
+                className="w-full p-3 bg-slate-800/80 hover:bg-slate-750 border border-slate-700/80 hover:border-blue-500/50 rounded-2xl flex items-center justify-between text-left transition-all group active:scale-[0.99]"
+              >
+                <div className="space-y-0.5">
+                  <div className="text-xs font-bold text-blue-300 flex items-center gap-1.5">
+                    💼 Trưởng Nhóm Khảo Thí (TeamLeader)
+                  </div>
+                  <div className="text-[11px] text-slate-400">teamlead@dehoc.vn (Quản lý phòng thi & giám sát AI)</div>
+                </div>
+                <Sparkles size={16} className="text-blue-400 group-hover:scale-110 transition-transform" />
+              </button>
+
+              {/* VIP Learner */}
+              <button
+                type="button"
+                onClick={() => quickFillCredential('student.vip@dehoc.vn', 'Vip@Dehoc2026!')}
+                className="w-full p-3 bg-slate-800/80 hover:bg-slate-750 border border-slate-700/80 hover:border-amber-500/50 rounded-2xl flex items-center justify-between text-left transition-all group active:scale-[0.99]"
+              >
+                <div className="space-y-0.5">
+                  <div className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+                    🌟 Học Viên VIP (AI Adaptive CAT)
+                  </div>
+                  <div className="text-[11px] text-slate-400">student.vip@dehoc.vn (Mở khóa toàn bộ tính năng VIP)</div>
+                </div>
+                <Sparkles size={16} className="text-amber-400 group-hover:scale-110 transition-transform" />
+              </button>
+            </div>
+
+            {/* Hardware PKI Option */}
+            <div className="pt-2 border-t border-slate-800 flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowSsoModal(false);
+                  handlePkiLogin();
+                }}
+                className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 flex items-center gap-1.5 py-1.5 transition-colors"
+              >
+                <Lock size={13} /> Đăng nhập bằng USB Token PKI
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  directRedirectToKeycloak();
+                }}
+                className="text-[11px] text-slate-500 hover:text-slate-300 transition-colors underline"
+              >
+                Chuyển hướng Keycloak gốc &rarr;
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

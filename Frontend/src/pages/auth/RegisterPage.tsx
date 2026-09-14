@@ -68,7 +68,16 @@ export function RegisterPage() {
 
     } catch (err: any) {
       console.error('[Register Error]', err);
-      const serverMsg = err.response?.data?.message || err.message || 'Đăng ký tài khoản thất bại. Vui lòng thử lại.';
+      let serverMsg = 'Đăng ký tài khoản thất bại. Vui lòng thử lại sau giây lát.';
+      if (err.response?.status === 503 || err.response?.status === 502) {
+        serverMsg = 'Dịch vụ máy chủ đang khởi động hoặc nâng cấp. Vui lòng thử lại sau 10-15 giây.';
+      } else if (err.response?.data?.message) {
+        serverMsg = err.response.data.message;
+      } else if (typeof err.response?.data === 'string' && err.response.data.length < 150) {
+        serverMsg = err.response.data;
+      } else if (err.message) {
+        serverMsg = err.message;
+      }
       setError(serverMsg);
     } finally {
       setLoading(false);
