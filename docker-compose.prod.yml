@@ -12,8 +12,6 @@ services:
       args:
         VITE_API_URL: ""
         VITE_AUTH_HUB_URL: "https://dehoc.vn"
-    ports:
-      - "${PORT:-80}:80"
     expose:
       - "80"
     environment:

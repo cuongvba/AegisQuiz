@@ -68,8 +68,8 @@ $composeOk = $false
 if (Test-Path $dockerComposePath) {
     $composeText = Get-Content $dockerComposePath -Raw
     $hasBackendHealth = $composeText -match "healthcheck:"
-    $hasPort = $composeText -match "PORT"
-    $composeOk = $hasBackendHealth -and $hasPort
+    $hasExpose = $composeText -match "expose:"
+    $composeOk = $hasBackendHealth -and $hasExpose
 }
 
 $backendDockerOk = (Test-Path $backendDockerfilePath) -and ((Get-Content $backendDockerfilePath -Raw) -match "curl")
