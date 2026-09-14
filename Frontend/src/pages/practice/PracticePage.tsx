@@ -12,7 +12,8 @@ import { useLearnerI18n } from '@/lib/i18n';
 import { learnerQuizService } from '@/services/learner-quiz.service';
 import type { LearnerAnswer, LearnerQuestion, PracticeConfig } from '@/types/quiz';
 
-const AUTH_HUB_URL = (import.meta as any).env?.VITE_AUTH_HUB_URL || window.location.origin;
+const AUTH_HUB_URL = (import.meta as any).env?.VITE_AUTH_HUB_URL
+  || (typeof window !== 'undefined' && window.location.hostname.endsWith('dehoc.vn') ? 'https://daotao.dehoc.vn' : (typeof window !== 'undefined' ? window.location.origin : ''));
 const AUTH_LOGIN_PATH = `${AUTH_HUB_URL}/login`;
 
 type LearnerUser = {

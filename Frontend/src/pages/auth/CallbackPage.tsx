@@ -104,10 +104,14 @@ export function CallbackPage() {
         localStorage.setItem('token', validToken);
         localStorage.setItem('user', JSON.stringify(userProfile));
 
-        // Tự động chuyển hướng về trang chủ
+        // Tự động chuyển hướng về trang chủ daotao.dehoc.vn
         setTimeout(() => {
-          navigate('/');
-          window.location.reload();
+          if (typeof window !== 'undefined' && window.location.hostname.endsWith('dehoc.vn') && window.location.hostname !== 'daotao.dehoc.vn') {
+            window.location.href = 'https://daotao.dehoc.vn/';
+          } else {
+            navigate('/');
+            window.location.reload();
+          }
         }, 1000);
 
       } catch (err: any) {

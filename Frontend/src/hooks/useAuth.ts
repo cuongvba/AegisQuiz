@@ -93,7 +93,10 @@ export function useAuth(): UseAuthReturn {
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    window.location.href = '/login';
+    const target = typeof window !== 'undefined' && window.location.hostname.endsWith('dehoc.vn')
+      ? 'https://daotao.dehoc.vn/login'
+      : '/login';
+    window.location.href = target;
   };
 
   return {

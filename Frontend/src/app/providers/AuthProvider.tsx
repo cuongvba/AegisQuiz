@@ -197,7 +197,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const handleAuthExpired = () => {
       setToken(null);
       setUser(null);
-      window.location.href = '/login';
+      const target = typeof window !== 'undefined' && window.location.hostname.endsWith('dehoc.vn')
+        ? 'https://daotao.dehoc.vn/login'
+        : '/login';
+      window.location.href = target;
     };
 
     window.addEventListener('aegis:auth:expired', handleAuthExpired);
@@ -220,7 +223,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('tenantId');
     setToken(null);
     setUser(null);
-    window.location.href = '/login';
+    const target = typeof window !== 'undefined' && window.location.hostname.endsWith('dehoc.vn')
+      ? 'https://daotao.dehoc.vn/login'
+      : '/login';
+    window.location.href = target;
   }, []);
 
   const updateUser = useCallback((updates: Partial<UserProfile>) => {

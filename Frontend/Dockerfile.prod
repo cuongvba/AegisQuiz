@@ -9,7 +9,7 @@ RUN npm ci
 # Copy source code and build
 COPY . .
 ARG VITE_API_URL=""
-ARG VITE_AUTH_HUB_URL="https://dehoc.vn"
+ARG VITE_AUTH_HUB_URL="https://daotao.dehoc.vn"
 ENV VITE_API_URL=${VITE_API_URL}
 ENV VITE_AUTH_HUB_URL=${VITE_AUTH_HUB_URL}
 

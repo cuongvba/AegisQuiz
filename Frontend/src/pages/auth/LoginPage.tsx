@@ -1,4 +1,4 @@
-﻿﻿﻿import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { KeyRound, ShieldAlert, Sparkles, User, Lock, Globe, LogIn, X, Mail } from 'lucide-react';
 import { useAgribankPKI } from '../../hooks/useAgribankPKI';
@@ -53,8 +53,12 @@ export function LoginPage() {
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
 
-      navigate('/');
-      window.location.reload();
+      if (typeof window !== 'undefined' && window.location.hostname.endsWith('dehoc.vn') && window.location.hostname !== 'daotao.dehoc.vn') {
+        window.location.href = 'https://daotao.dehoc.vn/';
+      } else {
+        navigate('/');
+        window.location.reload();
+      }
     } catch (err: any) {
       console.error(err);
       setPkiError(err.response?.data?.message || err.message || 'Lỗi xác thực đăng nhập PKI.');
@@ -63,7 +67,12 @@ export function LoginPage() {
     }
   };
 
-  const getRedirectUri = () => `${window.location.origin}/auth/callback`;
+  const getRedirectUri = () => {
+    const origin = typeof window !== 'undefined' && window.location.hostname.endsWith('dehoc.vn')
+      ? 'https://daotao.dehoc.vn'
+      : window.location.origin;
+    return `${origin}/auth/callback`;
+  };
 
   // 1. Mở Modal xác thực giả lập Keycloak SSO
   const handleKeycloakSSO = () => {
@@ -141,8 +150,12 @@ export function LoginPage() {
         localStorage.setItem('token', mockJwtToken);
         localStorage.setItem('user', JSON.stringify(loggedInUser));
 
-        navigate('/');
-        window.location.reload();
+        if (typeof window !== 'undefined' && window.location.hostname.endsWith('dehoc.vn') && window.location.hostname !== 'daotao.dehoc.vn') {
+          window.location.href = 'https://daotao.dehoc.vn/';
+        } else {
+          navigate('/');
+          window.location.reload();
+        }
       };
 
       const autoFill = (userType: 'admin' | 'teamlead' | 'vip' | 'free') => {

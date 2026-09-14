@@ -4,50 +4,46 @@ Tài liệu này hướng dẫn chi tiết từng bước triển khai hệ th�
 
 ---
 
-## 1. Chuẩn Bị Tên Miền `dehoc.vn`
+## 1. Chuẩn Bị Tên Miền Hệ Sinh Thái `dehoc.vn` & Phân Hệ `daotao.dehoc.vn`
 
-Trước khi bắt đầu, hãy đảm bảo các bản ghi DNS tại nhà cung cấp tên miền của bạn (PA Vietnam, Viettel, Mắt Bão, Cloudflare...) đã trỏ về IP của VPS:
+Hệ sinh thái `dehoc.vn` được thiết kế chuyên biệt hóa:
+- **`dehoc.vn` / `www.dehoc.vn`**: Cổng thông tin trung tâm / Landing Page / Hệ sinh thái chung.
+- **`daotao.dehoc.vn`**: Toàn bộ Nền tảng Khảo thí & Đào tạo AegisQuiz (Frontend SPA + Backend APIs + Realtime Hubs).
+- **Khi đăng nhập / đăng xuất**: Hệ thống tự động chuyển hướng về `https://daotao.dehoc.vn` (hoặc `https://daotao.dehoc.vn/login`).
 
-| Loại Bản Ghi (Type) | Tên (Host / Name) | Giá Trị (Value / IP Address) |
-|---|---|---|
-| **A** | `@` (hoặc `dehoc.vn`) | `[IP_VPS_CỦA_BẠN]` |
-| **A** | `www` | `[IP_VPS_CỦA_BẠN]` |
-| **A** | `panel` *(đã có)* | `[IP_VPS_CỦA_BẠN]` |
+Đảm bảo các bản ghi DNS tại nhà cung cấp tên miền của bạn (PA Vietnam, Viettel, Cloudflare...) đã trỏ về IP của VPS:
 
-> *Kiểm tra DNS*: Mở terminal máy tính chạy: `ping dehoc.vn` -> nếu ra đúng IP máy chủ là DNS đã sẵn sàng.
+| Loại Bản Ghi (Type) | Tên (Host / Name) | Giá Trị (Value / IP Address) | Mục Đích |
+|---|---|---|---|
+| **A** | `daotao` | `[IP_VPS_CỦA_BẠN]` | Phân hệ Khảo thí & Đào tạo AegisQuiz |
+| **A** | `@` (hoặc `dehoc.vn`) | `[IP_VPS_CỦA_BẠN]` | Cổng trung tâm hệ sinh thái Dehoc |
+| **A** | `panel` *(đã có)* | `[IP_VPS_CỦA_BẠN]` | Trang quản trị Coolify |
+
+> *Kiểm tra DNS*: Mở terminal chạy: `ping daotao.dehoc.vn` -> nếu ra đúng IP máy chủ VPS là DNS đã sẵn sàng.
 
 ---
 
 ## 2. Cách Triển Khai Trên Giao Diện Coolify (`panel.dehoc.vn`)
 
-Có 2 cách triển khai siêu nhanh trên Coolify:
-
-### Cách 1: Triển khai qua Docker Compose Trực Tiếp (Khuyên Dùng — 3 Phút)
+### Cách 1: Triển khai qua Docker Compose Trực Tiếp
 
 1. **Bước 1: Tạo Resource Mới Trong Project**:
    - Truy cập: `https://panel.dehoc.vn/projects`.
-   - Bấm vào project hiện có (ví dụ: `My first project`) hoặc bấm **`+ New Project`** đặt tên `AegisQuiz`.
-   - Chọn môi trường: `production`.
-   - Bấm nút **`+ New`** (hoặc `Add Resource`) -> Chọn **`Docker Compose`**.
+   - Chọn project `AegisQuiz` (môi trường: `production`).
+   - Chọn **`Docker Compose`**.
 
 2. **Bước 2: Cấu Hình Docker Compose**:
-   - Tại ô nhập cấu hình Docker Compose, copy toàn bộ nội dung từ tệp [`docker-compose.prod.yml`](../docker-compose.prod.yml) trong mã nguồn và dán vào.
-   - Bấm **Save**.
+   - Copy toàn bộ nội dung từ [`docker-compose.prod.yml`](../docker-compose.prod.yml) và dán vào ô Compose. Bấm **Save**.
 
-3. **Bước 3: Cấu Hình Tên Miền (Domains)**:
+3. **Bước 3: Cấu Hình Tên Miền Cho Frontend**:
    - Trong danh sách các Services bên trong Compose:
-     - Chọn service **`frontend`** -> tại mục **Domains**: nhập `https://dehoc.vn, https://www.dehoc.vn`.
-     *(Coolify sẽ tự động cấu hình Traefik Reverse Proxy và tự động cấp chứng chỉ SSL HTTPS Let's Encrypt hoàn toàn miễn phí!)*
-     - Cổng dịch vụ (Port): nhập `80` (vì `frontend` container chạy Nginx alpine trên cổng 80).
+     - Chọn service **`frontend`** -> tại mục **Domains**: nhập **`https://daotao.dehoc.vn`**.
+     - Cổng dịch vụ (Port): nhập `80` (vì container `frontend` chạy Nginx alpine trên cổng 80).
    - Bấm **Save**.
 
 4. **Bước 4: Bấm Deploy**:
-   - Bấm nút **`Deploy`** màu tím ở góc trên bên phải.
-   - Coolify sẽ tự động:
-     1. Build Frontend container (Node 22 -> Nginx alpine).
-     2. Build Backend container (.NET 9 Web API Release).
-     3. Khởi chạy PostgreSQL 17, Redis 7, IRT Engine, Keycloak.
-     4. Kích hoạt chứng chỉ SSL HTTPS `https://dehoc.vn`.
+   - Bấm nút **`Deploy`** màu tím.
+   - Coolify sẽ cấp phát SSL Let's Encrypt tự động cho `https://daotao.dehoc.vn`.
 
 ---
 
@@ -96,13 +92,13 @@ Kho lưu trữ cục bộ tại máy của bạn đã được khởi tạo và 
 3. **Cấu hình Domain & Port**:
    - Trong danh sách các service của Compose:
      - Chọn service **`frontend`**.
-     - Tại mục **Domains**: nhập `https://dehoc.vn, https://www.dehoc.vn`.
+     - Tại mục **Domains**: nhập **`https://daotao.dehoc.vn`**.
      - Cổng dịch vụ (Port): nhập `80`.
    - Bấm **Save**.
 
 4. **Kích hoạt Auto-Deploy (Tự động triển khai khi Push code)**:
    - Tích chọn mục **`Auto-deploy`** (hoặc Webhook).
-   - Bấm nút **`Deploy`** màu tím để tiến hành build và khởi chạy phiên bản đầu tiên! Coolify sẽ tự động xin chứng chỉ SSL Let's Encrypt cho `dehoc.vn`.
+   - Bấm nút **`Deploy`** màu tím để tiến hành build và khởi chạy phiên bản đầu tiên! Coolify sẽ tự động xin chứng chỉ SSL Let's Encrypt cho `https://daotao.dehoc.vn`.
 
 ---
 
@@ -111,10 +107,13 @@ Kho lưu trữ cục bộ tại máy của bạn đã được khởi tạo và 
 Sau khi Coolify báo trạng thái xanh lá cây `Healthy` / `Running`:
 
 1. **Kiểm tra Trang Chủ & Giao Diện Khảo Thí**:
-   - Truy cập: `https://dehoc.vn` -> Kiểm tra ổ khóa SSL bảo mật màu xanh.
-   - Truy cập: `https://dehoc.vn/practice` -> Kiểm tra thanh điều khiển thông minh **Smart LaunchPad** và các chế độ thi.
-2. **Kiểm tra Không Gian Đội Nhóm (Team Workspace)**:
-   - Bấm mục menu **`Đội nhóm 👥`** trên thanh Header (hoặc vào `https://dehoc.vn/team`).
+   - Truy cập: `https://daotao.dehoc.vn` -> Kiểm tra ổ khóa SSL bảo mật màu xanh.
+   - Truy cập: `https://daotao.dehoc.vn/practice` -> Kiểm tra thanh điều khiển thông minh **Smart LaunchPad** và các chế độ thi.
+2. **Kiểm tra Đăng Nhập / Đăng Xuất**:
+   - Đăng nhập tại `https://daotao.dehoc.vn/login` -> Tự động chuyển hướng về `https://daotao.dehoc.vn/`.
+   - Bấm **Đăng xuất** -> Tự động quay về `https://daotao.dehoc.vn/login`.
+3. **Kiểm tra Không Gian Đội Nhóm (Team Workspace)**:
+   - Bấm mục menu **`Đội nhóm 👥`** trên thanh Header (hoặc vào `https://daotao.dehoc.vn/team`).
    - Kiểm tra giao diện Quản lý ngân hàng câu hỏi của Team (`/admin/questions?scope=TEAM`) và nút Luyện thi cùng Team.
 3. **Kiểm tra Nạp Câu Hỏi Bằng AI (UCIS v3.0)**:
    - Tải thử file Word/Excel vào ngân hàng câu hỏi, kiểm tra hệ thống tự động sinh mã chủ đề SSAE ngắn gọn và lưu trữ thành công.

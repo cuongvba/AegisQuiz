@@ -23,8 +23,8 @@ export const env = {
   /** Backend API base URL. Trống = relative (proxied qua Vite) */
   API_URL: getEnv('VITE_API_URL', ''),
 
-  /** Auth Hub URL — dùng cho redirect login */
-  AUTH_HUB_URL: getEnv('VITE_AUTH_HUB_URL', typeof window !== 'undefined' ? window.location.origin : ''),
+  /** Auth Hub URL — dùng cho redirect login (mặc định daotao.dehoc.vn trên production) */
+  AUTH_HUB_URL: getEnv('VITE_AUTH_HUB_URL', typeof window !== 'undefined' && window.location.hostname.endsWith('dehoc.vn') ? 'https://daotao.dehoc.vn' : (typeof window !== 'undefined' ? window.location.origin : '')),
 
   /** Môi trường hiện tại */
   MODE: import.meta.env.MODE as 'development' | 'production' | 'test',

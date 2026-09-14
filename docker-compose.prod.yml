@@ -1,6 +1,6 @@
 # =============================================================================
 # AegisQuiz — Production Docker Compose (Deploy via Coolify or VPS)
-# Domain: https://dehoc.vn
+# Domain: https://daotao.dehoc.vn (Ecosystem Root: https://dehoc.vn)
 # =============================================================================
 
 services:
@@ -11,7 +11,7 @@ services:
       dockerfile: Dockerfile.prod
       args:
         VITE_API_URL: ""
-        VITE_AUTH_HUB_URL: "https://dehoc.vn"
+        VITE_AUTH_HUB_URL: "https://daotao.dehoc.vn"
     expose:
       - "80"
     environment:
