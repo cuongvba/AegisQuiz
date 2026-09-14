@@ -383,6 +383,34 @@ using (var scope = app.Services.CreateScope())
                       ('IT_SECURITY', '#0284c7', now(), 'Bảo mật an ninh mạng, kiến trúc hệ thống, chứng chỉ CISSP/CompTIA', 6, 'ShieldCheck', TRUE, TRUE, 'An toàn TT & CNTT', NULL, NULL),
                       ('GENERAL', '#4b5563', now(), 'Kiến thức đại cương, kỹ năng mềm, văn hóa doanh nghiệp', 7, 'Layers', TRUE, TRUE, 'Tổng hợp / Đại cương', NULL, NULL)
                     ON CONFLICT (""Code"") DO NOTHING;
+
+                    -- 4. BẢNG UserAccounts: Xác thực tài khoản người dùng chuẩn Enterprise
+                    CREATE TABLE IF NOT EXISTS ""UserAccounts"" (
+                        ""Id"" uuid NOT NULL,
+                        ""Email"" text NOT NULL,
+                        ""PasswordHash"" text NOT NULL,
+                        ""FullName"" text NOT NULL,
+                        ""PhoneNumber"" text,
+                        ""AvatarUrl"" text,
+                        ""Role"" text NOT NULL DEFAULT 'Learner',
+                        ""TenantId"" uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
+                        ""OrgUnitId"" uuid,
+                        ""IsPremium"" boolean NOT NULL DEFAULT false,
+                        ""SubscriptionTier"" text NOT NULL DEFAULT 'FREE',
+                        ""SubscriptionExpiresAt"" timestamp with time zone,
+                        ""IsActive"" boolean NOT NULL DEFAULT true,
+                        ""FailedLoginAttempts"" integer NOT NULL DEFAULT 0,
+                        ""LockoutEnd"" timestamp with time zone,
+                        ""LastLoginAt"" timestamp with time zone,
+                        ""CreatedAt"" timestamp with time zone NOT NULL DEFAULT now(),
+                        ""UpdatedAt"" timestamp with time zone NOT NULL DEFAULT now(),
+                        CONSTRAINT ""PK_UserAccounts"" PRIMARY KEY (""Id"")
+                    );
+                    CREATE UNIQUE INDEX IF NOT EXISTS ""IX_UserAccounts_Email"" ON ""UserAccounts"" (""Email"");
+                    CREATE INDEX IF NOT EXISTS ""IX_UserAccounts_TenantId"" ON ""UserAccounts"" (""TenantId"");
+                    CREATE INDEX IF NOT EXISTS ""IX_UserAccounts_OrgUnitId"" ON ""UserAccounts"" (""OrgUnitId"");
+                    CREATE INDEX IF NOT EXISTS ""IX_UserAccounts_Role"" ON ""UserAccounts"" (""Role"");
+                    CREATE INDEX IF NOT EXISTS ""IX_UserAccounts_SubscriptionTier"" ON ""UserAccounts"" (""SubscriptionTier"");
                 ");
                 log.LogInformation("[AegisQuiz] Auto-healing DDL executed successfully. All columns and tables guaranteed.");
             }
@@ -406,6 +434,115 @@ using (var scope = app.Services.CreateScope())
         {
             db.Database.EnsureCreated();
             log.LogInformation("[AegisQuiz] InMemory database created successfully for zero-friction local execution.");
+        }
+
+        // [BƯỚC 3: KHỞI TẠO TÀI KHOẢN GỐC ROOT ADMIN NẾU CHƯA CÓ]
+        try
+        {
+            if (!db.UserAccounts.Any())
+            {
+                var defaultTenant = db.Tenants.FirstOrDefault();
+                if (defaultTenant == null)
+                {
+                    defaultTenant = new AegisQuiz.Domain.Entities.Tenant
+                    {
+                        Id = Guid.NewGuid(),
+                        Code = "dehoc",
+                        Name = "Hệ sinh thái Giáo dục Dehoc",
+                        Plan = AegisQuiz.Domain.Entities.TenantPlan.Enterprise,
+                        ScaleType = AegisQuiz.Domain.Entities.TenantScaleType.Enterprise,
+                        IsActive = true,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    db.Tenants.Add(defaultTenant);
+                    db.SaveChanges();
+                }
+
+                // Root Admin
+                var adminHash = AegisQuiz.Application.Common.Security.PasswordSecurityHelper.HashPassword("Admin@Dehoc2026!");
+                var adminUser = new AegisQuiz.Domain.Entities.UserAccount
+                {
+                    Id = Guid.NewGuid(),
+                    Email = "admin@dehoc.vn",
+                    FullName = "Quản Trị Viên Hệ Thống",
+                    PasswordHash = adminHash,
+                    Role = AegisQuiz.Domain.Entities.AppRoles.TenantAdmin,
+                    TenantId = defaultTenant.Id,
+                    IsPremium = true,
+                    SubscriptionTier = "ENTERPRISE",
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                db.UserAccounts.Add(adminUser);
+                db.UserRoles.Add(new AegisQuiz.Domain.Entities.UserRole
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = adminUser.Id.ToString(),
+                    TenantId = defaultTenant.Id,
+                    Role = AegisQuiz.Domain.Entities.AppRoles.TenantAdmin,
+                    IsActive = true
+                });
+
+                // TeamLeader
+                var teamleadHash = AegisQuiz.Application.Common.Security.PasswordSecurityHelper.HashPassword("Lead@Dehoc2026!");
+                var teamleadUser = new AegisQuiz.Domain.Entities.UserAccount
+                {
+                    Id = Guid.NewGuid(),
+                    Email = "teamlead@dehoc.vn",
+                    FullName = "Trưởng Nhóm Khảo Thí",
+                    PasswordHash = teamleadHash,
+                    Role = AegisQuiz.Domain.Entities.AppRoles.TeamLeader,
+                    TenantId = defaultTenant.Id,
+                    IsPremium = true,
+                    SubscriptionTier = "VIP",
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                db.UserAccounts.Add(teamleadUser);
+                db.UserRoles.Add(new AegisQuiz.Domain.Entities.UserRole
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = teamleadUser.Id.ToString(),
+                    TenantId = defaultTenant.Id,
+                    Role = AegisQuiz.Domain.Entities.AppRoles.TeamLeader,
+                    IsActive = true
+                });
+
+                // VIP Learner
+                var vipHash = AegisQuiz.Application.Common.Security.PasswordSecurityHelper.HashPassword("Vip@Dehoc2026!");
+                var vipUser = new AegisQuiz.Domain.Entities.UserAccount
+                {
+                    Id = Guid.NewGuid(),
+                    Email = "student.vip@dehoc.vn",
+                    FullName = "Học Viên VIP (AI Adaptive)",
+                    PasswordHash = vipHash,
+                    Role = AegisQuiz.Domain.Entities.AppRoles.Learner,
+                    TenantId = defaultTenant.Id,
+                    IsPremium = true,
+                    SubscriptionTier = "VIP",
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                db.UserAccounts.Add(vipUser);
+                db.UserRoles.Add(new AegisQuiz.Domain.Entities.UserRole
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = vipUser.Id.ToString(),
+                    TenantId = defaultTenant.Id,
+                    Role = AegisQuiz.Domain.Entities.AppRoles.Learner,
+                    IsActive = true
+                });
+
+                db.SaveChanges();
+                log.LogInformation("[AegisQuiz] Seeded enterprise accounts: admin@dehoc.vn, teamlead@dehoc.vn, student.vip@dehoc.vn");
+            }
+        }
+        catch (Exception exSeed)
+        {
+            log.LogWarning(exSeed, "[AegisQuiz] Initial accounts seeding warning: {Message}", exSeed.Message);
         }
 
         // Tự động nạp bộ câu hỏi toán thực tế từ DeToanGiaiChiTiet.docx nếu có

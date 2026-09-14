@@ -12,6 +12,7 @@ DROP TABLE IF EXISTS "OrganizationUnits" CASCADE;
 DROP TABLE IF EXISTS "Tenants" CASCADE;
 DROP TABLE IF EXISTS "DynamicDomains" CASCADE;
 DROP TABLE IF EXISTS "PaymentTransactions" CASCADE;
+DROP TABLE IF EXISTS "UserAccounts" CASCADE;
 DROP TABLE IF EXISTS "Notebooks" CASCADE;
 DROP TABLE IF EXISTS "LearningPaths" CASCADE;
 DROP TABLE IF EXISTS "LearningAchievements" CASCADE;
@@ -309,6 +310,35 @@ CREATE TABLE "PaymentTransactions" (
     "RawWebhookPayload" text,
     CONSTRAINT "PK_PaymentTransactions" PRIMARY KEY ("TransactionId")
 );
+
+-- BƯỚC 10: TẠO BẢNG TÀI KHOẢN NGƯỜI DÙNG BẢO MẬT (UserAccounts)
+CREATE TABLE "UserAccounts" (
+    "Id" uuid NOT NULL,
+    "Email" text NOT NULL,
+    "PasswordHash" text NOT NULL,
+    "FullName" text NOT NULL,
+    "PhoneNumber" text,
+    "AvatarUrl" text,
+    "Role" text NOT NULL DEFAULT 'Learner',
+    "TenantId" uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
+    "OrgUnitId" uuid,
+    "IsPremium" boolean NOT NULL DEFAULT false,
+    "SubscriptionTier" text NOT NULL DEFAULT 'FREE',
+    "SubscriptionExpiresAt" timestamp with time zone,
+    "IsActive" boolean NOT NULL DEFAULT true,
+    "FailedLoginAttempts" integer NOT NULL DEFAULT 0,
+    "LockoutEnd" timestamp with time zone,
+    "LastLoginAt" timestamp with time zone,
+    "CreatedAt" timestamp with time zone NOT NULL DEFAULT now(),
+    "UpdatedAt" timestamp with time zone NOT NULL DEFAULT now(),
+    CONSTRAINT "PK_UserAccounts" PRIMARY KEY ("Id")
+);
+
+CREATE UNIQUE INDEX "IX_UserAccounts_Email" ON "UserAccounts" ("Email");
+CREATE INDEX "IX_UserAccounts_TenantId" ON "UserAccounts" ("TenantId");
+CREATE INDEX "IX_UserAccounts_OrgUnitId" ON "UserAccounts" ("OrgUnitId");
+CREATE INDEX "IX_UserAccounts_Role" ON "UserAccounts" ("Role");
+CREATE INDEX "IX_UserAccounts_SubscriptionTier" ON "UserAccounts" ("SubscriptionTier");
 
 -- BƯỚC 10: NẠP SẴN CÁC NGÀNH ĐỘNG CHUẨN QUỐC GIA & DOANH NGHIỆP (DynamicDomains)
 INSERT INTO "DynamicDomains" ("Code", "ColorBadge", "CreatedAt", "Description", "DisplayOrder", "Icon", "IsActive", "IsSystemStandard", "Name", "ParentDomainCode", "TenantId")

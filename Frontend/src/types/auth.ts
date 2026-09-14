@@ -132,6 +132,8 @@ export interface UserProfile {
   /** AppRole constant — đã được normalize */
   role:        AppRoleType;
   isPremium:   boolean;
+  subscriptionTier?: 'FREE' | 'VIP' | 'ENTERPRISE' | string;
+  avatar?:     string;
   tenantId?:   string;
   /** OrgUnitId scope — bắt buộc với TeamLeader */
   orgUnitId?:  string;

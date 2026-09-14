@@ -32,6 +32,7 @@ namespace AegisQuiz.Infrastructure.Data
 
         // ── RBAC & Team Management ───────────────────────────────────────────
         public DbSet<UserRole> UserRoles { get; set; } = null!;
+        public DbSet<UserAccount> UserAccounts { get; set; } = null!;
 
         // ── Payment ───────────────────────────────────────────────────────────
         public DbSet<PaymentTransaction> PaymentTransactions { get; set; } = null!;
@@ -349,6 +350,16 @@ namespace AegisQuiz.Infrastructure.Data
                 entity.HasIndex(r => new { r.TenantId, r.UserId });
                 entity.HasIndex(r => new { r.TenantId, r.OrgUnitId });
                 entity.HasIndex(r => r.Role);
+            });
+
+            // ── UserAccount (Identity & Credentials) ──────────────────────
+            modelBuilder.Entity<UserAccount>(entity =>
+            {
+                entity.HasIndex(u => u.Email).IsUnique();
+                entity.HasIndex(u => u.TenantId);
+                entity.HasIndex(u => u.OrgUnitId);
+                entity.HasIndex(u => u.Role);
+                entity.HasIndex(u => u.SubscriptionTier);
             });
         }
 

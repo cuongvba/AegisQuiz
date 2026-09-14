@@ -4,18 +4,20 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using AegisQuiz.Infrastructure.Data;
 using AegisQuiz.Domain.Entities;
+using AegisQuiz.Application.Common.Security;
 
 namespace AegisQuiz.API.Controllers
 {
     /// <summary>
-    /// [CG5: Economic Engine] + [CG6: Identity Absolute]
-    /// Xử lý: Cấp lại JWT isPremium sau payment + PKCE Code Exchange
+    /// [Enterprise Security] Hệ thống xác thực định danh và phân luồng vai trò & thuê bao.
+    /// Hỗ trợ: Đăng nhập/Đăng ký tài khoản mật khẩu (Salted PBKDF2/SHA-256), PKCE Code Exchange, Refresh Premium.
     /// </summary>
     [ApiController]
     [Route("api/auth")]
@@ -31,13 +33,188 @@ namespace AegisQuiz.API.Controllers
         }
 
         /// <summary>
+        /// Đăng ký tài khoản học viên mới với bảo mật mật khẩu PBKDF2 và tự động phân luồng.
+        /// </summary>
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
+                return BadRequest(new { message = "Email và mật khẩu không được để trống." });
+
+            var emailClean = request.Email.Trim().ToLowerInvariant();
+            if (!emailClean.Contains('@') || !emailClean.Contains('.'))
+                return BadRequest(new { message = "Định dạng email không hợp lệ." });
+
+            if (request.Password.Length < 6)
+                return BadRequest(new { message = "Mật khẩu phải có độ dài tối thiểu 6 ký tự." });
+
+            var existingUser = await _db.UserAccounts.FirstOrDefaultAsync(u => u.Email == emailClean);
+            if (existingUser != null)
+                return Conflict(new { message = "Email này đã được đăng ký tài khoản trong hệ thống." });
+
+            // Lấy hoặc tạo Tenant mặc định
+            var defaultTenant = await _db.Tenants.FirstOrDefaultAsync();
+            if (defaultTenant == null)
+            {
+                defaultTenant = new Tenant
+                {
+                    Id = Guid.NewGuid(),
+                    Code = "dehoc",
+                    Name = "Hệ sinh thái Giáo dục Dehoc",
+                    Plan = TenantPlan.Starter,
+                    ScaleType = TenantScaleType.Individual,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow
+                };
+                _db.Tenants.Add(defaultTenant);
+                await _db.SaveChangesAsync();
+            }
+
+            // Băm mật khẩu chuẩn NIST PBKDF2
+            var passwordHash = PasswordSecurityHelper.HashPassword(request.Password);
+
+            var newUser = new UserAccount
+            {
+                Id = Guid.NewGuid(),
+                Email = emailClean,
+                FullName = string.IsNullOrWhiteSpace(request.Name) ? emailClean.Split('@')[0] : request.Name.Trim(),
+                PasswordHash = passwordHash,
+                Role = AppRoles.Learner,
+                TenantId = defaultTenant.Id,
+                IsPremium = false,
+                SubscriptionTier = "FREE",
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            _db.UserAccounts.Add(newUser);
+
+            // Ghi nhận bản ghi UserRole
+            var userRole = new UserRole
+            {
+                Id = Guid.NewGuid(),
+                UserId = newUser.Id.ToString(),
+                TenantId = defaultTenant.Id,
+                Role = AppRoles.Learner,
+                IsActive = true,
+                AssignedAt = DateTime.UtcNow
+            };
+            _db.UserRoles.Add(userRole);
+
+            await _db.SaveChangesAsync();
+
+            // Phát hành JWT Token
+            var token = GenerateJwtToken(newUser);
+
+            return Ok(new
+            {
+                token,
+                user = BuildUserProfileDto(newUser)
+            });
+        }
+
+        /// <summary>
+        /// Đăng nhập tài khoản với cơ chế kiểm tra mật khẩu an toàn và chống tấn công Brute-force.
+        /// </summary>
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
+                return BadRequest(new { message = "Vui lòng điền đầy đủ email và mật khẩu." });
+
+            var emailClean = request.Email.Trim().ToLowerInvariant();
+
+            var user = await _db.UserAccounts.FirstOrDefaultAsync(u => u.Email == emailClean);
+            if (user == null)
+            {
+                // Giảm thiểu rò rỉ thông tin người dùng (timing mitigation)
+                PasswordSecurityHelper.VerifyPassword("dummy-password", "pbkdf2_sha256:100000:c2FsdHNhbHQ=:aGFzaGhhc2g=");
+                return Unauthorized(new { message = "Email hoặc mật khẩu không chính xác." });
+            }
+
+            if (!user.IsActive)
+                return Unauthorized(new { message = "Tài khoản của bạn đã bị vô hiệu hóa. Vui lòng liên hệ ban quản trị." });
+
+            // Kiểm tra trạng thái khóa tạm thời (Lockout)
+            if (user.LockoutEnd.HasValue && user.LockoutEnd.Value > DateTime.UtcNow)
+            {
+                var remainingMinutes = Math.Ceiling((user.LockoutEnd.Value - DateTime.UtcNow).TotalMinutes);
+                return StatusCode(423, new
+                {
+                    message = $"Tài khoản tạm thời bị khóa do nhập sai quá 5 lần liên tiếp. Vui lòng thử lại sau {remainingMinutes} phút."
+                });
+            }
+
+            // Kiểm tra mật khẩu
+            var isPasswordValid = PasswordSecurityHelper.VerifyPassword(request.Password, user.PasswordHash);
+            if (!isPasswordValid)
+            {
+                user.FailedLoginAttempts++;
+                if (user.FailedLoginAttempts >= 5)
+                {
+                    user.LockoutEnd = DateTime.UtcNow.AddMinutes(15);
+                    user.UpdatedAt = DateTime.UtcNow;
+                    await _db.SaveChangesAsync();
+                    return StatusCode(423, new
+                    {
+                        message = "Bạn đã nhập sai mật khẩu 5 lần liên tiếp. Tài khoản bị tạm khóa 15 phút để đảm bảo an toàn."
+                    });
+                }
+
+                user.UpdatedAt = DateTime.UtcNow;
+                await _db.SaveChangesAsync();
+
+                var remainingAttempts = 5 - user.FailedLoginAttempts;
+                return Unauthorized(new
+                {
+                    message = $"Mật khẩu không chính xác. Bạn còn {remainingAttempts} lần thử trước khi tài khoản bị tạm khóa."
+                });
+            }
+
+            // Đăng nhập thành công -> Reset lockout và đếm sai
+            user.FailedLoginAttempts = 0;
+            user.LockoutEnd = null;
+            user.LastLoginAt = DateTime.UtcNow;
+            user.UpdatedAt = DateTime.UtcNow;
+            await _db.SaveChangesAsync();
+
+            var token = GenerateJwtToken(user);
+
+            return Ok(new
+            {
+                token,
+                user = BuildUserProfileDto(user)
+            });
+        }
+
+        /// <summary>
+        /// Lấy thông tin phiên làm việc hiện tại của người dùng.
+        /// </summary>
+        [Authorize]
+        [HttpGet("me")]
+        public async Task<IActionResult> GetCurrentUser()
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
+                return Unauthorized(new { message = "Phiên đăng nhập không hợp lệ." });
+
+            var user = await _db.UserAccounts.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null || !user.IsActive)
+                return Unauthorized(new { message = "Tài khoản không tồn tại hoặc đã bị khóa." });
+
+            return Ok(new
+            {
+                user = BuildUserProfileDto(user)
+            });
+        }
+
+        /// <summary>
         /// [CG5 FIX] Sau khi webhook xác nhận payment → Cấp JWT mới với isPremium=true
-        /// Frontend gọi endpoint này thay vì tự set localStorage
         /// </summary>
         [HttpPost("refresh-premium")]
         public async Task<IActionResult> RefreshPremiumToken([FromBody] RefreshPremiumRequest request)
         {
-            // Xác minh giao dịch thực sự đã hoàn thành trong DB
             var transaction = await _db.PaymentTransactions
                 .FirstOrDefaultAsync(t =>
                     t.UserId == request.UserId &&
@@ -49,17 +226,25 @@ namespace AegisQuiz.API.Controllers
                 return Unauthorized(new { message = "[CG5] Giao dịch thanh toán chưa được xác nhận. isPremium không được cấp." });
             }
 
-            // Giao dịch hợp lệ → Phát hành JWT mới với isPremium=true
+            var user = await _db.UserAccounts.FirstOrDefaultAsync(u => u.Id == request.UserId);
+            if (user != null)
+            {
+                user.IsPremium = true;
+                user.SubscriptionTier = "VIP";
+                user.SubscriptionExpiresAt = DateTime.UtcNow.AddMonths(1);
+                user.UpdatedAt = DateTime.UtcNow;
+                await _db.SaveChangesAsync();
+            }
+
             var secretKey = _config["Jwt:Secret"]
                 ?? throw new InvalidOperationException("[CG2] Jwt:Secret chưa được cấu hình.");
 
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, request.UserId.ToString()),
-                // [RBAC FIX] Dùng AppRoles.Learner thay vì hardcode "student"
-                new Claim(ClaimTypes.Role, AppRoles.Learner),
-                // [CG5] isPremium=true được server cấp sau khi xác nhận payment — không thể giả mạo
+                new Claim(ClaimTypes.Role, user?.Role ?? AppRoles.Learner),
                 new Claim("isPremium", "true"),
+                new Claim("subscriptionTier", "VIP"),
                 new Claim("paymentCode", request.PaymentCode),
             };
 
@@ -81,18 +266,16 @@ namespace AegisQuiz.API.Controllers
                 token,
                 user = new
                 {
-                    id        = request.UserId,
+                    id = request.UserId,
                     isPremium = true,
-                    // [RBAC FIX] Dùng AppRoles constant
-                    role      = AppRoles.Learner
+                    subscriptionTier = "VIP",
+                    role = user?.Role ?? AppRoles.Learner
                 }
             });
         }
 
         /// <summary>
         /// [CG6: BFF Pattern] PKCE Authorization Code Exchange
-        /// Frontend gửi code + codeVerifier → Backend exchange với Keycloak → Trả JWT
-        /// Token KHÔNG trả về full access token để lưu localStorage → Dùng HttpOnly Cookie
         /// </summary>
         [HttpPost("exchange")]
         public async Task<IActionResult> ExchangeCode([FromBody] PkceExchangeRequest request)
@@ -103,17 +286,16 @@ namespace AegisQuiz.API.Controllers
             var oidcAuthority = _config["Oidc:Authority"] ?? "http://localhost:8180/realms/dehoc";
             var clientId = _config["Oidc:ClientId"] ?? "quiz-service";
 
-            // Exchange code với Keycloak
             using var httpClient = new System.Net.Http.HttpClient();
             var tokenEndpoint = $"{oidcAuthority}/protocol/openid-connect/token";
 
             var formData = new Dictionary<string, string>
             {
-                ["grant_type"]    = "authorization_code",
-                ["client_id"]     = clientId,
-                ["code"]          = request.Code,
+                ["grant_type"] = "authorization_code",
+                ["client_id"] = clientId,
+                ["code"] = request.Code,
                 ["code_verifier"] = request.CodeVerifier,
-                ["redirect_uri"]  = request.RedirectUri ?? $"{Request.Scheme}://{Request.Host}/auth/callback",
+                ["redirect_uri"] = request.RedirectUri ?? $"{Request.Scheme}://{Request.Host}/auth/callback",
             };
 
             var response = await httpClient.PostAsync(tokenEndpoint, new System.Net.Http.FormUrlEncodedContent(formData));
@@ -128,7 +310,6 @@ namespace AegisQuiz.API.Controllers
             using var doc = System.Text.Json.JsonDocument.Parse(tokenJson);
             var accessToken = doc.RootElement.GetProperty("access_token").GetString();
 
-            // [CG6 BFF] Lưu token trong HttpOnly Cookie — không trả về trực tiếp
             Response.Cookies.Append("aegis_access_token", accessToken ?? "", new Microsoft.AspNetCore.Http.CookieOptions
             {
                 HttpOnly = true,
@@ -137,13 +318,78 @@ namespace AegisQuiz.API.Controllers
                 Expires = DateTimeOffset.UtcNow.AddHours(8)
             });
 
-            // Trả về user info (không trả full access token)
             return Ok(new
             {
-                accessToken, // Tạm thời trả về để tương thích với localStorage flow hiện tại
-                user = new { isPremium = false, role = "student" }
+                accessToken,
+                user = new { isPremium = false, role = AppRoles.Learner, subscriptionTier = "FREE" }
             });
         }
+
+        // ── Helper Methods ──────────────────────────────────────────────────
+
+        private string GenerateJwtToken(UserAccount user)
+        {
+            var secretKey = _config["Jwt:Secret"]
+                ?? throw new InvalidOperationException("[CG2] Jwt:Secret chưa được cấu hình.");
+
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Email, user.Email),
+                new Claim(ClaimTypes.Name, user.FullName),
+                new Claim(ClaimTypes.Role, user.Role),
+                new Claim("tenant_id", user.TenantId.ToString()),
+                new Claim("isPremium", user.IsPremium ? "true" : "false"),
+                new Claim("subscriptionTier", user.SubscriptionTier ?? "FREE")
+            };
+
+            if (user.OrgUnitId.HasValue)
+            {
+                claims.Add(new Claim("org_unit_id", user.OrgUnitId.Value.ToString()));
+            }
+
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(claims),
+                Expires = DateTime.UtcNow.AddHours(8),
+                Issuer = "AegisQuiz.PKI",
+                SigningCredentials = new SigningCredentials(
+                    new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
+                    SecurityAlgorithms.HmacSha256Signature)
+            };
+
+            var handler = new JwtSecurityTokenHandler();
+            return handler.WriteToken(handler.CreateToken(tokenDescriptor));
+        }
+
+        private static object BuildUserProfileDto(UserAccount user)
+        {
+            return new
+            {
+                id = user.Id.ToString(),
+                name = user.FullName,
+                email = user.Email,
+                role = user.Role,
+                tenantId = user.TenantId.ToString(),
+                orgUnitId = user.OrgUnitId?.ToString(),
+                isPremium = user.IsPremium,
+                subscriptionTier = user.SubscriptionTier,
+                avatar = user.AvatarUrl
+            };
+        }
+    }
+
+    public class RegisterRequest
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+    }
+
+    public class LoginRequest
+    {
+        public string Email { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
     }
 
     public class RefreshPremiumRequest
