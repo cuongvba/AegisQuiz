@@ -78,6 +78,7 @@ export default function App() {
               <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/auth/callback" element={<CallbackPage />} />
               <Route path="/auth/qr-confirm" element={<QrConfirmPage />} />
+              <Route path="/qr-confirm" element={<QrConfirmPage />} />
               <Route
                 path="/profile"
                 element={
