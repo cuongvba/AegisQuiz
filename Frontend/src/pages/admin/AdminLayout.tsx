@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, FileQuestion, BookOpen, Users, CreditCard, FileText, ArrowLeft, Bot, Menu, X, Shield, Sparkles } from 'lucide-react';
+import { LayoutDashboard, FileQuestion, BookOpen, Users, CreditCard, FileText, ArrowLeft, Bot, Menu, X, Shield, Sparkles, Cpu } from 'lucide-react';
 import { useAuthContext } from '@/app/providers/AuthProvider';
 
 const allMenuItems = [
@@ -10,6 +10,7 @@ const allMenuItems = [
   { href: '/admin/users', label: 'Người dùng', icon: <Users size={18} />, adminOnly: true },
   { href: '/admin/payments', label: 'Doanh thu', icon: <CreditCard size={18} />, adminOnly: true },
   { href: '/admin/exams', label: 'Đề thi', icon: <FileText size={18} /> },
+  { href: '/admin/ai-settings', label: 'Cấu hình AI & FinOps', icon: <Cpu size={18} />, adminOnly: true },
 ];
 
 export function AdminLayout() {

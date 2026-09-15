@@ -1,0 +1,87 @@
+using System;
+using System.Diagnostics;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
+using System.Threading.Tasks;
+using AegisQuiz.Application.Models.AI;
+
+namespace AegisQuiz.Infrastructure.AI.Adapters
+{
+    public class DeepSeekAdapter : IAiProviderAdapter
+    {
+        private readonly IHttpClientFactory _httpClientFactory;
+        private const string DefaultEndpoint = "https://api.deepseek.com/v1/chat/completions";
+
+        public DeepSeekAdapter(IHttpClientFactory httpClientFactory)
+        {
+            _httpClientFactory = httpClientFactory;
+        }
+
+        public AiProviderType ProviderType => AiProviderType.DeepSeek;
+        public string DefaultModel => "deepseek-chat";
+
+        public async Task<(bool Success, string Content, string? Error, long DurationMs)> CallAsync(
+            string apiKey,
+            string? model,
+            string prompt,
+            string? systemPrompt,
+            double temperature,
+            int maxTokens,
+            string? customEndpoint = null)
+        {
+            var sw = Stopwatch.StartNew();
+            try
+            {
+                var endpoint = string.IsNullOrWhiteSpace(customEndpoint) ? DefaultEndpoint : customEndpoint;
+                var modelToUse = string.IsNullOrWhiteSpace(model) ? DefaultModel : model;
+
+                var messages = new System.Collections.Generic.List<object>();
+                if (!string.IsNullOrWhiteSpace(systemPrompt))
+                {
+                    messages.Add(new { role = "system", content = systemPrompt });
+                }
+                messages.Add(new { role = "user", content = prompt });
+
+                var payload = new
+                {
+                    model = modelToUse,
+                    messages = messages,
+                    temperature = temperature,
+                    max_tokens = maxTokens,
+                    stream = false
+                };
+
+                var client = _httpClientFactory.CreateClient("DeepSeekClient");
+                using var request = new HttpRequestMessage(HttpMethod.Post, endpoint);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+                request.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+
+                var response = await client.SendAsync(request);
+                var responseBody = await response.Content.ReadAsStringAsync();
+
+                sw.Stop();
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    return (false, string.Empty, $"[DeepSeek HTTP {(int)response.StatusCode}] {responseBody}", sw.ElapsedMilliseconds);
+                }
+
+                using var doc = JsonDocument.Parse(responseBody);
+                var content = doc.RootElement
+                    .GetProperty("choices")[0]
+                    .GetProperty("message")
+                    .GetProperty("content")
+                    .GetString() ?? string.Empty;
+
+                return (true, content, null, sw.ElapsedMilliseconds);
+            }
+            catch (Exception ex)
+            {
+                sw.Stop();
+                return (false, string.Empty, $"[DeepSeek Exception] {ex.Message}", sw.ElapsedMilliseconds);
+            }
+        }
+    }
+}

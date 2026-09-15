@@ -73,6 +73,13 @@ builder.Services.AddHttpClient("irt-service", client =>
     client.Timeout     = TimeSpan.FromSeconds(30);
 });
 
+// Universal AI Gateway Clients (FinOps & Multi-Provider)
+builder.Services.AddHttpClient("DeepSeekClient", c => c.Timeout = TimeSpan.FromSeconds(60));
+builder.Services.AddHttpClient("OpenAiClient", c => c.Timeout = TimeSpan.FromSeconds(60));
+builder.Services.AddHttpClient("GeminiClient", c => c.Timeout = TimeSpan.FromSeconds(45));
+builder.Services.AddHttpClient("AnthropicClient", c => c.Timeout = TimeSpan.FromSeconds(60));
+builder.Services.AddHttpClient("OllamaClient", c => c.Timeout = TimeSpan.FromSeconds(60));
+
 // Services (S.O.L.I.D Interface bindings)
 builder.Services.AddSingleton<IVietnameseTextCorrectionService, VietnameseTextCorrectionService>();
 builder.Services.AddSingleton<ISmartOptionShufflerService, SmartOptionShufflerService>();
@@ -84,6 +91,15 @@ builder.Services.AddScoped<IUrlDocumentFetcher, UrlDocumentFetcher>();
 
 // [FIX P1] IMemoryCache — dùng cho GeminiSolverService (TTL eviction thay static dict)
 builder.Services.AddMemoryCache();
+
+// [World-Class Supreme AI Architecture] Universal Multi-Provider AI Gateway & FinOps Key Pool
+builder.Services.AddSingleton<AegisQuiz.Infrastructure.AI.Adapters.IAiProviderAdapter, AegisQuiz.Infrastructure.AI.Adapters.DeepSeekAdapter>();
+builder.Services.AddSingleton<AegisQuiz.Infrastructure.AI.Adapters.IAiProviderAdapter, AegisQuiz.Infrastructure.AI.Adapters.OpenAiAdapter>();
+builder.Services.AddSingleton<AegisQuiz.Infrastructure.AI.Adapters.IAiProviderAdapter, AegisQuiz.Infrastructure.AI.Adapters.GoogleGeminiAdapter>();
+builder.Services.AddSingleton<AegisQuiz.Infrastructure.AI.Adapters.IAiProviderAdapter, AegisQuiz.Infrastructure.AI.Adapters.AnthropicClaudeAdapter>();
+builder.Services.AddSingleton<AegisQuiz.Infrastructure.AI.Adapters.IAiProviderAdapter, AegisQuiz.Infrastructure.AI.Adapters.LocalOllamaAdapter>();
+builder.Services.AddSingleton<AegisQuiz.Application.Interfaces.IUniversalAiRouter, AegisQuiz.Infrastructure.AI.UniversalAiRouter>();
+builder.Services.AddSingleton<AegisQuiz.Infrastructure.AI.MultiAgentCommitteeEngine>();
 
 // [FIX] GeminiGradingService dùng IHttpClientFactory (không còn new HttpClient)
 builder.Services.AddScoped<IGeminiGradingService, GeminiGradingService>();

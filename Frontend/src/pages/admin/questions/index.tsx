@@ -37,6 +37,7 @@ import { TenantGovernanceModal } from './components/TenantGovernanceModal';
 import { ExcelIngestionStudioModal } from './components/ExcelIngestionStudioModal';
 import { SmartUrlImportModal } from './SmartUrlImportModal';
 import { getSampleBankingUcisData } from './components/sampleBankingUcisData';
+import { AiCognitiveWalkthroughModal, type PedagogicalWalkthroughData } from '@/components/ai/AiCognitiveWalkthroughModal';
 
 // ── Helper: correct answer display ────────────────────────────────────────────
 function getCorrectAnswerDisplay(q: LearnerQuestion): { label: string; text: string } | null {
@@ -187,6 +188,11 @@ export function AdminQuestionsPage() {
   const [showBatchContextModal, setShowBatchContextModal] = useState(false);
   const [isBatchAssigning, setIsBatchAssigning] = useState(false);
 
+  // AI Cognitive Walkthrough state
+  const [walkthroughData, setWalkthroughData] = useState<PedagogicalWalkthroughData | null>(null);
+  const [isWalkthroughOpen, setIsWalkthroughOpen] = useState(false);
+  const [isWalkthroughLoading, setIsWalkthroughLoading] = useState(false);
+
   // Multi-Industry & Smart Tags state
   const [qDomainFilter, setQDomainFilter] = useState('ALL');
   const [qTagFilter, setQTagFilter] = useState<string | null>(null);
@@ -246,6 +252,59 @@ export function AdminQuestionsPage() {
   };
 
   useEffect(() => { fetchData(); }, []);
+
+  // ── AI Cognitive Walkthrough ─────────────────────────────────────────────────
+  const handleOpenWalkthrough = async (q: LearnerQuestion) => {
+    setIsWalkthroughLoading(true);
+    setWalkthroughData(null);
+    setIsWalkthroughOpen(true);
+    try {
+      const correctAnswerDisplay = (() => {
+        if (!q.answerRaw) return '';
+        if (q.options && q.options.length > 0) {
+          const idx = parseInt(q.answerRaw) - 1;
+          if (!isNaN(idx) && q.options[idx]) return q.options[idx];
+        }
+        return q.answerRaw;
+      })();
+      const payload = {
+        questionContent: q.content,
+        options: q.options || [],
+        correctAnswer: correctAnswerDisplay,
+        domainCode: q.domainCode || 'GENERAL',
+        questionType: q.questionType,
+      };
+      const res = await fetch('/api/admin/ai/walkthrough', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('aegis_token') || ''}` },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setWalkthroughData({ ...data, questionContent: q.content, correctAnswer: correctAnswerDisplay, domainCode: q.domainCode || 'GENERAL' });
+    } catch (err) {
+      console.error('[Walkthrough] Error:', err);
+      // Show a fallback mock for demo even if API unavailable
+      setWalkthroughData({
+        questionContent: q.content,
+        correctAnswer: q.answerRaw || '(chưa có đáp án)',
+        domainCode: q.domainCode || 'GENERAL',
+        promptAnatomy: '⚠️ Chưa cấu hình API Key AI. Vào **Cấu hình AI & FinOps** để nhập key.',
+        theoreticalGrounding: 'Cần kết nối với ít nhất 1 AI Provider (DeepSeek / Gemini / OpenAI) để sử dụng tính năng này.',
+        distractorAutopsy: 'Phân tích phương án nhiễu sẽ hiển thị sau khi cấu hình AI.',
+        mnemonicAndRecall: 'Kỹ thuật ghi nhớ sẽ được AI tạo ra tự động.',
+        extrapolatedCase: 'Tình huống mở rộng sẽ được AI mô phỏng.',
+        bloomLevel: 2,
+        estimatedDifficultyIrt: q.difficulty || 3,
+        resolvedByProvider: 'Offline',
+        resolvedByModel: 'N/A',
+        isFromSemanticCache: false,
+      });
+    } finally {
+      setIsWalkthroughLoading(false);
+    }
+  };
+
 
   // ── Sort helper ─────────────────────────────────────────────────────────────
   const renderSortIcon = (field: string, currentField: string, isAsc: boolean) => (
@@ -1436,6 +1495,13 @@ export function AdminQuestionsPage() {
                                   <button onClick={() => handleSuggestAnswer(q)} className="p-1.5 text-purple-400 hover:text-purple-300 hover:bg-purple-950/20 rounded-lg transition-colors cursor-pointer animate-pulse" title="Tự động giải bằng AI"><Sparkles size={14} /></button>
                                 )}
                                 <button
+                                  onClick={() => handleOpenWalkthrough(q)}
+                                  className="p-1.5 text-cyan-400 hover:text-cyan-300 hover:bg-cyan-950/30 rounded-lg transition-colors cursor-pointer border border-cyan-500/20 hover:border-cyan-400/40"
+                                  title="💡 Bản đồ tư duy sư phạm 5 bước AI (Cognitive Scaffold)"
+                                >
+                                  <Brain size={13} />
+                                </button>
+                                <button
                                   onClick={() => handleToggleActive(q)}
                                   disabled={!isRowManageable}
                                   className={`p-1.5 rounded-lg transition-colors ${
@@ -2003,6 +2069,14 @@ export function AdminQuestionsPage() {
           setExcelPreviewData(excelData);
           setShowExcelPreviewModal(true);
         }}
+      />
+
+      {/* AI Cognitive Walkthrough Modal — 5-Step Pedagogical Scaffold */}
+      <AiCognitiveWalkthroughModal
+        isOpen={isWalkthroughOpen}
+        onClose={() => setIsWalkthroughOpen(false)}
+        walkthrough={walkthroughData}
+        isLoading={isWalkthroughLoading}
       />
     </div>
   );
