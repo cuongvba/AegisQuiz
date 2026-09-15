@@ -16,7 +16,10 @@
 6. [Đột Phá 5: Lưu Trữ Đa Hình JSONB Payload, Chỉ Mục GIN Siêu Tốc & Docker Pipeline](#6-đột-phá-5-lưu-trữ-đa-hình-jsonb-payload-chỉ-mục-gin-siêu-tốc--docker-pipeline)
 7. [Đột Phá 6: Hợp Nhất Não Bộ Khảo Thí Thích Ứng CAT/IRT 3-PL & Đồng Bộ 8 Dạng Câu Hỏi](#8-đột-phá-6-hợp-nhất-não-bộ-khảo-thí-thích-ứng-catirt-3-pl--đồng-bộ-8-dạng-câu-hỏi)
 8. [Đột Phá 7: Quản Trị Danh Tính Đa Thuê Bao (Enterprise IAM), Scoped RBAC Đa Tầng & Giao Thức Kích Hoạt / Reset Mật Khẩu OTT](#9-đột-phá-7-quản-trị-danh-tính-đa-thuê-bao-enterprise-iam-scoped-rbac-đa-tầng--giao-thức-kích-hoạt--reset-mật-khẩu-ott)
-9. [Bảng Tổng Hợp Kiểm Thử & Hiệu Năng Thực Chiến](#10-bảng-tổng-hợp-kiểm-thử--hiệu-năng-thực-chiến)
+9. [Đột Phá 8: Động Cơ Nạp Câu Hỏi Vạn Năng Từ Liên Kết Đám Mây (Universal Smart URI Ingestion Engine)](#10-đột-phá-8-động-cơ-nạp-câu-hỏi-vạn-năng-từ-liên-kết-đám-mây-universal-smart-uri-ingestion-engine)
+10. [Đột Phá 9: Tối Ưu Hóa Trải Nghiệm Điều Hướng Profile & Xác Thực 2 Lớp (Google Authenticator 2FA)](#11-đột-phá-9-tối-ưu-hóa-trải-nghiệm-điều-hướng-profile--xác-thực-2-lớp-google-authenticator-2fa)
+11. [Đột Phá 10: Quy Trình Kiểm Thử Thực Nghiệm & Tự Chữa Lành Trên Docker Desktop](#12-đột-phá-10-quy-trình-kiểm-thử-thực-nghiệm--tự-chữa-lành-trên-docker-desktop)
+12. [Bảng Tổng Hợp Kiểm Thử & Hiệu Năng Thực Chiến](#13-bảng-tổng-hợp-kiểm-thử--hiệu-năng-thực-chiến)
 
 ---
 
@@ -26,7 +29,7 @@ Trong chuỗi nâng cấp mới nhất, nền tảng **AegisQuiz** đã giải q
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
-│                   7 ĐỘT PHÁ CÔNG NGHỆ TỐI THƯỢNG CỦA AEGISQUIZ (2026 EDITION)                    │
+│                  10 ĐỘT PHÁ CÔNG NGHỆ TỐI THƯỢNG CỦA AEGISQUIZ (2026 EDITION)                    │
 ├──────────────────────────┬───────────────────────────────────────┬───────────────────────────────┤
 │ Đột Phá                  │ Điểm Nghẽn Truyền Thống Cũ            │ Bước Nhảy Vọt Của AegisQuiz    │
 ├──────────────────────────┼───────────────────────────────────────┼───────────────────────────────┤
@@ -37,6 +40,12 @@ Trong chuỗi nâng cấp mới nhất, nền tảng **AegisQuiz** đã giải q
 │ 5. Đa hình JSONB & Docker│ Thêm cột CSDL cồng kềnh, cấu hình khó │ JSONB Payload linh hoạt + CI  │
 │ 6. Khảo thí thích ứng IRT│ Đề tĩnh 100 câu mệt mỏi, thiếu KaTeX │ CAT/IRT 3-PL + 8 dạng câu hỏi │
 │ 7. Enterprise IAM & OTT  │ Gửi pass thô, quyền phẳng 1 vai trò   │ Scoped RBAC đa OU + Link OTT  │
+│ 8. Smart URI Ingestion   │ Phải tải file về máy rồi upload thủ công│ Nạp trực tiếp từ Google Docs,  │
+│                          │                                       │ Sheets, OneDrive + Anti-SSRF  │
+│ 9. Profile UX & 2FA      │ Mất dấu quay lại, lỗi quét mã 2FA    │ Top Bar điều hướng + QR Code  │
+│                          │                                       │ Google Authenticator chuẩn xác│
+│ 10. Docker Verification  │ Lỗi bất ngờ khi triển khai VPS        │ Kiểm thử toàn diện đa container│
+│                          │                                       │ trên Docker Desktop trước     │
 └──────────────────────────┴───────────────────────────────────────┴───────────────────────────────┘
 ```
 
@@ -238,7 +247,52 @@ Khảo thí trực tuyến truyền thống thường rơi vào 2 cực đoan:
 
 ---
 
-## 10. BẢNG TỔNG HỢP KIỂM THỬ & HIỆU NĂNG THỰC CHIẾN (CẬP NHẬT 2026)
+## 10. ĐỘT PHÁ 8: ĐỘNG CƠ NẠP CÂU HỎI VẠN NĂNG TỪ LIÊN KẾT ĐÁM MÂY (UNIVERSAL SMART URI INGESTION ENGINE)
+
+### 10.1. Vấn Đề Thực Tiễn
+Trước đây, để nhập đề thi từ Google Docs, Google Sheets hay OneDrive, người dùng phải tải file về máy tính, sau đó mở web và kéo thả file lên. Quy trình này gây ma sát người dùng lớn, khó đồng bộ phiên bản mới nhất và tiêu tốn dung lượng ổ đĩa.
+
+### 10.2. Kiến Trúc Universal Smart URI Ingestion
+AegisQuiz tích hợp phân hệ nạp đường dẫn đám mây siêu việt:
+1. **Bộ Chuyển Đổi URL Nhà Cung Cấp Tự Động (Provider Transformers):**
+   - Google Docs (`docs.google.com/document/d/{id}`) $\rightarrow$ Chuyển đổi trực tiếp sang luồng OpenXML `.docx` (`/export?format=docx`).
+   - Google Sheets (`docs.google.com/spreadsheets/d/{id}`) $\rightarrow$ Chuyển đổi sang bảng tính Excel `.xlsx` (`/export?format=xlsx`) bảo toàn tham số `gid`.
+   - OneDrive, SharePoint, Google Drive, Dropbox $\rightarrow$ Chuẩn hóa sang direct download stream.
+2. **Lá Chắn An Ninh SSRF Đa Tầng:**
+   - Kiểm tra phân giải IP, chặn đứng 100% các dải IP nội bộ (`127.0.0.1`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`) và link-local Cloud Metadata (`169.254.169.254`).
+3. **Nhận Diện Quyền Riêng Tư & Hướng Dẫn Thân Thiện:**
+   - Khi phát hiện tệp Google Docs bị khóa quyền tải, hệ thống trả về mã `isRestricted: true` và chỉ dẫn cụ thể người dùng cách chuyển trạng thái chia sẻ sang *"Bất kỳ ai có đường liên kết (Người xem)"*.
+4. **Smart URL Import Modal:**
+   - Tích hợp nhận diện biểu tượng nhà cung cấp thời gian thực, nút dán từ Clipboard 1-chạm và switch kích hoạt AI Gemini giải đề.
+   - Chi tiết xem tại tài liệu chuyên sâu: 📖 **[UNIVERSAL_SMART_URI_INGESTION_ENGINE.md](UNIVERSAL_SMART_URI_INGESTION_ENGINE.md)**.
+
+---
+
+## 11. ĐỘT PHÁ 9: TỐI ƯU HÓA TRẢI NGHIỆM ĐIỀU HƯỚNG PROFILE & XÁC THỰC 2 LỚP (GOOGLE AUTHENTICATOR 2FA)
+
+### 11.1. Khắc Phục Điểm Nghẽn Mất Dấu Điều Hướng
+- **Trước đây**: Trang `/profile` không có thanh Top Navigation hoặc nút quay lại, khiến người dùng bị "mắc kẹt" khi muốn trở về trang chủ hoặc bảng điều khiển trước đó.
+- **Giải pháp mới**: Bổ sung Top Navigation Bar chuyên dụng với nút **"Quay lại"** thông minh (`navigate(-1)` kết hợp fallback về `/`), breadcrumbs trực quan và phím tắt `Esc` đóng modal nhanh.
+
+### 11.2. Nâng Cấp Hệ Thống Mã QR 2FA Google Authenticator
+- Khắc phục triệt để lỗi phân tích mã QR bằng cách chuẩn hóa URI `otpauth://totp/AegisQuiz:{email}?secret={secret}&issuer=AegisQuiz`.
+- Sinh mã dự phòng khẩn cấp (Emergency Backup Codes) hiển thị bảo mật trong modal.
+- Giao diện quét mã QR responsive, có ô sao chép Secret Key thủ công cho người dùng không tiện quét camera.
+
+---
+
+## 12. ĐỘT PHÁ 10: QUY TRÌNH KIỂM THỬ THỰC NGHIỆM & TỰ CHỮA LÀNH TRÊN DOCKER DESKTOP
+
+Nhằm đảm bảo 100% tính ổn định trước khi Golive sản phẩm lên VPS Cloud:
+1. **Kiểm thử Multi-Container Isolation**: Khởi chạy toàn bộ hệ thống gồm Frontend, Backend API, Python IRT, Keycloak, Redis và PostgreSQL trên Docker Desktop.
+2. **Kiểm thử Tự Chữa Lành (Self-Healing Validation)**:
+   - Thử nghiệm gửi request URL riêng tư $\rightarrow$ Backend không gián đoạn, trả về hướng dẫn trực quan.
+   - Thử nghiệm tấn công SSRF với IP Loopback $\rightarrow$ Chặn đứng tại lớp bảo vệ.
+3. **Tự Động Hóa CI/CD với Coolify**: Quy trình đồng bộ 1-chạm từ GitHub Desktop lên máy chủ sản xuất `https://daotao.dehoc.vn`.
+
+---
+
+## 13. BẢNG TỔNG HỢP KIỂM THỬ & HIỆU NĂNG THỰC CHIẾN (CẬP NHẬT 2026)
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
@@ -251,14 +305,18 @@ Khảo thí trực tuyến truyền thống thường rơi vào 2 cực đoan:
 │ Cầu nối IRT Microservice (Python)   │ 3 Endpoints CAT  │ Kết nối 100% Sub-millisecond  │
 │ Frontend TypeScript Build (tsc -b)  │ Toàn bộ project  │ 0 Errors, 0 Blockers          │
 │ Vite Production Bundle Build        │ 40+ Chunks       │ Thành công trong 1.01s        │
-│ Docker Containers Health            │ 6 Containers     │ Up & Healthy (Port 3000, 8080)│
+│ Docker Desktop Multi-Container      │ 6 Containers     │ Up & Healthy (Port 3000, 8080)│
 │ Tốc độ nhận diện tọa độ biểu ngữ   │ 244 câu hỏi      │ < 0.15 giây (Tức thì)         │
 │ Tính toàn vẹn đáp án Admin          │ 244 câu hỏi      │ 100% giữ nguyên thứ tự A,B,C,D│
 │ Phân tầng Cây tổ chức 5 cấp         │ LTree recursive  │ Render dạng lồng nhau < 5ms   │
 │ Khử nhiễu Sheet & Chuẩn hóa đáp án  │ Đa Sheet DOT2026 │ Bỏ qua 100% Sheet văn bản rác │
 │ Khảo thí thích ứng động CAT/IRT 3-PL│ Hội tụ SE <= 0.35│ 10-15 câu thay vì 100 câu     │
 │ Phân quyền Scoped RBAC & Link OTT   │ NIST SP 800-63B  │ Token 256-bit, Auto-Activation│
+│ Nạp Đề Thi Từ Google Docs / URL URI │ Cloud Fetcher    │ Chuyển đổi DOCX < 1s, An toàn │
+│ Phòng vệ An ninh Mạng SSRF          │ RFC 1918 + Loop  │ Chặn 100% IP nội bộ           │
+│ Google Authenticator 2FA & Top Bar  │ Web & Mobile     │ OTPAuth URI chuẩn, Back Button│
 └─────────────────────────────────────┴──────────────────┴───────────────────────────────┘
 ```
 
 > 🌟 **Lời kết:** Với những đột phá mang tính bản lề nói trên, AegisQuiz không chỉ hoàn thiện về mặt công nghệ mà còn nâng tầm trải nghiệm của người dùng lên mức vượt trội, thông minh và tinh tế nhất theo đúng triết lý của Nhà kiến tạo No.1 thế giới!
+
