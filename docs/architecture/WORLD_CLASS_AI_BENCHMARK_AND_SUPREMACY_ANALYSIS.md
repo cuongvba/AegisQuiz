@@ -18,7 +18,7 @@
    - 4.1. [Kỳ Quan 1: Não Bộ Đo Lường Tâm Lý Học Khảo Thí Thích Ứng CAT/IRT 3-PL](#41-kỳ-quan-1-não-bộ-đo-lường-tâm-lý-học-khảo-thí-thích-ứng-catirt-3-pl)
    - 4.2. [Kỳ Quan 2: Động Cơ Nhận Thức Siêu Vi Bóc Tách Tọa Độ Tri Thức (5D Taxonomy)](#42-kỳ-quan-2-động-cơ-nhận-thức-siêu-vi-bóc-tách-tọa-độ-tri-thức-5d-taxonomy)
    - 4.3. [Kỳ Quan 3: Động Cơ Nạp Câu Hỏi Vạn Năng Từ Link Đám Mây (Cloud URI Ingestion)](#43-kỳ-quan-3-động-cơ-nạp-câu-hỏi-vạn-năng-từ-link-đám-mây-cloud-uri-ingestion)
-   - 4.4. [Kỳ Quan 4: Đấu Trường Gameshow Học Thuật Bù Trễ Mili-Giây Thời Gian Thực](#44-kỳ-quan-4-đấu-trường-gameshow-học-thuật-bù-trễ-mili-giây-thời-gian-thực)
+   - 4.4. [Kỳ Quan 4: Động Cơ Đấu Trường Gameshow Siêu Động & Hệ Sinh Thái Sáng Tạo Vô Cực (Dynamic Meta-Gameshow & Creator-Led Plugin Engine)](#44-kỳ-quan-4-động-cơ-đấu-trường-gameshow-siêu-động--hệ-sinh-thái-sáng-tạo-vô-cực-dynamic-meta-gameshow--creator-led-plugin-engine)
 5. [Đánh Giá Trực Diện: Đã "Vượt Trội Thời Đại" Ở Mức Nào?](#5-đánh-giá-trực-diện-đã-vượt-trội-thời-đại-ở-mức-nào)
 6. [Lộ Trình Đưa Hệ Thống Lên Vị Thế "Siêu Kỳ Quan Độc Tôn Toàn Cầu" (The Next Horizon)](#6-lộ-trình-đưa-hệ-thống-lên-vị-thế-siêu-kỳ-quan-độc-tôn-toàn-cầu-the-next-horizon)
 7. [Lời Kết & Tuyên Ngôn Kiến Trúc](#7-lời-kết--tuyên-ngôn-kiến-trúc)
@@ -30,15 +30,15 @@
 Thị trường Công nghệ Giáo dục (EdTech) và Đào tạo Doanh nghiệp (Corporate LMS) toàn cầu trong nhiều thập kỷ qua bị phân mảnh nghiêm trọng thành các ốc đảo cô lập:
 - **Nhóm Khảo thí Cổ điển (ETS, Pearson)**: Sở hữu mô hình toán học chuẩn xác nhưng phần mềm nặng nề, đóng kín, chi phí đắt đỏ và không có tính giải trí, tương tác.
 - **Nhóm Quản lý Học tập Phổ thông (Canvas, Moodle, Blackboard)**: Dễ triển khai nhưng chỉ kiểm tra bằng các bài thi tĩnh (Linear Testing) tuyến tính 100 câu mệt mỏi, thiếu hụt hoàn toàn chiều sâu thích ứng AI.
-- **Nhóm Game Hóa (Gamification - Kahoot, Quizizz)**: Giao diện vui vẻ, hào hứng nhưng nghèo nàn về mặt học thuật, không có giá trị phân hóa trình độ năng lực và chỉ đo lường phản xạ bấm nhanh đơn điệu.
+- **Nhóm Game Hóa (Gamification - Kahoot, Quizizz)**: Giao diện vui vẻ, hào hứng nhưng nghèo nàn về mặt học thuật, **luật chơi bị đóng cứng 100% không thể tùy biến**, không có giá trị phân hóa trình độ năng lực và chỉ đo lường phản xạ bấm nhanh đơn điệu.
 
 **AegisQuiz ra đời như một cú nhảy vọt mang tính lịch sử:**
 Hệ thống đã hợp nhất thành công **3 thái cực vốn chưa từng hội tụ trên bất kỳ nền tảng nào trên thế giới**:
 1. *Đo lường tâm lý học hàn lâm đỉnh cao (Psychometric Rigor - CAT/IRT 3-PL)*.
-2. *Đấu trường Gameshow truyền hình tương tác đa giác quan thời gian thực (Microsecond Arena Gameshow Engine)*.
+2. *Động cơ Đấu trường Gameshow Siêu Động trao quyền năng sáng tạo vô hạn cho người dùng (Dynamic Meta-Gameshow & Creator-Led Plugin Engine)*.
 3. *Động cơ nhận thức bóc tách ngữ nghĩa vạn năng từ tài liệu đám mây (Universal Cloud URI & 5D Cognitive Ingestion)*.
 
-Hệ sinh thái này giúp giảm **70% - 85%** số lượng câu hỏi cần thi mà vẫn bảo toàn độ tin cậy khoa học, triệt tiêu 100% sự ức chế trong việc soạn thảo và nạp đề của giáo viên, đồng thời mang lại cảm xúc phấn khích bùng nổ cho người học.
+Hệ sinh thái này giúp giảm **70% - 85%** số lượng câu hỏi cần thi mà vẫn bảo toàn độ tin cậy khoa học, biến mọi giáo viên và tổ chức thành "Đạo diễn Gameshow" tự sáng tạo luật chơi theo ý muốn, triệt tiêu 100% sự ức chế trong việc soạn thảo và nạp đề, đồng thời mang lại cảm xúc phấn khích bùng nổ cho người học.
 
 ---
 
@@ -56,9 +56,9 @@ Theo các tiêu chuẩn học thuật toàn cầu, một hệ sinh thái AI đ�
          │                                           │                                           │
          ▼                                           ▼                                           ▼
 ┌──────────────────────────┐               ┌──────────────────────────┐                ┌──────────────────────────┐
-│  2. NHẬN THỨC DỮ LIỆU    │               │  3. TRÍ TUỆ SƯ PHẠM      │                │  4. THỜI GIAN THỰC &     │
-│     ĐA PHƯƠNG THỨC       │               │     SINH THÀNH CHI TIẾT  │                │     TỐC ĐỘ MILI-GIÂY     │
-│ (Multimodal Ingestion)   │               │   (Pedagogical Gen-AI)   │                │ (Microsecond Real-time)  │
+│  2. NHẬN THỨC DỮ LIỆU    │               │  3. TRÍ TUỆ SƯ PHẠM      │                │  4. ĐẤU TRƯỜNG SIÊU ĐỘNG │
+│     ĐA PHƯƠNG THỨC       │               │     SINH THÀNH CHI TIẾT  │                │     & TỐC ĐỘ VI-GIÂY     │
+│ (Multimodal Ingestion)   │               │   (Pedagogical Gen-AI)   │                │ (Dynamic Meta-Arena / μs)│
 └────────────┬─────────────┘               └────────────┬─────────────┘                └────────────┬─────────────┘
              │                                          │                                           │
              └──────────────────────────────────────────┼───────────────────────────────────────────┘
@@ -72,8 +72,8 @@ Theo các tiêu chuẩn học thuật toàn cầu, một hệ sinh thái AI đ�
 1. **Trục 1 — Psychometric Rigor (Đo lường Tâm lý học)**: Áp dụng các mô hình xác suất toán học (IRT) thay cho phép cộng điểm số thô sơ, triệt tiêu yếu tố may rủi, đoán mò và ước lượng được tham số năng lực tiềm ẩn thực thụ ($\theta$) của từng thí sinh.
 2. **Trục 2 — Multimodal Ingestion (Nhận thức Đa phương thức)**: Khả năng "thấu hiểu" tài liệu học thuật từ công thức toán học Word OMML, ký hiệu hóa học, bảng biểu Excel, hình ảnh vector SVG đến việc phân giải các đường dẫn đám mây (Google Docs/Sheets/Drive/OneDrive).
 3. **Trục 3 — Pedagogical Gen-AI (Trí tuệ Sư phạm Sinh thành)**: AI không chỉ đưa ra đáp án Đúng/Sai đơn thuần mà phân tích các phương án bẫy (Distractor Analysis), tạo lập lộ trình học bù đắp lỗ hổng nhận thức và phân loại chuẩn Bloom's Taxonomy.
-4. **Trục 4 — Microsecond Real-time (Thời gian thực Phân giải Cao)**: Xử lý tương tác cướp chuông, giơ bảng mica, quay nón vật lý với độ trễ dưới mức mắt thường có thể phân biệt (< 16ms), miễn nhiễm gián đoạn đường truyền.
-5. **Trục 5 — Cross-Paradigm Convergence (Hợp nhất Đa mô thức)**: Sự liền mạch không ma sát giữa Quản trị - Khảo thí - Đấu trường - Phân tích dữ liệu lớn.
+4. **Trục 4 — Dynamic Meta-Arena & Microsecond Real-time (Đấu trường Siêu Động & Tốc độ Vi-giây)**: Kiến trúc cắm rút Plugin động trao toàn quyền cho người dùng tự thiết kế các Gameshow hoàn toàn mới (Meta-Gameshow Paradigm), kết hợp xử lý tương tác cướp chuông, giơ bảng mica, quay nón vật lý với độ trễ dưới 16ms, bù trễ vi-giây mạng Internet.
+5. **Trục 5 — Cross-Paradigm Convergence (Hợp nhất Đa mô thức)**: Sự liền mạch không ma sát giữa Quản trị - Khảo thí - Đấu trường - Sáng tạo nội dung - Phân tích dữ liệu lớn.
 
 ---
 
@@ -153,14 +153,80 @@ Thay vì bắt buộc người dùng phải tải file về ổ cứng máy tín
 
 ---
 
-### 4.4. Kỳ Quan 4: Đấu Trường Gameshow Học Thuật Bù Trễ Mili-Giây Thời Gian Thực
+### 4.4. Kỳ Quan 4: Động Cơ Đấu Trường Gameshow Siêu Động & Hệ Sinh Thái Sáng Tạo Vô Cực (Dynamic Meta-Gameshow & Creator-Led Plugin Engine)
 
-Hệ thống giải quyết bài toán cướp chuông và tương tác trực tiếp của hàng trăm thí sinh qua mạng Internet thông qua:
-- **Kiến trúc Cắm rút Plugin (Arena Plugin Architecture)**: 6 Gameshow kinh điển (Olympia, Rung Chuông Vàng 100 thí sinh sinh tồn, Chiếc Nón Kỳ Diệu Canvas 60fps vật lý quán tính, University Challenge đối kháng đại học, Jeopardy ma trận, Nhanh Như Chớp dốc nghiêng).
-- **Giao thức Đồng Bộ Đồng Hồ Vi-Giây (Microsecond Clock Synchronization)**:
-  Sử dụng giao thức đo lường độ trễ hai chiều (Round-Trip Time - RTT) trên kết nối WebSocket SignalR:
-  $$t_{\text{offset}} = \frac{(t_1 - t_0) + (t_2 - t_3)}{2}$$
-  Đảm bảo việc bấm chuông cướp điểm giữa thí sinh ở Hà Nội, Đà Nẵng hay TP. Hồ Chí Minh được xếp hàng công bằng tới từng **mili-giây**, triệt tiêu hoàn toàn bất lợi do đường truyền mạng cục bộ.
+#### 4.4.1. Bước Đột Phá Triết Lý: "Meta-Gameshow Paradigm" (Mô Hình Roblox / Unreal Engine Trong Giáo Dục)
+Trong khi các tượng đài thị trường như **Kahoot** hay **Quizizz** chỉ cung cấp một trải nghiệm gameplay **đóng cứng 100%** (người dùng chỉ được đổi nội dung câu hỏi, hoàn toàn bất lực trong việc thay đổi luật chơi hay cơ chế tương tác), **AegisQuiz thiết lập một chuẩn mực hoàn toàn mới: Nền Tảng Siêu Động (Meta-Gameshow Engine)**:
+- Hệ thống không giới hạn ở 6 Gameshow kinh điển có sẵn mà **trao toàn quyền năng tối thượng cho người dùng (Giáo viên, Giảng viên doanh nghiệp, Ban tổ chức sự kiện)** tự sáng tạo ra hàng ngàn thể thức Gameshow mới mang đậm bản sắc riêng mà không cần viết mã lệnh.
+- Chuyển hóa người dùng từ vị thế *"người tiêu thụ nội dung thụ động"* thành **"Kiến trúc sư & Đạo diễn Gameshow thực thụ" (Gameshow Creators)**.
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                        KIẾN TRÚC ĐỘNG CƠ GAMESHOW CẮM RÚT ĐA TẦNG (DUAL-TIER ENGINE)                   │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│  [TIER 1: NO-CODE VISUAL CREATOR STUDIO]                                                               │
+│   Người dùng kéo thả quy tắc, cấu hình giao diện trên Frontend (ArenaStudioPage.tsx)                   │
+│   ==> Xuất bản đặc tả JSON chuẩn: GameshowManifest                                                     │
+│   ==> Lưu trữ động qua REST API: POST /api/arena/templates                                             │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│  [TIER 2: ENGINE TRỪU TƯỢNG HÓA SIÊU ĐỘNG]                                                             │
+│   DynamicArenaGamePlugin(manifest)                                                                     │
+│   ├── Layout Shells:     PODIUM | MEGA_GRID | STEP_LADDER | RADIAL_WHEEL | TOPIC_MATRIX | HIDDEN_TILES │
+│   ├── Contention Modes:  BUZZER_FASTEST | SIMULTANEOUS_ALL | TURN_ROUND_ROBIN | SELECTIVE_PICK        │
+│   ├── Survival Rules:    ACCUMULATIVE (Tích điểm) | SUDDEN_DEATH (Loại ngay) | LIVES_COUNT (3 Mạng)    │
+│   ├── Lifelines Matrix:  50:50 | Gia Sư AI Gemini (ASK_AI) | Biểu quyết khán giả | Đổi câu hỏi        │
+│   └── Multi-Round Staging: Vòng Khởi động, Tăng tốc, Vượt chướng ngại, Về đích (Hệ số x2, x3)         │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│  [HẠ TẦNG THỜI GIAN THỰC IN-MEMORY RAM & BÙ TRỄ VI-GIÂY]                                               │
+│   ArenaRoomManager duy trì ConcurrentDictionary<string, ArenaRoomState> trong RAM (< 2ms)              │
+│   Thuật toán bù trễ RTT WebSocket SignalR: t_offset = [(t1 - t0) + (t2 - t3)] / 2                      │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### 4.4.2. Đặc Tả Khai Báo Động Chuẩn Mực (`GameshowManifest Specification`)
+Mỗi Gameshow tự tạo là một đối tượng dữ liệu sống động, mở rộng vô hạn:
+
+```csharp
+public class GameshowManifest
+{
+    public string GameCode { get; set; }           // Mã định danh duy nhất (VD: "MILLIONAIRE", "THE_CHASE")
+    public string DisplayName { get; set; }        // Tên hiển thị hào hứng
+    public string LayoutShell { get; set; }        // Vỏ bọc bố cục không gian 3D/Canvas
+    public string ContentionMode { get; set; }     // Cơ chế phân xử tranh chấp quyền trả lời
+    public ScoringRuleConfig ScoringRule { get; set; }   // Hệ thống tính điểm & Thưởng chuỗi (Streak Bonus)
+    public SurvivalRuleConfig SurvivalRule { get; set; } // Cơ chế sinh tồn & Loại trừ trực tiếp
+    public List<LifelineConfig> EnabledLifelines { get; set; } // Danh mục quyền trợ giúp kích hoạt
+    public List<RoundDefinition> Rounds { get; set; }    // Phân tầng các vòng đấu đa giai đoạn
+    public string ThemeColor { get; set; }         // Bảng màu nhận diện thương hiệu động
+}
+```
+
+#### 4.4.3. Lục Đại Vỏ Bọc Không Gian (The 6 Layout Shells)
+Người dùng chỉ cần 1 cú nhấp chuột để biến đổi hoàn toàn diện mạo đấu trường:
+1. **`PODIUM` (Bục Đấu Trực Diện 3D)**: Mô phỏng Olympia, University Challenge với bục thí sinh phát sáng, đèn hiệu buzzer đỏ rực và chuông báo hào hùng.
+2. **`MEGA_GRID` (Ma Trận Sinh Tồn 100 Ghế Battle Royale)**: Mô phỏng Rung Chuông Vàng với 100 ô mica điện tử, tự động đổi màu khi thí sinh bị loại và hiệu ứng hồi sinh tập thể.
+3. **`STEP_LADDER` (Thang Leo Dốc Nghiêng 10 Bậc)**: Mô phỏng Nhanh Như Chớp và Ai Là Triệu Phú, leo từng nấc điểm cao dần, sai tụt về vạch số 0 hoặc mốc an toàn.
+4. **`RADIAL_WHEEL` (Vòng Quay Vật Lý Nan Hoa Canvas 60fps)**: Chiếc Nón Kỳ Diệu với lực quán tính góc, âm thanh lách cách cơ khí chân thực và ô điểm bí mật.
+5. **`TOPIC_MATRIX` (Bảng Ma Trận 30 Ô Jeopardy Mỹ)**: Lưới 6 chủ đề x 5 mốc điểm thử thách tư duy chiến thuật ngược *"Ai là...?"*.
+6. **`HIDDEN_TILES` (Lật Ô Ghép Hình Đuổi Hình Bắt Chữ)**: Bức tranh bí mật bị che bởi 16 mảnh ghép, lật từng ô khi trả lời đúng để giải từ khóa trung tâm.
+
+#### 4.4.4. Tứ Đại Cơ Chế Tranh Chấp Quyền Lực (The 4 Contention Modes)
+- **`BUZZER_FASTEST`**: Cướp chuông tốc độ cao, phân xử tới cấp độ **vi-giây (Microsecond)**, chỉ người nhanh nhất được quyền nói/chọn đáp án.
+- **`SIMULTANEOUS_ALL`**: 100% thí sinh trả lời đồng thời trong giới hạn thời gian (áp dụng đấu trường sinh tồn).
+- **`TURN_ROUND_ROBIN`**: Lần lượt từng người chơi theo lượt quay vòng (công bằng, tuần tự).
+- **`SELECTIVE_PICK`**: Người dẫn chương trình hoặc người thắng câu trước có quyền chỉ định đối thủ thi đấu trực tiếp.
+
+#### 4.4.5. Bộ Tứ Gameshow Mẫu Tự Sinh Động Sẵn Có (Built-in Dynamic Showcase)
+Minh chứng cho sức mạnh của động cơ `DynamicArenaGamePlugin`, AegisQuiz đã tích hợp sẵn 4 mẫu template động đỉnh cao:
+1. **Ai Là Triệu Phú (`MILLIONAIRE`)**: Thang tiền thưởng 15 câu, mốc an toàn 5 & 10, tích hợp quyền trợ giúp **Gia Sư AI Gemini (`ASK_AI`)** phân tích xác suất thời gian thực.
+2. **The Chase — Kẻ Đi Săn (`THE_CHASE`)**: Cuộc rượt đuổi nghẹt thở giữa người chơi và Kẻ Đi Săn AI (The Chaser bot) trên thang dốc dồn dập.
+3. **Visual Charades — Đuổi Hình Bắt Chữ (`VISUAL_CHARADES`)**: Lật mở từng mảnh ghép che bức ảnh chủ đề.
+4. **1 vs 100 — Đấu Trường Sinh Tử (`ONE_VS_100`)**: 1 người chơi chính đối đầu với bức tường 100 người chơi phụ (The Mob), chia sẻ quỹ điểm khổng lồ khi loại bỏ từng đối thủ.
+
+#### 4.4.6. Cơ Chế Phân Xử Chuông Vi-Giây & Bù Trễ RTT (Microsecond Arbitration)
+Để loại trừ triệt để tình trạng người ở gần máy chủ có lợi thế đường truyền so với người ở xa, `ArenaRoomManager` áp dụng công thức bù trễ hai chiều Round-Trip Time (RTT):
+$$t_{\text{offset}} = \frac{(t_1 - t_0) + (t_2 - t_3)}{2}$$
+Mọi lượt bấm chuông được gắn dấu thời gian gốc của máy trạm và chuẩn hóa về đồng hồ máy chủ qua SignalR, biến AegisQuiz thành nền tảng thi đấu cướp chuông công bằng và minh bạch tuyệt đối trên quy mô toàn cầu.
 
 ---
 
@@ -175,6 +241,8 @@ Dưới lăng kính phân tích hệ thống độc lập và khắt khe nhất:
    Giải quyết tận gốc nghịch lý làm sai lệch đề thi của giáo viên khi quản trị — một "nỗi đau" kinh niên mà các hệ thống LMS lớn như Canvas hay Moodle chưa giải quyết trọn vẹn.
 3. **Bóc Tách Tọa Độ Tri Thức Đa Ngành Tự Động (5D Cognitive Sniffer)**:
    Vượt xa khả năng của các công cụ parser thông thường nhờ khả năng suy luận ngữ cảnh hành chính, tổ chức và chuyên ngành ngân hàng/y tế.
+4. **Hệ Sinh Thái Sáng Tạo Đấu Trường Vô Hạn (Dynamic Meta-Gameshow & Creator Economy)**:
+   Chấm dứt hoàn toàn kỷ nguyên "luật chơi đóng khung đơn điệu" của Kahoot hay Quizizz. AegisQuiz trao quyền năng cho mọi giảng viên và nhà tổ chức tự sáng tạo không giới hạn các thể thức Gameshow mới thông qua `GameshowManifest`, tự chọn từ 6 vỏ bọc không gian (Layout Shells), 4 chế độ cướp quyền (Contention Modes), 3 cơ chế sinh tồn và quyền trợ giúp AI Gemini — một đột phá chưa từng xuất hiện trên bất kỳ nền tảng EdTech nào trên thế giới.
 
 ### 5.2. Các Lĩnh Vực ĐANG TIỆM CẬN ĐỈNH CAO THẾ GIỚI (World-Class / At Par):
 1. **Thuật toán Khảo thí CAT**: Hiện đang làm chủ hoàn toàn mô hình Đơn chiều 3-PL (Unidimensional 3-PL). Các viện khảo thí hàng đầu như ETS đang bắt đầu nghiên cứu **MIRT (Multidimensional IRT - Đa chiều đồng thời)**.
