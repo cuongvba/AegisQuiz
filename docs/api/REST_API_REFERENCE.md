@@ -6,24 +6,106 @@
 
 ---
 
-## 1. Xác Thực & Người Dùng (`AuthController`, `PkiAuthController`)
+## 1. Xác Thực & Định Danh Đa Phương Thức (`AuthController`, `PkiAuthController`)
 
-### `POST /api/auth/login`
+### 1.1. Đăng Nhập Truyền Thống & Google Identity
+#### `POST /api/auth/login`
 - Đăng nhập hệ thống bằng email và mật khẩu.
 - **Request Body**:
   ```json
   { "email": "student@dehoc.vn", "password": "SecretPassword123" }
   ```
-- **Response (200 OK)**:
+- **Response (200 OK - Không 2FA)**:
   ```json
-  { "token": "eyJhbGciOi...", "expiresIn": 86400, "user": { "id": "u1", "name": "Nguyễn Văn A", "role": "Student" } }
+  { "token": "eyJhbGciOi...", "user": { "id": "u1", "name": "Nguyễn Văn A", "role": "TenantAdmin" } }
+  ```
+- **Response (200 OK - Yêu cầu 2FA)**:
+  ```json
+  { "requires2FA": true, "tempToken": "eyJhbGci...", "email": "student@dehoc.vn" }
   ```
 
-### `POST /api/auth/register`
+#### `POST /api/auth/google`
+- Đăng nhập thông qua Google Identity Services (GIS).
+- **Request Body**: `{ "idToken": "<Google_ID_Token_JWT>" }`
+- **Response**: Trả về Access Token hoặc yêu cầu 2FA tương tự `/api/auth/login`.
+
+#### `POST /api/auth/register`
 - Đăng ký tài khoản người học mới.
 
-### `POST /api/auth/pki/verify`
-- Xác thực chữ ký số bằng khóa công khai (PKI).
+---
+
+### 1.2. Đăng Nhập 1-Giây Bằng Quét Mã QR (Scan-to-Auth)
+#### `POST /api/auth/qr/generate`
+- Khởi tạo vé QR Code mới có hiệu lực 120 giây.
+- **Response (200 OK)**:
+  ```json
+  {
+    "ticket": "259aefb0ada846d695e1d9dc790c2b8d",
+    "qrUrl": "http://localhost:3000/auth/qr-confirm?ticket=259aefb0ada846d695e1d9dc790c2b8d",
+    "expiresIn": 120
+  }
+  ```
+
+#### `GET /api/auth/qr/status`
+- Web client thăm dò (polling mỗi 2s) kiểm tra trạng thái vé.
+- **Query Param**: `?ticket=259aefb0ada846d695e1d9dc790c2b8d`
+- **Response (Đang chờ)**: `{"status": "pending", "message": "Đang chờ quét mã..."}`
+- **Response (Đã quét)**: `{"status": "scanned", "message": "Thiết bị di động đã quét mã."}`
+- **Response (Đã xác nhận - Single Use)**:
+  ```json
+  {
+    "status": "confirmed",
+    "token": "eyJhbGciOi...",
+    "user": { "id": "u1", "name": "Quản Trị Viên", "email": "admin@dehoc.vn", "role": "TenantAdmin" },
+    "message": "Đăng nhập thành công!"
+  }
+  ```
+  *(Lưu ý: Vé tự hủy ngay khi trả về JWT Token để ngăn chặn tấn công phát lại Replay Attack).*
+
+#### `POST /api/auth/qr/scan`
+- Điện thoại gọi khi vừa quét trúng mã QR để giao diện máy tính cập nhật hiệu ứng nhận diện.
+- **Request Body**: `{ "ticket": "..." }`
+
+#### `POST /api/auth/qr/confirm`
+- Điện thoại gửi lệnh phê duyệt cho phép phiên web máy tính đăng nhập.
+- **Request Body**:
+  ```json
+  {
+    "ticket": "...",
+    "userId": "usr-123",
+    "email": "user@dehoc.vn",
+    "fullName": "Nguyễn Văn B",
+    "role": "Learner"
+  }
+  ```
+
+#### `POST /api/auth/qr/demo-confirm`
+- Hỗ trợ 1-click test trực tiếp trên trình duyệt máy tính mà không cần cầm điện thoại thật.
+- **Request Body**: `{ "ticket": "..." }`
+
+---
+
+### 1.3. Xác Thực Hai Yếu Tố (2FA TOTP RFC 6238)
+- `POST /api/auth/2fa/setup`: Khởi tạo Secret Base32 và mã URI `otpauth://` kèm QR Code SVG cho Google Authenticator.
+- `POST /api/auth/2fa/enable`: Kích hoạt 2FA sau khi người dùng nhập đúng mã 6 số lần đầu.
+- `POST /api/auth/2fa/verify`: Xác thực mã OTP khi đăng nhập (kèm `mfaTempToken`).
+- `POST /api/auth/2fa/disable`: Hủy kích hoạt 2FA.
+
+---
+
+### 1.4. Chữ Ký Số Phần Cứng USB Token (PKI)
+- `POST /api/auth/pki/challenge`: Sinh chuỗi nonce ngẫu nhiên 32 bytes chống Replay Attack.
+- `POST /api/auth/pki/login`: Tiếp nhận chữ ký số phần cứng và chứng thư số X.509 để xác thực cán bộ ngân hàng.
+- `POST /api/auth/pki/verify`: Xác thực tính toàn vẹn của chữ ký số trên bài thi.
+
+---
+
+### 1.5. Quản Lý Hồ Sơ & Đặt Lại Mật Khẩu
+- `GET /api/auth/me`: Lấy thông tin tài khoản hiện tại kèm Tenant và OrgUnit.
+- `PUT /api/auth/profile`: Cập nhật Họ tên, Số điện thoại, Avatar.
+- `POST /api/auth/change-password`: Đổi mật khẩu có xác thực mật khẩu cũ.
+- `POST /api/auth/forgot-password`: Yêu cầu gửi link đặt lại mật khẩu an toàn.
+- `POST /api/auth/reset-password`: Đặt mật khẩu mới qua token bí mật.
 
 ---
 

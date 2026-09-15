@@ -302,7 +302,6 @@ if (enableSwagger)
 app.UseSerilogRequestLogging();
 
 // [World-Class Upgrade] Health Checks (K8s/Docker readiness + liveness)
-app.MapHealthChecks("/health").RequireRateLimiting("health-check");
 app.MapHealthChecks("/health/detail", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
 {
     ResponseWriter = async (context, report) =>

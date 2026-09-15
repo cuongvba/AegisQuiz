@@ -8,24 +8,53 @@ Tài liệu này mô tả chi tiết kiến trúc dữ liệu của **AegisQuiz*
 
 ```mermaid
 erDiagram
-    USERS ||--o{ QUIZ_ATTEMPTS : takes
-    USERS ||--o{ USER_ACHIEVEMENTS : earns
-    USERS ||--o{ NOTEBOOKS : owns
+    ORGANIZATION_UNITS ||--o{ USER_ACCOUNTS : contains
+    ORGANIZATION_UNITS ||--o{ ORGANIZATION_UNITS : parent_of
+    USER_ACCOUNTS ||--o{ USER_ROLES : assigned_roles
+    USER_ACCOUNTS ||--o{ QUIZ_ATTEMPTS : takes
+    USER_ACCOUNTS ||--o{ USER_ACHIEVEMENTS : earns
+    USER_ACCOUNTS ||--o{ NOTEBOOKS : owns
     EXAMS ||--o{ QUESTIONS : contains
     EXAMS ||--o{ QUIZ_ATTEMPTS : instantiated_by
     QUESTIONS ||--o{ ATTEMPT_ANSWERS : evaluated_in
     QUIZ_ATTEMPTS ||--o{ ATTEMPT_ANSWERS : records
     TOPICS ||--o{ QUESTIONS : categorizes
 
-    USERS {
+    ORGANIZATION_UNITS {
         uuid id PK
-        string username
+        uuid tenant_id FK
+        uuid parent_id FK
+        string code
+        string name
+        string unit_type
+        string hierarchy_path
+    }
+
+    USER_ACCOUNTS {
+        uuid id PK
+        uuid tenant_id FK
+        uuid org_unit_id FK
         string email
+        string full_name
+        string phone_number
         string password_hash
         string role
-        string ou
+        string subscription_tier
         boolean is_premium
+        boolean is_active
+        int failed_login_attempts
+        timestamp lockout_end
+        string password_reset_token
+        timestamp password_reset_token_expires_at
         timestamp created_at
+    }
+
+    USER_ROLES {
+        uuid id PK
+        uuid user_id FK
+        uuid tenant_id FK
+        uuid org_unit_id FK
+        string role
     }
 
     QUESTIONS {
@@ -97,6 +126,42 @@ erDiagram
   - `FinalScore`: Điểm thang 10 hoặc thang 100.
   - `EstimatedTheta`: Điểm năng lực chuẩn hóa $\theta \in [-4.0, +4.0]$.
   - `ViolationCount`: Số lần vi phạm an ninh phòng thi (rời màn hình, mở tab mới, cắm màn hình phụ).
+
+### 2.3. Bảng `UserAccounts` (Quản Trị Danh Tính & Bảo Mật Đa Thuê Bao)
+- Quản trị toàn bộ tài khoản người dùng, nhân sự và thí sinh trong từng Tenant:
+  - **`Id`** (`UUID`, PK): Khóa chính định danh tài khoản.
+  - **`TenantId`** (`UUID`, FK): Ranh giới cô lập khách thuê (Multi-Tenant Isolation).
+  - **`OrgUnitId`** (`UUID?`, FK): Khóa ngoại trỏ đến Đơn vị phòng ban trực thuộc trong cây phân cấp.
+  - **`Email`** (`VARCHAR(256)`, Unique per Tenant): Địa chỉ thư điện tử chính danh.
+  - **`FullName`** (`VARCHAR(256)`): Họ và tên đầy đủ.
+  - **`PhoneNumber`** (`VARCHAR(32)`): Số điện thoại liên hệ.
+  - **`PasswordHash`** (`TEXT`): Chuỗi băm mật khẩu PBKDF2/SHA-256 (100,000 vòng lặp).
+  - **`Role`** (`VARCHAR(64)`): Vai trò mặc định (`SystemAdmin`, `TenantAdmin`, `OrgUnitManager`, `TeamLeader`, `Instructor`, `Learner`, `GuestViewer`).
+  - **`SubscriptionTier`** (`VARCHAR(32)`): Gói thuê bao (`FREE`, `VIP`, `ENTERPRISE`).
+  - **`IsPremium`** (`BOOLEAN`): Cờ kích hoạt đặc quyền VIP/Enterprise.
+  - **`IsActive`** (`BOOLEAN`): Trạng thái hoạt động (`true` = Active, `false` = Khóa tài khoản).
+  - **`FailedLoginAttempts`** (`INT`): Đếm số lần đăng nhập sai liên tiếp để kích hoạt phòng thủ Brute-force.
+  - **`LockoutEnd`** (`TIMESTAMPTZ?`): Thời điểm kết thúc khóa tài khoản tạm thời.
+  - **`PasswordResetToken`** (`VARCHAR(256)?`): Mã token mã hóa ngẫu nhiên một lần (OTT 256-bit) cho reset/kích hoạt mật khẩu.
+  - **`PasswordResetTokenExpiresAt`** (`TIMESTAMPTZ?`): Thời điểm hết hạn của OTT token (30 phút cho tự phục vụ, 24 giờ cho thư mời Admin).
+
+### 2.4. Bảng `OrganizationUnits` (Cây Phân Cấp Đơn Vị Đa Tầng)
+- Lưu trữ cấu trúc tổ chức ngân hàng, tập đoàn và trường đại học:
+  - **`Id`** (`UUID`, PK): Khóa chính đơn vị.
+  - **`TenantId`** (`UUID`, FK): Mã khách thuê.
+  - **`ParentId`** (`UUID?`, FK): Đơn vị cấp trên trực tiếp (tự tham chiếu).
+  - **`Code`** (`VARCHAR(64)`): Mã định danh nghiệp vụ (VD: `HOAN_KIEM`, `KHAO_THI`).
+  - **`Name`** (`VARCHAR(256)`): Tên đơn vị (VD: `Chi nhánh Hoàn Kiếm`).
+  - **`UnitType`** (`VARCHAR(32)`): Phân loại đơn vị (`HEADQUARTERS`, `DIVISION`, `BRANCH`, `DEPARTMENT`, `TEAM`).
+  - **`HierarchyPath`** (`TEXT`): Đường dẫn phân cấp Materialized Path (VD: `/HQ/MIEN_BAC/CN_HN/HOAN_KIEM`) phục vụ truy vấn đệ quy tốc độ cao.
+
+### 2.5. Bảng `UserRoles` (Ma Trận Phân Quyền Scoped RBAC)
+- Cho phép 1 tài khoản sở hữu nhiều vai trò độc lập theo từng phòng ban và thuê bao:
+  - **`Id`** (`UUID`, PK): Khóa chính bản ghi phân quyền.
+  - **`UserId`** (`UUID`, FK): Người dùng được gán quyền.
+  - **`TenantId`** (`UUID`, FK): Mã khách thuê hiệu lực.
+  - **`OrgUnitId`** (`UUID?`, FK): Phạm vi đơn vị được ủy nhiệm quyền hạn (`null` = toàn bộ Tenant).
+  - **`Role`** (`VARCHAR(64)`): Vai trò cụ thể trong phạm vi đơn vị đó.
 
 ---
 

@@ -14,7 +14,9 @@
 4. [Đột Phá 3: Cơ Chế Xóa Cây Phân Cấp Chủ Đề An Toàn Tuyệt Đối & Miễn Nhiễm Lỗi Khóa Ngoại](#4-đột-phá-3-cơ-chế-xóa-cây-phân-cấp-chủ-đề-an-toàn-tuyệt-đối--miễn-nhiễm-lỗi-khóa-ngoại)
 5. [Đột Phá 4: Bộ Đôi Modal Tự Động Điền & Nút 1-Click "⚡ Nhận Diện Tự Động AI"](#5-đột-phá-4-bộ-đôi-modal-tự-động-điền--nút-1-click--nhận-diện-tự-động-ai)
 6. [Đột Phá 5: Lưu Trữ Đa Hình JSONB Payload, Chỉ Mục GIN Siêu Tốc & Docker Pipeline](#6-đột-phá-5-lưu-trữ-đa-hình-jsonb-payload-chỉ-mục-gin-siêu-tốc--docker-pipeline)
-7. [Bảng Tổng Hợp Kiểm Thử & Hiệu Năng Thực Chiến](#7-bảng-tổng-hợp-kiểm-thử--hiệu-năng-thực-chiến)
+7. [Đột Phá 6: Hợp Nhất Não Bộ Khảo Thí Thích Ứng CAT/IRT 3-PL & Đồng Bộ 8 Dạng Câu Hỏi](#8-đột-phá-6-hợp-nhất-não-bộ-khảo-thí-thích-ứng-catirt-3-pl--đồng-bộ-8-dạng-câu-hỏi)
+8. [Đột Phá 7: Quản Trị Danh Tính Đa Thuê Bao (Enterprise IAM), Scoped RBAC Đa Tầng & Giao Thức Kích Hoạt / Reset Mật Khẩu OTT](#9-đột-phá-7-quản-trị-danh-tính-đa-thuê-bao-enterprise-iam-scoped-rbac-đa-tầng--giao-thức-kích-hoạt--reset-mật-khẩu-ott)
+9. [Bảng Tổng Hợp Kiểm Thử & Hiệu Năng Thực Chiến](#10-bảng-tổng-hợp-kiểm-thử--hiệu-năng-thực-chiến)
 
 ---
 
@@ -24,7 +26,7 @@ Trong chuỗi nâng cấp mới nhất, nền tảng **AegisQuiz** đã giải q
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
-│                   5 ĐỘT PHÁ CÔNG NGHỆ TỐI THƯỢNG CỦA AEGISQUIZ (2026 EDITION)                    │
+│                   7 ĐỘT PHÁ CÔNG NGHỆ TỐI THƯỢNG CỦA AEGISQUIZ (2026 EDITION)                    │
 ├──────────────────────────┬───────────────────────────────────────┬───────────────────────────────┤
 │ Đột Phá                  │ Điểm Nghẽn Truyền Thống Cũ            │ Bước Nhảy Vọt Của AegisQuiz    │
 ├──────────────────────────┼───────────────────────────────────────┼───────────────────────────────┤
@@ -33,6 +35,8 @@ Trong chuỗi nâng cấp mới nhất, nền tảng **AegisQuiz** đã giải q
 │ 3. Xóa chủ đề phân cấp   │ Lỗi khóa ngoại Restrict & QueryFilter │ Xóa Leaf-to-Root, dồn an toàn │
 │ 4. Trải nghiệm Modal     │ Form trống trơn, người dùng bối rối   │ Pre-populate sẵn + Nút 1-Click│
 │ 5. Đa hình JSONB & Docker│ Thêm cột CSDL cồng kềnh, cấu hình khó │ JSONB Payload linh hoạt + CI  │
+│ 6. Khảo thí thích ứng IRT│ Đề tĩnh 100 câu mệt mỏi, thiếu KaTeX │ CAT/IRT 3-PL + 8 dạng câu hỏi │
+│ 7. Enterprise IAM & OTT  │ Gửi pass thô, quyền phẳng 1 vai trò   │ Scoped RBAC đa OU + Link OTT  │
 └──────────────────────────┴───────────────────────────────────────┴───────────────────────────────┘
 ```
 
@@ -213,7 +217,28 @@ Khảo thí trực tuyến truyền thống thường rơi vào 2 cực đoan:
 
 ---
 
-## 9. BẢNG TỔNG HỢP KIỂM THỬ & HIỆU NĂNG THỰC CHIẾN (CẬP NHẬT 2026)
+## 9. ĐỘT PHÁ 7: QUẢN TRỊ DANH TÍNH ĐA THUÊ BAO (ENTERPRISE IAM), SCOPED RBAC ĐA TẦNG & GIAO THỨC KÍCH HOẠT / RESET MẬT KHẨU OTT
+
+### 9.1. Vấn Đề Thực Tiễn Trong Doanh Nghiệp & Ngân Hàng Lớn
+1. **Một người dùng có nhiều vai trò ở các đơn vị khác nhau:** Một chuyên gia đào tạo vừa là Trưởng ban ra đề thi tại Hội sở (`TeamLeader`), vừa là học viên thi chứng chỉ tại Chi nhánh (`Learner`). Các hệ thống thông thường chỉ gắn 1 vai trò phẳng (Flat RBAC), dẫn tới xung đột đặc quyền hoặc phải lập nhiều tài khoản rườm rà.
+2. **Nguy cơ an ninh khi cấp phát mật khẩu mới:** Quản trị viên hay gửi mật khẩu qua Zalo, Email dạng văn bản thô (Cleartext), vi phạm nghiêm trọng NIST SP 800-63B và ISO 27001. Thêm vào đó, nếu không có cơ chế chống User Enumeration, tin tặc có thể quét dò danh sách cán bộ qua form quên mật khẩu.
+
+### 9.2. Giải Pháp Đột Phá Toàn Diện Của AegisQuiz
+1. **Mô Hình Scoped RBAC Đa Tầng & B2B Federation:**
+   - Hỗ trợ quan hệ thực thể `UserRole = (UserId, TenantId, OrgUnitId, Role)`: Cho phép tài khoản đồng thời mang nhiều vai trò theo từng cây đơn vị (OrgUnit) và chuyển đổi ngữ cảnh làm việc tức thì.
+   - Hỗ trợ liên minh định danh B2B: 1 tài khoản đăng nhập có thể được ủy nhiệm vào nhiều Tenant khác nhau trong hệ sinh thái Dehoc.
+2. **Giao Thức Kích Hoạt / Đổi Mật Khẩu One-Time Token (OTT) Chuẩn Quốc Tế:**
+   - Sinh token bảo mật 256-bit bằng `RandomNumberGenerator`.
+   - Thời hạn hiệu lực: **30 phút** đối với tự phục vụ quên mật khẩu, **24 giờ** đối với link kích hoạt nhân sự mới do Admin phát hành.
+   - **Chống User Enumeration 100%**: Endpoint `POST /api/auth/forgot-password` luôn phản hồi HTTP 200 generic, bảo toàn bí mật danh tính tài khoản.
+   - **Tự động xóa dấu vết & kích hoạt 1 bước**: Khi đặt mật khẩu thành công qua link `/reset-password`, hệ thống lập tức hủy OTT token, xóa sạch số lần nhập sai `FailedLoginAttempts`, gỡ cờ khóa tạm `LockoutEnd`, chuyển `IsActive = true` và cấp JWT Token đăng nhập tức thì.
+3. **Bộ Đôi Giao Diện Đẳng Cấp Thế Giới:**
+   - Màn hình `/reset-password` tích hợp **Thước đo độ phức tạp NIST** (độ dài >= 8, chữ hoa, số, ký tự đặc biệt) và hoạt ảnh chuyển cảnh Cyberpunk.
+   - Modal phân quyền Admin (`UserRoleModal.tsx`) tích hợp nút **"Gửi Link Kích Hoạt (24h)"** kèm ô copy 1-click tiện dụng.
+
+---
+
+## 10. BẢNG TỔNG HỢP KIỂM THỬ & HIỆU NĂNG THỰC CHIẾN (CẬP NHẬT 2026)
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
@@ -221,17 +246,18 @@ Khảo thí trực tuyến truyền thống thường rơi vào 2 cực đoan:
 ├─────────────────────────────────────┬──────────────────┬───────────────────────────────┤
 │ Phân Hệ Kiểm Thử                    │ Số Lượng Test    │ Kết Quả Thực Tế               │
 ├─────────────────────────────────────┼──────────────────┼───────────────────────────────┤
-│ Backend Unit & Integration Tests    │ 117 / 117 Tests  │ PASS 100% (Thời gian: 4.8s)   │
+│ Backend Unit & Integration Tests    │ 147 / 147 Tests  │ PASS 100% (Thời gian: 13s)    │
 │ Backend API & Core Compilation      │ 2 C# Projects    │ 0 Errors, 0 Blockers          │
 │ Cầu nối IRT Microservice (Python)   │ 3 Endpoints CAT  │ Kết nối 100% Sub-millisecond  │
 │ Frontend TypeScript Build (tsc -b)  │ Toàn bộ project  │ 0 Errors, 0 Blockers          │
-│ Vite Production Bundle Build        │ 37+ Chunks       │ Thành công trong 1.85s        │
+│ Vite Production Bundle Build        │ 40+ Chunks       │ Thành công trong 1.01s        │
 │ Docker Containers Health            │ 6 Containers     │ Up & Healthy (Port 3000, 8080)│
 │ Tốc độ nhận diện tọa độ biểu ngữ   │ 244 câu hỏi      │ < 0.15 giây (Tức thì)         │
 │ Tính toàn vẹn đáp án Admin          │ 244 câu hỏi      │ 100% giữ nguyên thứ tự A,B,C,D│
 │ Phân tầng Cây tổ chức 5 cấp         │ LTree recursive  │ Render dạng lồng nhau < 5ms   │
 │ Khử nhiễu Sheet & Chuẩn hóa đáp án  │ Đa Sheet DOT2026 │ Bỏ qua 100% Sheet văn bản rác │
 │ Khảo thí thích ứng động CAT/IRT 3-PL│ Hội tụ SE <= 0.35│ 10-15 câu thay vì 100 câu     │
+│ Phân quyền Scoped RBAC & Link OTT   │ NIST SP 800-63B  │ Token 256-bit, Auto-Activation│
 └─────────────────────────────────────┴──────────────────┴───────────────────────────────┘
 ```
 

@@ -48,7 +48,7 @@ export function AdminLayout() {
           )}
           <button 
             onClick={() => setIsSidebarOpen(true)}
-            className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors cursor-pointer animate-pulse"
+            className="md:hidden p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
           >
             <Menu size={20} />
           </button>
@@ -66,12 +66,12 @@ export function AdminLayout() {
       {/* SIDEBAR */}
       <aside className={`
         fixed inset-y-0 left-0 w-64 bg-slate-900 border-r border-slate-800 p-6 flex flex-col z-50 transition-transform duration-300 transform
-        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        md:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
-        {/* Close Button */}
+        {/* Close Button (Mobile Only) */}
         <button 
           onClick={() => setIsSidebarOpen(false)}
-          className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+          className="md:hidden absolute top-4 right-4 p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
         >
           <X size={18} />
         </button>
@@ -117,7 +117,7 @@ export function AdminLayout() {
       </aside>
 
       {/* MAIN CONTENT */}
-      <main className={`flex-1 p-4 md:p-8 overflow-y-auto transition-all duration-300 ${isSidebarOpen ? 'md:ml-64' : 'md:ml-0'}`}>
+      <main className="flex-1 p-4 md:p-8 overflow-y-auto md:ml-64 transition-all duration-300">
         <div className="w-full">
           <Outlet />
         </div>

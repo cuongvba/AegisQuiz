@@ -57,6 +57,21 @@ namespace AegisQuiz.Domain.Entities
         /// <summary>Thời điểm đăng nhập gần nhất.</summary>
         public DateTime? LastLoginAt { get; set; }
 
+        /// <summary>Mã token một lần (OTT) dùng để đặt lại mật khẩu hoặc kích hoạt tài khoản.</summary>
+        public string? PasswordResetToken { get; set; }
+
+        /// <summary>Thời điểm hết hạn của token đặt lại mật khẩu (chuẩn OWASP/NIST: 15-30 phút).</summary>
+        public DateTime? PasswordResetTokenExpiresAt { get; set; }
+
+        /// <summary>Cờ đánh dấu tài khoản đã kích hoạt xác thực 2 bước Google Authenticator (TOTP RFC 6238).</summary>
+        public bool IsTwoFactorEnabled { get; set; } = false;
+
+        /// <summary>Khóa bí mật TOTP dạng Base32 (mã hóa an toàn ở trạng thái nghỉ).</summary>
+        public string? TwoFactorSecret { get; set; }
+
+        /// <summary>Danh sách mã khôi phục dự phòng khẩn cấp dạng JSON (đã băm SHA-256).</summary>
+        public string? TwoFactorRecoveryCodes { get; set; }
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 

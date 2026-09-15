@@ -17,7 +17,7 @@
    - [Kỳ quan 3: Bộ Bóc Tách Đa Phương Thức Docx/WMF & Bộ Hóa Giải Công Thức MathType Sang LaTeX](#kỳ-quan-3-bộ-bóc-tách-đa-phương-thức-docxwmf--bộ-hóa-giải-công-thức-mathtype-sang-latex)
    - [Kỳ quan 4: Phòng Thi Bảo Mật Cấp Quân Sự (Omni-Shield SecureExamRoom & AI Proctoring)](#kỳ-quan-4-phòng-thi-bảo-mật-cấp-quân-sự-omni-shield-secureexamroom--ai-proctoring)
    - [Kỳ quan 5: Bộ Tổng Hợp Âm Thanh Web Audio 0ms Latency (Không Cần MP3)](#kỳ-quan-5-bộ-tổng-hợp-âm-thanh-web-audio-0ms-latency-không-cần-mp3)
-   - [Kỳ quan 6: Kiến Trúc Định Danh Kép (PKI Chữ Ký Số USB Token + Keycloak OIDC)](#kỳ-quan-6-kiến-trúc-định-danh-kép-pki-chữ-ký-số-usb-token--keycloak-oidc)
+   - [Kỳ quan 6: Kiến Trúc Định Danh Tứ Trụ & Xác Thực Đa Yếu Tố Thông Minh (Quad-Pillar IAM: QR Scan-to-Auth + Google GIS + PKI Hardware USB Token + Keycloak OIDC)](#kỳ-quan-6-kiến-trúc-định-danh-tứ-trụ--xác-thực-đa-yếu-tố-thông-minh-quad-pillar-iam-qr-scan-to-auth--google-gis--pki-hardware-usb-token--keycloak-oidc)
    - [Kỳ quan 7: Gia Sư Socrates Trí Tuệ Nhân Tạo (Gemini Mentorship & Zero-Cost Caching)](#kỳ-quan-7-gia-sư-socrates-trí-tuệ-nhân-tạo-gemini-mentorship--zero-cost-caching)
    - [Kỳ quan 8: Phân Hệ Sát Hạch Lái Xe Quốc Gia & Cơ Chế 60 Câu Điểm Liệt Tử Thần (GPLX A1-C & Sa Hình AI)](#kỳ-quan-8-phân-hệ-sát-hạch-lái-xe-quốc-gia--cơ-chế-60-câu-điểm-liệt-tử-thần-gplx-a1-c--sa-hình-ai)
    - [Kỳ quan 9: Động Cơ Bóc Tách & Nhập Câu Hỏi Cấu Hình Động Vạn Năng (Universal Dynamic Ingestion Engine & CIG Grammar)](#kỳ-quan-9-động-cơ-bóc-tách--nhập-câu-hỏi-cấu-hình-động-vạn-năng-universal-dynamic-ingestion-engine--cig-grammar)
@@ -204,10 +204,30 @@ Không dùng thẻ `<audio src="sound.mp3">` vì file mp3 có thể tải chậm
 
 ---
 
-### 🔑 Kỳ quan 6: Kiến Trúc Định Danh Kép (PKI Chữ Ký Số USB Token + Keycloak OIDC)
+### 🔑 Kỳ quan 6: Kiến Trúc Định Danh Tứ Trụ & Xác Thực Đa Yếu Tố Thông Minh (Quad-Pillar IAM: QR Scan-to-Auth + Google GIS + PKI Hardware USB Token + Keycloak OIDC)
 
-- Tích hợp chuẩn nhận thực **PKI (Public Key Infrastructure)**: Dành cho các kỳ thi cấp chứng chỉ ngân hàng hoặc sát hạch pháp lý cao. Bài làm của thí sinh được ký số bằng khóa riêng (Private Key) lưu trong USB Token/SmartCard trước khi gửi lên server.
-- Không một ai — kể cả Lập trình viên hay Quản trị viên cơ sở dữ liệu — có thể can thiệp sửa đổi đáp án sau khi bài thi đã được đóng dấu chữ ký số!
+Hệ thống bảo mật danh tính của AegisQuiz được thiết kế theo cấp độ phòng thủ chuyên sâu (Defense-in-Depth) với 4 trụ cột linh hoạt, mang lại sự tiện ích cực hạn song hành với an ninh cấp ngân hàng:
+
+1. **Trụ Cột 1: Đăng Nhập 1-Giây Bằng Quét Mã QR (Scan-to-Auth)**:
+   - Thí sinh và cán bộ quản lý mở màn hình đăng nhập, chọn tab **"Quét mã QR 1-giây"**.
+   - Mã QR SVG độ nét cao được sinh ra với cơ chế **Zero-Trust Single-Use Ticket** (TTL 120s).
+   - Người dùng mở Camera điện thoại (hoặc Zalo) quét mã $\rightarrow$ Bấm 1 nút **"Cho Phép Đăng Nhập Trên Web"** $\rightarrow$ Màn hình máy tính lập tức nhảy thẳng vào hệ thống mà không cần nhập mật khẩu!
+   - Hỗ trợ nút **"Thử nghiệm quét QR nhanh (Demo Scan)"** 1-click giúp quản trị viên kiểm thử tính năng ngay trên máy tính mà không cần thiết bị ngoại vi.
+   - Vé xác thực tự động hủy vĩnh viễn khỏi RAM ngay khi cấp JWT Token, triệt tiêu 100% nguy cơ tấn công phát lại (Replay Attack).
+
+2. **Trụ Cột 2: Tích Hợp Google Identity Services (GIS) Chuẩn Mực**:
+   - Sử dụng SDK GIS chính hãng của Google (`https://accounts.google.com/gsi/client`), tự động xác minh Google ID Token tại máy chủ .NET 10 với hệ thống chứng chỉ số công khai của Google.
+   - Cơ chế phát hiện và cưỡng chế hiển thị **duy nhất 1 nút Google** đạt chuẩn Google Brand Guidelines, loại bỏ hoàn toàn hiện tượng nút trùng lặp gây rối mắt người dùng.
+
+3. **Trụ Cột 3: Xác Thực Hai Yếu Tố Cấp Ngân Hàng (2FA TOTP RFC 6238)**:
+   - Bảo vệ bổ sung qua ứng dụng Google Authenticator / Microsoft Authenticator.
+   - Thuật toán trích xuất mã số động 6 chữ số với dung sai lệch giờ (Clock Skew Tolerance) $\pm 1$ chu kỳ ($\pm 30$ giây), giải quyết triệt để sự cố lệch xung nhịp đồng hồ giữa máy chủ và điện thoại.
+   - Giao diện nhập mã thông minh 6 ô số tự động nhảy con trỏ và hỗ trợ dán phím tắt (Ctrl+V) tức thì.
+
+4. **Trụ Cột 4: Chữ Ký Số Phần Cứng PKI (USB Token) & SSO Doanh Nghiệp (Keycloak OIDC)**:
+   - Dành cho các kỳ thi cấp chứng chỉ quốc gia, ngân hàng hoặc sát hạch pháp lý cao. Bài làm của thí sinh được ký số bằng khóa riêng (Private Key) lưu trong thiết bị phần cứng bảo mật (Secure Element) của USB Token/SmartCard trước khi gửi lên server.
+   - Không một ai — kể cả Lập trình viên hay Quản trị viên cơ sở dữ liệu — có thể can thiệp sửa đổi đáp án sau khi bài thi đã được đóng dấu chữ ký số!
+   - Tương thích chuẩn OpenID Connect (OIDC) doanh nghiệp với Keycloak để kết nối mạng lưới Active Directory / LDAP tập đoàn.
 
 ---
 

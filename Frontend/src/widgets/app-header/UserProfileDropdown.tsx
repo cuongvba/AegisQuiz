@@ -8,7 +8,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Settings, LogOut } from 'lucide-react';
+import { Settings, LogOut, Shield, Users } from 'lucide-react';
 import { useAuthContext } from '@/app/providers/AuthProvider';
 import { useLearnerI18n } from '@/lib/i18n';
 
@@ -108,7 +108,34 @@ export function UserProfileDropdown() {
             <p className="text-xs text-[var(--text-muted)] truncate">{user.email}</p>
           </div>
 
-          {/* Settings */}
+          {/* Role-based quick portals */}
+          {(user.role === 'SystemAdmin' || user.role === 'TenantAdmin') && (
+            <button
+              role="menuitem"
+              onClick={() => { setIsOpen(false); navigate('/admin'); }}
+              className="w-full text-start px-3 py-2 flex items-center gap-2
+                         text-sm font-medium text-purple-400
+                         hover:bg-purple-500/10 rounded-xl transition-colors cursor-pointer"
+            >
+              <Shield className="w-4 h-4 text-purple-400" aria-hidden="true" />
+              Quản trị Hệ thống
+            </button>
+          )}
+
+          {user.role === 'TeamLeader' && (
+            <button
+              role="menuitem"
+              onClick={() => { setIsOpen(false); navigate('/team'); }}
+              className="w-full text-start px-3 py-2 flex items-center gap-2
+                         text-sm font-medium text-cyan-400
+                         hover:bg-cyan-500/10 rounded-xl transition-colors cursor-pointer"
+            >
+              <Users className="w-4 h-4 text-cyan-400" aria-hidden="true" />
+              Khu vực Trưởng nhóm
+            </button>
+          )}
+
+          {/* Profile */}
           <button
             role="menuitem"
             onClick={() => { setIsOpen(false); navigate('/profile'); }}
@@ -117,7 +144,7 @@ export function UserProfileDropdown() {
                        hover:bg-[var(--surface-secondary)] rounded-xl transition-colors cursor-pointer"
           >
             <Settings className="w-4 h-4" aria-hidden="true" />
-            {t('profileTitle')}
+            Hồ sơ cá nhân & Bảo mật
           </button>
 
           <div className="my-1 border-t border-[var(--border-subtle)]" role="separator" />

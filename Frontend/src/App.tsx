@@ -33,7 +33,10 @@ const AdminExamsPage = lazy(() => import('@/pages/admin/AdminExamsPage').then(m 
 // Auth Lazy Pages
 const LoginPage = lazy(() => import('@/pages/auth/LoginPage').then(m => ({ default: m.LoginPage })));
 const RegisterPage = lazy(() => import('@/pages/auth/RegisterPage').then(m => ({ default: m.RegisterPage })));
+const ResetPasswordPage = lazy(() => import('@/pages/auth/ResetPasswordPage').then(m => ({ default: m.ResetPasswordPage })));
 const CallbackPage = lazy(() => import('@/pages/auth/CallbackPage').then(m => ({ default: m.CallbackPage })));
+const QrConfirmPage = lazy(() => import('@/pages/auth/QrConfirmPage').then(m => ({ default: m.QrConfirmPage })));
+const ProfilePage = lazy(() => import('@/pages/profile/ProfilePage').then(m => ({ default: m.ProfilePage })));
 
 export default function App() {
   return (
@@ -72,7 +75,17 @@ export default function App() {
               {/* Auth Routes */}
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/auth/callback" element={<CallbackPage />} />
+              <Route path="/auth/qr-confirm" element={<QrConfirmPage />} />
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <ProfilePage />
+                  </ProtectedRoute>
+                }
+              />
 
               {/* Practice/Exam is full screen so it stays separate from MainLayout */}
               <Route path="/practice" element={<PracticePage />} />

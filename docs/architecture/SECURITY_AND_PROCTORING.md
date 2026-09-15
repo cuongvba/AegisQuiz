@@ -78,3 +78,14 @@ Dành cho các kỳ thi cấp chứng chỉ quốc tế và khảo thí yêu c�
 - Mỗi thí sinh sở hữu một cặp khóa bất đối xứng (Public Key / Private Key).
 - Trước khi nộp bài, gói tin kết quả thi được ký số (Digital Signature) bằng Private Key của thí sinh trên thiết bị đầu cuối.
 - Server giải mã chữ ký bằng Public Key đã đăng ký trước đó để khẳng định chắc chắn 100% bài làm xuất phát từ chính thí sinh đó và không hề bị sửa đổi trên đường truyền mạng.
+
+### 3.3. Đăng Nhập 1-Giây Bằng Quét Mã QR (Scan-to-Auth Zero-Trust)
+Dành cho trải nghiệm người dùng tối ưu trên thiết bị cá nhân:
+- **Cơ chế Single-Use Invalidation**: Máy chủ sinh vé ngắn hạn 120s dạng GUID ngẫu nhiên; client hiển thị mã QR SVG kèm đồng hồ đếm ngược.
+- **Ủy quyền từ xa**: Thí sinh quét mã bằng camera điện thoại và bấm xác nhận $\rightarrow$ Máy chủ tự động cấp phiên đăng nhập hợp lệ cho máy tính và hủy vé ngay lập tức khỏi RAM để chống tấn công phát lại (Replay Attack).
+- **Thử nghiệm 1-Click (Demo Scan)**: Hỗ trợ kiểm thử trực tiếp trên màn hình desktop cho quản trị viên và người kiểm định.
+
+### 3.4. Xác Thực Hai Yếu Tố (2FA TOTP RFC 6238)
+- Bảo vệ tài khoản quản trị và thí sinh bằng mật khẩu dùng một lần theo thời gian (Time-Based One-Time Password - RFC 6238).
+- Tích hợp chuẩn Google Authenticator / Microsoft Authenticator với thuật toán Base32 và cơ chế bù trừ lệch giờ (Clock Skew Tolerance) $\pm 30$ giây.
+- Ngăn chặn hoàn toàn các vụ xâm nhập do lộ mật khẩu tài khoản hoặc tấn công rà quét từ điển.

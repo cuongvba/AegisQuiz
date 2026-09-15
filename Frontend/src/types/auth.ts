@@ -129,16 +129,23 @@ export interface UserProfile {
   id:          string;
   name?:       string;
   email?:      string;
+  phoneNumber?: string;
   /** AppRole constant — đã được normalize */
   role:        AppRoleType;
   isPremium:   boolean;
   subscriptionTier?: 'FREE' | 'VIP' | 'ENTERPRISE' | string;
+  subscriptionExpiresAt?: string;
   avatar?:     string;
   tenantId?:   string;
+  tenantName?: string;
+  tenantCode?: string;
   /** OrgUnitId scope — bắt buộc với TeamLeader */
   orgUnitId?:  string;
   orgUnitName?: string;
+  orgUnitHierarchyPath?: string;
   ou?:         string; // tên đơn vị hiển thị (display)
+  createdAt?:  string;
+  lastLoginAt?: string;
 }
 
 // ── Admin Panel access check ──────────────────────────────────────────────────
