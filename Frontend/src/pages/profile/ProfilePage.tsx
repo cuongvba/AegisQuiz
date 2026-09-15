@@ -3,7 +3,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import {
   User, Shield, Key, Sparkles, Building2, Layers, CheckCircle2,
   AlertCircle, Save, Lock, Smartphone, Mail, Calendar, Eye, EyeOff,
-  Clock, ArrowRight, Zap, RefreshCw, Check
+  Clock, ArrowRight, Zap, RefreshCw, Check, ArrowLeft, Home, LayoutDashboard,
+  X, ChevronRight
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import api from '@/services/api';
@@ -151,6 +152,15 @@ export function ProfilePage() {
 
   const role = user?.role || AppRole.Learner;
   const isVip = user?.isPremium || user?.subscriptionTier === 'VIP' || user?.subscriptionTier === 'ENTERPRISE';
+  const isAdminRole = [AppRole.SystemAdmin, AppRole.TenantAdmin, AppRole.TeamLeader, AppRole.Instructor].includes(role as any);
+
+  const handleGoBack = () => {
+    if (window.history.length > 2) {
+      navigate(-1);
+    } else {
+      navigate(isAdminRole ? '/admin' : '/');
+    }
+  };
 
   const getRoleBadge = (r: string) => {
     switch (r) {
@@ -171,13 +181,71 @@ export function ProfilePage() {
   const strengthInfo = getStrengthLabel(passwordScore);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 py-10 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-5xl mx-auto space-y-8">
+    <div className="min-h-screen bg-slate-950 text-slate-100 py-6 sm:py-10 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-5xl mx-auto space-y-6">
+
+        {/* ── TOP BREADCRUMB & NAVIGATION BAR ─────────────────────────── */}
+        <div className="flex items-center justify-between flex-wrap gap-3 pb-1">
+          {/* Back & Breadcrumbs */}
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleGoBack}
+              className="px-3.5 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 hover:border-slate-700 transition-all flex items-center gap-2 text-xs font-bold shadow-sm cursor-pointer"
+              title="Quay lại giao diện trước"
+            >
+              <ArrowLeft size={16} />
+              <span>Quay lại</span>
+            </button>
+
+            <nav className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
+              <Link to="/" className="hover:text-slate-200 transition-colors flex items-center gap-1">
+                <Home size={13} />
+                <span>Trang chủ</span>
+              </Link>
+              <ChevronRight size={13} className="text-slate-600" />
+              <span className="text-slate-200 font-semibold">Hồ sơ cá nhân & Bảo mật</span>
+            </nav>
+          </div>
+
+          {/* Quick shortcuts */}
+          <div className="flex items-center gap-2">
+            {isAdminRole && (
+              <button
+                type="button"
+                onClick={() => navigate('/admin')}
+                className="px-3 py-1.5 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 transition-all text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+              >
+                <LayoutDashboard size={14} />
+                <span>Trang Quản Trị</span>
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={() => navigate('/')}
+              className="px-3 py-1.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition-all text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+            >
+              <Home size={14} />
+              <span>Trang chủ</span>
+            </button>
+          </div>
+        </div>
 
         {/* ── TOP HERO CARD ──────────────────────────────────────────────── */}
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-b from-slate-900/90 to-slate-900/40 border border-slate-800 p-6 sm:p-8 backdrop-blur-xl shadow-2xl">
           <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
           <div className="absolute bottom-0 left-1/3 w-64 h-64 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
+
+          {/* Close button in top right of hero card */}
+          <button
+            type="button"
+            onClick={handleGoBack}
+            className="absolute top-5 right-5 z-20 p-2 rounded-xl bg-slate-850/80 hover:bg-slate-750 text-slate-400 hover:text-white border border-slate-700/60 transition-all cursor-pointer"
+            title="Đóng / Trở về giao diện trước"
+          >
+            <X size={18} />
+          </button>
 
           <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-start gap-6">
             {/* Avatar with Glow */}

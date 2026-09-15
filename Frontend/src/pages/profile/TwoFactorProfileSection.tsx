@@ -61,7 +61,12 @@ export const TwoFactorProfileSection: React.FC<TwoFactorProfileSectionProps> = (
     setVerifyCode('');
     try {
       const res = await api.post('/api/auth/2fa/setup');
-      setSetupData(res.data);
+      const data = res.data;
+      setSetupData({
+        manualKey: data.manualKey || data.secretKey || '',
+        qrCodeUri: data.qrCodeUri || data.otpAuthUri || '',
+        recoveryCodes: data.recoveryCodes || []
+      });
       setShowSetupModal(true);
     } catch (err: any) {
       console.error('[2FA Setup Error]', err);
@@ -83,7 +88,10 @@ export const TwoFactorProfileSection: React.FC<TwoFactorProfileSectionProps> = (
     setSetupError(null);
     try {
       const res = await api.post('/api/auth/2fa/enable', {
-        totpCode: verifyCode.trim()
+        secretKey: setupData?.manualKey,
+        code: verifyCode.trim(),
+        totpCode: verifyCode.trim(),
+        recoveryCodes: setupData?.recoveryCodes
       });
 
       setShowSetupModal(false);

@@ -1100,15 +1100,18 @@ namespace AegisQuiz.API.Controllers
             if (user == null) return NotFound(new { message = "Không tìm thấy người dùng." });
 
             var secretKey = TotpSecurityHelper.GenerateSecretKey(20);
-            var otpAuthUri = TotpSecurityHelper.GenerateOtpAuthUri("AegisQuiz (Dehoc.vn)", user.Email, secretKey);
+            var issuer = "Dehoc.vn";
+            var otpAuthUri = TotpSecurityHelper.GenerateOtpAuthUri(issuer, user.Email, secretKey);
             var recoveryCodes = TotpSecurityHelper.GenerateRecoveryCodes(8);
 
             return Ok(new
             {
                 secretKey,
+                manualKey = secretKey,
                 otpAuthUri,
+                qrCodeUri = otpAuthUri,
                 recoveryCodes,
-                issuer = "AegisQuiz (Dehoc.vn)",
+                issuer,
                 account = user.Email
             });
         }
@@ -1127,14 +1130,17 @@ namespace AegisQuiz.API.Controllers
             var user = await _db.UserAccounts.FirstOrDefaultAsync(u => u.Id == userId);
             if (user == null) return NotFound(new { message = "Không tìm thấy người dùng." });
 
-            if (string.IsNullOrWhiteSpace(request.SecretKey) || string.IsNullOrWhiteSpace(request.Code))
+            var code = !string.IsNullOrWhiteSpace(request.Code) ? request.Code.Trim() : request.TotpCode?.Trim();
+            var secretKey = !string.IsNullOrWhiteSpace(request.SecretKey) ? request.SecretKey.Trim() : user.TwoFactorSecret;
+
+            if (string.IsNullOrWhiteSpace(secretKey) || string.IsNullOrWhiteSpace(code))
                 return BadRequest(new { message = "Khóa bí mật và mã xác thực không được để trống." });
 
-            var isValid = TotpSecurityHelper.ValidateTotpCode(request.SecretKey, request.Code);
+            var isValid = TotpSecurityHelper.ValidateTotpCode(secretKey, code);
             if (!isValid)
                 return BadRequest(new { message = "Mã xác thực 6 số không chính xác hoặc đã hết hạn chu kỳ. Vui lòng kiểm tra lại đồng hồ điện thoại." });
 
-            user.TwoFactorSecret = request.SecretKey.Trim();
+            user.TwoFactorSecret = secretKey;
             if (request.RecoveryCodes != null && request.RecoveryCodes.Count > 0)
             {
                 user.TwoFactorRecoveryCodes = TotpSecurityHelper.SerializeRecoveryCodes(request.RecoveryCodes);
@@ -1147,6 +1153,7 @@ namespace AegisQuiz.API.Controllers
 
             return Ok(new
             {
+                success = true,
                 message = "Đã kích hoạt xác thực 2 bước Google Authenticator thành công. Tài khoản của bạn được bảo vệ tối đa.",
                 isTwoFactorEnabled = true
             });
@@ -1457,6 +1464,7 @@ namespace AegisQuiz.API.Controllers
     {
         public string SecretKey { get; set; } = string.Empty;
         public string Code { get; set; } = string.Empty;
+        public string? TotpCode { get; set; }
         public List<string>? RecoveryCodes { get; set; }
     }
 
