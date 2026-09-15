@@ -292,6 +292,17 @@ export const learnerQuizService = {
     return res.data;
   },
 
+  // UNIVERSAL SMART URI / GOOGLE DOCS / SHEETS / URL INGESTION
+  async importQuestionsFromUrl(url: string, useAi = false): Promise<any> {
+    const res = await api.post(`${QUIZ_API}/questions/import-url`, {
+      url: url.trim(),
+      useAi,
+    }, {
+      timeout: 120000,
+    });
+    return res.data;
+  },
+
   // AI QUESTION GENERATOR TỪ TÀI LIỆU (Kịch bản B)
   async generateQuestionsFromDoc(
     file: File,

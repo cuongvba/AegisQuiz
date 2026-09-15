@@ -12,6 +12,7 @@ using AegisQuiz.Domain.Factories;
 using AegisQuiz.Infrastructure.Data;
 using AegisQuiz.Infrastructure.Services;
 using AegisQuiz.Infrastructure.Excel;
+using AegisQuiz.API.Services;
 
 namespace AegisQuiz.API.Controllers
 {
@@ -31,6 +32,7 @@ namespace AegisQuiz.API.Controllers
         private readonly IGeminiSolverService                _geminiSolver;
         private readonly IAiQuestionGeneratorService         _aiGenerator;
         private readonly IVietnameseTextCorrectionService    _textCorrectionService;
+        private readonly IUrlDocumentFetcher                 _urlFetcher;
 
         public QuestionsController(
             AegisQuizDbContext                  db,
@@ -39,7 +41,8 @@ namespace AegisQuiz.API.Controllers
             IPdfExtractorService                pdfExtractor,
             IGeminiSolverService                geminiSolver,
             IAiQuestionGeneratorService         aiGenerator,
-            IVietnameseTextCorrectionService    textCorrectionService)
+            IVietnameseTextCorrectionService    textCorrectionService,
+            IUrlDocumentFetcher                 urlFetcher)
         {
             _db                   = db;
             _excelParser          = excelParser;
@@ -48,6 +51,7 @@ namespace AegisQuiz.API.Controllers
             _geminiSolver         = geminiSolver;
             _aiGenerator          = aiGenerator;
             _textCorrectionService = textCorrectionService;
+            _urlFetcher           = urlFetcher;
         }
 
         // ── GET api/quiz/questions (Paged) ─────────────────────────────────────
@@ -415,6 +419,129 @@ namespace AegisQuiz.API.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = $"Lỗi phân tích câu hỏi từ PDF: {ex.Message}" });
+            }
+        }
+
+        // ── POST api/quiz/questions/import-url [Universal Smart URI Ingestion] ─
+        [HttpPost("questions/import-url")]
+        public async Task<IActionResult> ImportQuestionsFromUrl([FromBody] ImportUrlRequest request)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.Url))
+                return BadRequest(new { message = "Vui lòng nhập đường dẫn URL tài liệu (Google Docs, Google Sheets, OneDrive hoặc direct link)." });
+
+            try
+            {
+                var fetchResult = await _urlFetcher.FetchDocumentAsync(request.Url);
+                if (!fetchResult.Success)
+                {
+                    return BadRequest(new
+                    {
+                        message = fetchResult.ErrorMessage ?? "Không thể tải tài liệu từ liên kết đã cung cấp.",
+                        isRestricted = fetchResult.IsRestricted,
+                        suggestedAction = fetchResult.SuggestedAction,
+                        originalUrl = fetchResult.OriginalUrl
+                    });
+                }
+
+                if (fetchResult.Stream == null || fetchResult.FileSizeBytes == 0)
+                {
+                    return BadRequest(new { message = "Tài liệu tải về có dung lượng rỗng." });
+                }
+
+                // 1. Nếu là định dạng EXCEL (bao gồm Google Sheets)
+                if (fetchResult.DocumentType == "EXCEL")
+                {
+                    var preview = _excelParser.ParseExcelFileToPreview(fetchResult.Stream, fetchResult.FileName);
+                    if (preview.TotalQuestions == 0)
+                    {
+                        return BadRequest(new
+                        {
+                            message = "Không tìm thấy câu hỏi hợp lệ trong bảng tính Excel / Google Sheets.",
+                            warnings = preview.Warnings
+                        });
+                    }
+
+                    return Ok(new
+                    {
+                        sourceType                = "EXCEL",
+                        fileName                  = preview.FileName,
+                        totalSheets               = preview.TotalSheets,
+                        totalQuestions            = preview.TotalQuestions,
+                        warnings                  = preview.Warnings,
+                        detectedDomainCode        = preview.DetectedDomainCode,
+                        detectedTargetLevel       = preview.DetectedTargetLevel,
+                        detectedAssessmentPurpose = preview.DetectedAssessmentPurpose,
+                        detectedIssuingOrg        = preview.DetectedIssuingOrg,
+                        detectedBenchmarkYear     = preview.DetectedBenchmarkYear,
+                        detectedBenchmarkStandard = preview.DetectedBenchmarkStandard,
+                        detectedTags              = preview.DetectedTags,
+                        globalMetadataBanner      = preview.GlobalMetadataBanner,
+                        sheets                    = preview.Sheets
+                    });
+                }
+
+                // 2. Nếu là định dạng PDF
+                if (fetchResult.DocumentType == "PDF")
+                {
+                    var rawQuestions = _pdfExtractor.ParsePdfQuestions(fetchResult.Stream);
+                    if (rawQuestions == null || rawQuestions.Count == 0)
+                    {
+                        return BadRequest(new { message = "Không tìm thấy câu hỏi định dạng sẵn trong file PDF." });
+                    }
+
+                    if (request.UseAi)
+                    {
+                        var solvedQuestions = await _geminiSolver.AutoSolveQuestionsAsync(rawQuestions);
+                        return Ok(new
+                        {
+                            sourceType = "PDF",
+                            fileName = fetchResult.FileName,
+                            totalQuestions = solvedQuestions.Count,
+                            questions = solvedQuestions
+                        });
+                    }
+
+                    return Ok(new
+                    {
+                        sourceType = "PDF",
+                        fileName = fetchResult.FileName,
+                        totalQuestions = rawQuestions.Count,
+                        questions = rawQuestions
+                    });
+                }
+
+                // 3. Mặc định là định dạng Word DOCX (bao gồm Google Docs)
+                {
+                    var rawQuestions = _docxParser.ParseDocxFile(fetchResult.Stream);
+                    if (rawQuestions == null || rawQuestions.Count == 0)
+                    {
+                        return BadRequest(new { message = "Không tìm thấy câu hỏi hợp lệ trong tài liệu Word / Google Docs." });
+                    }
+
+                    if (request.UseAi)
+                    {
+                        var solvedQuestions = await _geminiSolver.AutoSolveQuestionsAsync(rawQuestions);
+                        return Ok(new
+                        {
+                            sourceType = "DOCX",
+                            fileName = fetchResult.FileName,
+                            totalQuestions = solvedQuestions.Count,
+                            questions = solvedQuestions
+                        });
+                    }
+
+                    return Ok(new
+                    {
+                        sourceType = "DOCX",
+                        fileName = fetchResult.FileName,
+                        totalQuestions = rawQuestions.Count,
+                        questions = rawQuestions
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = $"Lỗi xử lý nạp câu hỏi từ liên kết: {ex.Message}" });
             }
         }
 
@@ -1703,5 +1830,11 @@ namespace AegisQuiz.API.Controllers
         public string RawHeader { get; set; } = string.Empty;
         public string? DomainScope { get; set; } = "ALL";
         public string? LanguageCode { get; set; } = "any";
+    }
+
+    public class ImportUrlRequest
+    {
+        public string Url { get; set; } = string.Empty;
+        public bool UseAi { get; set; } = false;
     }
 }

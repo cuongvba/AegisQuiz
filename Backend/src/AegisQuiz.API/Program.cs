@@ -80,6 +80,7 @@ builder.Services.AddScoped<IExcelParserService, ExcelParserService>();
 builder.Services.AddScoped<IDocxParserService, DocxParserService>();
 builder.Services.AddScoped<IPdfExtractorService, PdfParserService>();
 builder.Services.AddScoped<IIrtClientService, IrtClientService>();
+builder.Services.AddScoped<IUrlDocumentFetcher, UrlDocumentFetcher>();
 
 // [FIX P1] IMemoryCache — dùng cho GeminiSolverService (TTL eviction thay static dict)
 builder.Services.AddMemoryCache();

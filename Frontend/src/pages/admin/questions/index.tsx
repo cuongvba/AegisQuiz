@@ -13,7 +13,7 @@
  *   └── index.tsx                        — File này (orchestrator)
  */
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { FileUp, Plus, HelpCircle, Star, Sparkles, Layers, ArrowUpDown, Eye, Edit, ToggleLeft, ToggleRight, Loader2, FolderOpen, Brain, Wand2, Cpu, BookOpen, X, CheckCircle2, Unlink, Tag, Trash2, AlertTriangle, Network, FileSpreadsheet, Users, User, ShieldCheck, UploadCloud } from 'lucide-react';
+import { FileUp, Plus, HelpCircle, Star, Sparkles, Layers, ArrowUpDown, Eye, Edit, ToggleLeft, ToggleRight, Loader2, FolderOpen, Brain, Wand2, Cpu, BookOpen, X, CheckCircle2, Unlink, Tag, Trash2, AlertTriangle, Network, FileSpreadsheet, Users, User, ShieldCheck, UploadCloud, Globe } from 'lucide-react';
 import { learnerQuizService } from '@/services/learner-quiz.service';
 import type { LearnerQuestion, QuestionType } from '@/types/quiz';
 import { useAuthContext } from '@/app/providers/AuthProvider';
@@ -35,6 +35,7 @@ import { BatchContextModal } from './components/BatchContextModal';
 import { BatchTagModal }     from './components/BatchTagModal';
 import { TenantGovernanceModal } from './components/TenantGovernanceModal';
 import { ExcelIngestionStudioModal } from './components/ExcelIngestionStudioModal';
+import { SmartUrlImportModal } from './SmartUrlImportModal';
 import { getSampleBankingUcisData } from './components/sampleBankingUcisData';
 
 // ── Helper: correct answer display ────────────────────────────────────────────
@@ -168,6 +169,8 @@ export function AdminQuestionsPage() {
 
   // AI Generate modal state (Kịch bản B)
   const [showAiGenerateModal, setShowAiGenerateModal] = useState(false);
+  // Smart Universal URL / Google Docs Modal state
+  const [showSmartUrlModal, setShowSmartUrlModal]     = useState(false);
   // Universal Context Modal state
   const [selectedContext, setSelectedContext] = useState<{ title: string; content: string } | null>(null);
   const [availableContexts, setAvailableContexts] = useState<any[]>([]);
@@ -1041,6 +1044,15 @@ export function AdminQuestionsPage() {
                 Tạo câu hỏi AI từ tài liệu
               </button>
               <button
+                type="button"
+                onClick={() => setShowSmartUrlModal(true)}
+                className="flex items-center gap-2 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-purple-500 text-white px-3.5 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-indigo-500/25 active:scale-95 text-xs cursor-pointer border border-indigo-400/30"
+                title="Nhập đề thi trực tiếp bằng cách dán đường link Google Docs, Google Sheets, OneDrive hoặc web link"
+              >
+                <Globe size={14} className="text-cyan-300 animate-pulse" />
+                Nhập từ Google Docs / Link Web 🌐
+              </button>
+              <button
                 onClick={() => setShowGovernanceModal(true)}
                 className="flex items-center gap-2 bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-800 hover:from-blue-600 hover:to-indigo-600 text-white px-3.5 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-indigo-900/30 active:scale-95 text-xs cursor-pointer border border-indigo-400/30"
                 title="Quản trị Cây phân cấp 5 tầng (HQ -> Chi nhánh -> Phòng ban) & Danh mục Ngành động"
@@ -1084,6 +1096,15 @@ export function AdminQuestionsPage() {
             Nhập nhanh câu hỏi qua <span className="text-green-400 font-semibold">Excel</span>, hoặc tải tệp <span className="text-purple-400 font-semibold">Word (DOCX)</span> / <span className="text-red-400 font-semibold">PDF</span> có sẵn câu hỏi để Gemini AI tự động giải đề & lập barem.
           </p>
           <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setShowSmartUrlModal(true); }}
+              className="flex items-center gap-2 bg-indigo-950/80 hover:bg-indigo-900 text-indigo-300 border border-indigo-500/40 px-4 py-2 rounded-xl font-bold text-xs cursor-pointer transition-all hover:scale-105 shadow-md shadow-indigo-900/30"
+            >
+              <Globe size={14} className="text-cyan-300" />
+              Dán Link Google Docs / Web URL
+              <span className="bg-indigo-500/30 text-indigo-200 text-[10px] px-1.5 py-0.2 rounded font-mono">1-Click</span>
+            </button>
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); handleOpenExcelStudio(); }}
@@ -1963,6 +1984,25 @@ export function AdminQuestionsPage() {
       <TenantGovernanceModal
         isOpen={showGovernanceModal}
         onClose={() => setShowGovernanceModal(false)}
+      />
+
+      {/* Smart Universal URI Ingestion Modal */}
+      <SmartUrlImportModal
+        isOpen={showSmartUrlModal}
+        onClose={() => setShowSmartUrlModal(false)}
+        onSuccessDocxOrPdf={(questions, fileName) => {
+          const mappedData = questions.map((item: any) => ({
+            ...item,
+            topicCode: item.topicCode || (topics.length > 0 ? topics[0].code : 'PARTY_BUILDING'),
+            difficulty: item.difficulty || 3,
+          }));
+          setDocxPreviewList(mappedData);
+          setShowDocxPreviewModal(true);
+        }}
+        onSuccessExcel={(excelData) => {
+          setExcelPreviewData(excelData);
+          setShowExcelPreviewModal(true);
+        }}
       />
     </div>
   );
