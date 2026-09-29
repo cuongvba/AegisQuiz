@@ -1,0 +1,55 @@
+# ============================================================================
+# AegisQuiz Backend — DEV Container (Hot-Reload qua `dotnet watch`)
+# ============================================================================
+# Khác với `Dockerfile` (multi-stage build/publish cho Production), file này
+# CHỈ dùng cho môi trường phát triển cục bộ: source code được mount qua volume,
+# mọi thay đổi *.cs được `dotnet watch` tự động biên dịch lại + restart ngay
+# trong container — không cần rebuild image mỗi lần sửa code.
+#
+# Build & chạy độc lập (không cần docker-compose):
+#   cd Backend
+#   docker build -f Dockerfile.dev -t aegisquiz-backend-dev .
+#   docker run --rm -p 8080:8080 -v "${PWD}:/src" -v /src/src/AegisQuiz.API/bin -v /src/src/AegisQuiz.API/obj `
+#     --name aegisquiz-backend-dev aegisquiz-backend-dev
+#
+# Khuyến nghị: chạy qua `docker-compose.dev.yml` ở thư mục gốc để tự động có
+# Postgres/Redis/Keycloak/IRT-Service kèm theo:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up backend frontend
+# ============================================================================
+FROM mcr.microsoft.com/dotnet/sdk:10.0
+WORKDIR /src
+
+# Thư viện hệ thống cần cho xử lý ảnh/PDF (giống hệt runtime image Production)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgdiplus libfontconfig1 curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# ── Cache layer restore: copy *.csproj trước để tận dụng Docker layer cache ──
+# (Khi build lần đầu; sau đó volume mount ở docker-compose.dev.yml sẽ ghi đè)
+COPY AegisQuiz.sln ./
+COPY src/AegisQuiz.Domain/AegisQuiz.Domain.csproj                 src/AegisQuiz.Domain/
+COPY src/AegisQuiz.Application/AegisQuiz.Application.csproj       src/AegisQuiz.Application/
+COPY src/AegisQuiz.Infrastructure/AegisQuiz.Infrastructure.csproj src/AegisQuiz.Infrastructure/
+COPY src/AegisQuiz.API/AegisQuiz.API.csproj                       src/AegisQuiz.API/
+RUN dotnet restore src/AegisQuiz.API/AegisQuiz.API.csproj
+
+# Copy toàn bộ source (fallback khi build image độc lập, không qua volume mount)
+COPY . .
+
+ENV ASPNETCORE_ENVIRONMENT=Development
+ENV ASPNETCORE_URLS=http://+:8080
+# [Docker Desktop Windows/Mac] Bind-mount qua bên ngoài filesystem Linux khiến
+# inotify không nhận diện thay đổi file đáng tin cậy — bắt buộc bật Polling.
+ENV DOTNET_USE_POLLING_FILE_WATCHER=true
+# Tắt telemetry + tối ưu thời gian khởi động lần đầu trong container dev
+ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
+ENV DOTNET_NOLOGO=1
+
+EXPOSE 8080
+
+# `dotnet watch run` thay vì `dotnet run` — tự động rebuild + restart khi code đổi.
+# --non-interactive: tránh watch chờ input phím (không có TTY tương tác trong container).
+ENTRYPOINT ["dotnet", "watch", "run", \
+            "--project", "src/AegisQuiz.API/AegisQuiz.API.csproj", \
+            "--urls", "http://+:8080", \
+            "--non-interactive"]

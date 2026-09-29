@@ -4,9 +4,11 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using AegisQuiz.Application.DTOs;
 
 namespace AegisQuiz.Infrastructure.Services
 {
+    /// <summary>Kết quả nhận diện Hệ 5 Trục Tọa Độ Tri Thức + Smart Tags.</summary>
     public class CognitiveCoordinateTaxonomyResult
     {
         public string DomainCode { get; set; } = "GENERAL";
@@ -20,8 +22,10 @@ namespace AegisQuiz.Infrastructure.Services
 
     /// <summary>
     /// [Universal Cognitive Coordinate & Taxonomy Engine]
-    /// Động cơ siêu vi nhận thức tự động nhận diện Hệ 5 Trục Tọa Độ và Thẻ Thông Minh
-    /// từ tiêu đề file, các hàng banner/tiêu đề đầu bảng và nội dung câu hỏi/căn cứ pháp lý.
+    /// Động cơ nhận thức tự động nhận diện Hệ 5 Trục Tọa Độ (DomainCode, TargetLevel, AssessmentPurpose, IssuingOrg,
+    /// BenchmarkYear/BenchmarkStandard) và Thẻ Thông Minh từ tên file, hàng banner đầu bảng, nội dung câu hỏi và căn cứ pháp lý.
+    /// Ưu tiên tuyệt đối dữ liệu động của Tenant (<see cref="DynamicDomainContext"/>: Domains, CoordinatePresets, Topics);
+    /// bộ từ khóa chuẩn hệ thống chỉ là lớp dự phòng khi Tenant chưa cấu hình.
     /// </summary>
     public static class UniversalCoordinateTaxonomyEngine
     {
@@ -30,7 +34,8 @@ namespace AegisQuiz.Infrastructure.Services
             string? sheetName,
             IEnumerable<string>? headerBannerLines,
             IEnumerable<string>? sampleContents = null,
-            IEnumerable<string>? sampleReferences = null)
+            IEnumerable<string>? sampleReferences = null,
+            DynamicDomainContext? dynamicContext = null)
         {
             var result = new CognitiveCoordinateTaxonomyResult();
 
@@ -44,250 +49,234 @@ namespace AegisQuiz.Infrastructure.Services
                               $"{string.Join(" ", sampleContents?.Take(15) ?? Enumerable.Empty<string>())} " +
                               $"{string.Join(" ", sampleReferences?.Take(15) ?? Enumerable.Empty<string>())}";
 
-            // 1. Nhận diện Năm chuẩn mực (BenchmarkYear)
             result.BenchmarkYear = DetectYear(bannerList, fileName, sheetName);
-
-            // 2. Nhận diện Vị trí / Cấp bậc / Khối lớp (TargetLevel)
-            result.TargetLevel = DetectTargetLevel(bannerList, fileName, sheetName, combinedAll);
-
-            // 3. Nhận diện Mục đích sát hạch / Loại kỳ thi (AssessmentPurpose)
-            result.AssessmentPurpose = DetectAssessmentPurpose(bannerList, fileName, sheetName, combinedAll);
-
-            // 4. Nhận diện Đơn vị / Cơ quan ban hành (IssuingOrg)
-            result.IssuingOrg = DetectIssuingOrg(bannerList, fileName, combinedAll);
-
-            // 5. Nhận diện Miền ngành nghề đào tạo (DomainCode)
-            result.DomainCode = DetectDomain(combinedAll, result.TargetLevel, result.AssessmentPurpose, result.IssuingOrg);
-
-            // 6. Nhận diện Chuẩn mực / Thể thức quy chiếu (BenchmarkStandard)
-            result.BenchmarkStandard = DetectStandard(combinedAll, result.DomainCode, result.AssessmentPurpose, result.BenchmarkYear);
-
-            // 7. Tự động sinh danh sách Thẻ thông minh (Smart Tags)
-            result.Tags = GenerateSmartTags(result, fileName, sheetName);
-
+            result.TargetLevel = DetectTargetLevel(bannerList, fileName, sheetName, combinedAll, dynamicContext);
+            result.AssessmentPurpose = DetectAssessmentPurpose(bannerList, fileName, sheetName, combinedAll, dynamicContext);
+            result.IssuingOrg = DetectIssuingOrg(bannerList, fileName, combinedAll, dynamicContext);
+            result.DomainCode = DetectDomain(combinedAll, result.TargetLevel, result.AssessmentPurpose, result.IssuingOrg, dynamicContext);
+            result.BenchmarkStandard = DetectStandard(combinedAll, result.DomainCode, result.AssessmentPurpose, result.BenchmarkYear, dynamicContext);
+            result.Tags = GenerateSmartTags(result, fileName, sheetName, dynamicContext);
             return result;
         }
 
+        // ─────────────────────────────────────────────────────────────────────
+        // Trục 1: Năm chuẩn mực
+        // ─────────────────────────────────────────────────────────────────────
+
         private static int? DetectYear(List<string> banners, string? fileName, string? sheetName)
         {
-            var textToScan = $"{string.Join(" ", banners)} {fileName} {sheetName}";
+            var text = $"{string.Join(" ", banners)} {fileName} {sheetName}";
 
-            // Ưu tiên khớp "NĂM 2026", "ĐỢT 2 NĂM 2026", "NIÊN KHÓA 2025-2026"
-            var mYearPrefixed = Regex.Match(textToScan, @"(?:năm|nam|đợt\s*\d+\s*năm|niên\s*khóa|khoá|year)\s*[:\-–—]?\s*(20\d{2})", RegexOptions.IgnoreCase);
-            if (mYearPrefixed.Success && int.TryParse(mYearPrefixed.Groups[1].Value, out int y1) && y1 >= 2000 && y1 <= 2050)
+            var labeled = Regex.Match(text, @"(?:năm|nam|đợt\s*\d+\s*năm|niên\s*khóa|khoá|year)\s*[:\-–—]?\s*(20\d{2})", RegexOptions.IgnoreCase);
+            if (labeled.Success && int.TryParse(labeled.Groups[1].Value, out var year) && year >= 2000 && year <= 2050)
             {
-                return y1;
+                return year;
             }
 
-            // Quét năm dạng 202x đứng riêng
-            var mYearStandalone = Regex.Match(textToScan, @"\b(202[0-9]|201[8-9])\b");
-            if (mYearStandalone.Success && int.TryParse(mYearStandalone.Groups[1].Value, out int y2))
-            {
-                return y2;
-            }
-
-            return null;
+            var bare = Regex.Match(text, @"\b(202[0-9]|201[8-9])\b");
+            return bare.Success && int.TryParse(bare.Groups[1].Value, out var bareYear) ? bareYear : null;
         }
 
-        private static string? DetectTargetLevel(List<string> banners, string? fileName, string? sheetName, string combinedAll)
+        // ─────────────────────────────────────────────────────────────────────
+        // Trục 2: Vị trí / Cấp bậc / Khối lớp
+        // ─────────────────────────────────────────────────────────────────────
+
+        private static string? DetectTargetLevel(List<string> banners, string? fileName, string? sheetName, string combinedAll, DynamicDomainContext? dynamicContext)
         {
-            // 1. Quét các dòng banner tìm tiền tố "VỊ TRÍ:", "CHỨC DANH:", "ĐỐI TƯỢNG:", "KHỐI LỚP:", "CẤP BẬC:"
-            foreach (var line in banners)
+            var preset = MatchPreset(dynamicContext, "TARGET_LEVEL", combinedAll);
+            if (preset != null) return preset;
+
+            foreach (var banner in banners)
             {
-                var mPrefix = Regex.Match(line, @"(?:vị\s*trí|chức\s*danh|ngạch|đối\s*tượng|cấp\s*bậc|khối\s*lớp|hạng\s*bằng|dành\s*cho)\s*[:\-–—]\s*([^\r\n|;]+)", RegexOptions.IgnoreCase);
-                if (mPrefix.Success)
+                var m = Regex.Match(banner, @"(?:vị\s*trí|chức\s*danh|ngạch|đối\s*tượng|cấp\s*bậc|khối\s*lớp|hạng\s*bằng|dành\s*cho)\s*[:\-–—]\s*([^\r\n|;]+)", RegexOptions.IgnoreCase);
+                if (!m.Success) continue;
+                var extracted = CleanExtractedText(m.Groups[1].Value);
+                if (!string.IsNullOrWhiteSpace(extracted) && extracted.Length > 2)
                 {
-                    var val = CleanExtractedText(mPrefix.Groups[1].Value);
-                    if (!string.IsNullOrWhiteSpace(val) && val.Length > 2)
-                    {
-                        return NormalizeLevelName(val);
-                    }
+                    return NormalizeLevelName(extracted);
                 }
             }
 
-            // 2. Nhận diện từ file name / sheet name (Ví dụ: "1. Tín dụng KHDN", "Tín dụng KHCN", "Lớp 12", "Hạng B2")
-            var nameSource = $"{fileName} {sheetName}";
-            if (Regex.IsMatch(nameSource, @"\btín\s+dụng\s+khdn\b|\bkhdn\b", RegexOptions.IgnoreCase))
-                return "Tín dụng Khách hàng Doanh nghiệp";
-            if (Regex.IsMatch(nameSource, @"\btín\s+dụng\s+khcn\b|\bkhcn\b", RegexOptions.IgnoreCase))
-                return "Tín dụng Khách hàng Cá nhân";
-            if (Regex.IsMatch(nameSource, @"\bkế\s+toán\s+ngân\s+quỹ\b|\bngân\s+quỹ\b", RegexOptions.IgnoreCase))
-                return "Kế toán & Ngân quỹ";
-            if (Regex.IsMatch(nameSource, @"\bkiểm\s+soát\s+viên\b", RegexOptions.IgnoreCase))
-                return "Kiểm soát viên";
-            if (Regex.IsMatch(nameSource, @"\bgiao\s+dịch\s+viên\b", RegexOptions.IgnoreCase))
-                return "Giao dịch viên";
-            if (Regex.IsMatch(nameSource, @"\blớp\s*12\b|\bkhối\s*12\b", RegexOptions.IgnoreCase))
-                return "Lớp 12";
-            if (Regex.IsMatch(nameSource, @"\blớp\s*11\b|\bkhối\s*11\b", RegexOptions.IgnoreCase))
-                return "Lớp 11";
-            if (Regex.IsMatch(nameSource, @"\blớp\s*10\b|\bkhối\s*10\b", RegexOptions.IgnoreCase))
-                return "Lớp 10";
-            if (Regex.IsMatch(nameSource, @"\bhạng\s*(?:b2|b1|c|d|e|f)\b", RegexOptions.IgnoreCase))
-            {
-                var hm = Regex.Match(nameSource, @"hạng\s*(b2|b1|c|d|e|f)", RegexOptions.IgnoreCase);
-                return $"GPLX Hạng {hm.Groups[1].Value.ToUpperInvariant()}";
-            }
+            var fileAndSheet = $"{fileName} {sheetName}";
+            if (Regex.IsMatch(fileAndSheet, @"\btín\s+dụng\s+khdn\b|\bkhdn\b", RegexOptions.IgnoreCase)) return "Tín dụng Khách hàng Doanh nghiệp";
+            if (Regex.IsMatch(fileAndSheet, @"\btín\s+dụng\s+khcn\b|\bkhcn\b", RegexOptions.IgnoreCase)) return "Tín dụng Khách hàng Cá nhân";
+            if (Regex.IsMatch(fileAndSheet, @"\bkế\s+toán\s+ngân\s+quỹ\b|\bngân\s+quỹ\b", RegexOptions.IgnoreCase)) return "Kế toán & Ngân quỹ";
+            if (Regex.IsMatch(fileAndSheet, @"\bkiểm\s+soát\s+viên\b", RegexOptions.IgnoreCase)) return "Kiểm soát viên";
+            if (Regex.IsMatch(fileAndSheet, @"\bgiao\s+dịch\s+viên\b", RegexOptions.IgnoreCase)) return "Giao dịch viên";
+            if (Regex.IsMatch(fileAndSheet, @"\blớp\s*12\b|\bkhối\s*12\b", RegexOptions.IgnoreCase)) return "Lớp 12";
+            if (Regex.IsMatch(fileAndSheet, @"\blớp\s*11\b|\bkhối\s*11\b", RegexOptions.IgnoreCase)) return "Lớp 11";
+            if (Regex.IsMatch(fileAndSheet, @"\blớp\s*10\b|\bkhối\s*10\b", RegexOptions.IgnoreCase)) return "Lớp 10";
 
-            // 3. Quét toàn văn
-            if (Regex.IsMatch(combinedAll, @"\btín\s+dụng\s+khách\s+hàng\s+doanh\s+nghiệp\b", RegexOptions.IgnoreCase))
-                return "Tín dụng Khách hàng Doanh nghiệp";
-            if (Regex.IsMatch(combinedAll, @"\btín\s+dụng\s+khách\s+hàng\s+cá\s+nhân\b", RegexOptions.IgnoreCase))
-                return "Tín dụng Khách hàng Cá nhân";
+            var licenseClass = Regex.Match(fileAndSheet, @"\bhạng\s*(b2|b1|c|d|e|f)\b", RegexOptions.IgnoreCase);
+            if (licenseClass.Success) return "GPLX Hạng " + licenseClass.Groups[1].Value.ToUpperInvariant();
 
+            if (Regex.IsMatch(combinedAll, @"\btín\s+dụng\s+khách\s+hàng\s+doanh\s+nghiệp\b", RegexOptions.IgnoreCase)) return "Tín dụng Khách hàng Doanh nghiệp";
+            if (Regex.IsMatch(combinedAll, @"\btín\s+dụng\s+khách\s+hàng\s+cá\s+nhân\b", RegexOptions.IgnoreCase)) return "Tín dụng Khách hàng Cá nhân";
             return null;
         }
 
-        private static string? DetectAssessmentPurpose(List<string> banners, string? fileName, string? sheetName, string combinedAll)
-        {
-            // 1. Quét banner tìm cấu trúc kỳ kiểm tra / kỳ thi
-            foreach (var line in banners)
-            {
-                // Bỏ qua cụm "BỘ CÂU HỎI, ĐÁP ÁN ÔN TẬP"
-                var cleaned = Regex.Replace(line, @"^(?:bộ\s*câu\s*hỏi(?:\s*,\s*đáp\s*án)?\s*(?:ôn\s*tập\s*)?[-–—:]?\s*)", "", RegexOptions.IgnoreCase).Trim();
+        // ─────────────────────────────────────────────────────────────────────
+        // Trục 3: Mục đích sát hạch / Loại kỳ thi
+        // ─────────────────────────────────────────────────────────────────────
 
-                var m = Regex.Match(cleaned, @"(kỳ\s*kiểm\s*tra[^\r\n|;]+|kỳ\s*thi[^\r\n|;]+|sát\s*hạch[^\r\n|;]+|đánh\s*giá[^\r\n|;]+|ôn\s*tập\s*nghiệp\s*vụ[^\r\n|;]+)", RegexOptions.IgnoreCase);
+        private static string? DetectAssessmentPurpose(List<string> banners, string? fileName, string? sheetName, string combinedAll, DynamicDomainContext? dynamicContext)
+        {
+            var preset = MatchPreset(dynamicContext, "ASSESSMENT_PURPOSE", combinedAll);
+            if (preset != null) return preset;
+
+            foreach (var banner in banners)
+            {
+                var stripped = Regex.Replace(banner, @"^(?:bộ\s*câu\s*hỏi(?:\s*,\s*đáp\s*án)?\s*(?:ôn\s*tập\s*)?[-–—:]?\s*)", "", RegexOptions.IgnoreCase).Trim();
+                var m = Regex.Match(stripped, @"(kỳ\s*kiểm\s*tra[^\r\n|;]+|kỳ\s*thi[^\r\n|;]+|sát\s*hạch[^\r\n|;]+|đánh\s*giá[^\r\n|;]+|ôn\s*tập\s*nghiệp\s*vụ[^\r\n|;]+)", RegexOptions.IgnoreCase);
                 if (m.Success)
                 {
-                    var purpose = m.Groups[1].Value.Trim();
-                    // Loại bỏ phần "năm 20xx" ở đuôi nếu có
-                    purpose = Regex.Replace(purpose, @"\s+năm\s+\d{4}$", "", RegexOptions.IgnoreCase).Trim();
+                    var purpose = Regex.Replace(m.Groups[1].Value.Trim(), @"\s+năm\s+\d{4}$", "", RegexOptions.IgnoreCase).Trim();
                     return NormalizeTitleCase(purpose);
                 }
             }
 
-            // 2. Nhận diện từ file / sheet / nội dung
-            if (Regex.IsMatch(combinedAll, @"\btốt\s+nghiệp\s+thpt\b|\bthpt\s+quốc\s+gia\b", RegexOptions.IgnoreCase))
-                return "Kỳ thi Tốt nghiệp THPT Quốc Gia";
-            if (Regex.IsMatch(combinedAll, @"\bsát\s+hạch\s+lái\s+xe\b|\bgplx\b", RegexOptions.IgnoreCase))
-                return "Sát hạch Giấy phép Lái xe (GPLX)";
-            if (Regex.IsMatch(combinedAll, @"\bkiểm\s+tra\s+(?:chuyên\s*môn\s*)?nghiệp\s+vụ\s+định\s+kỳ\b", RegexOptions.IgnoreCase))
-                return "Kiểm tra chuyên môn nghiệp vụ định kỳ";
-            if (Regex.IsMatch(combinedAll, @"\bphòng\s+chống\s+rửa\s+tiền\b|\baml\b", RegexOptions.IgnoreCase))
-                return "Sát hạch Nghiệp vụ Phòng chống Rửa tiền (AML)";
-            if (Regex.IsMatch(combinedAll, @"\ban\s+toàn\s+lao\s+động\b|\batvsld\b", RegexOptions.IgnoreCase))
-                return "Huấn luyện An toàn Vệ sinh Lao động (ATVSLĐ)";
-
+            if (Regex.IsMatch(combinedAll, @"\btốt\s+nghiệp\s+thpt\b|\bthpt\s+quốc\s+gia\b", RegexOptions.IgnoreCase)) return "Kỳ thi Tốt nghiệp THPT Quốc Gia";
+            if (Regex.IsMatch(combinedAll, @"\bsát\s+hạch\s+lái\s+xe\b|\bgplx\b", RegexOptions.IgnoreCase)) return "Sát hạch Giấy phép Lái xe (GPLX)";
+            if (Regex.IsMatch(combinedAll, @"\bkiểm\s+tra\s+(?:chuyên\s*môn\s*)?nghiệp\s+vụ\s+định\s+kỳ\b", RegexOptions.IgnoreCase)) return "Kiểm tra chuyên môn nghiệp vụ định kỳ";
+            if (Regex.IsMatch(combinedAll, @"\bphòng\s+chống\s+rửa\s+tiền\b|\baml\b", RegexOptions.IgnoreCase)) return "Sát hạch Nghiệp vụ Phòng chống Rửa tiền (AML)";
+            if (Regex.IsMatch(combinedAll, @"\ban\s+toàn\s+lao\s+động\b|\batvsld\b", RegexOptions.IgnoreCase)) return "Huấn luyện An toàn Vệ sinh Lao động (ATVSLĐ)";
             return null;
         }
 
-        private static string? DetectIssuingOrg(List<string> banners, string? fileName, string combinedAll)
+        // ─────────────────────────────────────────────────────────────────────
+        // Trục 4: Đơn vị / Cơ quan ban hành
+        // ─────────────────────────────────────────────────────────────────────
+
+        private static string? DetectIssuingOrg(List<string> banners, string? fileName, string combinedAll, DynamicDomainContext? dynamicContext)
         {
-            // 1. Quét tìm tên ngân hàng / tổ chức lớn
+            var preset = MatchPreset(dynamicContext, "ISSUING_ORG", combinedAll);
+            if (preset != null) return preset;
+
             if (Regex.IsMatch(combinedAll, @"\bagribank\b|\bnhno\b|\bngân\s+hàng\s+nông\s+nghiệp\b", RegexOptions.IgnoreCase))
             {
-                if (Regex.IsMatch(combinedAll, @"\bchi\s+nhánh\b", RegexOptions.IgnoreCase))
-                    return "Agribank (Chi nhánh)";
-                return "Agribank";
+                return Regex.IsMatch(combinedAll, @"\bchi\s+nhánh\b", RegexOptions.IgnoreCase) ? "Agribank (Chi nhánh)" : "Agribank";
             }
-            if (Regex.IsMatch(combinedAll, @"\bvietcombank\b|\bvcb\b|\bngoại\s+thương\b", RegexOptions.IgnoreCase))
-                return "Vietcombank";
-            if (Regex.IsMatch(combinedAll, @"\bbidv\b|\bđầu\s+tư\s+và\s+phát\s+triển\b", RegexOptions.IgnoreCase))
-                return "BIDV";
-            if (Regex.IsMatch(combinedAll, @"\bvietinbank\b|\bctg\b|\bcông\s+thương\b", RegexOptions.IgnoreCase))
-                return "VietinBank";
-            if (Regex.IsMatch(combinedAll, @"\bcục\s+đường\s+bộ\b", RegexOptions.IgnoreCase))
-                return "Cục Đường bộ Việt Nam";
-            if (Regex.IsMatch(combinedAll, @"\bbộ\s+y\s+tế\b", RegexOptions.IgnoreCase))
-                return "Bộ Y tế";
-            if (Regex.IsMatch(combinedAll, @"\bbộ\s+giáo\s+dục\b", RegexOptions.IgnoreCase))
-                return "Bộ Giáo dục và Đào tạo";
-            if (Regex.IsMatch(combinedAll, @"\bchuyên\s+amsterdam\b|\bamsterdam\b", RegexOptions.IgnoreCase))
-                return "THPT Chuyên Hà Nội - Amsterdam";
+            if (Regex.IsMatch(combinedAll, @"\bvietcombank\b|\bvcb\b|\bngoại\s+thương\b", RegexOptions.IgnoreCase)) return "Vietcombank";
+            if (Regex.IsMatch(combinedAll, @"\bbidv\b|\bđầu\s+tư\s+và\s+phát\s+triển\b", RegexOptions.IgnoreCase)) return "BIDV";
+            if (Regex.IsMatch(combinedAll, @"\bvietinbank\b|\bctg\b|\bcông\s+thương\b", RegexOptions.IgnoreCase)) return "VietinBank";
+            if (Regex.IsMatch(combinedAll, @"\bcục\s+đường\s+bộ\b", RegexOptions.IgnoreCase)) return "Cục Đường bộ Việt Nam";
+            if (Regex.IsMatch(combinedAll, @"\bbộ\s+y\s+tế\b", RegexOptions.IgnoreCase)) return "Bộ Y tế";
+            if (Regex.IsMatch(combinedAll, @"\bbộ\s+giáo\s+dục\b", RegexOptions.IgnoreCase)) return "Bộ Giáo dục và Đào tạo";
+            if (Regex.IsMatch(combinedAll, @"\bchuyên\s+amsterdam\b|\bamsterdam\b", RegexOptions.IgnoreCase)) return "THPT Chuyên Hà Nội - Amsterdam";
 
-            // 2. Tìm tiền tố "ĐƠN VỊ:", "CƠ QUAN:", "TẠI CHI NHÁNH"
-            foreach (var line in banners)
+            foreach (var banner in banners)
             {
-                var m = Regex.Match(line, @"(?:đơn\s*vị|cơ\s*quan|trường|ngân\s*hàng|chi\s*nhánh)\s*[:\-–—]\s*([^\r\n|;]+)", RegexOptions.IgnoreCase);
+                var m = Regex.Match(banner, @"(?:đơn\s*vị|cơ\s*quan|trường|ngân\s*hàng|chi\s*nhánh)\s*[:\-–—]\s*([^\r\n|;]+)", RegexOptions.IgnoreCase);
                 if (m.Success)
                 {
-                    var val = CleanExtractedText(m.Groups[1].Value);
-                    if (!string.IsNullOrWhiteSpace(val)) return NormalizeTitleCase(val);
+                    var extracted = CleanExtractedText(m.Groups[1].Value);
+                    if (!string.IsNullOrWhiteSpace(extracted)) return NormalizeTitleCase(extracted);
                 }
-
-                if (Regex.IsMatch(line, @"\btại\s+chi\s+nhánh\b", RegexOptions.IgnoreCase))
-                    return "Chi nhánh";
+                if (Regex.IsMatch(banner, @"\btại\s+chi\s+nhánh\b", RegexOptions.IgnoreCase)) return "Chi nhánh";
             }
-
             return null;
         }
 
-        private static string DetectDomain(string combinedAll, string? targetLevel, string? purpose, string? org)
+        // ─────────────────────────────────────────────────────────────────────
+        // Trục 5: Miền ngành nghề (Dynamic Domains → chuẩn hệ thống dự phòng)
+        // ─────────────────────────────────────────────────────────────────────
+
+        private static string DetectDomain(string combinedAll, string? targetLevel, string? purpose, string? org, DynamicDomainContext? dynamicContext)
         {
-            var scores = new Dictionary<string, int>
+            if (dynamicContext?.Domains != null && dynamicContext.Domains.Count > 0)
             {
-                ["BANKING"] = 0,
-                ["EDUCATION"] = 0,
-                ["GOV_DRIVING"] = 0,
-                ["HEALTHCARE"] = 0,
-                ["HSE"] = 0,
-                ["IT_SECURITY"] = 0
+                var cleanAll = CleanToTag(combinedAll);
+                var scores = dynamicContext.Domains.ToDictionary(d => d.Code, _ => 0, StringComparer.OrdinalIgnoreCase);
+
+                foreach (var domain in dynamicContext.Domains)
+                {
+                    if (domain.Code.Equals("GENERAL", StringComparison.OrdinalIgnoreCase)) continue;
+
+                    if (!string.IsNullOrWhiteSpace(domain.Code) && combinedAll.Contains(domain.Code, StringComparison.OrdinalIgnoreCase)) scores[domain.Code] += 5;
+                    if (ContainsPhrase(combinedAll, cleanAll, domain.Name)) scores[domain.Code] += 5;
+                    scores[domain.Code] += 3 * domain.Synonyms.Count(s => ContainsPhrase(combinedAll, cleanAll, s));
+
+                    if (dynamicContext.CoordinatePresets != null)
+                    {
+                        foreach (var preset in dynamicContext.CoordinatePresets.Where(p => p.DomainCode.Equals(domain.Code, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            if (ContainsPhrase(combinedAll, cleanAll, preset.PresetLabel)) scores[domain.Code] += 4;
+                            scores[domain.Code] += 2 * preset.Synonyms.Count(s => ContainsPhrase(combinedAll, cleanAll, s));
+                        }
+                    }
+
+                    if (dynamicContext.Topics != null)
+                    {
+                        foreach (var topic in dynamicContext.Topics)
+                        {
+                            bool topicMentioned = combinedAll.Contains(topic.Code, StringComparison.OrdinalIgnoreCase) || ContainsPhrase(combinedAll, cleanAll, topic.Name);
+                            if (!topicMentioned) continue;
+
+                            var cleanTopicName = CleanToTag(topic.Name);
+                            bool topicBelongsToDomain = domain.Synonyms.Any(s => cleanTopicName.Contains(CleanToTag(s)))
+                                                        || (!string.IsNullOrWhiteSpace(domain.Name) && cleanTopicName.Contains(CleanToTag(domain.Name)));
+                            if (topicBelongsToDomain) scores[domain.Code] += 4;
+                        }
+                    }
+                }
+
+                var best = scores.OrderByDescending(kv => kv.Value).FirstOrDefault();
+                if (best.Value > 0) return best.Key;
+            }
+
+            var fallbackScores = new Dictionary<string, int>
+            {
+                ["BANKING"] = 0, ["EDUCATION"] = 0, ["GOV_DRIVING"] = 0, ["HEALTHCARE"] = 0, ["HSE"] = 0, ["IT_SECURITY"] = 0
             };
 
-            // Điểm tín hiệu Ngân hàng
-            var bankingTerms = new[] { "tín dụng", "khdn", "khcn", "tiền gửi", "ngân hàng", "chi nhánh", "rửa tiền", "aml", "thế chấp",
-                "tài sản bảo đảm", "e-banking", "ebanking", "agribank", "vietcombank", "bidv", "vietinbank", "cic", "kho tiền", "ngân quỹ",
-                "thẩm định", "cho vay", "bảo lãnh", "lãi suất", "sổ tiết kiệm", "thẻ tín dụng", "quy định số 1686", "nhno", "hạn mức" };
-            foreach (var term in bankingTerms)
+            foreach (var (domain, keywords, weight) in SystemDomainKeywords)
             {
-                if (combinedAll.Contains(term, StringComparison.OrdinalIgnoreCase)) scores["BANKING"] += 2;
+                fallbackScores[domain] += weight * keywords.Count(k => combinedAll.Contains(k, StringComparison.OrdinalIgnoreCase));
             }
 
-            // Điểm tín hiệu Giáo dục
-            var eduTerms = new[] { "toán", "đạo hàm", "tích phân", "hàm số", "ngữ văn", "tiếng anh", "vật lý", "hóa học", "gdpt", "thpt",
-                "lớp 12", "lớp 11", "lớp 10", "k-12", "reading passage", "pronunciation", "chuyên amsterdam" };
-            foreach (var term in eduTerms)
-            {
-                if (combinedAll.Contains(term, StringComparison.OrdinalIgnoreCase)) scores["EDUCATION"] += 2;
-            }
-
-            // Điểm tín hiệu Sát hạch lái xe
-            var drivingTerms = new[] { "gplx", "sa hình", "biển báo", "lái xe", "vượt ẩu", "xe cơ giới", "tốc độ tối đa", "điểm liệt", "cục đường bộ" };
-            foreach (var term in drivingTerms)
-            {
-                if (combinedAll.Contains(term, StringComparison.OrdinalIgnoreCase)) scores["GOV_DRIVING"] += 3;
-            }
-
-            // Điểm tín hiệu Y tế
-            var healthTerms = new[] { "bác sĩ", "dược lâm sàng", "phác đồ", "điều trị", "bệnh nhân", "bệnh viện", "bộ y tế", "y khoa" };
-            foreach (var term in healthTerms)
-            {
-                if (combinedAll.Contains(term, StringComparison.OrdinalIgnoreCase)) scores["HEALTHCARE"] += 3;
-            }
-
-            // Điểm tín hiệu HSE
-            var hseTerms = new[] { "an toàn lao động", "bảo hộ lao động", "pccc", "phòng cháy chữa cháy", "vslđ", "iso 45001", "hóa chất", "an toàn điện" };
-            foreach (var term in hseTerms)
-            {
-                if (combinedAll.Contains(term, StringComparison.OrdinalIgnoreCase)) scores["HSE"] += 3;
-            }
-
-            // Điểm tín hiệu CNTT
-            var itTerms = new[] { "an toàn thông tin", "iso 27001", "owasp", "an ninh mạng", "phishing", "mật khẩu", "cybersecurity", "devsecops" };
-            foreach (var term in itTerms)
-            {
-                if (combinedAll.Contains(term, StringComparison.OrdinalIgnoreCase)) scores["IT_SECURITY"] += 3;
-            }
-
-            var best = scores.OrderByDescending(kv => kv.Value).First();
-            return best.Value > 0 ? best.Key : "GENERAL";
+            var winner = fallbackScores.OrderByDescending(kv => kv.Value).First();
+            return winner.Value > 0 ? winner.Key : "GENERAL";
         }
 
-        private static string? DetectStandard(string combinedAll, string domain, string? purpose, int? year)
+        /// <summary>Bộ từ khóa chuẩn hệ thống (lớp dự phòng khi Tenant chưa cấu hình Dynamic Domains).</summary>
+        private static readonly (string Domain, string[] Keywords, int Weight)[] SystemDomainKeywords =
         {
-            // Trích xuất số quy định nếu có (Ví dụ: "Quy định số 1686/QyĐ-NHNo-KHDN")
-            var mQd = Regex.Match(combinedAll, @"(quy\s*định\s*số\s*\d+/[A-Za-z0-9\-_]+)", RegexOptions.IgnoreCase);
-            if (mQd.Success)
+            ("BANKING", new[] { "tín dụng", "khdn", "khcn", "tiền gửi", "ngân hàng", "chi nhánh", "rửa tiền", "aml", "thế chấp", "tài sản bảo đảm",
+                                "e-banking", "ebanking", "agribank", "vietcombank", "bidv", "vietinbank", "cic", "kho tiền", "ngân quỹ", "thẩm định",
+                                "cho vay", "bảo lãnh", "lãi suất", "sổ tiết kiệm", "thẻ tín dụng", "quy định số 1686", "nhno", "hạn mức" }, 2),
+            ("EDUCATION", new[] { "toán", "đạo hàm", "tích phân", "hàm số", "ngữ văn", "tiếng anh", "vật lý", "hóa học", "gdpt", "thpt",
+                                  "lớp 12", "lớp 11", "lớp 10", "k-12", "reading passage", "pronunciation", "chuyên amsterdam" }, 2),
+            ("GOV_DRIVING", new[] { "gplx", "sa hình", "biển báo", "lái xe", "vượt ẩu", "xe cơ giới", "tốc độ tối đa", "điểm liệt", "cục đường bộ" }, 3),
+            ("HEALTHCARE", new[] { "bác sĩ", "dược lâm sàng", "phác đồ", "điều trị", "bệnh nhân", "bệnh viện", "bộ y tế", "y khoa" }, 3),
+            ("HSE", new[] { "an toàn lao động", "bảo hộ lao động", "pccc", "phòng cháy chữa cháy", "vslđ", "iso 45001", "hóa chất", "an toàn điện" }, 3),
+            ("IT_SECURITY", new[] { "an toàn thông tin", "iso 27001", "owasp", "an ninh mạng", "phishing", "mật khẩu", "cybersecurity", "devsecops" }, 3)
+        };
+
+        // ─────────────────────────────────────────────────────────────────────
+        // Trục 5b: Chuẩn mực / Văn bản pháp quy
+        // ─────────────────────────────────────────────────────────────────────
+
+        private static string? DetectStandard(string combinedAll, string domain, string? purpose, int? year, DynamicDomainContext? dynamicContext)
+        {
+            if (dynamicContext?.CoordinatePresets != null && dynamicContext.CoordinatePresets.Count > 0)
             {
-                return NormalizeTitleCase(mQd.Groups[1].Value);
+                var candidates = dynamicContext.CoordinatePresets.Where(p =>
+                    p.CoordinateType.Equals("BENCHMARK_STANDARD", StringComparison.OrdinalIgnoreCase)
+                    && (string.IsNullOrWhiteSpace(domain)
+                        || p.DomainCode.Equals(domain, StringComparison.OrdinalIgnoreCase)
+                        || p.DomainCode.Equals("GENERAL", StringComparison.OrdinalIgnoreCase)));
+
+                foreach (var preset in candidates)
+                {
+                    if (PresetMentioned(preset, combinedAll)) return preset.PresetLabel;
+                }
             }
 
-            // Trích xuất Thông tư nếu có (Ví dụ: "Thông tư 41/2016/TT-NHNN")
-            var mTt = Regex.Match(combinedAll, @"(thông\s*tư\s*\d+(?:/\d+)?/TT-[A-Za-z0-9]+)", RegexOptions.IgnoreCase);
-            if (mTt.Success)
-            {
-                return mTt.Groups[1].Value.ToUpperInvariant();
-            }
+            var decision = Regex.Match(combinedAll, @"(quy\s*định\s*số\s*\d+/[A-Za-z0-9\-_]+)", RegexOptions.IgnoreCase);
+            if (decision.Success) return NormalizeTitleCase(decision.Groups[1].Value);
+
+            var circular = Regex.Match(combinedAll, @"(thông\s*tư\s*\d+(?:/\d+)?/TT-[A-Za-z0-9]+)", RegexOptions.IgnoreCase);
+            if (circular.Success) return circular.Groups[1].Value.ToUpperInvariant();
 
             return domain switch
             {
@@ -307,81 +296,73 @@ namespace AegisQuiz.Infrastructure.Services
             return m.Success ? m.Groups[1].Value : "2";
         }
 
-        private static List<string> GenerateSmartTags(CognitiveCoordinateTaxonomyResult res, string? fileName, string? sheetName)
+        // ─────────────────────────────────────────────────────────────────────
+        // Smart Tags
+        // ─────────────────────────────────────────────────────────────────────
+
+        private static List<string> GenerateSmartTags(CognitiveCoordinateTaxonomyResult res, string? fileName, string? sheetName, DynamicDomainContext? dynamicContext)
         {
             var tags = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            // 1. Thẻ từ Domain
+            var dynamicDomain = dynamicContext?.Domains?.FirstOrDefault(d => d.Code.Equals(res.DomainCode, StringComparison.OrdinalIgnoreCase));
+            if (dynamicDomain != null)
+            {
+                AddTag(tags, CleanToTag(dynamicDomain.Name));
+                AddTag(tags, CleanToTag(dynamicDomain.Code));
+            }
+
+            if (dynamicContext?.CoordinatePresets != null)
+            {
+                foreach (var preset in dynamicContext.CoordinatePresets)
+                {
+                    bool presetSelected = string.Equals(preset.PresetLabel, res.TargetLevel, StringComparison.OrdinalIgnoreCase)
+                                          || string.Equals(preset.PresetLabel, res.IssuingOrg, StringComparison.OrdinalIgnoreCase)
+                                          || string.Equals(preset.PresetLabel, res.BenchmarkStandard, StringComparison.OrdinalIgnoreCase)
+                                          || string.Equals(preset.PresetLabel, res.AssessmentPurpose, StringComparison.OrdinalIgnoreCase);
+                    if (presetSelected) AddTag(tags, CleanToTag(preset.PresetCode));
+                }
+            }
+
             switch (res.DomainCode)
             {
-                case "BANKING":
-                    tags.Add("ngan-hang");
-                    break;
-                case "EDUCATION":
-                    tags.Add("giao-duc");
-                    break;
-                case "GOV_DRIVING":
-                    tags.Add("gplx");
-                    tags.Add("sat-hach-lai-xe");
-                    break;
-                case "HEALTHCARE":
-                    tags.Add("y-te");
-                    break;
-                case "HSE":
-                    tags.Add("an-toan-lao-dong");
-                    tags.Add("hse");
-                    break;
-                case "IT_SECURITY":
-                    tags.Add("an-toan-thong-tin");
-                    break;
+                case "BANKING": tags.Add("ngan-hang"); break;
+                case "EDUCATION": tags.Add("giao-duc"); break;
+                case "GOV_DRIVING": tags.Add("gplx"); tags.Add("sat-hach-lai-xe"); break;
+                case "HEALTHCARE": tags.Add("y-te"); break;
+                case "HSE": tags.Add("an-toan-lao-dong"); tags.Add("hse"); break;
+                case "IT_SECURITY": tags.Add("an-toan-thong-tin"); break;
             }
 
-            // 2. Thẻ từ TargetLevel
             if (!string.IsNullOrWhiteSpace(res.TargetLevel))
             {
-                var cleanLvl = CleanToTag(res.TargetLevel);
-                if (!string.IsNullOrWhiteSpace(cleanLvl)) tags.Add(cleanLvl);
-
-                // Viết tắt phổ biến
-                if (res.TargetLevel.Contains("Khách hàng Doanh nghiệp", StringComparison.OrdinalIgnoreCase))
-                {
-                    tags.Add("tin-dung-khdn");
-                    tags.Add("khdn");
-                }
-                if (res.TargetLevel.Contains("Khách hàng Cá nhân", StringComparison.OrdinalIgnoreCase))
-                {
-                    tags.Add("tin-dung-khcn");
-                    tags.Add("khcn");
-                }
+                AddTag(tags, CleanToTag(res.TargetLevel));
+                if (res.TargetLevel.Contains("Khách hàng Doanh nghiệp", StringComparison.OrdinalIgnoreCase)) { tags.Add("tin-dung-khdn"); tags.Add("khdn"); }
+                if (res.TargetLevel.Contains("Khách hàng Cá nhân", StringComparison.OrdinalIgnoreCase)) { tags.Add("tin-dung-khcn"); tags.Add("khcn"); }
             }
 
-            // 3. Thẻ từ Purpose
             if (!string.IsNullOrWhiteSpace(res.AssessmentPurpose))
             {
-                if (res.AssessmentPurpose.Contains("định kỳ", StringComparison.OrdinalIgnoreCase))
-                    tags.Add("kiem-tra-dinh-ky");
-                if (res.AssessmentPurpose.Contains("Đợt 2", StringComparison.OrdinalIgnoreCase) && res.BenchmarkYear.HasValue)
-                    tags.Add($"dot-2-{res.BenchmarkYear}");
-                else if (res.AssessmentPurpose.Contains("Đợt 1", StringComparison.OrdinalIgnoreCase) && res.BenchmarkYear.HasValue)
-                    tags.Add($"dot-1-{res.BenchmarkYear}");
+                if (res.AssessmentPurpose.Contains("định kỳ", StringComparison.OrdinalIgnoreCase)) tags.Add("kiem-tra-dinh-ky");
+                if (res.BenchmarkYear.HasValue)
+                {
+                    if (res.AssessmentPurpose.Contains("Đợt 2", StringComparison.OrdinalIgnoreCase)) tags.Add($"dot-2-{res.BenchmarkYear}");
+                    else if (res.AssessmentPurpose.Contains("Đợt 1", StringComparison.OrdinalIgnoreCase)) tags.Add($"dot-1-{res.BenchmarkYear}");
+                }
             }
 
-            // 4. Thẻ từ Year
-            if (res.BenchmarkYear.HasValue)
-            {
-                tags.Add($"nam-{res.BenchmarkYear}");
-            }
+            if (res.BenchmarkYear.HasValue) tags.Add($"nam-{res.BenchmarkYear}");
 
-            // 5. Thẻ từ Org
             if (!string.IsNullOrWhiteSpace(res.IssuingOrg))
             {
+                AddTag(tags, CleanToTag(res.IssuingOrg));
                 if (res.IssuingOrg.Contains("Agribank", StringComparison.OrdinalIgnoreCase)) tags.Add("agribank");
                 if (res.IssuingOrg.Contains("Vietcombank", StringComparison.OrdinalIgnoreCase)) tags.Add("vietcombank");
                 if (res.IssuingOrg.Contains("BIDV", StringComparison.OrdinalIgnoreCase)) tags.Add("bidv");
                 if (res.IssuingOrg.Contains("Chi nhánh", StringComparison.OrdinalIgnoreCase)) tags.Add("chi-nhanh");
             }
 
-            // 6. Thẻ từ File name
+            if (!string.IsNullOrWhiteSpace(res.BenchmarkStandard)) AddTag(tags, CleanToTag(res.BenchmarkStandard));
+
             if (!string.IsNullOrWhiteSpace(fileName))
             {
                 var lowerFile = fileName.ToLowerInvariant();
@@ -389,6 +370,40 @@ namespace AegisQuiz.Infrastructure.Services
             }
 
             return tags.Where(t => !string.IsNullOrWhiteSpace(t) && t.Length >= 2).ToList();
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // Tiện ích dùng chung
+        // ─────────────────────────────────────────────────────────────────────
+
+        /// <summary>Tìm preset của Tenant theo loại tọa độ có nhãn hoặc từ đồng nghĩa xuất hiện trong văn bản.</summary>
+        private static string? MatchPreset(DynamicDomainContext? dynamicContext, string coordinateType, string combinedAll)
+        {
+            if (dynamicContext?.CoordinatePresets == null || dynamicContext.CoordinatePresets.Count == 0) return null;
+
+            foreach (var preset in dynamicContext.CoordinatePresets.Where(p => p.CoordinateType.Equals(coordinateType, StringComparison.OrdinalIgnoreCase)))
+            {
+                if (PresetMentioned(preset, combinedAll)) return preset.PresetLabel;
+            }
+            return null;
+        }
+
+        private static bool PresetMentioned(TenantCoordinatePresetDto preset, string combinedAll)
+        {
+            if (!string.IsNullOrWhiteSpace(preset.PresetLabel) && combinedAll.Contains(preset.PresetLabel, StringComparison.OrdinalIgnoreCase)) return true;
+            return preset.Synonyms.Any(s => !string.IsNullOrWhiteSpace(s) && combinedAll.Contains(s, StringComparison.OrdinalIgnoreCase));
+        }
+
+        /// <summary>Cụm từ xuất hiện trong văn bản gốc (không phân biệt hoa/thường) hoặc trong dạng slug đã bỏ dấu.</summary>
+        private static bool ContainsPhrase(string combinedAll, string cleanAll, string? phrase)
+        {
+            if (string.IsNullOrWhiteSpace(phrase)) return false;
+            return combinedAll.Contains(phrase, StringComparison.OrdinalIgnoreCase) || cleanAll.Contains(CleanToTag(phrase));
+        }
+
+        private static void AddTag(HashSet<string> tags, string tag)
+        {
+            if (!string.IsNullOrWhiteSpace(tag)) tags.Add(tag);
         }
 
         private static string CleanExtractedText(string input)
@@ -399,81 +414,53 @@ namespace AegisQuiz.Infrastructure.Services
 
         private static string NormalizeLevelName(string text)
         {
-            var t = text.Trim();
-            if (t.Equals("TÍN DỤNG KHÁCH HÀNG DOANH NGHIỆP", StringComparison.OrdinalIgnoreCase) ||
-                t.Equals("TÍN DỤNG KHDN", StringComparison.OrdinalIgnoreCase))
-            {
+            var trimmed = text.Trim();
+            if (trimmed.Equals("TÍN DỤNG KHÁCH HÀNG DOANH NGHIỆP", StringComparison.OrdinalIgnoreCase) || trimmed.Equals("TÍN DỤNG KHDN", StringComparison.OrdinalIgnoreCase))
                 return "Tín dụng Khách hàng Doanh nghiệp";
-            }
-            if (t.Equals("TÍN DỤNG KHÁCH HÀNG CÁ NHÂN", StringComparison.OrdinalIgnoreCase) ||
-                t.Equals("TÍN DỤNG KHCN", StringComparison.OrdinalIgnoreCase))
-            {
+            if (trimmed.Equals("TÍN DỤNG KHÁCH HÀNG CÁ NHÂN", StringComparison.OrdinalIgnoreCase) || trimmed.Equals("TÍN DỤNG KHCN", StringComparison.OrdinalIgnoreCase))
                 return "Tín dụng Khách hàng Cá nhân";
-            }
-            return NormalizeTitleCase(t);
+            return NormalizeTitleCase(trimmed);
         }
 
+        private static readonly HashSet<string> UpperCaseAcronyms = new(StringComparer.OrdinalIgnoreCase)
+            { "KHDN", "KHCN", "GPLX", "THPT", "GDPT", "AML", "HSE", "PCCC", "CNTT", "ISO" };
+
+        private static readonly HashSet<string> LowerCaseConnectors = new(StringComparer.OrdinalIgnoreCase)
+            { "và", "với", "tại", "cho", "của" };
+
+        /// <summary>Viết hoa chữ cái đầu mỗi từ; giữ nguyên viết tắt chuyên ngành; hạ thường liên từ tiếng Việt.</summary>
         public static string NormalizeTitleCase(string input)
         {
             if (string.IsNullOrWhiteSpace(input)) return string.Empty;
-            var words = input.Trim().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+            var words = input.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
             var sb = new StringBuilder();
             for (int i = 0; i < words.Length; i++)
             {
-                var w = words[i];
-                if (w.Length == 1)
-                {
-                    sb.Append(char.ToUpper(w[0]));
-                }
-                else if (w.Equals("KHDN", StringComparison.OrdinalIgnoreCase) ||
-                         w.Equals("KHCN", StringComparison.OrdinalIgnoreCase) ||
-                         w.Equals("GPLX", StringComparison.OrdinalIgnoreCase) ||
-                         w.Equals("THPT", StringComparison.OrdinalIgnoreCase) ||
-                         w.Equals("GDPT", StringComparison.OrdinalIgnoreCase) ||
-                         w.Equals("AML", StringComparison.OrdinalIgnoreCase) ||
-                         w.Equals("HSE", StringComparison.OrdinalIgnoreCase) ||
-                         w.Equals("PCCC", StringComparison.OrdinalIgnoreCase) ||
-                         w.Equals("CNTT", StringComparison.OrdinalIgnoreCase) ||
-                         w.Equals("ISO", StringComparison.OrdinalIgnoreCase))
-                {
-                    sb.Append(w.ToUpperInvariant());
-                }
-                else if (i > 0 && (w.Equals("và", StringComparison.OrdinalIgnoreCase) ||
-                                  w.Equals("với", StringComparison.OrdinalIgnoreCase) ||
-                                  w.Equals("tại", StringComparison.OrdinalIgnoreCase) ||
-                                  w.Equals("cho", StringComparison.OrdinalIgnoreCase) ||
-                                  w.Equals("của", StringComparison.OrdinalIgnoreCase)))
-                {
-                    sb.Append(w.ToLowerInvariant());
-                }
-                else
-                {
-                    sb.Append(char.ToUpper(w[0]) + w.Substring(1).ToLowerInvariant());
-                }
+                var word = words[i];
+                if (word.Length == 1) sb.Append(char.ToUpper(word[0]));
+                else if (UpperCaseAcronyms.Contains(word)) sb.Append(word.ToUpperInvariant());
+                else if (i > 0 && LowerCaseConnectors.Contains(word)) sb.Append(word.ToLowerInvariant());
+                else sb.Append(char.ToUpper(word[0])).Append(word.Substring(1).ToLowerInvariant());
+
                 if (i < words.Length - 1) sb.Append(' ');
             }
             return sb.ToString();
         }
 
+        /// <summary>Chuyển cụm từ thành slug không dấu, chữ thường, phân cách bằng "-" (ví dụ "Tín dụng KHDN" → "tin-dung-khdn").</summary>
         private static string CleanToTag(string input)
         {
             if (string.IsNullOrWhiteSpace(input)) return string.Empty;
-            // Chuyển tiếng Việt có dấu thành không dấu
-            string normalized = input.Normalize(NormalizationForm.FormD);
+
             var sb = new StringBuilder();
-            foreach (var c in normalized)
+            foreach (var c in input.Normalize(NormalizationForm.FormD))
             {
-                var cat = CharUnicodeInfo.GetUnicodeCategory(c);
-                if (cat != UnicodeCategory.NonSpacingMark)
-                {
-                    if (char.IsLetterOrDigit(c))
-                        sb.Append(char.ToLowerInvariant(c));
-                    else if (char.IsWhiteSpace(c) || c == '-' || c == '_')
-                        sb.Append('-');
-                }
+                if (CharUnicodeInfo.GetUnicodeCategory(c) == UnicodeCategory.NonSpacingMark) continue;
+                if (char.IsLetterOrDigit(c)) sb.Append(char.ToLowerInvariant(c));
+                else if (char.IsWhiteSpace(c) || c == '-' || c == '_') sb.Append('-');
             }
-            var tag = Regex.Replace(sb.ToString(), @"-+", "-").Trim('-');
-            return tag;
+            return Regex.Replace(sb.ToString(), "-+", "-").Trim('-');
         }
     }
 }

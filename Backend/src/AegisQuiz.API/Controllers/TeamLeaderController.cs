@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using AegisQuiz.API.Security;
 using AegisQuiz.Domain.Entities;
 using AegisQuiz.Infrastructure.Data;
 using AegisQuiz.Application.Interfaces;
@@ -24,7 +25,7 @@ namespace AegisQuiz.API.Controllers
     /// </summary>
     [ApiController]
     [Route("api/team-leader")]
-    [Authorize(Roles = $"{AppRoles.TeamLeader},{AppRoles.TenantAdmin},{AppRoles.SystemAdmin}")]
+    [Authorize(Policy = RoleWeightPolicies.TeamLeader)]
     public class TeamLeaderController : ControllerBase
     {
         private readonly AegisQuizDbContext _db;

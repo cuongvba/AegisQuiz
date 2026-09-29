@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using AegisQuiz.API.Security;
 using AegisQuiz.Application.Interfaces;
 using AegisQuiz.Domain.Entities;
 using AegisQuiz.Infrastructure.Data;
@@ -14,6 +16,7 @@ namespace AegisQuiz.API.Controllers
     /// [Kỳ quan 16] OrganizationUnitsController — Quản lý Cây phân cấp tổ chức đệ quy mềm (5-Tier Hierarchy Governance).
     /// Hỗ trợ cấu trúc đa tầng: Hội sở (HQ) -> Vùng/Miền -> Chi nhánh -> Phòng ban -> Lớp học.
     /// Route base: api/quiz/org-units
+    /// [SECURITY FIX] Ghi (tạo/sửa/xóa) yêu cầu Role-Weight ≥ OrgUnitManager; đọc chỉ yêu cầu đăng nhập.
     /// </summary>
     [ApiController]
     [Route("api/quiz/org-units")]
@@ -125,6 +128,7 @@ namespace AegisQuiz.API.Controllers
         /// Tạo mới một đơn vị tổ chức trong cây phân cấp
         /// </summary>
         [HttpPost]
+        [Authorize(Policy = RoleWeightPolicies.OrgUnitManager)]
         public async Task<IActionResult> CreateOrganizationUnit([FromBody] CreateOrgUnitRequest req)
         {
             try
@@ -191,6 +195,7 @@ namespace AegisQuiz.API.Controllers
         /// Cập nhật thông tin đơn vị tổ chức
         /// </summary>
         [HttpPut("{id:guid}")]
+        [Authorize(Policy = RoleWeightPolicies.OrgUnitManager)]
         public async Task<IActionResult> UpdateOrganizationUnit(Guid id, [FromBody] UpdateOrgUnitRequest req)
         {
             try
@@ -224,6 +229,7 @@ namespace AegisQuiz.API.Controllers
         /// Xóa hoặc vô hiệu hóa đơn vị tổ chức (Bảo vệ tính toàn vẹn cây phân cấp)
         /// </summary>
         [HttpDelete("{id:guid}")]
+        [Authorize(Policy = RoleWeightPolicies.OrgUnitManager)]
         public async Task<IActionResult> DeleteOrganizationUnit(Guid id)
         {
             try

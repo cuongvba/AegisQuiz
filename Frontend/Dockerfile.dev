@@ -1,0 +1,40 @@
+# ============================================================================
+# AegisQuiz Frontend — DEV Container (Vite Dev Server + Hot Module Replacement)
+# ============================================================================
+# Khác với `Dockerfile`/`Dockerfile.prod` (build tĩnh + phục vụ qua Nginx cho
+# Production), file này CHỈ dùng cho phát triển cục bộ: source code được mount
+# qua volume, Vite tự động HMR (Hot Module Replacement) ngay khi sửa *.tsx/*.ts
+# — không cần rebuild image hay refresh trình duyệt thủ công.
+#
+# Build & chạy độc lập (không cần docker-compose):
+#   cd Frontend
+#   docker build -f Dockerfile.dev -t aegisquiz-frontend-dev .
+#   docker run --rm -p 3000:3000 -v "${PWD}:/app" -v /app/node_modules `
+#     -e VITE_API_URL=http://localhost:8080 --name aegisquiz-frontend-dev aegisquiz-frontend-dev
+#
+# Khuyến nghị: chạy qua `docker-compose.dev.yml` ở thư mục gốc để tự động trỏ
+# đúng vào container Backend dev (VITE_API_URL=http://backend:8080):
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up backend frontend
+# ============================================================================
+FROM node:22-alpine
+WORKDIR /app
+
+# ── Cache layer cài dependencies: copy package*.json trước ──────────────────
+# (Khi build lần đầu; sau đó volume mount ở docker-compose.dev.yml sẽ ghi đè)
+COPY package*.json ./
+RUN npm ci
+
+# Copy toàn bộ source (fallback khi build image độc lập, không qua volume mount)
+COPY . .
+
+# Trỏ mặc định sang service `backend` trong docker-compose (dev container khác
+# không thể dùng "localhost:8080" — mỗi container có network namespace riêng).
+# Có thể override khi `docker run -e VITE_API_URL=...` hoặc trong compose file.
+ENV VITE_API_URL=http://backend:8080
+
+EXPOSE 3000
+
+# --host 0.0.0.0: bắt buộc để cổng 3000 trong container "thoát" ra ngoài qua
+# port mapping của Docker — mặc định Vite dev server chỉ bind vào localhost,
+# không dùng được từ ngoài container nếu thiếu cờ này.
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "3000"]

@@ -24,10 +24,15 @@
     "noData": "Không có dữ liệu"
   },
   "nav": {
-    "dashboard": "Bảng điều khiển",
+    "dashboard": "Tổng quan",
+    "mainMenu": "Menu chính",
+    "bottomMenu": "Menu điều hướng dưới",
     "quiz": "Kiểm tra",
-    "practice": "Luyện tập",
-    "leaderboard": "Bảng xếp hạng",
+    "practice": "Luyện thi",
+    "team": "Đội nhóm",
+    "arena": "Đấu trường",
+    "mockExam": "Thi thử",
+    "leaderboard": "Bảng vàng",
     "achievements": "Thành tích",
     "learningPaths": "Lộ trình học",
     "admin": "Quản trị",
@@ -52,11 +57,20 @@
   },
   "auth": {
     "login": "Đăng nhập",
+    "register": "Đăng ký",
     "logout": "Đăng xuất",
     "loginWithKeycloak": "Đăng nhập SSO tổ chức",
     "loginWithPKI": "Đăng nhập USB Token (PKI)",
     "welcome": "Chào mừng trở lại, {{name}}",
     "sessionExpired": "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại."
+  },
+  "userMenu": {
+    "defaultName": "Người dùng",
+    "accountOf": "Tài khoản của {{name}}",
+    "menuLabel": "Menu tài khoản",
+    "systemAdminPortal": "Quản trị Hệ thống",
+    "teamLeaderArea": "Khu vực Trưởng nhóm",
+    "profileAndSecurity": "Hồ sơ cá nhân & Bảo mật"
   },
   "admin": {
     "questions": "Quản lý câu hỏi",

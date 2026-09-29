@@ -1,0 +1,126 @@
+{
+  "nav": {
+    "features": "Features",
+    "gameshows": "Gameshows",
+    "pricing": "Pricing",
+    "login": "Log in",
+    "cta": "Start for free"
+  },
+  "hero": {
+    "eyebrow": "Aegis Enterprise AI Engine v4.0",
+    "headline": "Measure Real Competence.",
+    "headlineHighlight": "Ignite Peak Learning.",
+    "subheadline": "An AI adaptive assessment platform (IRT 3-PL), 6 classic academic gameshows, and Enterprise-grade Multi-Tenant architecture — built for individuals, schools, enterprises and banks worldwide.",
+    "ctaPrimary": "Individual learner — Start for free",
+    "ctaSecondary": "Enterprise / Banking — Book a demo",
+    "previewCaption": "Watch AI personalize the question matrix in real time"
+  },
+  "socialProof": {
+    "title": "Trusted by the most demanding organizations",
+    "stats": [
+      { "value": "3,500+", "label": "Questions in the item bank" },
+      { "value": "6", "label": "Academic gameshow formats" },
+      { "value": "<2ms", "label": "Arena buzzer latency" },
+      { "value": "99.9%", "label": "Enterprise infrastructure uptime" }
+    ],
+    "segments": ["Banking & Finance", "Multi-branch Enterprises", "Universities & Education", "Driving Test Centers"]
+  },
+  "features": {
+    "title": "6 Breakthrough Technologies, Only at AegisQuiz",
+    "subtitle": "Not just a quiz tool — a next-generation competence assessment ecosystem.",
+    "items": [
+      { "title": "AI Brain-Adaptive Testing", "desc": "A CAT/IRT 3-PL engine that adjusts difficulty after every answer, measuring true competence instead of rote memorization." },
+      { "title": "Live Gameshow Arena Studio", "desc": "Sub-2-millisecond buzzer arbitration across 6 fully reproduced classic TV gameshow formats." },
+      { "title": "Military-Grade Secure Exam Room", "desc": "Real-time AI anti-cheating proctoring and PKI USB Token digital signatures for high-stakes exams." },
+      { "title": "1-Second Passwordless Login", "desc": "QR code scan or Google Identity Services — enter the exam room instantly, no password to remember." },
+      { "title": "1-Click Question Bank Digitization", "desc": "Auto-import from Word/MathType, Excel, or PDF — turn paper archives into a digital item bank in minutes." },
+      { "title": "Socrates AI Tutor", "desc": "A personalized study companion that explains every step using the Socratic method, available 24/7." }
+    ]
+  },
+  "gameshows": {
+    "title": "6 Academic Gameshows — Learn Through Play",
+    "subtitle": "Full rule sets faithfully reproduced from classic TV gameshows, applied directly to knowledge review.",
+    "items": [
+      { "name": "Road to Olympia", "desc": "4 rounds — Warm-up, Obstacle Course, Acceleration, Finish Line — exactly as broadcast." },
+      { "name": "Wheel of Fortune", "desc": "Physics-based 60fps spinning wheel, solve the full puzzle board with Lucky, Lose-a-Turn and Double slots." },
+      { "name": "University Challenge", "desc": "4-vs-4 inter-university face-off with a Starter buzzer and 3-question Bonus rounds with team huddles." },
+      { "name": "Jeopardy! American Matrix", "desc": "A 30-cell point matrix, answers required in the classic question-form structure." },
+      { "name": "Lightning Fast", "desc": "A 10-step climbing machine — correct answers climb one step, one wrong answer resets to zero." },
+      { "name": "Golden Bell", "desc": "Large-scale group competition, ring the bell to earn the right to answer the deciding question." }
+    ]
+  },
+  "segments": {
+    "title": "Solutions Built for Every Industry",
+    "subtitle": "Every organization has a different challenge — AegisQuiz adapts to exactly what you need.",
+    "tabs": [
+      { "id": "banking", "label": "Banking & Finance", "painPoint": "Standardizing recruitment exams, periodic professional certification, and AML compliance across tens of thousands of staff.", "solution": "Absolute multi-tenant data isolation per branch, tamper-proof SHA-256 audit logs, and legally valid PKI digital signatures." },
+      { "id": "enterprise", "label": "Multi-branch Enterprises", "painPoint": "Internal training scattered across many locations, hard to measure consistently.", "solution": "Team leaders manage their own question banks with real-time progress reporting per unit." },
+      { "id": "university", "label": "Universities & Education", "painPoint": "Massive paper exam archives, difficult to personalize learning paths for every student.", "solution": "1-click digitization from Word/MathType, AI adaptive testing personalized to real ability." },
+      { "id": "driving", "label": "Driving Test Centers", "painPoint": "Need to simulate theory tests to the national transport authority's standard, including instant-fail critical questions.", "solution": "Automatic critical-question (fail-instantly) logic, plus AI-simulated road-scenario practice." }
+    ]
+  },
+  "pricing": {
+    "title": "Transparent Pricing for Every Scale",
+    "subtitle": "Start for free, upgrade as your organization grows.",
+    "tiers": [
+      {
+        "name": "Community",
+        "price": "Free",
+        "period": "",
+        "description": "For individual learners studying on their own.",
+        "features": ["Access to the Community question bank", "Basic AI adaptive practice", "Join the Gameshow Arena", "Track your leaderboard ranking"],
+        "cta": "Start for free",
+        "highlighted": false
+      },
+      {
+        "name": "Pro / Team",
+        "price": "Contact us",
+        "period": "/ month",
+        "description": "For Team Leaders managing a small team.",
+        "features": ["Everything in Community", "Your own team question bank", "Assign exams & track team progress", "1-click import from Word/Excel"],
+        "cta": "Try Pro",
+        "highlighted": true
+      },
+      {
+        "name": "Enterprise",
+        "price": "Custom quote",
+        "period": "",
+        "description": "For large Banks, Corporations and Universities.",
+        "features": ["Multi-tenant data isolation", "SSO / PKI USB Token login", "Tamper-proof SHA-256 audit log", "Dedicated SLA & support"],
+        "cta": "Book a demo",
+        "highlighted": false
+      }
+    ]
+  },
+  "trust": {
+    "title": "International-Grade Security & Compliance",
+    "badges": [
+      { "label": "NIST SP 800-63B", "desc": "Password & authentication standard" },
+      { "label": "PBKDF2 / SHA-256", "desc": "Password hashing & audit logging" },
+      { "label": "PKI USB Token", "desc": "Enterprise-grade digital signatures" },
+      { "label": "Multi-Tenant Isolation", "desc": "Absolute data isolation" }
+    ]
+  },
+  "finalCta": {
+    "title": "Ready to Accelerate Your Competence with AegisQuiz?",
+    "subtitle": "Join thousands of learners and dozens of organizations that trust AegisQuiz every day.",
+    "ctaPrimary": "Start for free now",
+    "ctaSecondary": "Book an Enterprise demo"
+  },
+  "footer": {
+    "tagline": "Measure real competence. Ignite peak learning.",
+    "product": "Product",
+    "company": "Company",
+    "legal": "Legal",
+    "links": {
+      "features": "Features",
+      "gameshows": "Gameshows",
+      "pricing": "Pricing",
+      "about": "About us",
+      "contact": "Contact",
+      "privacy": "Privacy Policy",
+      "terms": "Terms of Service"
+    },
+    "copyright": "All rights reserved."
+  }
+}

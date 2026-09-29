@@ -32,6 +32,14 @@ namespace AegisQuiz.Domain.Entities
         // Guid.Empty = câu hỏi dùng chung (system-wide), chỉ SystemAdmin mới tạo được.
         public Guid TenantId { get; set; } = Guid.Empty;
 
+        /// <summary>
+        /// [Community-First Tenancy] Câu hỏi công khai cho Community Commons (true) hay riêng tư trong Tenant (false).
+        /// </summary>
+        public bool IsPublic { get; set; } = true;
+
+        /// <summary>Định danh người tạo (UserAccount.Id dạng chuỗi) phục vụ Ownership Scoping.</summary>
+        public string? CreatedBy { get; set; }
+
         // Audit trail
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
@@ -109,6 +117,37 @@ namespace AegisQuiz.Domain.Entities
         public string? Explanation
         {
             get => TryGetPayloadProperty(Payload, "explanation", out var el) && el.ValueKind == JsonValueKind.String ? el.GetString() : null;
+        }
+
+        /// <summary>
+        /// [Ownership Scoping] UserId người tạo (ghi lúc import/tạo mới trong Payload).
+        /// Dùng để kiểm tra quyền sở hữu cho vai trò TeamLeader — TeamLeader chỉ được
+        /// Update/Delete/bulk-* câu hỏi do chính mình tạo hoặc thuộc OrgUnit của mình.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("creatorId")]
+        public string? CreatorId
+        {
+            get => TryGetPayloadProperty(Payload, "creatorId", out var el) && el.ValueKind == JsonValueKind.String ? el.GetString() : null;
+        }
+
+        /// <summary>[Ownership Scoping] OrgUnitId (phạm vi nhóm/lớp) sở hữu câu hỏi — dùng cho TeamLeader.</summary>
+        [System.Text.Json.Serialization.JsonPropertyName("orgUnitId")]
+        public Guid? OrgUnitId
+        {
+            get
+            {
+                if (TryGetPayloadProperty(Payload, "orgUnitId", out var el) && el.ValueKind == JsonValueKind.String
+                    && Guid.TryParse(el.GetString(), out var g))
+                    return g;
+                return null;
+            }
+        }
+
+        /// <summary>Phạm vi chia sẻ tri thức: "COMMUNITY" (kho mở) | "TENANT" | "TEAM" (do TeamLeader tạo).</summary>
+        [System.Text.Json.Serialization.JsonPropertyName("scope")]
+        public string? Scope
+        {
+            get => TryGetPayloadProperty(Payload, "scope", out var el) && el.ValueKind == JsonValueKind.String ? el.GetString() : null;
         }
 
         /// <summary>
@@ -190,6 +229,10 @@ namespace AegisQuiz.Domain.Entities
 
         public override double EvaluateAnswer(string studentAnswerJson)
         {
+            // Dữ liệu cũ lưu dạng TRUE_FALSE nhưng có nhiều mệnh đề a) b) c) d) → chấm theo Đúng/Sai đa mệnh đề (GDPT 2025)
+            if (Options != null && Options.Count > 2)
+                return MultiTrueFalseQuestion.EvaluateMultiTf(Payload, CorrectOption, Options, studentAnswerJson);
+
             if (TryGetPayloadProperty(Payload, "correctAnswer", out var correctEl))
                 return string.Equals(studentAnswerJson?.Trim(), correctEl.ToString()?.Trim(),
                     StringComparison.OrdinalIgnoreCase) ? 1.0 : 0.0;

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using AegisQuiz.API.Security;
 using AegisQuiz.Domain.Entities;
 using AegisQuiz.Infrastructure.Data;
 using AegisQuiz.Application.Interfaces;
@@ -74,7 +75,7 @@ namespace AegisQuiz.API.Controllers
 
         // ── GET /api/admin/users/{userId}/roles ───────────────────────────────
         [HttpGet("api/admin/users/{userId}/roles")]
-        [Authorize(Roles = $"{AppRoles.SystemAdmin},{AppRoles.TenantAdmin}")]
+        [Authorize(Policy = RoleWeightPolicies.TenantAdmin)]
         public async Task<IActionResult> GetUserRoles(string userId)
         {
             var tenantId = _tenant.CurrentTenantId;
@@ -99,7 +100,7 @@ namespace AegisQuiz.API.Controllers
 
         // ── PUT /api/admin/users/{userId}/roles ───────────────────────────────
         [HttpPut("api/admin/users/{userId}/roles")]
-        [Authorize(Roles = $"{AppRoles.SystemAdmin},{AppRoles.TenantAdmin}")]
+        [Authorize(Policy = RoleWeightPolicies.TenantAdmin)]
         public async Task<IActionResult> AssignRole(string userId, [FromBody] AssignRoleRequest request)
         {
             if (!IsValidRole(request.Role))
@@ -157,7 +158,7 @@ namespace AegisQuiz.API.Controllers
 
         // ── DELETE /api/admin/users/{userId}/roles/{roleId} ───────────────────
         [HttpDelete("api/admin/users/{userId}/roles/{roleId:guid}")]
-        [Authorize(Roles = $"{AppRoles.SystemAdmin},{AppRoles.TenantAdmin}")]
+        [Authorize(Policy = RoleWeightPolicies.TenantAdmin)]
         public async Task<IActionResult> RevokeRole(string userId, Guid roleId)
         {
             var tenantId = _tenant.CurrentTenantId;
@@ -177,7 +178,7 @@ namespace AegisQuiz.API.Controllers
         // ── GET /api/admin/roles/summary ──────────────────────────────────────
         /// <summary>Tổng số user theo từng role trong tenant (dùng cho Admin Dashboard).</summary>
         [HttpGet("api/admin/roles/summary")]
-        [Authorize(Roles = $"{AppRoles.SystemAdmin},{AppRoles.TenantAdmin}")]
+        [Authorize(Policy = RoleWeightPolicies.TenantAdmin)]
         public async Task<IActionResult> GetRoleSummary()
         {
             var tenantId = _tenant.CurrentTenantId;

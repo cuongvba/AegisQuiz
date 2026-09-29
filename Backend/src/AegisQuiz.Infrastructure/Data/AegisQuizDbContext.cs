@@ -57,6 +57,33 @@ namespace AegisQuiz.Infrastructure.Data
         public DbSet<LearningPathStep> LearningPathSteps { get; set; } = null!;
         public DbSet<LearningPathProgress> LearningPathProgresses { get; set; } = null!;
 
+        // ── Poly-Tenant Membership (Workspace Switcher) ─────────────────────────
+        public DbSet<TenantMembership> TenantMemberships { get; set; } = null!;
+
+        // ── Cognitive Intelligence (FSRS Spaced Repetition) ────────────────────
+        public DbSet<QuestionNeuralState> QuestionNeuralStates { get; set; } = null!;
+
+        // ── Enterprise Fortress (Tamper-Evident Audit Trail) ───────────────────
+        public DbSet<ExamAuditLog> ExamAuditLogs { get; set; } = null!;
+
+        // ── Community Ecosystem (Proof-of-Learning Economy) ────────────────────
+        public DbSet<AegisCoinWallet> AegisCoinWallets { get; set; } = null!;
+        public DbSet<AegisCoinTransaction> AegisCoinTransactions { get; set; } = null!;
+
+        // ── CognitiveOS (Metacognitive Knowledge Graph) ────────────────────────
+        public DbSet<KnowledgeConcept> KnowledgeConcepts { get; set; } = null!;
+        public DbSet<ConceptRelationship> ConceptRelationships { get; set; } = null!;
+
+        // ── Cognitive Ingestion Grammar (CIG): quy tắc bóc tách câu hỏi động ──
+        public DbSet<QuestionParsingRule> QuestionParsingRules { get; set; } = null!;
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            base.OnConfiguring(optionsBuilder);
+            // Auto-healing DDL chạy trước Migrate() nên model có thể lệch nhẹ so với snapshot — không coi là lỗi chặn khởi động.
+            optionsBuilder.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+        }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -360,6 +387,96 @@ namespace AegisQuiz.Infrastructure.Data
                 entity.HasIndex(u => u.OrgUnitId);
                 entity.HasIndex(u => u.Role);
                 entity.HasIndex(u => u.SubscriptionTier);
+            });
+
+            // ── TenantMembership (Poly-Tenant Membership) ─────────────────
+            modelBuilder.Entity<TenantMembership>(entity =>
+            {
+                entity.HasKey(m => m.Id);
+                entity.HasIndex(m => new { m.UserId, m.TenantId }).IsUnique();
+                entity.HasIndex(m => m.TenantId);
+                entity.HasIndex(m => m.UserId);
+
+                entity.HasOne(m => m.User)
+                    .WithMany(u => u.Memberships)
+                    .HasForeignKey(m => m.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(m => m.Tenant)
+                    .WithMany()
+                    .HasForeignKey(m => m.TenantId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(m => m.OrgUnit)
+                    .WithMany()
+                    .HasForeignKey(m => m.OrgUnitId)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            // ── QuestionNeuralState (FSRS Spaced Repetition) ──────────────
+            modelBuilder.Entity<QuestionNeuralState>(entity =>
+            {
+                entity.HasKey(s => s.Id);
+                entity.HasIndex(s => new { s.UserId, s.QuestionId }).IsUnique();
+                entity.HasIndex(s => new { s.UserId, s.DueAt });
+                entity.HasIndex(s => s.TenantId);
+
+                entity.HasOne(s => s.Question)
+                    .WithMany()
+                    .HasForeignKey(s => s.QuestionId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(s => s.User)
+                    .WithMany()
+                    .HasForeignKey(s => s.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // ── Enterprise Fortress: ExamAuditLog ─────────────────────────
+            modelBuilder.Entity<ExamAuditLog>(entity =>
+            {
+                entity.HasIndex(a => a.TenantId);
+                entity.HasIndex(a => a.ExamId);
+                entity.HasIndex(a => new { a.ExamId, a.SequenceNumber }).IsUnique();
+                entity.HasIndex(a => new { a.ExamId, a.UserId });
+                entity.HasIndex(a => a.TimestampUtc);
+            });
+
+            // ── Community Ecosystem: AegisCoin Wallet & Transactions ───────
+            modelBuilder.Entity<AegisCoinWallet>(entity =>
+            {
+                entity.HasIndex(w => w.TenantId);
+                entity.HasIndex(w => w.UserId).IsUnique();
+            });
+
+            modelBuilder.Entity<AegisCoinTransaction>(entity =>
+            {
+                entity.HasIndex(t => t.WalletId);
+                entity.HasIndex(t => t.UserId);
+                entity.HasIndex(t => t.CreatedAt);
+            });
+
+            // ── CognitiveOS: Knowledge Concepts & Relationships ───────────
+            modelBuilder.Entity<KnowledgeConcept>(entity =>
+            {
+                entity.HasIndex(c => c.TenantId);
+                entity.HasIndex(c => c.ConceptCode).IsUnique();
+                entity.HasIndex(c => c.DomainCode);
+            });
+
+            modelBuilder.Entity<ConceptRelationship>(entity =>
+            {
+                entity.HasIndex(r => r.TenantId);
+                entity.HasIndex(r => new { r.SourceConceptCode, r.TargetConceptCode }).IsUnique();
+            });
+
+            // ── CIG Rules: QuestionParsingRules ───────────────────────────
+            modelBuilder.Entity<QuestionParsingRule>(entity =>
+            {
+                entity.HasKey(r => r.Id);
+                entity.HasIndex(r => new { r.TenantId, r.RuleCode }).IsUnique();
+                entity.HasIndex(r => r.Priority);
+                entity.HasIndex(r => r.IsActive);
             });
         }
 

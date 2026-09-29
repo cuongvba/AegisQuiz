@@ -1,22 +1,37 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using AegisQuiz.API.Security;
 using AegisQuiz.Infrastructure.Data;
 
 namespace AegisQuiz.API.Controllers
 {
+    /// <summary>
+    /// [CRITICAL SECURITY FIX] Trước đây controller này KHÔNG có bất kỳ [Authorize] nào,
+    /// cho phép người dùng ẩn danh trên Internet gọi endpoint xóa/tái tạo toàn bộ database
+    /// production chỉ bằng một query-string cố định hard-code trong mã nguồn. Nay bắt buộc
+    /// Role-Weight ≥ SystemAdmin (vai trò cao nhất) mới được thao tác bảo trì hệ thống.
+    /// </summary>
     [ApiController]
     [Route("api/system")]
+    [Authorize(Policy = RoleWeightPolicies.SystemAdmin)]
     public class SystemMaintenanceController : ControllerBase
     {
         private readonly AegisQuizDbContext _db;
+        private readonly IConfiguration _configuration;
         private readonly ILogger<SystemMaintenanceController> _logger;
 
-        public SystemMaintenanceController(AegisQuizDbContext db, ILogger<SystemMaintenanceController> logger)
+        public SystemMaintenanceController(
+            AegisQuizDbContext db,
+            IConfiguration configuration,
+            ILogger<SystemMaintenanceController> logger)
         {
             _db = db;
+            _configuration = configuration;
             _logger = logger;
         }
 
@@ -96,17 +111,31 @@ namespace AegisQuiz.API.Controllers
 
         /// <summary>
         /// Tái tạo toàn bộ bảng theo chuẩn mới nhất 2026 (Xóa sạch bảng cũ và tạo lại từ đầu).
-        /// Gọi qua: POST /api/system/recreate-tables?confirm=RESET_2026
+        /// [CRITICAL FIX] Chỉ SystemAdmin (đã xác thực) mới gọi được. Token xác nhận đọc từ
+        /// cấu hình (env var <c>System__MaintenanceConfirmToken</c>), KHÔNG hard-code trong
+        /// mã nguồn — nếu chưa cấu hình, endpoint từ chối theo nguyên tắc Fail-Safe.
+        /// Gọi qua: POST /api/system/recreate-tables?confirm={MaintenanceConfirmToken}
         /// </summary>
         [HttpPost("recreate-tables")]
         public async Task<IActionResult> RecreateAllTables([FromQuery] string confirm = "")
         {
-            if (confirm != "RESET_2026")
+            var expectedToken = _configuration["System:MaintenanceConfirmToken"];
+            if (string.IsNullOrWhiteSpace(expectedToken))
+            {
+                _logger.LogWarning("[RecreateTables] Từ chối: System:MaintenanceConfirmToken chưa được cấu hình.");
+                return StatusCode(503, new
+                {
+                    success = false,
+                    message = "Thao tác bị vô hiệu hóa: chưa cấu hình System:MaintenanceConfirmToken trên máy chủ."
+                });
+            }
+
+            if (!string.Equals(confirm, expectedToken, StringComparison.Ordinal))
             {
                 return BadRequest(new
                 {
                     success = false,
-                    message = "Để tái tạo toàn bộ cơ sở dữ liệu, vui lòng truyền tham số ?confirm=RESET_2026"
+                    message = "Tham số xác nhận không hợp lệ."
                 });
             }
 
@@ -116,10 +145,6 @@ namespace AegisQuiz.API.Controllers
                 if (!System.IO.File.Exists(sqlPath))
                 {
                     sqlPath = Path.Combine(Directory.GetCurrentDirectory(), "RECREATE_ALL_TABLES_LATEST_2026.sql");
-                }
-                if (!System.IO.File.Exists(sqlPath))
-                {
-                    sqlPath = @"d:\Cuong\DuAn\mybank\AegisQuiz\RECREATE_ALL_TABLES_LATEST_2026.sql";
                 }
 
                 if (System.IO.File.Exists(sqlPath))

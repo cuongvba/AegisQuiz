@@ -34,6 +34,7 @@ services:
       - Gemini__ApiKey=${GEMINI_API_KEY:-}
       - Webhook__SecretKey=${WEBHOOK_SECRET:-aegis_super_secret_webhook_key_2026}
       - Jwt__Secret=${JWT_SECRET:-SuperSecretJwtKeyForAegisQuizPlatform2026DehocVn!}
+      - System__MaintenanceConfirmToken=${MAINTENANCE_CONFIRM_TOKEN:-}
       - Oidc__Authority=https://dehoc.vn/auth/realms/dehoc
       - ASPNETCORE_ENVIRONMENT=Production
       - IrtService__BaseUrl=http://irt-service:8001

@@ -1,0 +1,1194 @@
+{
+  "$schema": "https://aegisquiz.internal/schemas/math_dictionary_registry.v1.json",
+  "version": "2026.1",
+  "lastUpdated": "2026-09-17T08:55:00Z",
+  "symbolGlyphs": [
+    {
+      "font": "Symbol",
+      "charHex": "0x00A2",
+      "replacement": "&#x2032;",
+      "latex": "'",
+      "desc": "Prime (Phẩy đỉnh A', B', C', D' hoặc đạo hàm y')"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00F2",
+      "replacement": "&#x222B;",
+      "latex": "\\int",
+      "desc": "Integral (Dấu tích phân)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00C5",
+      "replacement": "&#x22A5;",
+      "latex": "\\perp",
+      "desc": "Perpendicular (Vuông góc)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00A5",
+      "replacement": "&#x221E;",
+      "latex": "\\infty",
+      "desc": "Infinity (Vô cực)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00CE",
+      "replacement": "&#x2208;",
+      "latex": "\\in",
+      "desc": "Element of (Thuộc tập hợp)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00CF",
+      "replacement": "&#x2209;",
+      "latex": "\\notin",
+      "desc": "Not element of (Không thuộc tập hợp)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00C8",
+      "replacement": "&#x222A;",
+      "latex": "\\cup",
+      "desc": "Union (Hợp tập hợp)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00C7",
+      "replacement": "&#x2229;",
+      "latex": "\\cap",
+      "desc": "Intersection (Giao tập hợp)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00C6",
+      "replacement": "&#x2205;",
+      "latex": "\\emptyset",
+      "desc": "Empty set (Tập hợp rỗng)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00A3",
+      "replacement": "&#x2264;",
+      "latex": "\\le",
+      "desc": "Less than or equal (Nhỏ hơn hoặc bằng)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00B3",
+      "replacement": "&#x2265;",
+      "latex": "\\ge",
+      "desc": "Greater than or equal (Lớn hơn hoặc bằng)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00B9",
+      "replacement": "&#x2260;",
+      "latex": "\\ne",
+      "desc": "Not equal (Khác / Không bằng)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00B1",
+      "replacement": "&#x00B1;",
+      "latex": "\\pm",
+      "desc": "Plus-minus (Cộng trừ)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00B4",
+      "replacement": "&#x00D7;",
+      "latex": "\\times",
+      "desc": "Multiplication sign (Dấu nhân)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00B8",
+      "replacement": "&#x00F7;",
+      "latex": "\\div",
+      "desc": "Division sign (Dấu chia)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00D7",
+      "replacement": "&#x22C5;",
+      "latex": "\\cdot",
+      "desc": "Dot product (Tích vô hướng / Nhân chấm)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00D6",
+      "replacement": "&#x221A;",
+      "latex": "\\sqrt",
+      "desc": "Square root (Căn bậc hai)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00AE",
+      "replacement": "&#x2192;",
+      "latex": "\\to",
+      "desc": "Right arrow (Mũi tên suy ra / tiến tới)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00AC",
+      "replacement": "&#x2190;",
+      "latex": "\\gets",
+      "desc": "Left arrow (Mũi tên trái)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00AB",
+      "replacement": "&#x2194;",
+      "latex": "\\leftrightarrow",
+      "desc": "Left right arrow (Mũi tên hai chiều)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00DE",
+      "replacement": "&#x21D2;",
+      "latex": "\\implies",
+      "desc": "Implies (Suy ra)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00DC",
+      "replacement": "&#x21D0;",
+      "latex": "\\impliedby",
+      "desc": "Implied by (Được suy ra bởi)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00DB",
+      "replacement": "&#x21D4;",
+      "latex": "\\iff",
+      "desc": "If and only if (Tương đương)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00CD",
+      "replacement": "&#x2282;",
+      "latex": "\\subset",
+      "desc": "Subset (Tập con)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00CC",
+      "replacement": "&#x2284;",
+      "latex": "\\not\\subset",
+      "desc": "Not subset (Không phải tập con)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00E5",
+      "replacement": "&#x2211;",
+      "latex": "\\sum",
+      "desc": "Summation (Tổng Sigma)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00D5",
+      "replacement": "&#x220F;",
+      "latex": "\\prod",
+      "desc": "Product (Tích Pi)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00B0",
+      "replacement": "&#x00B0;",
+      "latex": "^{\\circ}",
+      "desc": "Degree (Độ góc)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00D0",
+      "replacement": "&#x2220;",
+      "latex": "\\angle",
+      "desc": "Angle (Góc)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x0044",
+      "replacement": "&#x0394;",
+      "latex": "\\Delta",
+      "desc": "Delta hoa"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x0070",
+      "replacement": "&#x03C0;",
+      "latex": "\\pi",
+      "desc": "Pi thường"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x0050",
+      "replacement": "&#x03A0;",
+      "latex": "\\Pi",
+      "desc": "Pi hoa"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00A4",
+      "replacement": "&#x2215;",
+      "latex": "/",
+      "desc": "Division slash"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00B5",
+      "replacement": "&#x221D;",
+      "latex": "\\propto",
+      "desc": "Proportional to"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00BA",
+      "replacement": "&#x2261;",
+      "latex": "\\equiv",
+      "desc": "Equivalent (Đồng dư / Tương đương)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00BB",
+      "replacement": "&#x2248;",
+      "latex": "\\approx",
+      "desc": "Approximately equal (Xấp xỉ)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00DA",
+      "replacement": "&#x21D4;",
+      "latex": "\\iff",
+      "desc": "Equivalent double arrow"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00D8",
+      "replacement": "&#x00AC;",
+      "latex": "\\neg",
+      "desc": "Logical not (Phủ định)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00D9",
+      "replacement": "&#x2227;",
+      "latex": "\\land",
+      "desc": "Logical and (Và / Giao logic)"
+    },
+    {
+      "font": "Euclid Symbol",
+      "charHex": "0x00A2",
+      "replacement": "&#x2032;",
+      "latex": "'",
+      "desc": "Euclid Symbol Prime"
+    },
+    {
+      "font": "Euclid Symbol",
+      "charHex": "0x00F2",
+      "replacement": "&#x222B;",
+      "latex": "\\int",
+      "desc": "Euclid Symbol Integral"
+    },
+    {
+      "font": "Euclid Math One",
+      "charHex": "0x0082",
+      "replacement": "\\",
+      "latex": "\\setminus",
+      "desc": "Setminus / Dấu trừ tập hợp (R \\ {2})"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x0082",
+      "replacement": "\\",
+      "latex": "\\setminus",
+      "desc": "Setminus / Dấu trừ tập hợp"
+    },
+    {
+      "font": "Euclid Math Two",
+      "charHex": "0x0052",
+      "replacement": "&#x211D;",
+      "latex": "\\mathbb{R}",
+      "desc": "Blackboard Bold R (Tập số thực)"
+    },
+    {
+      "font": "Euclid Math One",
+      "charHex": "0x00A1",
+      "replacement": "&#x211D;",
+      "latex": "\\mathbb{R}",
+      "desc": "Blackboard Bold R (Tập số thực R)"
+    },
+    {
+      "font": "MT Extra",
+      "charHex": "0x00A1",
+      "replacement": "&#x211D;",
+      "latex": "\\mathbb{R}",
+      "desc": "Blackboard Bold R MT Extra"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00A1",
+      "replacement": "&#x211D;",
+      "latex": "\\mathbb{R}",
+      "desc": "Blackboard Bold R Symbol"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00E6",
+      "replacement": "&#x239B;",
+      "latex": "(",
+      "desc": "Left paren top hook"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00E7",
+      "replacement": "&#x239C;",
+      "latex": "|",
+      "desc": "Left paren extender"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00E8",
+      "replacement": "&#x239D;",
+      "latex": ")",
+      "desc": "Left paren bottom hook"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00F6",
+      "replacement": "&#x239E;",
+      "latex": ")",
+      "desc": "Right paren top hook"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00F7",
+      "replacement": "&#x239F;",
+      "latex": "|",
+      "desc": "Right paren extender"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00F8",
+      "replacement": "&#x23A0;",
+      "latex": ")",
+      "desc": "Right paren bottom hook"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00B1",
+      "replacement": "&#x00B1;",
+      "latex": "\\pm ",
+      "desc": "Plus-minus ± (Cộng trừ)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00B0",
+      "replacement": "&#x00B0;",
+      "latex": "^\\circ ",
+      "desc": "Degree ° (Độ)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00D7",
+      "replacement": "&#x22C5;",
+      "latex": "\\cdot ",
+      "desc": "Center dot / Tích vô hướng ⋅"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00B7",
+      "replacement": "&#x22C5;",
+      "latex": "\\cdot ",
+      "desc": "Center dot ⋅"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00AE",
+      "replacement": "&#x2192;",
+      "latex": "\\rightarrow ",
+      "desc": "Right arrow → (Mũi tên sang phải)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00AC",
+      "replacement": "&#x2190;",
+      "latex": "\\leftarrow ",
+      "desc": "Left arrow ← (Mũi tên sang trái)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00AB",
+      "replacement": "&#x2194;",
+      "latex": "\\leftrightarrow ",
+      "desc": "Left right arrow ↔"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00DE",
+      "replacement": "&#x21D2;",
+      "latex": "\\Rightarrow ",
+      "desc": "Rightwards double arrow ⇒ (Suy ra)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00DB",
+      "replacement": "&#x21D4;",
+      "latex": "\\Leftrightarrow ",
+      "desc": "Left right double arrow ⇔ (Tương đương)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00DC",
+      "replacement": "&#x21D0;",
+      "latex": "\\Leftarrow ",
+      "desc": "Leftwards double arrow ⇐"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00C2",
+      "replacement": "&#x2220;",
+      "latex": "\\angle ",
+      "desc": "Angle ∠ (Góc)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x0040",
+      "replacement": "&#x2245;",
+      "latex": "\\cong ",
+      "desc": "Congruent ≅ (Đồng dạng và bằng)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x007E",
+      "replacement": "&#x223C;",
+      "latex": "\\sim ",
+      "desc": "Similar ∼ (Đồng dạng)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x0022",
+      "replacement": "&#x2200;",
+      "latex": "\\forall ",
+      "desc": "For all ∀ (Với mọi)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x0024",
+      "replacement": "&#x2203;",
+      "latex": "\\exists ",
+      "desc": "There exists ∃ (Tồn tại)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x005C",
+      "replacement": "&#x2234;",
+      "latex": "\\therefore ",
+      "desc": "Therefore ∴ (Do đó)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00C6",
+      "replacement": "&#x2205;",
+      "latex": "\\emptyset ",
+      "desc": "Empty set ∅ (Tập rỗng)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00CC",
+      "replacement": "&#x2282;",
+      "latex": "\\subset ",
+      "desc": "Subset ⊂ (Tập con)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00CD",
+      "replacement": "&#x2283;",
+      "latex": "\\supset ",
+      "desc": "Superset ⊃ (Chứa tập)"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00DA",
+      "replacement": "&#x2286;",
+      "latex": "\\subseteq ",
+      "desc": "Subset or equal ⊆"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00A3",
+      "replacement": "&#x2264;",
+      "latex": "\\le ",
+      "desc": "Less than or equal ≤"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00B3",
+      "replacement": "&#x2265;",
+      "latex": "\\ge ",
+      "desc": "Greater than or equal ≥"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00B9",
+      "replacement": "&#x2260;",
+      "latex": "\\ne ",
+      "desc": "Not equal ≠"
+    },
+    {
+      "font": "Symbol",
+      "charHex": "0x00D6",
+      "replacement": "&#x221A;",
+      "latex": "\\sqrt ",
+      "desc": "Square root √"
+    }
+  ],
+  "greekLetters": [
+    {
+      "font": "Symbol",
+      "char": "a",
+      "replacement": "&#x03B1;",
+      "latex": "\\alpha"
+    },
+    {
+      "font": "Symbol",
+      "char": "b",
+      "replacement": "&#x03B2;",
+      "latex": "\\beta"
+    },
+    {
+      "font": "Symbol",
+      "char": "g",
+      "replacement": "&#x03B3;",
+      "latex": "\\gamma"
+    },
+    {
+      "font": "Symbol",
+      "char": "d",
+      "replacement": "&#x03B4;",
+      "latex": "\\delta"
+    },
+    {
+      "font": "Symbol",
+      "char": "e",
+      "replacement": "&#x03B5;",
+      "latex": "\\epsilon"
+    },
+    {
+      "font": "Symbol",
+      "char": "z",
+      "replacement": "&#x03B6;",
+      "latex": "\\zeta"
+    },
+    {
+      "font": "Symbol",
+      "char": "h",
+      "replacement": "&#x03B7;",
+      "latex": "\\eta"
+    },
+    {
+      "font": "Symbol",
+      "char": "q",
+      "replacement": "&#x03B8;",
+      "latex": "\\theta"
+    },
+    {
+      "font": "Symbol",
+      "char": "i",
+      "replacement": "&#x03B9;",
+      "latex": "\\iota"
+    },
+    {
+      "font": "Symbol",
+      "char": "k",
+      "replacement": "&#x03BA;",
+      "latex": "\\kappa"
+    },
+    {
+      "font": "Symbol",
+      "char": "l",
+      "replacement": "&#x03BB;",
+      "latex": "\\lambda"
+    },
+    {
+      "font": "Symbol",
+      "char": "m",
+      "replacement": "&#x03BC;",
+      "latex": "\\mu"
+    },
+    {
+      "font": "Symbol",
+      "char": "n",
+      "replacement": "&#x03BD;",
+      "latex": "\\nu"
+    },
+    {
+      "font": "Symbol",
+      "char": "x",
+      "replacement": "&#x03BE;",
+      "latex": "\\xi"
+    },
+    {
+      "font": "Symbol",
+      "char": "o",
+      "replacement": "o",
+      "latex": "o"
+    },
+    {
+      "font": "Symbol",
+      "char": "p",
+      "replacement": "&#x03C0;",
+      "latex": "\\pi"
+    },
+    {
+      "font": "Symbol",
+      "char": "r",
+      "replacement": "&#x03C1;",
+      "latex": "\\rho"
+    },
+    {
+      "font": "Symbol",
+      "char": "s",
+      "replacement": "&#x03C3;",
+      "latex": "\\sigma"
+    },
+    {
+      "font": "Symbol",
+      "char": "t",
+      "replacement": "&#x03C4;",
+      "latex": "\\tau"
+    },
+    {
+      "font": "Symbol",
+      "char": "u",
+      "replacement": "&#x03C5;",
+      "latex": "\\upsilon"
+    },
+    {
+      "font": "Symbol",
+      "char": "f",
+      "replacement": "&#x03C6;",
+      "latex": "\\phi"
+    },
+    {
+      "font": "Symbol",
+      "char": "c",
+      "replacement": "&#x03C7;",
+      "latex": "\\chi"
+    },
+    {
+      "font": "Symbol",
+      "char": "y",
+      "replacement": "&#x03C8;",
+      "latex": "\\psi"
+    },
+    {
+      "font": "Symbol",
+      "char": "w",
+      "replacement": "&#x03C9;",
+      "latex": "\\omega"
+    },
+    {
+      "font": "Symbol",
+      "char": "A",
+      "replacement": "&#x0391;",
+      "latex": "A"
+    },
+    {
+      "font": "Symbol",
+      "char": "B",
+      "replacement": "&#x0392;",
+      "latex": "B"
+    },
+    {
+      "font": "Symbol",
+      "char": "G",
+      "replacement": "&#x0393;",
+      "latex": "\\Gamma"
+    },
+    {
+      "font": "Symbol",
+      "char": "D",
+      "replacement": "&#x0394;",
+      "latex": "\\Delta"
+    },
+    {
+      "font": "Symbol",
+      "char": "E",
+      "replacement": "&#x0395;",
+      "latex": "E"
+    },
+    {
+      "font": "Symbol",
+      "char": "Z",
+      "replacement": "&#x0396;",
+      "latex": "Z"
+    },
+    {
+      "font": "Symbol",
+      "char": "H",
+      "replacement": "&#x0397;",
+      "latex": "H"
+    },
+    {
+      "font": "Symbol",
+      "char": "Q",
+      "replacement": "&#x0398;",
+      "latex": "\\Theta"
+    },
+    {
+      "font": "Symbol",
+      "char": "I",
+      "replacement": "&#x0399;",
+      "latex": "I"
+    },
+    {
+      "font": "Symbol",
+      "char": "K",
+      "replacement": "&#x039A;",
+      "latex": "K"
+    },
+    {
+      "font": "Symbol",
+      "char": "L",
+      "replacement": "&#x039B;",
+      "latex": "\\Lambda"
+    },
+    {
+      "font": "Symbol",
+      "char": "M",
+      "replacement": "&#x039C;",
+      "latex": "M"
+    },
+    {
+      "font": "Symbol",
+      "char": "N",
+      "replacement": "&#x039D;",
+      "latex": "N"
+    },
+    {
+      "font": "Symbol",
+      "char": "X",
+      "replacement": "&#x039E;",
+      "latex": "\\Xi"
+    },
+    {
+      "font": "Symbol",
+      "char": "O",
+      "replacement": "O",
+      "latex": "O"
+    },
+    {
+      "font": "Symbol",
+      "char": "P",
+      "replacement": "&#x03A0;",
+      "latex": "\\Pi"
+    },
+    {
+      "font": "Symbol",
+      "char": "R",
+      "replacement": "&#x03A1;",
+      "latex": "P"
+    },
+    {
+      "font": "Symbol",
+      "char": "S",
+      "replacement": "&#x03A3;",
+      "latex": "\\Sigma"
+    },
+    {
+      "font": "Symbol",
+      "char": "T",
+      "replacement": "&#x03A4;",
+      "latex": "T"
+    },
+    {
+      "font": "Symbol",
+      "char": "U",
+      "replacement": "&#x03A5;",
+      "latex": "\\Upsilon"
+    },
+    {
+      "font": "Symbol",
+      "char": "F",
+      "replacement": "&#x03A6;",
+      "latex": "\\Phi"
+    },
+    {
+      "font": "Symbol",
+      "char": "C",
+      "replacement": "&#x03A7;",
+      "latex": "X"
+    },
+    {
+      "font": "Symbol",
+      "char": "Y",
+      "replacement": "&#x03A8;",
+      "latex": "\\Psi"
+    },
+    {
+      "font": "Symbol",
+      "char": "W",
+      "replacement": "&#x03A9;",
+      "latex": "\\Omega"
+    }
+  ],
+  "ommlTokens": {
+    "±": "\\pm ",
+    "∓": "\\mp ",
+    "×": "\\times ",
+    "÷": "\\div ",
+    "·": "\\cdot ",
+    "≤": "\\le ",
+    "≥": "\\ge ",
+    "≠": "\\ne ",
+    "≈": "\\approx ",
+    "≡": "\\equiv ",
+    "∞": "\\infty ",
+    "∈": "\\in ",
+    "∉": "\\notin ",
+    "⊂": "\\subset ",
+    "⊃": "\\supset ",
+    "⊆": "\\subseteq ",
+    "⊇": "\\supseteq ",
+    "∪": "\\cup ",
+    "∩": "\\cap ",
+    "∅": "\\emptyset ",
+    "→": "\\to ",
+    "←": "\\gets ",
+    "↔": "\\leftrightarrow ",
+    "⇒": "\\implies ",
+    "⇐": "\\impliedby ",
+    "⇔": "\\iff ",
+    "↦": "\\mapsto ",
+    "∀": "\\forall ",
+    "∃": "\\exists ",
+    "∄": "\\nexists ",
+    "⊥": "\\perp ",
+    "∥": "\\parallel ",
+    "∠": "\\angle ",
+    "△": "\\triangle ",
+    "°": "^{\\circ}",
+    "∂": "\\partial ",
+    "∇": "\\nabla ",
+    "∯": "\\oiint ",
+    "∰": "\\oiiint ",
+    "⊗": "\\otimes ",
+    "⊕": "\\oplus ",
+    "⊙": "\\odot ",
+    "ℝ": "\\mathbb{R}",
+    "∦": "\\nparallel ",
+    "≅": "\\cong ",
+    "∼": "\\sim ",
+    "≃": "\\simeq ",
+    "∡": "\\measuredangle ",
+    "∢": "\\sphericalangle ",
+    "ℤ": "\\mathbb{Z}",
+    "ℕ": "\\mathbb{N}",
+    "ℚ": "\\mathbb{Q}",
+    "ℂ": "\\mathbb{C}"
+  },
+  "accentMappings": {
+    "⃗": "\\vec",
+    "→": "\\vec",
+    "⟶": "\\overrightarrow",
+    "^": "\\widehat",
+    "̂": "\\widehat",
+    "¯": "\\overline",
+    "_": "\\overline",
+    "‾": "\\overline",
+    "′": "'",
+    "'": "'",
+    "″": "''",
+    "\"": "''",
+    "~": "\\tilde",
+    "̃": "\\tilde",
+    ".": "\\dot",
+    "̇": "\\dot",
+    "..": "\\ddot",
+    "̈": "\\ddot"
+  },
+  "inlineNormalizations": [
+    {
+      "pattern": "(?<=[A-Z])[’´`′]",
+      "replacement": "'",
+      "desc": "Chuẩn hóa dấu phẩy trên cho đỉnh hình học A', B', C', D'"
+    },
+    {
+      "pattern": "([A-Z]{2})\\u20D7",
+      "replacement": "$\\overrightarrow{$1}$",
+      "desc": "Vector 2 điểm OpenXML combining accent"
+    },
+    {
+      "pattern": "([a-zA-Z])\\u20D7",
+      "replacement": "$\\vec{$1}$",
+      "desc": "Vector 1 chữ cái combining accent"
+    },
+    {
+      "pattern": "([A-Z])\\^2",
+      "replacement": "$1^2",
+      "desc": "Chuẩn hóa số mũ"
+    },
+    {
+      "pattern": "(\\d+)\\^0(?![\\d])",
+      "replacement": "$1^{\\circ}",
+      "desc": "Chuẩn hóa độ góc số học (VD: 30^0 -> 30^\\circ)"
+    },
+    {
+      "pattern": "\\b(tam\\s*giác|tg)\\s+([A-Z]{3})\\b",
+      "replacement": "$\\Delta $2$",
+      "desc": "Chuẩn hóa ký hiệu tam giác hình học"
+    },
+    {
+      "pattern": "\\b(góc)\\s+([A-Z]{3}|[a-z]{1,2}[A-Z][a-z]{1,2})\\b",
+      "replacement": "$\\widehat{$2}$",
+      "desc": "Chuẩn hóa góc hình học THCS"
+    },
+    {
+      "pattern": "√\\s*(\\d+|[a-zA-Z])",
+      "replacement": "$\\sqrt{$1}$",
+      "desc": "Chuẩn hóa ký hiệu căn bậc hai (VD: √3 -> $\\sqrt{3}$)"
+    },
+    {
+      "pattern": "√\\s*\\(([^\\)]+)\\)",
+      "replacement": "$\\sqrt{$1}$",
+      "desc": "Chuẩn hóa ký hiệu căn bậc hai có ngoặc (VD: √(x+1) -> $\\sqrt{x+1}$)"
+    },
+    {
+      "pattern": "([A-Z]{3,4})\\s*\\\\cdot\\s*([A-Z])",
+      "replacement": "$1.$2",
+      "desc": "Chuẩn hóa dấu chấm hình lập phương/lăng trụ ABCD.A'B'C'D'"
+    }
+  ],
+  "engineSettings": {
+    "baseFontUnit": 1.45,
+    "letterSpacing": "0.1em",
+    "minInlineHeight": "1.40em",
+    "maxFormulaHeight": "14em",
+    "formulaPaddingX": "0.5rem",
+    "formulaPaddingY": "0.125rem",
+    "formulaMarginX": "0.25rem",
+    "fontFamilySerif": "'Times New Roman', 'Cambria Math', serif",
+    "vAlignSlope": 0.48,
+    "vAlignIntercept": 0.12,
+    "multiLineThreshold": 1.8,
+    "cropPadX": 10.0,
+    "cropPadY": 6.0,
+    "charWidthFactor": 0.72,
+    "ascenderFactor": 0.85,
+    "descenderFactor": 0.25,
+    "vectorHeadLengthRatio": 0.16,
+    "vectorHeadSpreadRatio": 0.09,
+    "vectorStrokeWidthRatio": 0.04,
+    "parenthesisBowRatio": 0.18,
+    "parenthesisStrokeWidthRatio": 0.04,
+    "simplifierMaxDeltaYRatio": 0.55,
+    "simplifierSuperscriptThresholdRatio": 0.18,
+    "simplifierSubscriptThresholdRatio": 0.12,
+    "simplifierWordGapRatio": 0.40,
+    "simplifierMaxSimpleCharCount": 70,
+    "subjectProfiles": {
+      "MATH": {
+        "subjectCode": "MATH",
+        "subjectName": "Toán Học",
+        "baseFontUnit": 1.45,
+        "letterSpacing": "0.12em",
+        "minInlineHeight": "1.40em",
+        "cropPadX": 10.0,
+        "cropPadY": 6.0
+      },
+      "CHEMISTRY": {
+        "subjectCode": "CHEMISTRY",
+        "subjectName": "Hóa Học",
+        "baseFontUnit": 1.30,
+        "letterSpacing": "0.04em",
+        "minInlineHeight": "1.25em",
+        "cropPadX": 8.0,
+        "cropPadY": 5.0
+      },
+      "PHYSICS": {
+        "subjectCode": "PHYSICS",
+        "subjectName": "Vật Lý",
+        "baseFontUnit": 1.40,
+        "letterSpacing": "0.08em",
+        "minInlineHeight": "1.35em",
+        "cropPadX": 10.0,
+        "cropPadY": 6.0
+      },
+      "BIOLOGY": {
+        "subjectCode": "BIOLOGY",
+        "subjectName": "Sinh Học",
+        "baseFontUnit": 1.35,
+        "letterSpacing": "0.06em",
+        "minInlineHeight": "1.30em",
+        "cropPadX": 8.0,
+        "cropPadY": 5.0
+      }
+    }
+  },
+  "structuralSimplificationRules": [
+    {
+      "id": "RULE_SIMPLE_FRACTION",
+      "name": "Phân số đơn giản 1 gạch ngang",
+      "priority": 100,
+      "enabled": true,
+      "anchor": {
+        "type": "GEOMETRIC_LINE",
+        "orientation": "HORIZONTAL",
+        "count": 1,
+        "maxSlope": 0.08
+      },
+      "slots": [
+        {
+          "name": "numerator",
+          "relativePosition": "ABOVE_ANCHOR",
+          "maxDistanceYRatio": 1.5,
+          "paddingX": 40,
+          "maxTokens": 8,
+          "allowedPattern": "^[0-9a-zA-Z\\+\\-\\.\\s\\(\\)\\\\]+$",
+          "optional": false
+        },
+        {
+          "name": "denominator",
+          "relativePosition": "BELOW_ANCHOR",
+          "maxDistanceYRatio": 1.5,
+          "paddingX": 40,
+          "maxTokens": 8,
+          "allowedPattern": "^[0-9a-zA-Z\\+\\-\\.\\s\\(\\)\\\\]+$",
+          "optional": false
+        }
+      ],
+      "constraints": {
+        "disallowPolygons": true,
+        "maxTotalChars": 30,
+        "maxLines": 1
+      },
+      "template": "\\frac{{{numerator}}}{{{denominator}}}"
+    },
+    {
+      "id": "RULE_RADICAL_OVERLINE",
+      "name": "Căn thức đơn giản có gạch nóc",
+      "priority": 90,
+      "enabled": true,
+      "anchor": {
+        "type": "COMPOUND",
+        "symbol": "\\sqrt",
+        "attachedLine": "TOP_OVERLINE"
+      },
+      "slots": [
+        {
+          "name": "radicand",
+          "relativePosition": "UNDER_OVERLINE",
+          "maxDistanceYRatio": 1.5,
+          "paddingX": 15,
+          "maxTokens": 10,
+          "allowedPattern": "^[0-9a-zA-Z\\+\\-\\.\\s\\(\\)]+$",
+          "optional": false
+        },
+        {
+          "name": "degree",
+          "relativePosition": "TOP_LEFT_CORNER",
+          "maxTokens": 2,
+          "allowedPattern": "^[0-9n]$",
+          "optional": true
+        }
+      ],
+      "constraints": {
+        "disallowPolygons": true,
+        "maxTotalChars": 30,
+        "maxLines": 1
+      },
+      "template": "\\sqrt{{{radicand}}}"
+    },
+    {
+      "id": "RULE_SYSTEM_OF_EQUATIONS",
+      "name": "Hệ hai phương trình dấu ngoặc nhọn",
+      "priority": 80,
+      "enabled": true,
+      "anchor": {
+        "type": "DELIMITER_SYMBOL",
+        "symbol": "{",
+        "minHeightRatio": 1.5
+      },
+      "slots": [
+        {
+          "name": "row1",
+          "relativePosition": "RIGHT_UPPER",
+          "maxTokens": 15,
+          "allowedPattern": "^[0-9a-zA-Z\\+\\-\\=\\.\\s]+$",
+          "optional": false
+        },
+        {
+          "name": "row2",
+          "relativePosition": "RIGHT_LOWER",
+          "maxTokens": 15,
+          "allowedPattern": "^[0-9a-zA-Z\\+\\-\\=\\.\\s]+$",
+          "optional": false
+        }
+      ],
+      "constraints": {
+        "disallowPolygons": true,
+        "maxTotalChars": 50,
+        "maxLines": 0
+      },
+      "template": "\\begin{cases} {{row1}} \\\\ {{row2}} \\end{cases}"
+    },
+    {
+      "id": "RULE_LIMIT_EXPRESSION",
+      "name": "Biểu thức giới hạn lim",
+      "priority": 85,
+      "enabled": true,
+      "anchor": {
+        "type": "TEXT_ANCHOR",
+        "symbol": "\\lim"
+      },
+      "slots": [
+        {
+          "name": "subscript",
+          "relativePosition": "DIRECTLY_BELOW",
+          "maxDistanceYRatio": 1.2,
+          "paddingX": 15,
+          "maxTokens": 8,
+          "allowedPattern": "^[a-zA-Z0-9\\\\to\\\\infty\\-\\+\\s]+$",
+          "optional": false
+        },
+        {
+          "name": "argument",
+          "relativePosition": "RIGHT_ADJACENT",
+          "maxTokens": 20,
+          "optional": false
+        }
+      ],
+      "constraints": {
+        "disallowPolygons": true,
+        "maxTotalChars": 40,
+        "maxLines": 0
+      },
+      "template": "\\lim_{{{subscript}}} {{argument}}"
+    },
+    {
+      "id": "RULE_VECTOR_OVERLINE",
+      "name": "Mũi tên vector hình học",
+      "priority": 95,
+      "enabled": true,
+      "anchor": {
+        "type": "VECTOR_OVERLINE"
+      },
+      "slots": [
+        {
+          "name": "base",
+          "relativePosition": "BELOW_ANCHOR",
+          "maxTokens": 4,
+          "allowedPattern": "^[a-zA-Z\\']+$",
+          "optional": false
+        }
+      ],
+      "constraints": {
+        "disallowPolygons": true,
+        "maxTotalChars": 20,
+        "maxLines": 0
+      },
+      "template": "\\vec{{{base}}}"
+    }
+  ]
+}

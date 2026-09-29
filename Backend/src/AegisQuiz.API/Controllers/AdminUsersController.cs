@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using AegisQuiz.API.Security;
 using AegisQuiz.Application.Common.Security;
 using AegisQuiz.Application.Interfaces;
 using AegisQuiz.Domain.Entities;
@@ -17,11 +18,11 @@ namespace AegisQuiz.API.Controllers
 {
     /// <summary>
     /// [Enterprise IAM / RBAC] Quản trị người dùng & phân quyền đa tầng đa khách thuê (Multi-Tenant & Scoped OU).
-    /// Chỉ SystemAdmin và TenantAdmin có thẩm quyền truy cập.
+    /// Chỉ SystemAdmin và TenantAdmin có thẩm quyền truy cập (Role-Weight ≥ TenantAdmin).
     /// </summary>
     [ApiController]
     [Route("api/admin/users")]
-    [Authorize(Roles = $"{AppRoles.SystemAdmin},{AppRoles.TenantAdmin}")]
+    [Authorize(Policy = RoleWeightPolicies.TenantAdmin)]
     public class AdminUsersController : ControllerBase
     {
         private readonly AegisQuizDbContext _db;

@@ -13,7 +13,7 @@
  *   └── index.tsx                        — File này (orchestrator)
  */
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { FileUp, Plus, HelpCircle, Star, Sparkles, Layers, ArrowUpDown, Eye, Edit, ToggleLeft, ToggleRight, Loader2, FolderOpen, Brain, Wand2, Cpu, BookOpen, X, CheckCircle2, Unlink, Tag, Trash2, AlertTriangle, Network, FileSpreadsheet, Users, User, ShieldCheck, UploadCloud, Globe } from 'lucide-react';
+import { FileUp, Plus, HelpCircle, Star, Sparkles, Layers, ArrowUpDown, Eye, Edit, ToggleLeft, ToggleRight, Loader2, FolderOpen, Brain, Wand2, Cpu, BookOpen, X, CheckCircle2, Unlink, Tag, Trash2, AlertTriangle, Network, FileSpreadsheet, Users, User, ShieldCheck, UploadCloud } from 'lucide-react';
 import { learnerQuizService } from '@/services/learner-quiz.service';
 import type { LearnerQuestion, QuestionType } from '@/types/quiz';
 import { useAuthContext } from '@/app/providers/AuthProvider';
@@ -26,6 +26,9 @@ import {
   getTopicFullPath,
   isOptionSelectedAsCorrect,
 } from './types';
+import { useQuestionFilters } from './hooks/useQuestionFilters';
+import { useTopicFilters }    from './hooks/useTopicFilters';
+import { useExcelDocxImport } from './hooks/useExcelDocxImport';
 import { QuestionModal }     from './components/QuestionModal';
 import { TopicModal }        from './components/TopicModal';
 import { DocxPreviewModal }  from './components/DocxPreviewModal';
@@ -35,9 +38,6 @@ import { BatchContextModal } from './components/BatchContextModal';
 import { BatchTagModal }     from './components/BatchTagModal';
 import { TenantGovernanceModal } from './components/TenantGovernanceModal';
 import { ExcelIngestionStudioModal } from './components/ExcelIngestionStudioModal';
-import { SmartUrlImportModal } from './SmartUrlImportModal';
-import { getSampleBankingUcisData } from './components/sampleBankingUcisData';
-import { AiCognitiveWalkthroughModal, type PedagogicalWalkthroughData } from '@/components/ai/AiCognitiveWalkthroughModal';
 
 // ── Helper: correct answer display ────────────────────────────────────────────
 function getCorrectAnswerDisplay(q: LearnerQuestion): { label: string; text: string } | null {
@@ -136,12 +136,7 @@ export function AdminQuestionsPage() {
 
   // Enterprise Multi-Tier Scope & Attribution state
   const [formScope, setFormScope] = useState<'COMMUNITY' | 'TENANT' | 'TEAM' | 'PERSONAL'>('COMMUNITY');
-  const [qScopeFilter, setQScopeFilter] = useState<'ALL' | 'TEAM' | 'MY_QUESTIONS'>(() => {
-    const param = new URLSearchParams(window.location.search).get('scope');
-    if (param === 'TEAM') return 'TEAM';
-    if (param === 'MY_QUESTIONS') return 'MY_QUESTIONS';
-    return 'ALL';
-  });
+  // qScopeFilter: tách sang useQuestionFilters (hooks/useQuestionFilters.ts)
 
   // Topic modal state
   const [isTopicModalOpen, setIsTopicModalOpen]   = useState(false);
@@ -156,22 +151,10 @@ export function AdminQuestionsPage() {
   const [topicDomainCode, setTopicDomainCode] = useState('GENERAL');
   const [topicScope, setTopicScope]           = useState('COMMUNITY');
 
-  // DOCX & PDF import state (Kịch bản A)
-  const [docxPreviewList, setDocxPreviewList]       = useState<any[]>([]);
-  const [showDocxPreviewModal, setShowDocxPreviewModal] = useState(false);
-  const [isDocxProcessing, setIsDocxProcessing]     = useState(false);
-
-  // Excel DOT-2026 import state
-  const [excelPreviewData, setExcelPreviewData]         = useState<any | null>(null);
-  const [showExcelPreviewModal, setShowExcelPreviewModal] = useState(false);
-  const [showExcelStudioModal, setShowExcelStudioModal] = useState(false);
-  const [excelSelectedSheets, setExcelSelectedSheets]   = useState<Set<number>>(new Set());
-  const [isExcelImporting, setIsExcelImporting]         = useState(false);
+  // DOCX/PDF/Excel import state + handlers: tách sang useExcelDocxImport (hooks/)
 
   // AI Generate modal state (Kịch bản B)
   const [showAiGenerateModal, setShowAiGenerateModal] = useState(false);
-  // Smart Universal URL / Google Docs Modal state
-  const [showSmartUrlModal, setShowSmartUrlModal]     = useState(false);
   // Universal Context Modal state
   const [selectedContext, setSelectedContext] = useState<{ title: string; content: string } | null>(null);
   const [availableContexts, setAvailableContexts] = useState<any[]>([]);
@@ -188,14 +171,8 @@ export function AdminQuestionsPage() {
   const [showBatchContextModal, setShowBatchContextModal] = useState(false);
   const [isBatchAssigning, setIsBatchAssigning] = useState(false);
 
-  // AI Cognitive Walkthrough state
-  const [walkthroughData, setWalkthroughData] = useState<PedagogicalWalkthroughData | null>(null);
-  const [isWalkthroughOpen, setIsWalkthroughOpen] = useState(false);
-  const [isWalkthroughLoading, setIsWalkthroughLoading] = useState(false);
-
   // Multi-Industry & Smart Tags state
-  const [qDomainFilter, setQDomainFilter] = useState('ALL');
-  const [qTagFilter, setQTagFilter] = useState<string | null>(null);
+  // qDomainFilter/qTagFilter: tách sang useQuestionFilters (hooks/useQuestionFilters.ts)
   const [showBatchTagModal, setShowBatchTagModal] = useState(false);
   const [isBatchTagging, setIsBatchTagging] = useState(false);
   const [showGovernanceModal, setShowGovernanceModal] = useState(false);
@@ -208,29 +185,36 @@ export function AdminQuestionsPage() {
   const [formIssuingOrg, setFormIssuingOrg] = useState('');
   const [formBenchmarkYear, setFormBenchmarkYear] = useState<number | undefined>(2025);
 
-  // Filter / pagination — questions
-  const [showMissingOnly, setShowMissingOnly] = useState(false);
-  const [qSearch, setQSearch]       = useState('');
-  const [qTypeFilter, setQTypeFilter] = useState('');
-  const [qTopicFilter, setQTopicFilter] = useState('');
-  const [qPage, setQPage]           = useState(1);
-  const [qSortField, setQSortField] = useState('stt');
-  const [qSortAsc, setQSortAsc]     = useState(true);
-  const qPageSize = 10;
+  // Filter / pagination — questions & topics (tách sang custom hooks, xem hooks/)
+  const {
+    showMissingOnly, setShowMissingOnly,
+    qSearch, setQSearch,
+    qTypeFilter, setQTypeFilter,
+    qTopicFilter, setQTopicFilter,
+    qDomainFilter, setQDomainFilter,
+    qTagFilter, setQTagFilter,
+    qScopeFilter, setQScopeFilter,
+    qPage, setQPage,
+    qSortField, setQSortField,
+    qSortAsc, setQSortAsc,
+    qPageSize,
+    missingAnswersCount,
+    filteredQuestions,
+    pagedQuestions,
+    qTotalPages,
+    resetFilters,
+  } = useQuestionFilters(questions, topics, user);
 
-  // Filter / pagination — topics
-  const [tSearch, setTSearch]       = useState('');
-  const [tPage, setTPage]           = useState(1);
-  const [tSortField, setTSortField] = useState('code');
-  const [tSortAsc, setTSortAsc]     = useState(true);
-  const tPageSize = 10;
-
-  const missingAnswersCount = useMemo(() =>
-    questions.filter(q => !q.answerRaw || !q.answerRaw.trim()).length, [questions]);
-
-  // Reset pages on filter change
-  useEffect(() => setQPage(1), [qSearch, qTypeFilter, qTopicFilter, qDomainFilter, qTagFilter, qScopeFilter]);
-  useEffect(() => setTPage(1), [tSearch]);
+  const {
+    tSearch, setTSearch,
+    tPage, setTPage,
+    tSortField, setTSortField,
+    tSortAsc, setTSortAsc,
+    tPageSize,
+    filteredTopics,
+    pagedTopics,
+    tTotalPages,
+  } = useTopicFilters(topics);
 
   // ── Data Fetch ──────────────────────────────────────────────────────────────
   const fetchData = async () => {
@@ -253,59 +237,6 @@ export function AdminQuestionsPage() {
 
   useEffect(() => { fetchData(); }, []);
 
-  // ── AI Cognitive Walkthrough ─────────────────────────────────────────────────
-  const handleOpenWalkthrough = async (q: LearnerQuestion) => {
-    setIsWalkthroughLoading(true);
-    setWalkthroughData(null);
-    setIsWalkthroughOpen(true);
-    try {
-      const correctAnswerDisplay = (() => {
-        if (!q.answerRaw) return '';
-        if (q.options && q.options.length > 0) {
-          const idx = parseInt(q.answerRaw) - 1;
-          if (!isNaN(idx) && q.options[idx]) return q.options[idx];
-        }
-        return q.answerRaw;
-      })();
-      const payload = {
-        questionContent: q.content,
-        options: q.options || [],
-        correctAnswer: correctAnswerDisplay,
-        domainCode: q.domainCode || 'GENERAL',
-        questionType: q.questionType,
-      };
-      const res = await fetch('/api/admin/ai/walkthrough', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('aegis_token') || ''}` },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      setWalkthroughData({ ...data, questionContent: q.content, correctAnswer: correctAnswerDisplay, domainCode: q.domainCode || 'GENERAL' });
-    } catch (err) {
-      console.error('[Walkthrough] Error:', err);
-      // Show a fallback mock for demo even if API unavailable
-      setWalkthroughData({
-        questionContent: q.content,
-        correctAnswer: q.answerRaw || '(chưa có đáp án)',
-        domainCode: q.domainCode || 'GENERAL',
-        promptAnatomy: '⚠️ Chưa cấu hình API Key AI. Vào **Cấu hình AI & FinOps** để nhập key.',
-        theoreticalGrounding: 'Cần kết nối với ít nhất 1 AI Provider (DeepSeek / Gemini / OpenAI) để sử dụng tính năng này.',
-        distractorAutopsy: 'Phân tích phương án nhiễu sẽ hiển thị sau khi cấu hình AI.',
-        mnemonicAndRecall: 'Kỹ thuật ghi nhớ sẽ được AI tạo ra tự động.',
-        extrapolatedCase: 'Tình huống mở rộng sẽ được AI mô phỏng.',
-        bloomLevel: 2,
-        estimatedDifficultyIrt: q.difficulty || 3,
-        resolvedByProvider: 'Offline',
-        resolvedByModel: 'N/A',
-        isFromSemanticCache: false,
-      });
-    } finally {
-      setIsWalkthroughLoading(false);
-    }
-  };
-
-
   // ── Sort helper ─────────────────────────────────────────────────────────────
   const renderSortIcon = (field: string, currentField: string, isAsc: boolean) => (
     <span className={`inline-flex ml-1.5 transition-colors ${field === currentField ? 'text-blue-400' : 'text-slate-600 group-hover:text-slate-400'}`}>
@@ -313,269 +244,24 @@ export function AdminQuestionsPage() {
     </span>
   );
 
-  // ── Computed lists ──────────────────────────────────────────────────────────
-  const filteredQuestions = useMemo(() => {
-    const list = questions.filter(q => {
-      const searchLower = qSearch.toLowerCase().trim();
-      let matchSearch = true;
-      if (searchLower) {
-        if (searchLower.startsWith('#')) {
-          const tagKeyword = searchLower.substring(1);
-          matchSearch = (q.tags || []).some(t => t.toLowerCase().includes(tagKeyword)) || q.content.toLowerCase().includes(searchLower);
-        } else {
-          matchSearch =
-            q.content.toLowerCase().includes(searchLower) ||
-            q.id.toLowerCase().includes(searchLower) ||
-            (q.tags || []).some(t => t.toLowerCase().includes(searchLower)) ||
-            (q.issuingOrg || '').toLowerCase().includes(searchLower) ||
-            (q.targetLevel || '').toLowerCase().includes(searchLower);
-        }
-      }
-
-      const matchType    = !qTypeFilter || q.questionType === qTypeFilter;
-      const matchTopic   = !qTopicFilter || q.topicCode === qTopicFilter;
-      const matchDomain  = !qDomainFilter || qDomainFilter === 'ALL' || q.domainCode === qDomainFilter;
-      const matchTag     = !qTagFilter || (q.tags || []).some(t => t.toLowerCase() === qTagFilter.toLowerCase());
-      const matchMissing = !showMissingOnly || !q.answerRaw || !q.answerRaw.trim();
-      const matchScope =
-        qScopeFilter === 'ALL'
-          ? true
-          : qScopeFilter === 'TEAM'
-          ? (q.scope === 'TEAM' || (user?.orgUnitId && q.orgUnitId === user.orgUnitId))
-          : qScopeFilter === 'MY_QUESTIONS'
-          ? (user?.id && q.creatorId === user.id)
-          : true;
-
-      return matchSearch && matchType && matchTopic && matchDomain && matchTag && matchMissing && matchScope;
-    });
-    list.sort((a, b) => {
-      let valA: any = '';
-      let valB: any = '';
-      if (qSortField === 'stt') { valA = questions.indexOf(a); valB = questions.indexOf(b); }
-      else if (qSortField === 'content') { valA = a.content || ''; valB = b.content || ''; }
-      else if (qSortField === 'questionType') { valA = a.questionType || ''; valB = b.questionType || ''; }
-      else if (qSortField === 'topicCode') {
-        const tA = topics.find(t => t.code === a.topicCode || t.categoryCode === a.topicCode);
-        const tB = topics.find(t => t.code === b.topicCode || t.categoryCode === b.topicCode);
-        valA = tA ? getTopicFullPath(tA, topics) : a.topicCode || '';
-        valB = tB ? getTopicFullPath(tB, topics) : b.topicCode || '';
-      }
-      else if (qSortField === 'difficulty') { valA = a.difficulty || 0; valB = b.difficulty || 0; }
-      if (typeof valA === 'string') return qSortAsc ? valA.localeCompare(valB, 'vi', { sensitivity: 'base' }) : valB.localeCompare(valA, 'vi', { sensitivity: 'base' });
-      return qSortAsc ? valA - valB : valB - valA;
-    });
-    return list;
-  }, [questions, qSearch, qTypeFilter, qTopicFilter, qDomainFilter, qTagFilter, qScopeFilter, qSortField, qSortAsc, showMissingOnly, topics, user]);
-
-  const filteredTopics = useMemo(() => {
-    const list = topics.filter(t =>
-      t.code.toLowerCase().includes(tSearch.toLowerCase()) ||
-      t.name.toLowerCase().includes(tSearch.toLowerCase()) ||
-      (t.description || '').toLowerCase().includes(tSearch.toLowerCase())
-    );
-    list.sort((a, b) => {
-      let valA: any = '';
-      let valB: any = '';
-      if (tSortField === 'code') { valA = a.code; valB = b.code; }
-      else if (tSortField === 'name') { valA = a.name; valB = b.name; }
-      else if (tSortField === 'categoryCode') { valA = a.categoryCode; valB = b.categoryCode; }
-      else if (tSortField === 'visibilityScope') { valA = a.visibilityScope; valB = b.visibilityScope; }
-      return tSortAsc ? valA.localeCompare(valB, 'vi', { sensitivity: 'base' }) : valB.localeCompare(valA, 'vi', { sensitivity: 'base' });
-    });
-    return list;
-  }, [topics, tSearch, tSortField, tSortAsc]);
-
-  const pagedQuestions = useMemo(() => {
-    const start = (qPage - 1) * qPageSize;
-    return filteredQuestions.slice(start, start + qPageSize);
-  }, [filteredQuestions, qPage, qPageSize]);
-
-  const qTotalPages = Math.ceil(filteredQuestions.length / qPageSize);
-
-  const pagedTopics = useMemo(() => {
-    const start = (tPage - 1) * tPageSize;
-    return filteredTopics.slice(start, start + tPageSize);
-  }, [filteredTopics, tPage, tPageSize]);
-
-  const tTotalPages = Math.ceil(filteredTopics.length / tPageSize);
-
-  // ── Import handlers ─────────────────────────────────────────────────────────
-  const handleFileImport = async (file: File) => {
-    setIsDocxProcessing(true);
-    try {
-      const res = await learnerQuizService.importQuestions(file);
-      // Kết quả mới trả về: { fileName, totalSheets, totalQuestions, warnings, sheets: [...] }
-      if (res && res.sheets && Array.isArray(res.sheets)) {
-        const allQuestions: any[] = [];
-        const isBanking = /tin[\s_-]?dung|tham[\s_-]?dinh|ke[\s_-]?toan|kiem[\s_-]?ngan|thanh[\s_-]?toan|ngan[\s_-]?hang|bank|khdn|khcn|xu[\s_-]?ly[\s_-]?no|nstl/i.test(file.name);
-        const defaultDomain = isBanking ? 'BANKING' : 'GENERAL';
-        const globalDomain = res.detectedDomainCode || defaultDomain;
-        const globalTargetLevel = res.detectedTargetLevel;
-        const globalAssessmentPurpose = res.detectedAssessmentPurpose;
-        const globalIssuingOrg = res.detectedIssuingOrg;
-        const globalBenchmarkYear = res.detectedBenchmarkYear;
-        const globalBenchmarkStandard = res.detectedBenchmarkStandard;
-        const globalTags = Array.isArray(res.detectedTags) ? res.detectedTags : [];
-
-        res.sheets.forEach((sheet: any) => {
-          (sheet.questions || []).forEach((q: any) => {
-            allQuestions.push({
-              ...q,
-              topicCode: q.topicCode || sheet.detectedTopicCode || (topics.length > 0 ? topics[0].code : 'GENERAL'),
-              domainCode: q.domainCode || sheet.detectedDomainCode || globalDomain,
-              targetLevel: q.targetLevel || sheet.detectedTargetLevel || globalTargetLevel,
-              assessmentPurpose: q.assessmentPurpose || sheet.detectedAssessmentPurpose || globalAssessmentPurpose,
-              issuingOrg: q.issuingOrg || sheet.detectedIssuingOrg || globalIssuingOrg,
-              benchmarkYear: q.benchmarkYear || sheet.detectedBenchmarkYear || globalBenchmarkYear,
-              benchmarkStandard: q.benchmarkStandard || sheet.detectedBenchmarkStandard || globalBenchmarkStandard,
-              tags: (Array.isArray(q.tags) && q.tags.length > 0)
-                ? q.tags
-                : ((Array.isArray(sheet.detectedTags) && sheet.detectedTags.length > 0)
-                    ? sheet.detectedTags
-                    : globalTags),
-              difficulty: q.difficulty || 3,
-            });
-          });
-        });
-
-        if (allQuestions.length === 0) {
-          const warningMsg = res.warnings?.length > 0 ? `\n\nChi tiết cảnh báo:\n• ${res.warnings.join('\n• ')}` : '';
-          alert(`Không tìm thấy câu hỏi hợp lệ trong file Excel.${warningMsg}`);
-          return;
-        }
-
-        // Mở Universal Cognitive Excel Ingestion Studio (UCIS v3.0)
-        setExcelPreviewData(res);
-        setDocxPreviewList(allQuestions);
-        setShowExcelStudioModal(true);
-      } else {
-        // Fallback: server trả về dạng cũ
-        alert(`Đã nhập thành công ${res.count ?? 0} câu hỏi từ file Excel!`);
-        fetchData();
-      }
-    } catch (err: any) {
-      alert(err.response?.data?.message || err.message || 'Nhập câu hỏi từ file Excel thất bại. Vui lòng thử lại.');
-    } finally {
-      setIsDocxProcessing(false);
-    }
-  };
-
-  const handleConfirmStudioImport = async (questionsToImport: any[]) => {
-    setIsDocxProcessing(true);
-    try {
-      const tagged = questionsToImport.map(q => ({
-        ...q,
-        creatorId: user?.id,
-        creatorName: user?.name || user?.email,
-        orgUnitId: user?.orgUnitId,
-        orgUnitName: user?.orgUnitName || (user?.orgUnitId ? 'Phòng GD/Chi Nhánh' : undefined),
-        scope: isTeamLeader ? 'TEAM' : (q.scope || 'COMMUNITY'),
-        visibilityScope: isTeamLeader ? 'TEAM' : (q.visibilityScope || 'PUBLIC'),
-        contributionStatus: isTeamLeader ? 'TEAM_PUBLISHED' : undefined,
-      }));
-      await learnerQuizService.confirmImportQuestionsExcel(tagged);
-      setShowExcelStudioModal(false);
-      alert(`Đã nạp thành công ${questionsToImport.length} câu hỏi vào ngân hàng câu hỏi!`);
-      fetchData();
-    } catch (err: any) {
-      alert(err.response?.data?.message || err.message || 'Nạp câu hỏi thất bại. Vui lòng thử lại.');
-    } finally {
-      setIsDocxProcessing(false);
-    }
-  };
-
-  const handleOpenExcelStudio = () => {
-    if (!excelPreviewData) {
-      setExcelPreviewData(getSampleBankingUcisData());
-    }
-    setShowExcelStudioModal(true);
-  };
-
-  const handleLoadStudioSample = () => {
-    setExcelPreviewData(getSampleBankingUcisData());
-    setShowExcelStudioModal(true);
-  };
-
-  const handleConfirmExcelImport = async () => {
-    if (!excelPreviewData) return;
-    setIsExcelImporting(true);
-    try {
-      // Gom tất cả câu hỏi từ các sheet được chọn
-      const allItems: any[] = [];
-      excelPreviewData.sheets.forEach((sheet: any, idx: number) => {
-        if (excelSelectedSheets.has(idx)) {
-          allItems.push(...sheet.questions);
-        }
-      });
-      if (allItems.length === 0) {
-        alert('Vui lòng chọn ít nhất một sheet để nhập.');
-        return;
-      }
-      const taggedItems = allItems.map(q => ({
-        ...q,
-        creatorId: user?.id,
-        creatorName: user?.name || user?.email,
-        orgUnitId: user?.orgUnitId,
-        orgUnitName: user?.orgUnitName || (user?.orgUnitId ? 'Phòng GD/Chi Nhánh' : undefined),
-        scope: isTeamLeader ? 'TEAM' : (q.scope || 'COMMUNITY'),
-        visibilityScope: isTeamLeader ? 'TEAM' : (q.visibilityScope || 'PUBLIC'),
-        contributionStatus: isTeamLeader ? 'TEAM_PUBLISHED' : undefined,
-      }));
-      const res = await learnerQuizService.confirmImportQuestionsExcel(taggedItems);
-      setShowExcelPreviewModal(false);
-      setExcelPreviewData(null);
-      // Reset bộ lọc về trang đầu rồi tải lại dữ liệu
-      setQTopicFilter('');
-      setQDomainFilter('ALL');
-      setQTagFilter(null);
-      setQSearch('');
-      setQPage(1);
-      await fetchData();
-      alert(`✅ Đã nhập thành công ${res?.count ?? allItems.length} câu hỏi từ Excel!`);
-    } catch (err: any) {
-      alert(err.response?.data?.message || 'Lưu câu hỏi Excel thất bại. Vui lòng thử lại.');
-    } finally {
-      setIsExcelImporting(false);
-    }
-  };
-
-
-  const handleFileImportDocxOrPdf = async (file: File) => {
-    setIsDocxProcessing(true);
-    try {
-      const isPdf = file.name.toLowerCase().endsWith('.pdf');
-      const data = isPdf
-        ? await learnerQuizService.importQuestionsPdf(file)
-        : await learnerQuizService.importQuestionsDocx(file);
-      if (!Array.isArray(data) || data.length === 0) {
-        alert('Không tìm thấy câu hỏi hợp lệ trong tệp. Vui lòng kiểm tra cấu trúc định dạng file Word/PDF.');
-        return;
-      }
-      const mappedData = data.map((item: any) => ({
-        ...item,
-        topicCode: item.topicCode || (topics.length > 0 ? topics[0].code : 'PARTY_BUILDING'),
-        difficulty: item.difficulty || 3,
-      }));
-      setDocxPreviewList(mappedData);
-      setShowDocxPreviewModal(true);
-    } catch (err: any) {
-      alert(err.response?.data?.message || 'Nhập câu hỏi từ tệp thất bại. Vui lòng kiểm tra lại định dạng file hoặc liên hệ quản trị viên.');
-    } finally {
-      setIsDocxProcessing(false);
-    }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.[0]) {
-      const file = e.target.files[0];
-      const lower = file.name.toLowerCase();
-      if (lower.endsWith('.docx') || lower.endsWith('.pdf')) {
-        handleFileImportDocxOrPdf(file);
-      } else {
-        handleFileImport(file);
-      }
-    }
-  };
+  // ── Import handlers (Excel/Docx/PDF): tách sang useExcelDocxImport (hooks/) ──
+  const {
+    docxPreviewList, setDocxPreviewList,
+    showDocxPreviewModal, setShowDocxPreviewModal,
+    isDocxProcessing, setIsDocxProcessing,
+    excelPreviewData, setExcelPreviewData,
+    showExcelPreviewModal, setShowExcelPreviewModal,
+    showExcelStudioModal, setShowExcelStudioModal,
+    excelSelectedSheets, setExcelSelectedSheets,
+    isExcelImporting,
+    handleFileImport,
+    handleConfirmStudioImport,
+    handleOpenExcelStudio,
+    handleLoadStudioSample,
+    handleConfirmExcelImport,
+    handleFileImportDocxOrPdf,
+    handleFileChange,
+  } = useExcelDocxImport(topics, user, isTeamLeader, fetchData, resetFilters);
 
   // ── Question CRUD ───────────────────────────────────────────────────────────
   const openAddModal = () => {
@@ -1103,15 +789,6 @@ export function AdminQuestionsPage() {
                 Tạo câu hỏi AI từ tài liệu
               </button>
               <button
-                type="button"
-                onClick={() => setShowSmartUrlModal(true)}
-                className="flex items-center gap-2 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-purple-500 text-white px-3.5 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-indigo-500/25 active:scale-95 text-xs cursor-pointer border border-indigo-400/30"
-                title="Nhập đề thi trực tiếp bằng cách dán đường link Google Docs, Google Sheets, OneDrive hoặc web link"
-              >
-                <Globe size={14} className="text-cyan-300 animate-pulse" />
-                Nhập từ Google Docs / Link Web 🌐
-              </button>
-              <button
                 onClick={() => setShowGovernanceModal(true)}
                 className="flex items-center gap-2 bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-800 hover:from-blue-600 hover:to-indigo-600 text-white px-3.5 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-indigo-900/30 active:scale-95 text-xs cursor-pointer border border-indigo-400/30"
                 title="Quản trị Cây phân cấp 5 tầng (HQ -> Chi nhánh -> Phòng ban) & Danh mục Ngành động"
@@ -1155,15 +832,6 @@ export function AdminQuestionsPage() {
             Nhập nhanh câu hỏi qua <span className="text-green-400 font-semibold">Excel</span>, hoặc tải tệp <span className="text-purple-400 font-semibold">Word (DOCX)</span> / <span className="text-red-400 font-semibold">PDF</span> có sẵn câu hỏi để Gemini AI tự động giải đề & lập barem.
           </p>
           <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); setShowSmartUrlModal(true); }}
-              className="flex items-center gap-2 bg-indigo-950/80 hover:bg-indigo-900 text-indigo-300 border border-indigo-500/40 px-4 py-2 rounded-xl font-bold text-xs cursor-pointer transition-all hover:scale-105 shadow-md shadow-indigo-900/30"
-            >
-              <Globe size={14} className="text-cyan-300" />
-              Dán Link Google Docs / Web URL
-              <span className="bg-indigo-500/30 text-indigo-200 text-[10px] px-1.5 py-0.2 rounded font-mono">1-Click</span>
-            </button>
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); handleOpenExcelStudio(); }}
@@ -1494,13 +1162,6 @@ export function AdminQuestionsPage() {
                                 {(!q.answerRaw || !q.answerRaw.trim()) && isRowManageable && (
                                   <button onClick={() => handleSuggestAnswer(q)} className="p-1.5 text-purple-400 hover:text-purple-300 hover:bg-purple-950/20 rounded-lg transition-colors cursor-pointer animate-pulse" title="Tự động giải bằng AI"><Sparkles size={14} /></button>
                                 )}
-                                <button
-                                  onClick={() => handleOpenWalkthrough(q)}
-                                  className="p-1.5 text-cyan-400 hover:text-cyan-300 hover:bg-cyan-950/30 rounded-lg transition-colors cursor-pointer border border-cyan-500/20 hover:border-cyan-400/40"
-                                  title="💡 Bản đồ tư duy sư phạm 5 bước AI (Cognitive Scaffold)"
-                                >
-                                  <Brain size={13} />
-                                </button>
                                 <button
                                   onClick={() => handleToggleActive(q)}
                                   disabled={!isRowManageable}
@@ -2050,33 +1711,6 @@ export function AdminQuestionsPage() {
       <TenantGovernanceModal
         isOpen={showGovernanceModal}
         onClose={() => setShowGovernanceModal(false)}
-      />
-
-      {/* Smart Universal URI Ingestion Modal */}
-      <SmartUrlImportModal
-        isOpen={showSmartUrlModal}
-        onClose={() => setShowSmartUrlModal(false)}
-        onSuccessDocxOrPdf={(questions, fileName) => {
-          const mappedData = questions.map((item: any) => ({
-            ...item,
-            topicCode: item.topicCode || (topics.length > 0 ? topics[0].code : 'PARTY_BUILDING'),
-            difficulty: item.difficulty || 3,
-          }));
-          setDocxPreviewList(mappedData);
-          setShowDocxPreviewModal(true);
-        }}
-        onSuccessExcel={(excelData) => {
-          setExcelPreviewData(excelData);
-          setShowExcelPreviewModal(true);
-        }}
-      />
-
-      {/* AI Cognitive Walkthrough Modal — 5-Step Pedagogical Scaffold */}
-      <AiCognitiveWalkthroughModal
-        isOpen={isWalkthroughOpen}
-        onClose={() => setIsWalkthroughOpen(false)}
-        walkthrough={walkthroughData}
-        isLoading={isWalkthroughLoading}
       />
     </div>
   );

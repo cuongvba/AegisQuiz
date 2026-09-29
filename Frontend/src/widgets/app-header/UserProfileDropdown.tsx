@@ -8,13 +8,13 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Settings, LogOut, Shield, Users } from 'lucide-react';
 import { useAuthContext } from '@/app/providers/AuthProvider';
-import { useLearnerI18n } from '@/lib/i18n';
 
 export function UserProfileDropdown() {
   const { user, logout } = useAuthContext();
-  const { t } = useLearnerI18n();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -48,7 +48,7 @@ export function UserProfileDropdown() {
                      hover:bg-[var(--surface-secondary)] hover:text-[var(--text-primary)]
                      rounded-full transition-all cursor-pointer"
         >
-          Đăng nhập
+          {t('auth.login')}
         </button>
         <button
           onClick={() => navigate('/register')}
@@ -58,7 +58,7 @@ export function UserProfileDropdown() {
                      shadow-[var(--tenant-shadow-primary)]
                      active:scale-95 cursor-pointer hover:brightness-110"
         >
-          Đăng ký
+          {t('auth.register')}
         </button>
       </div>
     );
@@ -73,7 +73,7 @@ export function UserProfileDropdown() {
         onClick={() => setIsOpen((v) => !v)}
         aria-expanded={isOpen}
         aria-haspopup="menu"
-        aria-label={`Tài khoản của ${user.name ?? 'bạn'}`}
+        aria-label={t('userMenu.accountOf', { name: user.name ?? t('userMenu.defaultName') })}
         className="flex items-center gap-2
                    bg-[var(--surface-secondary)] hover:bg-[var(--surface-tertiary)]
                    p-1 pe-3 rounded-full border border-[var(--border-default)]
@@ -88,7 +88,7 @@ export function UserProfileDropdown() {
           {initials}
         </div>
         <span className="hidden sm:inline-block text-[var(--text-primary)] truncate max-w-[100px]">
-          {user.name ?? 'User'}
+          {user.name ?? t('userMenu.defaultName')}
         </span>
       </button>
 
@@ -96,7 +96,7 @@ export function UserProfileDropdown() {
       {isOpen && (
         <div
           role="menu"
-          aria-label="Menu tài khoản"
+          aria-label={t('userMenu.menuLabel')}
           className="absolute end-0 mt-3 w-56
                      bg-[var(--surface-elevated)] rounded-2xl
                      shadow-xl border border-[var(--border-subtle)] p-2 z-[var(--z-dropdown)]
@@ -118,7 +118,7 @@ export function UserProfileDropdown() {
                          hover:bg-purple-500/10 rounded-xl transition-colors cursor-pointer"
             >
               <Shield className="w-4 h-4 text-purple-400" aria-hidden="true" />
-              Quản trị Hệ thống
+              {t('userMenu.systemAdminPortal')}
             </button>
           )}
 
@@ -131,7 +131,7 @@ export function UserProfileDropdown() {
                          hover:bg-cyan-500/10 rounded-xl transition-colors cursor-pointer"
             >
               <Users className="w-4 h-4 text-cyan-400" aria-hidden="true" />
-              Khu vực Trưởng nhóm
+              {t('userMenu.teamLeaderArea')}
             </button>
           )}
 
@@ -144,7 +144,7 @@ export function UserProfileDropdown() {
                        hover:bg-[var(--surface-secondary)] rounded-xl transition-colors cursor-pointer"
           >
             <Settings className="w-4 h-4" aria-hidden="true" />
-            Hồ sơ cá nhân & Bảo mật
+            {t('userMenu.profileAndSecurity')}
           </button>
 
           <div className="my-1 border-t border-[var(--border-subtle)]" role="separator" />
@@ -158,7 +158,7 @@ export function UserProfileDropdown() {
                        hover:bg-[var(--state-danger-bg)] rounded-xl transition-colors cursor-pointer"
           >
             <LogOut className="w-4 h-4" aria-hidden="true" />
-            Đăng xuất
+            {t('auth.logout')}
           </button>
         </div>
       )}

@@ -1,6 +1,7 @@
 using System;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using AegisQuiz.API.Security;
@@ -21,7 +22,10 @@ namespace AegisQuiz.API.Controllers
         }
 
         // [LUỒNG 1: Ngân hàng Việt Nam (Casso/SePay)]
+        // [AllowAnonymous] bắt buộc: bên thứ 3 (ngân hàng) không gửi JWT, xác thực bằng
+        // chữ ký HMAC ([ValidateWebhookSignature]) thay vì Bearer token.
         [ValidateWebhookSignature] // [Lỗ hổng #5 đã vá!]
+        [AllowAnonymous]
         [HttpPost("vietqr-gateway")]
         public async Task<IActionResult> ReceiveVietQRPayment([FromBody] VietQRPayload payload)
         {
@@ -57,6 +61,7 @@ namespace AegisQuiz.API.Controllers
         // [LUỒNG 2: Crypto Web3 (Polygon Smart Contract)]
         // [Fix bảo mật] Thêm [ValidateWebhookSignature] để chống giả mạo — đồng nhất với VietQR
         [ValidateWebhookSignature]
+        [AllowAnonymous]
         [HttpPost("polygon-gateway")]
         public async Task<IActionResult> ReceiveWeb3Payment([FromBody] Web3EventPayload payload)
         {

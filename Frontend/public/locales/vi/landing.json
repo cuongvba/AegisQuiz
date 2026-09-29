@@ -1,0 +1,126 @@
+{
+  "nav": {
+    "features": "Tính năng",
+    "gameshows": "Gameshow",
+    "pricing": "Bảng giá",
+    "login": "Đăng nhập",
+    "cta": "Dùng thử miễn phí"
+  },
+  "hero": {
+    "eyebrow": "Aegis Enterprise AI Engine v4.0",
+    "headline": "Đo lường năng lực thực chất",
+    "headlineHighlight": "Bùng nổ cảm hứng học tập đỉnh cao",
+    "subheadline": "Nền tảng khảo thí thích ứng AI (IRT 3-PL), 6 Gameshow học thuật kinh điển và kiến trúc Multi-Tenant chuẩn Enterprise — dành cho cá nhân, trường học, doanh nghiệp và ngân hàng trên toàn thế giới.",
+    "ctaPrimary": "Học viên cá nhân — Bắt đầu miễn phí",
+    "ctaSecondary": "Doanh nghiệp / Ngân hàng — Đặt lịch Demo",
+    "previewCaption": "Xem AI cá nhân hóa ma trận câu hỏi theo thời gian thực"
+  },
+  "socialProof": {
+    "title": "Được tin tưởng bởi các tổ chức khắt khe nhất",
+    "stats": [
+      { "value": "3,500+", "label": "Câu hỏi trong ngân hàng đề" },
+      { "value": "6", "label": "Thể loại Gameshow học thuật" },
+      { "value": "<2ms", "label": "Độ trễ buzzer Đấu trường" },
+      { "value": "99.9%", "label": "Uptime hạ tầng Enterprise" }
+    ],
+    "segments": ["Ngân hàng & Tài chính", "Tập đoàn Đa chi nhánh", "Đại học & Giáo dục", "Trung tâm Sát hạch GPLX"]
+  },
+  "features": {
+    "title": "6 Đột phá công nghệ chỉ có tại AegisQuiz",
+    "subtitle": "Không chỉ là công cụ thi trắc nghiệm — đây là hệ sinh thái đánh giá năng lực thế hệ mới.",
+    "items": [
+      { "title": "Khảo thí Thích ứng Não bộ AI", "desc": "Động cơ CAT/IRT 3-PL tự động điều chỉnh độ khó theo từng câu trả lời, đo lường năng lực thực chất thay vì học vẹt." },
+      { "title": "Đấu trường Gameshow Live Studio", "desc": "Tốc độ tranh chuông dưới 2 mili-giây, 6 định dạng gameshow truyền hình kinh điển được tái hiện hoàn chỉnh." },
+      { "title": "Phòng thi Bảo mật Cấp Quân sự", "desc": "Giám sát AI chống gian lận theo thời gian thực, ký số PKI bằng USB Token cho các kỳ thi quan trọng." },
+      { "title": "Đăng nhập 1 giây Không mật khẩu", "desc": "Quét mã QR hoặc Google Identity Services — vào phòng thi trong tích tắc, không cần nhớ mật khẩu." },
+      { "title": "Số hóa Ngân hàng đề 1-Click", "desc": "Tự động nhập đề từ file Word/MathType, Excel, PDF — biến kho đề giấy thành ngân hàng số chỉ trong vài phút." },
+      { "title": "Gia sư AI Socrates", "desc": "Trợ lý học tập cá nhân hóa, giải thích từng bước theo phương pháp Socratic, đồng hành 24/7." }
+    ]
+  },
+  "gameshows": {
+    "title": "6 Gameshow học thuật — Học mà chơi, chơi mà học",
+    "subtitle": "Tái hiện đầy đủ luật chơi của các gameshow truyền hình kinh điển, ứng dụng trực tiếp vào ôn luyện kiến thức.",
+    "items": [
+      { "name": "Đường Lên Đỉnh Olympia", "desc": "4 phần thi Khởi động – Vượt chướng ngại vật – Tăng tốc – Về đích, đúng chuẩn truyền hình." },
+      { "name": "Chiếc Nón Kỳ Diệu", "desc": "Vòng quay vật lý 60fps, giải toàn bộ ô chữ với các ô điểm May mắn, Mất lượt, Nhân đôi." },
+      { "name": "University Challenge", "desc": "Đối kháng liên trường 4 vs 4, chuông Starter và bộ 3 câu hỏi Bonus có thảo luận nhóm." },
+      { "name": "Jeopardy! American Matrix", "desc": "Bảng ma trận 30 ô điểm, bắt buộc trả lời theo cấu trúc câu hỏi ngược đúng luật gốc." },
+      { "name": "Nhanh Như Chớp", "desc": "Cỗ máy leo dốc 10 bậc, đúng tiến 1 nấc — sai lập tức tụt về vạch xuất phát." },
+      { "name": "Chuông Vàng (Golden Bell)", "desc": "Thi đấu tập thể quy mô lớn, rung chuông giành quyền trả lời câu hỏi quyết định." }
+    ]
+  },
+  "segments": {
+    "title": "Giải pháp theo từng ngành",
+    "subtitle": "Mỗi tổ chức có một bài toán riêng — AegisQuiz thích ứng theo đúng nhu cầu của bạn.",
+    "tabs": [
+      { "id": "banking", "label": "Ngân hàng & Tài chính", "painPoint": "Cần chuẩn hóa thi tuyển dụng, sát hạch nghiệp vụ định kỳ và tuân thủ AML trên quy mô hàng chục nghìn nhân sự.", "solution": "Multi-Tenant cách ly dữ liệu tuyệt đối theo chi nhánh, Audit Log SHA-256 không thể chỉnh sửa, PKI ký số hợp lệ." },
+      { "id": "enterprise", "label": "Tập đoàn Đa chi nhánh", "painPoint": "Đào tạo nội bộ phân tán nhiều địa điểm, khó đo lường hiệu quả đồng nhất.", "solution": "Trưởng nhóm tự quản lý ngân hàng câu hỏi riêng, báo cáo tiến độ real-time theo từng đơn vị." },
+      { "id": "university", "label": "Đại học & Giáo dục", "painPoint": "Khối lượng đề thi giấy khổng lồ, khó cá nhân hóa lộ trình cho từng sinh viên.", "solution": "Số hóa đề thi 1-click từ Word/MathType, AI Adaptive Testing cá nhân hóa theo năng lực thực." },
+      { "id": "driving", "label": "Trung tâm Sát hạch GPLX", "painPoint": "Cần mô phỏng sát hạch lý thuyết chuẩn Bộ GTVT với các câu hỏi điểm liệt.", "solution": "Cơ chế Điểm liệt (IsCritical) tự động trượt toàn bài, mô phỏng sa hình bằng AI." }
+    ]
+  },
+  "pricing": {
+    "title": "Bảng giá minh bạch cho mọi quy mô",
+    "subtitle": "Bắt đầu miễn phí, nâng cấp khi tổ chức của bạn phát triển.",
+    "tiers": [
+      {
+        "name": "Cộng đồng",
+        "price": "Miễn phí",
+        "period": "",
+        "description": "Dành cho học viên cá nhân tự luyện thi.",
+        "features": ["Truy cập kho câu hỏi Cộng đồng", "Luyện thi thích ứng AI cơ bản", "Tham gia Đấu trường Gameshow", "Theo dõi Bảng vàng thành tích"],
+        "cta": "Bắt đầu miễn phí",
+        "highlighted": false
+      },
+      {
+        "name": "Pro / Đội nhóm",
+        "price": "Liên hệ",
+        "period": "/ tháng",
+        "description": "Dành cho Trưởng nhóm quản lý đội ngũ nhỏ.",
+        "features": ["Tất cả quyền lợi gói Cộng đồng", "Ngân hàng câu hỏi riêng của Nhóm", "Giao đề & theo dõi tiến độ đội nhóm", "Nhập đề 1-click từ Word/Excel"],
+        "cta": "Dùng thử Pro",
+        "highlighted": true
+      },
+      {
+        "name": "Enterprise",
+        "price": "Báo giá riêng",
+        "period": "",
+        "description": "Dành cho Ngân hàng, Tập đoàn, Đại học quy mô lớn.",
+        "features": ["Multi-Tenant cách ly dữ liệu", "Đăng nhập SSO/PKI USB Token", "Audit Log SHA-256 không thể sửa", "SLA cam kết & hỗ trợ riêng"],
+        "cta": "Đặt lịch Demo",
+        "highlighted": false
+      }
+    ]
+  },
+  "trust": {
+    "title": "Bảo mật & Tuân thủ chuẩn quốc tế",
+    "badges": [
+      { "label": "NIST SP 800-63B", "desc": "Chuẩn mật khẩu & xác thực" },
+      { "label": "PBKDF2 / SHA-256", "desc": "Băm mật khẩu & Audit Log" },
+      { "label": "PKI USB Token", "desc": "Chữ ký số cấp doanh nghiệp" },
+      { "label": "Multi-Tenant Isolation", "desc": "Cách ly dữ liệu tuyệt đối" }
+    ]
+  },
+  "finalCta": {
+    "title": "Sẵn sàng bứt phá năng lực cùng AegisQuiz?",
+    "subtitle": "Tham gia cùng hàng nghìn học viên và hàng chục tổ chức đang tin dùng AegisQuiz mỗi ngày.",
+    "ctaPrimary": "Bắt đầu miễn phí ngay",
+    "ctaSecondary": "Đặt lịch Demo cho Doanh nghiệp"
+  },
+  "footer": {
+    "tagline": "Đo lường năng lực thực chất — Bùng nổ cảm hứng học tập đỉnh cao.",
+    "product": "Sản phẩm",
+    "company": "Công ty",
+    "legal": "Pháp lý",
+    "links": {
+      "features": "Tính năng",
+      "gameshows": "Gameshow",
+      "pricing": "Bảng giá",
+      "about": "Về chúng tôi",
+      "contact": "Liên hệ",
+      "privacy": "Chính sách bảo mật",
+      "terms": "Điều khoản sử dụng"
+    },
+    "copyright": "Đã đăng ký bản quyền."
+  }
+}

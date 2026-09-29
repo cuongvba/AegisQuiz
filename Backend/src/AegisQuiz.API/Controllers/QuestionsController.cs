@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using AegisQuiz.API.Security;
 using AegisQuiz.Application.DTOs;
 using AegisQuiz.Application.Interfaces;
 using AegisQuiz.Domain.Entities;
@@ -12,7 +14,6 @@ using AegisQuiz.Domain.Factories;
 using AegisQuiz.Infrastructure.Data;
 using AegisQuiz.Infrastructure.Services;
 using AegisQuiz.Infrastructure.Excel;
-using AegisQuiz.API.Services;
 
 namespace AegisQuiz.API.Controllers
 {
@@ -20,9 +21,18 @@ namespace AegisQuiz.API.Controllers
     /// [World-Class Refactor] QuestionsController — Tách từ QuizController.
     /// Chỉ phụ trách: CRUD câu hỏi, Import Excel/Docx, Missing-Answer AI.
     /// Route base: api/quiz/questions
+    /// [CRITICAL SECURITY FIX] Trước đây controller này KHÔNG có [Authorize] nào —
+    /// bất kỳ ai (kể cả ẩn danh) đều có thể tạo/sửa/xóa/import câu hỏi. Nay yêu cầu
+    /// Role-Weight ≥ TeamLeader (ngưỡng thấp nhất trong nhóm "staff" — bảo toàn tính
+    /// năng TeamLeader tự quản lý câu hỏi phạm vi TEAM đang hoạt động ở Frontend
+    /// admin/questions). Learner/GuestViewer/ẩn danh vẫn bị chặn hoàn toàn.
+    /// [KNOWN GAP — theo dõi riêng]: Backend chưa lọc theo creatorId/OrgUnitId khi
+    /// Update/Delete, chỉ Frontend (canManageResource) đang tự giới hạn phạm vi TEAM;
+    /// cần bổ sung kiểm tra sở hữu ở tầng API trong một đợt hardening kế tiếp.
     /// </summary>
     [ApiController]
     [Route("api/quiz")]
+    [Authorize(Policy = RoleWeightPolicies.TeamLeader)]
     public class QuestionsController : ControllerBase
     {
         private readonly AegisQuizDbContext                  _db;
@@ -32,7 +42,7 @@ namespace AegisQuiz.API.Controllers
         private readonly IGeminiSolverService                _geminiSolver;
         private readonly IAiQuestionGeneratorService         _aiGenerator;
         private readonly IVietnameseTextCorrectionService    _textCorrectionService;
-        private readonly IUrlDocumentFetcher                 _urlFetcher;
+        private readonly IContentOwnershipGuard              _ownershipGuard;
 
         public QuestionsController(
             AegisQuizDbContext                  db,
@@ -42,7 +52,7 @@ namespace AegisQuiz.API.Controllers
             IGeminiSolverService                geminiSolver,
             IAiQuestionGeneratorService         aiGenerator,
             IVietnameseTextCorrectionService    textCorrectionService,
-            IUrlDocumentFetcher                 urlFetcher)
+            IContentOwnershipGuard              ownershipGuard)
         {
             _db                   = db;
             _excelParser          = excelParser;
@@ -51,7 +61,7 @@ namespace AegisQuiz.API.Controllers
             _geminiSolver         = geminiSolver;
             _aiGenerator          = aiGenerator;
             _textCorrectionService = textCorrectionService;
-            _urlFetcher           = urlFetcher;
+            _ownershipGuard       = ownershipGuard;
         }
 
         // ── GET api/quiz/questions (Paged) ─────────────────────────────────────
@@ -97,6 +107,33 @@ namespace AegisQuiz.API.Controllers
                     var tagLower = query.Tag.Trim().TrimStart('#').ToLower();
                     q = q.Where(x => x.Tags.Any(t => t.ToLower().Contains(tagLower)));
                 }
+
+                // [P2 Perf Fix] Đẩy ORDER BY xuống SQL trước khi materialize — toàn bộ các
+                // trường sort (Difficulty/Content/CreatedAt/Id) đều là cột thật, Postgres có
+                // thể dùng index thay vì phải load hết rồi sort lại trong RAM.
+                q = (query.SortBy?.ToLower(), query.Sort) switch
+                {
+                    ("difficulty", SortDirection.Desc) => q.OrderByDescending(x => x.Difficulty),
+                    ("difficulty", _)                  => q.OrderBy(x => x.Difficulty),
+                    ("content", SortDirection.Desc)    => q.OrderByDescending(x => x.Content),
+                    ("content", _)                      => q.OrderBy(x => x.Content),
+                    ("createdat", SortDirection.Asc)   => q.OrderBy(x => x.CreatedAt),
+                    _                                   => q.OrderByDescending(x => x.CreatedAt).ThenByDescending(x => x.Id)
+                };
+
+                // [P2 Perf Fix — Safety Cap] `enabled`/Year/TargetLevel/AssessmentPurpose/
+                // IssuingOrg chỉ tồn tại trong Payload JSONB (không phải cột thật), nên KHÔNG
+                // thể dịch trực tiếp sang SQL WHERE/Skip/Take mà không thay đổi schema (thêm
+                // cột `Enabled` thật + migration + backfill — nằm ngoài phạm vi patch hiện
+                // tại). Để tránh tải toàn bộ bảng vào RAM trong trường hợp xấu nhất (ngân
+                // hàng câu hỏi hàng trăm nghìn bản ghi), giới hạn số dòng candidate tải vào
+                // bộ nhớ ở một ngưỡng an toàn khi không yêu cầu "All" — với PageSize thông
+                // thường (10-100), ngưỡng này thừa sức bao trọn nhiều trang mà vẫn chặn được
+                // truy vấn không giới hạn gây OOM.
+                const int InMemoryScanSafetyCap = 20_000;
+                bool willReturnAll = query.All || query.PageSize <= 0;
+                if (!willReturnAll)
+                    q = q.Take(InMemoryScanSafetyCap);
 
                 // [FIX P0 & High Scale Engine] Load all items matching DB filters với AsNoTracking() hiệu năng cao
                 var allItems = await q.ToListAsync();
@@ -193,6 +230,9 @@ namespace AegisQuiz.API.Controllers
                 if (question == null)
                     return NotFound(new { message = "Không tìm thấy câu hỏi" });
 
+                if (!await _ownershipGuard.CanManageAsync(User, question.CreatorId, question.OrgUnitId))
+                    return Forbid();
+
                 ApplyDto(question, dto);
                 await _db.SaveChangesAsync();
                 return Ok(question);
@@ -212,6 +252,9 @@ namespace AegisQuiz.API.Controllers
                 var question = await _db.Questions.FindAsync(id);
                 if (question == null)
                     return NotFound(new { message = "Không tìm thấy câu hỏi" });
+
+                if (!await _ownershipGuard.CanManageAsync(User, question.CreatorId, question.OrgUnitId))
+                    return Forbid();
 
                 _db.Questions.Remove(question);
                 await _db.SaveChangesAsync();
@@ -422,129 +465,6 @@ namespace AegisQuiz.API.Controllers
             }
         }
 
-        // ── POST api/quiz/questions/import-url [Universal Smart URI Ingestion] ─
-        [HttpPost("questions/import-url")]
-        public async Task<IActionResult> ImportQuestionsFromUrl([FromBody] ImportUrlRequest request)
-        {
-            if (request == null || string.IsNullOrWhiteSpace(request.Url))
-                return BadRequest(new { message = "Vui lòng nhập đường dẫn URL tài liệu (Google Docs, Google Sheets, OneDrive hoặc direct link)." });
-
-            try
-            {
-                var fetchResult = await _urlFetcher.FetchDocumentAsync(request.Url);
-                if (!fetchResult.Success)
-                {
-                    return BadRequest(new
-                    {
-                        message = fetchResult.ErrorMessage ?? "Không thể tải tài liệu từ liên kết đã cung cấp.",
-                        isRestricted = fetchResult.IsRestricted,
-                        suggestedAction = fetchResult.SuggestedAction,
-                        originalUrl = fetchResult.OriginalUrl
-                    });
-                }
-
-                if (fetchResult.Stream == null || fetchResult.FileSizeBytes == 0)
-                {
-                    return BadRequest(new { message = "Tài liệu tải về có dung lượng rỗng." });
-                }
-
-                // 1. Nếu là định dạng EXCEL (bao gồm Google Sheets)
-                if (fetchResult.DocumentType == "EXCEL")
-                {
-                    var preview = _excelParser.ParseExcelFileToPreview(fetchResult.Stream, fetchResult.FileName);
-                    if (preview.TotalQuestions == 0)
-                    {
-                        return BadRequest(new
-                        {
-                            message = "Không tìm thấy câu hỏi hợp lệ trong bảng tính Excel / Google Sheets.",
-                            warnings = preview.Warnings
-                        });
-                    }
-
-                    return Ok(new
-                    {
-                        sourceType                = "EXCEL",
-                        fileName                  = preview.FileName,
-                        totalSheets               = preview.TotalSheets,
-                        totalQuestions            = preview.TotalQuestions,
-                        warnings                  = preview.Warnings,
-                        detectedDomainCode        = preview.DetectedDomainCode,
-                        detectedTargetLevel       = preview.DetectedTargetLevel,
-                        detectedAssessmentPurpose = preview.DetectedAssessmentPurpose,
-                        detectedIssuingOrg        = preview.DetectedIssuingOrg,
-                        detectedBenchmarkYear     = preview.DetectedBenchmarkYear,
-                        detectedBenchmarkStandard = preview.DetectedBenchmarkStandard,
-                        detectedTags              = preview.DetectedTags,
-                        globalMetadataBanner      = preview.GlobalMetadataBanner,
-                        sheets                    = preview.Sheets
-                    });
-                }
-
-                // 2. Nếu là định dạng PDF
-                if (fetchResult.DocumentType == "PDF")
-                {
-                    var rawQuestions = _pdfExtractor.ParsePdfQuestions(fetchResult.Stream);
-                    if (rawQuestions == null || rawQuestions.Count == 0)
-                    {
-                        return BadRequest(new { message = "Không tìm thấy câu hỏi định dạng sẵn trong file PDF." });
-                    }
-
-                    if (request.UseAi)
-                    {
-                        var solvedQuestions = await _geminiSolver.AutoSolveQuestionsAsync(rawQuestions);
-                        return Ok(new
-                        {
-                            sourceType = "PDF",
-                            fileName = fetchResult.FileName,
-                            totalQuestions = solvedQuestions.Count,
-                            questions = solvedQuestions
-                        });
-                    }
-
-                    return Ok(new
-                    {
-                        sourceType = "PDF",
-                        fileName = fetchResult.FileName,
-                        totalQuestions = rawQuestions.Count,
-                        questions = rawQuestions
-                    });
-                }
-
-                // 3. Mặc định là định dạng Word DOCX (bao gồm Google Docs)
-                {
-                    var rawQuestions = _docxParser.ParseDocxFile(fetchResult.Stream);
-                    if (rawQuestions == null || rawQuestions.Count == 0)
-                    {
-                        return BadRequest(new { message = "Không tìm thấy câu hỏi hợp lệ trong tài liệu Word / Google Docs." });
-                    }
-
-                    if (request.UseAi)
-                    {
-                        var solvedQuestions = await _geminiSolver.AutoSolveQuestionsAsync(rawQuestions);
-                        return Ok(new
-                        {
-                            sourceType = "DOCX",
-                            fileName = fetchResult.FileName,
-                            totalQuestions = solvedQuestions.Count,
-                            questions = solvedQuestions
-                        });
-                    }
-
-                    return Ok(new
-                    {
-                        sourceType = "DOCX",
-                        fileName = fetchResult.FileName,
-                        totalQuestions = rawQuestions.Count,
-                        questions = rawQuestions
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = $"Lỗi xử lý nạp câu hỏi từ liên kết: {ex.Message}" });
-            }
-        }
-
         // ── POST api/quiz/questions/generate-from-doc [Kịch bản B] ───────────
         [HttpPost("questions/generate-from-doc")]
         public async Task<IActionResult> GenerateQuestionsFromDoc(
@@ -665,8 +585,16 @@ namespace AegisQuiz.API.Controllers
                     .ToListAsync();
 
                 int updated = 0;
+                int skipped = 0;
                 foreach (var q in questions)
                 {
+                    // [Ownership Scoping] TeamLeader chỉ được bật/tắt câu hỏi mình sở hữu.
+                    if (!await _ownershipGuard.CanManageAsync(User, q.CreatorId, q.OrgUnitId))
+                    {
+                        skipped++;
+                        continue;
+                    }
+
                     var dict = new Dictionary<string, object>();
                     foreach (var prop in q.Payload.RootElement.EnumerateObject())
                         dict[prop.Name] = prop.Value.ValueKind == JsonValueKind.String
@@ -679,7 +607,7 @@ namespace AegisQuiz.API.Controllers
                 }
 
                 await _db.SaveChangesAsync();
-                return Ok(new { success = true, updated });
+                return Ok(new { success = true, updated, skipped });
             }
             catch (Exception ex)
             {
@@ -691,11 +619,20 @@ namespace AegisQuiz.API.Controllers
         [HttpPost("questions/confirm-import-docx")]
         public async Task<IActionResult> ConfirmImportQuestionsDocx([FromBody] List<DocxImportPreviewDto> items)
         {
+            if (items == null || items.Count == 0)
+                return BadRequest(new { message = "Danh sách câu hỏi trống." });
+
+            // [P1 Data-Integrity Fix] Bọc toàn bộ luồng import (tạo Context dùng chung +
+            // tạo/đồng bộ Topic cha-con + tạo hàng loạt Question) trong 1 transaction duy
+            // nhất. Trước đây có nhiều SaveChangesAsync() rải rác — nếu lỗi giữa chừng (vd
+            // câu hỏi thứ 300/500), DB rơi vào trạng thái nửa vời (một số Topic/Context đã
+            // tạo, phần còn lại thì không), rất khó dọn dẹp thủ công.
+            Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction? transaction = null;
+            if (_db.Database.IsRelational())
+                transaction = await _db.Database.BeginTransactionAsync();
+
             try
             {
-                if (items == null || items.Count == 0)
-                    return BadRequest(new { message = "Danh sách câu hỏi trống." });
-
                 var toSave = new List<QuestionBase>();
 
                 // [Universal Shared Context] Khử trùng lặp và lưu trữ bài đọc hiểu/ngữ cảnh dùng chung một lần duy nhất
@@ -1052,48 +989,25 @@ namespace AegisQuiz.API.Controllers
 
                 _db.Questions.AddRange(toSave);
                 await _db.SaveChangesAsync();
+                if (transaction != null) await transaction.CommitAsync();
                 return Ok(new { success = true, count = toSave.Count });
             }
             catch (Exception ex)
             {
-                // [Kỳ tích Tự chữa lành Runtime] Nếu gặp lỗi thiếu cột DepthLevel (42703), tự động bổ sung cột vào PostgreSQL và thử lại ngay lập tức!
-                if (ex.Message.Contains("42703") || ex.Message.Contains("DepthLevel") || ex.InnerException?.Message.Contains("42703") == true || ex.InnerException?.Message.Contains("DepthLevel") == true)
-                {
-                    try
-                    {
-                        await _db.Database.ExecuteSqlRawAsync(@"
-                            ALTER TABLE ""BankTopics"" ADD COLUMN IF NOT EXISTS ""DepthLevel"" integer NOT NULL DEFAULT 0;
-                            ALTER TABLE ""BankTopics"" ADD COLUMN IF NOT EXISTS ""MaterializedPath"" text NULL;
-                            ALTER TABLE ""BankTopics"" ADD COLUMN IF NOT EXISTS ""Scope"" text NOT NULL DEFAULT 'COMMUNITY';
-                            ALTER TABLE ""BankTopics"" ADD COLUMN IF NOT EXISTS ""DomainCode"" text NOT NULL DEFAULT 'GENERAL';
-                            ALTER TABLE ""BankTopics"" ADD COLUMN IF NOT EXISTS ""DisplayOrder"" integer NOT NULL DEFAULT 0;
-                            ALTER TABLE ""BankTopics"" ADD COLUMN IF NOT EXISTS ""QuestionCountCached"" integer NOT NULL DEFAULT 0;
-                            ALTER TABLE ""BankTopics"" ADD COLUMN IF NOT EXISTS ""Urn"" text NULL;
-                            ALTER TABLE ""BankTopics"" ADD COLUMN IF NOT EXISTS ""ParentId"" uuid NULL;
-                            ALTER TABLE ""BankTopics"" ADD COLUMN IF NOT EXISTS ""AllowedTenantIds"" text[] NOT NULL DEFAULT '{}';
-                            ALTER TABLE ""BankTopics"" ADD COLUMN IF NOT EXISTS ""TenantId"" uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000';
-                            
-                            ALTER TABLE ""Questions"" ADD COLUMN IF NOT EXISTS ""ContextId"" uuid NULL;
-                            ALTER TABLE ""Questions"" ADD COLUMN IF NOT EXISTS ""DomainCode"" text NOT NULL DEFAULT 'EDUCATION';
-                            ALTER TABLE ""Questions"" ADD COLUMN IF NOT EXISTS ""IsCritical"" boolean NOT NULL DEFAULT false;
-                            ALTER TABLE ""Questions"" ADD COLUMN IF NOT EXISTS ""SubCategory"" text NULL;
-                            ALTER TABLE ""Questions"" ADD COLUMN IF NOT EXISTS ""Tags"" text[] NOT NULL DEFAULT '{}';
-                            ALTER TABLE ""Questions"" ADD COLUMN IF NOT EXISTS ""TenantId"" uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000';
-                        ");
+                if (transaction != null) await transaction.RollbackAsync();
 
-                        // Xóa các entity bị lỗi khỏi ChangeTracker trước khi thử lại
-                        _db.ChangeTracker.Clear();
-
-                        // Thử lại lần 2 sau khi DB đã được tự động chữa lành cột
-                        return await ConfirmImportQuestionsDocx(items);
-                    }
-                    catch (Exception retryEx)
-                    {
-                        return StatusCode(500, new { message = $"Lỗi lưu câu hỏi (sau khi tự chữa lành): {retryEx.Message}" });
-                    }
-                }
-
-                return StatusCode(500, new { message = $"Lỗi lưu câu hỏi: {ex.Message}" });
+                // [P1 Fix] Loại bỏ pattern "bắt lỗi bằng so khớp chuỗi rồi tự ALTER TABLE +
+                // tự đệ quy gọi lại chính mình" — dễ che giấu lỗi thật và có nguy cơ đệ quy
+                // vô hạn nếu nguyên nhân không phải do thiếu cột. Việc tự-chữa-lành schema
+                // nay tập trung duy nhất ở khởi động ứng dụng (Program.cs) và endpoint quản
+                // trị thủ công [SystemMaintenanceController] — không còn lặp lại ở đây.
+                var innerMsg = ex.InnerException?.Message;
+                var detailedMsg = string.IsNullOrWhiteSpace(innerMsg) ? ex.Message : $"{ex.Message} -> {innerMsg}";
+                return StatusCode(500, new { message = $"Lỗi lưu câu hỏi: {detailedMsg}" });
+            }
+            finally
+            {
+                if (transaction != null) await transaction.DisposeAsync();
             }
         }
 
@@ -1103,6 +1017,16 @@ namespace AegisQuiz.API.Controllers
         {
             try
             {
+                // [P2 Perf Fix] Trước đây dùng correlated subquery COUNT theo từng dòng
+                // Context (`_db.Questions.Count(q => q.ContextId == c.Id)` bên trong
+                // .Select()). Nay gộp đếm 1 lần bằng GroupBy rồi join bằng Dictionary,
+                // giảm số subquery từ O(n) xuống 1 câu SQL tổng hợp duy nhất.
+                var questionCountByContext = await _db.Questions
+                    .Where(q => q.ContextId != null)
+                    .GroupBy(q => q.ContextId!.Value)
+                    .Select(g => new { ContextId = g.Key, Count = g.Count() })
+                    .ToDictionaryAsync(x => x.ContextId, x => x.Count);
+
                 var contexts = await _db.QuestionContexts
                     .OrderByDescending(c => c.CreatedAt)
                     .Select(c => new
@@ -1112,12 +1036,22 @@ namespace AegisQuiz.API.Controllers
                         c.Content,
                         c.ContentType,
                         c.ContentHash,
-                        c.CreatedAt,
-                        QuestionCount = _db.Questions.Count(q => q.ContextId == c.Id)
+                        c.CreatedAt
                     })
                     .ToListAsync();
 
-                return Ok(contexts);
+                var result = contexts.Select(c => new
+                {
+                    c.Id,
+                    c.Title,
+                    c.Content,
+                    c.ContentType,
+                    c.ContentHash,
+                    c.CreatedAt,
+                    QuestionCount = questionCountByContext.GetValueOrDefault(c.Id, 0)
+                });
+
+                return Ok(result);
             }
             catch (Exception ex)
             {
@@ -1166,9 +1100,17 @@ namespace AegisQuiz.API.Controllers
                 if (ctx == null)
                     return BadRequest(new { message = "Không xác định được bài đọc hiểu / ngữ cảnh để gán." });
 
-                var questions = await _db.Questions
+                var candidateQuestions = await _db.Questions
                     .Where(q => dto.QuestionIds.Contains(q.Id))
                     .ToListAsync();
+
+                // [Ownership Scoping] TeamLeader chỉ gán ngữ cảnh cho câu hỏi mình sở hữu.
+                var questions = new List<QuestionBase>();
+                foreach (var q in candidateQuestions)
+                {
+                    if (await _ownershipGuard.CanManageAsync(User, q.CreatorId, q.OrgUnitId))
+                        questions.Add(q);
+                }
 
                 foreach (var q in questions)
                 {
@@ -1223,9 +1165,17 @@ namespace AegisQuiz.API.Controllers
                 if (dto == null || dto.QuestionIds == null || dto.QuestionIds.Count == 0)
                     return BadRequest(new { message = "Danh sách câu hỏi cần gỡ trống." });
 
-                var questions = await _db.Questions
+                var candidateQuestions = await _db.Questions
                     .Where(q => dto.QuestionIds.Contains(q.Id))
                     .ToListAsync();
+
+                // [Ownership Scoping] TeamLeader chỉ gỡ ngữ cảnh khỏi câu hỏi mình sở hữu.
+                var questions = new List<QuestionBase>();
+                foreach (var q in candidateQuestions)
+                {
+                    if (await _ownershipGuard.CanManageAsync(User, q.CreatorId, q.OrgUnitId))
+                        questions.Add(q);
+                }
 
                 foreach (var q in questions)
                 {
@@ -1269,9 +1219,17 @@ namespace AegisQuiz.API.Controllers
                 if (dto == null || dto.QuestionIds == null || dto.QuestionIds.Count == 0)
                     return BadRequest(new { message = "Danh sách câu hỏi cần gán thẻ trống." });
 
-                var questions = await _db.Questions
+                var candidateQuestions = await _db.Questions
                     .Where(q => dto.QuestionIds.Contains(q.Id))
                     .ToListAsync();
+
+                // [Ownership Scoping] TeamLeader chỉ gán thẻ cho câu hỏi mình sở hữu.
+                var questions = new List<QuestionBase>();
+                foreach (var q in candidateQuestions)
+                {
+                    if (await _ownershipGuard.CanManageAsync(User, q.CreatorId, q.OrgUnitId))
+                        questions.Add(q);
+                }
 
                 foreach (var q in questions)
                 {
@@ -1345,10 +1303,20 @@ namespace AegisQuiz.API.Controllers
                 int updatedCount = 0;
                 var sampleResults = new List<object>();
 
+                // [P2 Perf Fix] Trước đây mỗi group lại query riêng 1 lần (N+1 round-trip
+                // tới DB). Nay load 1 lần toàn bộ Topic khớp các CategoryCode liên quan.
+                var topicCodes = grouped.Select(g => g.Key).ToList();
+                var topicsByCode = (await _db.BankTopics
+                        .AsNoTracking()
+                        .Where(t => topicCodes.Contains(t.Code))
+                        .ToListAsync())
+                    .GroupBy(t => t.Code)
+                    .ToDictionary(g => g.Key, g => g.First());
+
                 foreach (var group in grouped)
                 {
                     var topicCode = group.Key;
-                    var topic = await _db.BankTopics.FirstOrDefaultAsync(t => t.Code == topicCode);
+                    var topic = topicsByCode.GetValueOrDefault(topicCode);
                     var topicName = topic?.Name ?? topicCode;
 
                     var sampleContents = group.Select(q => q.Content).Take(20).ToList();
@@ -1522,6 +1490,20 @@ namespace AegisQuiz.API.Controllers
                 if (q == null)
                     return NotFound(new { message = "Không tìm thấy câu hỏi" });
 
+                if (!await _ownershipGuard.CanManageAsync(User, q.CreatorId, q.OrgUnitId))
+                    return Forbid();
+
+                // [Data-Loss Fix] Merge vào Payload hiện có thay vì ghi đè toàn bộ — trước đây
+                // SerializeToDocument(new {...}) chỉ giữ 2-3 field, xóa mất creatorId/orgUnitId/
+                // scope/tags/domainCode/contextId..., khiến TeamLeader mất quyền sở hữu câu hỏi
+                // của chính mình ngay sau lần đầu sửa đáp án.
+                var payloadDict = new Dictionary<string, object>();
+                if (q.Payload != null)
+                {
+                    foreach (var prop in q.Payload.RootElement.EnumerateObject())
+                        payloadDict[prop.Name] = prop.Value.Clone();
+                }
+
                 if (q is SingleChoiceQuestion sq)
                 {
                     sq.CorrectOption = request.CorrectAnswer;
@@ -1533,30 +1515,24 @@ namespace AegisQuiz.API.Controllers
                         int idx = sq.Options.IndexOf(request.CorrectAnswer);
                         if (idx >= 0) correctVal = (idx + 1).ToString();
                     }
-                    sq.Payload = JsonSerializer.SerializeToDocument(new
-                    {
-                        options       = optPayload,
-                        correctAnswer = correctVal,
-                        explanation   = request.AiExplanation ?? ""
-                    });
+                    payloadDict["options"]       = optPayload;
+                    payloadDict["correctAnswer"] = correctVal;
+                    payloadDict["explanation"]   = request.AiExplanation ?? "";
+                    sq.Payload = JsonSerializer.SerializeToDocument(payloadDict);
                 }
                 else if (q is EssayQuestion eq)
                 {
                     eq.GradingRubric = request.CorrectAnswer;
-                    eq.Payload = JsonSerializer.SerializeToDocument(new
-                    {
-                        rubric      = request.CorrectAnswer,
-                        explanation = request.AiExplanation ?? ""
-                    });
+                    payloadDict["rubric"]      = request.CorrectAnswer;
+                    payloadDict["explanation"] = request.AiExplanation ?? "";
+                    eq.Payload = JsonSerializer.SerializeToDocument(payloadDict);
                 }
                 else
                 {
                     q.CorrectOption = request.CorrectAnswer;
-                    q.Payload = JsonSerializer.SerializeToDocument(new
-                    {
-                        correctAnswer = request.CorrectAnswer,
-                        explanation   = request.AiExplanation ?? ""
-                    });
+                    payloadDict["correctAnswer"] = request.CorrectAnswer;
+                    payloadDict["explanation"]   = request.AiExplanation ?? "";
+                    q.Payload = JsonSerializer.SerializeToDocument(payloadDict);
                 }
 
                 await _db.SaveChangesAsync();
@@ -1830,11 +1806,5 @@ namespace AegisQuiz.API.Controllers
         public string RawHeader { get; set; } = string.Empty;
         public string? DomainScope { get; set; } = "ALL";
         public string? LanguageCode { get; set; } = "any";
-    }
-
-    public class ImportUrlRequest
-    {
-        public string Url { get; set; } = string.Empty;
-        public bool UseAi { get; set; } = false;
     }
 }

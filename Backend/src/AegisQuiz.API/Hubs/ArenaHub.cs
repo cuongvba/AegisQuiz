@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using AegisQuiz.Application.Interfaces;
@@ -7,6 +8,11 @@ using AegisQuiz.Infrastructure.Arena;
 
 namespace AegisQuiz.API.Hubs
 {
+    // [RBAC hardening] Giữ nguyên hành vi hiện có (Hub chưa có kiểm tra vai trò riêng)
+    // sau khi bổ sung FallbackPolicy RequireAuthenticatedUser toàn cục — tránh phá vỡ
+    // luồng kết nối realtime hiện tại (khán giả ẩn danh trong Arena). TODO: thiết kế
+    // Authorize policy riêng cho Hub.
+    [AllowAnonymous]
     public class ArenaHub : Hub
     {
         private readonly ArenaRoomManager _roomManager;

@@ -6,6 +6,7 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Configuration;
@@ -32,6 +33,7 @@ namespace AegisQuiz.API.Controllers
 
         // Bước 1: Sinh Challenge (Nonce) gửi cho Client
         [HttpPost("challenge")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetChallenge()
         {
             // Sinh chuỗi ngẫu nhiên 32 bytes dưới dạng Base64
@@ -54,6 +56,7 @@ namespace AegisQuiz.API.Controllers
 
         // Bước 2: Nhận Chữ ký số và xác thực đăng nhập
         [HttpPost("login")]
+        [AllowAnonymous]
         public async Task<IActionResult> Login([FromBody] PkiLoginRequest request)
         {
             if (string.IsNullOrEmpty(request.Challenge) || 

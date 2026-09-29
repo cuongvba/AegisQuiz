@@ -25,8 +25,13 @@
   },
   "nav": {
     "dashboard": "Dashboard",
+    "mainMenu": "Main menu",
+    "bottomMenu": "Bottom navigation menu",
     "quiz": "Quiz",
     "practice": "Practice",
+    "team": "Team",
+    "arena": "Arena",
+    "mockExam": "Mock Exam",
     "leaderboard": "Leaderboard",
     "achievements": "Achievements",
     "learningPaths": "Learning Paths",
@@ -52,11 +57,20 @@
   },
   "auth": {
     "login": "Login",
+    "register": "Sign up",
     "logout": "Logout",
     "loginWithKeycloak": "Login with Organization SSO",
     "loginWithPKI": "Login with USB Token (PKI)",
     "welcome": "Welcome back, {{name}}",
     "sessionExpired": "Your session has expired. Please log in again."
+  },
+  "userMenu": {
+    "defaultName": "User",
+    "accountOf": "Account of {{name}}",
+    "menuLabel": "Account menu",
+    "systemAdminPortal": "System Administration",
+    "teamLeaderArea": "Team Leader Area",
+    "profileAndSecurity": "Profile & Security"
   },
   "admin": {
     "questions": "Question Management",

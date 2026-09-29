@@ -1,0 +1,68 @@
+# ============================================================================
+# AegisQuiz — Docker Compose OVERRIDE cho môi trường DEV (Hot-Reload)
+# ============================================================================
+# File này KHÔNG thay thế `docker-compose.yml` — chỉ override cách build/chạy
+# 2 service `backend` và `frontend` sang chế độ phát triển (Dockerfile.dev):
+#   - backend:  dotnet watch run  → tự rebuild + restart khi sửa *.cs
+#   - frontend: vite --host        → Hot Module Replacement khi sửa *.tsx/*.ts
+# Postgres/Redis/Keycloak/IRT-Service vẫn dùng nguyên từ docker-compose.yml gốc
+# (không cần dev-mode riêng cho các service hạ tầng này).
+#
+# ── Khởi động toàn bộ stack ở chế độ dev ─────────────────────────────────────
+#   cp .env.example .env
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+#
+# ── Chỉ khởi động RIÊNG container Backend (tự kéo theo Postgres/Redis/... vì
+#    đã khai báo depends_on trong docker-compose.yml gốc) ───────────────────
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build backend
+#
+# ── Chỉ khởi động RIÊNG container Frontend ──────────────────────────────────
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build frontend
+#
+# ── Xem log / vào shell từng container riêng lẻ ────────────────────────────
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml logs -f backend
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml exec backend bash
+# ============================================================================
+
+services:
+  # ===== BACKEND — DEV (Hot Reload qua dotnet watch) =========================
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile.dev
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    volumes:
+      # Mount toàn bộ source code Backend vào container — sửa file ở host là
+      # dotnet watch nhận diện ngay lập tức, không cần build lại image.
+      - ./Backend:/src
+      # [Quan trọng] Anonymous volumes: giữ bin/obj sinh ra BÊN TRONG container
+      # (biên dịch cho Linux), tránh bị ghi đè bởi bin/obj build sẵn trên máy
+      # host Windows/Mac (khác kiến trúc/OS → lỗi runtime khó hiểu).
+      - /src/src/AegisQuiz.Domain/bin
+      - /src/src/AegisQuiz.Domain/obj
+      - /src/src/AegisQuiz.Application/bin
+      - /src/src/AegisQuiz.Application/obj
+      - /src/src/AegisQuiz.Infrastructure/bin
+      - /src/src/AegisQuiz.Infrastructure/obj
+      - /src/src/AegisQuiz.API/bin
+      - /src/src/AegisQuiz.API/obj
+
+  # ===== FRONTEND — DEV (Vite Dev Server + HMR) ==============================
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile.dev
+      args: {}
+    environment:
+      # Container frontend không dùng "localhost:8080" được — mỗi container có
+      # network namespace riêng, phải trỏ đúng tên service Docker Compose.
+      - VITE_API_URL=http://backend:8080
+    volumes:
+      # Mount toàn bộ source code Frontend vào container — Vite HMR tự nhận
+      # diện thay đổi *.tsx/*.ts/*.css ngay lập tức.
+      - ./Frontend:/app
+      # [Quan trọng] Anonymous volume: giữ node_modules cài BÊN TRONG container
+      # (Linux), tránh bị ghi đè bởi node_modules cài sẵn trên máy host
+      # Windows/Mac (binary native khác kiến trúc/OS → lỗi module).
+      - /app/node_modules

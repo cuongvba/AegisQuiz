@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using AegisQuiz.Infrastructure.Data;
@@ -15,6 +16,10 @@ namespace AegisQuiz.API.Hubs
     ///   - JoinInvigilator: giám thị theo dõi
     ///   - ConfirmVoidByInvigilator: giám thị xác nhận hủy bài
     /// </summary>
+    // [RBAC hardening] Giữ nguyên hành vi hiện có (Hub chưa có kiểm tra vai trò riêng)
+    // sau khi bổ sung FallbackPolicy RequireAuthenticatedUser toàn cục — tránh phá vỡ
+    // luồng kết nối realtime hiện tại. TODO: thiết kế Authorize policy riêng cho Hub.
+    [AllowAnonymous]
     public class ExamProctoringHub : Hub
     {
         private readonly AegisQuizDbContext _db;

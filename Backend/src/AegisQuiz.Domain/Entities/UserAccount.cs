@@ -75,7 +75,17 @@ namespace AegisQuiz.Domain.Entities
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
+        /// <summary>[Workspace Switcher] Tenant đang hoạt động trong phiên hiện tại (JWT active_tenant_id). Guid.Empty = dùng TenantId gốc.</summary>
+        public Guid ActiveTenantId { get; set; }
+
+        /// <summary>Refresh token (đã băm) cho phiên đăng nhập dài hạn.</summary>
+        public string? RefreshToken { get; set; }
+        public DateTime? RefreshTokenExpiresAt { get; set; }
+
         // Navigation properties
         public virtual OrganizationUnit? OrgUnit { get; set; }
+
+        /// <summary>[Poly-Tenant Membership] Một định danh toàn cục — nhiều tư cách thành viên Tenant.</summary>
+        public virtual ICollection<TenantMembership> Memberships { get; set; } = new List<TenantMembership>();
     }
 }

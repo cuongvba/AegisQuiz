@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Target, TrendingUp, Flag, BookOpen, Zap, Sparkles,
   Loader2, Trophy, Users, ShieldCheck, ChevronRight,
@@ -20,15 +21,8 @@ interface TopicData {
   fullMark: number;
 }
 
-const FALLBACK_RADAR: TopicData[] = [
-  { subject: 'Toán học & Logic', A: 68, fullMark: 100 },
-  { subject: 'Công nghệ & IT',    A: 92, fullMark: 100 },
-  { subject: 'Ngoại ngữ (Anh)',  A: 85, fullMark: 100 },
-  { subject: 'Quy trình & Luật',  A: 64, fullMark: 100 },
-  { subject: 'Kỹ năng Quản trị', A: 88, fullMark: 100 },
-];
-
 export function Dashboard() {
+  const { t } = useTranslation('dashboard');
   const navigate = useNavigate();
   const { user, isAdmin } = useAuthContext();
   const userId = user?.id ?? 'anonymous';
@@ -36,6 +30,14 @@ export function Dashboard() {
   const isTeamLeader = user?.role === 'TeamLeader';
 
   const [activeTimeframe, setActiveTimeframe] = useState<'week' | 'month'>('week');
+
+  const FALLBACK_RADAR: TopicData[] = [
+    { subject: t('radar.topics.math'),     A: 68, fullMark: 100 },
+    { subject: t('radar.topics.tech'),     A: 92, fullMark: 100 },
+    { subject: t('radar.topics.language'), A: 85, fullMark: 100 },
+    { subject: t('radar.topics.process'),  A: 64, fullMark: 100 },
+    { subject: t('radar.topics.management'), A: 88, fullMark: 100 },
+  ];
 
   // 1. Weak topics → RadarChart
   const { data: weakTopicsRaw, isLoading: loadingTopics } = useQuery({
@@ -60,7 +62,7 @@ export function Dashboard() {
 
   // Determine greeting based on local time
   const currentHour = new Date().getHours();
-  const greetingTime = currentHour < 12 ? 'Chào buổi sáng' : currentHour < 18 ? 'Chào buổi chiều' : 'Chào buổi tối';
+  const greetingTime = currentHour < 12 ? t('greeting.morning') : currentHour < 18 ? t('greeting.afternoon') : t('greeting.evening');
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans pb-24">
@@ -83,20 +85,20 @@ export function Dashboard() {
               <div className="flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-cyan-500/15 border border-cyan-500/30 text-cyan-300">
                   <Sparkles size={13} className="text-cyan-400 animate-pulse" />
-                  <span>Aegis Enterprise AI Engine v4.0</span>
+                  <span>{t('hero.eyebrow')}</span>
                 </span>
 
                 {isTeamLeader ? (
                   <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black bg-amber-500/15 border border-amber-500/30 text-amber-300">
-                    <ShieldCheck size={13} /> Trưởng Nhóm Khảo Thí
+                    <ShieldCheck size={13} /> {t('hero.badgeTeamLeader')}
                   </span>
                 ) : isAdmin ? (
                   <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black bg-purple-500/15 border border-purple-500/30 text-purple-300">
-                    <Award size={13} /> Quản Trị Hệ Thống
+                    <Award size={13} /> {t('hero.badgeAdmin')}
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black bg-emerald-500/15 border border-emerald-500/30 text-emerald-300">
-                    <Flame size={13} /> Học Viên Ưu Tú
+                    <Flame size={13} /> {t('hero.badgeLearner')}
                   </span>
                 )}
 
@@ -106,11 +108,11 @@ export function Dashboard() {
               </div>
 
               <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight leading-tight">
-                {greetingTime}, <span className="bg-gradient-to-r from-cyan-400 via-indigo-300 to-purple-400 bg-clip-text text-transparent">{user?.name ?? 'Chuyên Gia Khảo Thí'}</span>! 👋
+                {greetingTime}, <span className="bg-gradient-to-r from-cyan-400 via-indigo-300 to-purple-400 bg-clip-text text-transparent">{user?.name ?? t('greeting.defaultName')}</span>! 👋
               </h1>
 
               <p className="text-sm sm:text-base text-slate-300 font-medium leading-relaxed">
-                Hôm nay là thời điểm lý tưởng để bứt phá năng lực nhận thức. Động cơ IRT đã cá nhân hóa ma trận câu hỏi mới nhất cho bạn!
+                {t('hero.subheadline')}
               </p>
             </div>
 
@@ -124,9 +126,9 @@ export function Dashboard() {
                   <Play size={18} />
                 </div>
                 <span className="text-xs font-black text-white group-hover:text-cyan-300 transition-colors flex items-center gap-1">
-                  Luyện Thi AI <ArrowUpRight size={13} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                  {t('actions.practice.title')} <ArrowUpRight size={13} className="opacity-0 group-hover:opacity-100 transition-opacity" />
                 </span>
-                <span className="text-[10px] text-slate-400 font-medium mt-0.5">3,500+ Câu hỏi</span>
+                <span className="text-[10px] text-slate-400 font-medium mt-0.5">{t('actions.practice.desc')}</span>
               </button>
 
               <button
@@ -137,9 +139,9 @@ export function Dashboard() {
                   <Zap size={18} />
                 </div>
                 <span className="text-xs font-black text-white group-hover:text-amber-300 transition-colors flex items-center gap-1">
-                  Đấu Trường <ArrowUpRight size={13} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                  {t('actions.arena.title')} <ArrowUpRight size={13} className="opacity-0 group-hover:opacity-100 transition-opacity" />
                 </span>
-                <span className="text-[10px] text-slate-400 font-medium mt-0.5">Chuông Vàng & PvP</span>
+                <span className="text-[10px] text-slate-400 font-medium mt-0.5">{t('actions.arena.desc')}</span>
               </button>
 
               <button
@@ -150,9 +152,9 @@ export function Dashboard() {
                   <Users size={18} />
                 </div>
                 <span className="text-xs font-black text-white group-hover:text-emerald-300 transition-colors flex items-center gap-1">
-                  Đội Nhóm <ArrowUpRight size={13} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                  {t('actions.team.title')} <ArrowUpRight size={13} className="opacity-0 group-hover:opacity-100 transition-opacity" />
                 </span>
-                <span className="text-[10px] text-slate-400 font-medium mt-0.5">Tiến độ & đề Team</span>
+                <span className="text-[10px] text-slate-400 font-medium mt-0.5">{t('actions.team.desc')}</span>
               </button>
 
               <button
@@ -163,9 +165,9 @@ export function Dashboard() {
                   <Target size={18} />
                 </div>
                 <span className="text-xs font-black text-white group-hover:text-rose-300 transition-colors flex items-center gap-1">
-                  Thi Đánh Giá <ArrowUpRight size={13} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                  {t('actions.adaptive.title')} <ArrowUpRight size={13} className="opacity-0 group-hover:opacity-100 transition-opacity" />
                 </span>
-                <span className="text-[10px] text-slate-400 font-medium mt-0.5">Chuẩn Năng Lực IRT</span>
+                <span className="text-[10px] text-slate-400 font-medium mt-0.5">{t('actions.adaptive.desc')}</span>
               </button>
             </div>
           </div>
@@ -177,21 +179,21 @@ export function Dashboard() {
           <div className="rounded-2xl p-5 bg-gradient-to-br from-indigo-950/60 to-slate-900/80 border border-indigo-500/30 shadow-xl backdrop-blur-md relative overflow-hidden group hover:border-indigo-400/60 transition-colors">
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-black text-indigo-300 tracking-wide uppercase flex items-center gap-1.5">
-                <Target size={14} className="text-indigo-400" /> Mục tiêu tuần
+                <Target size={14} className="text-indigo-400" /> {t('metrics.weeklyGoal.label')}
               </span>
               <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                71% Đạt
+                {t('metrics.weeklyGoal.badge')}
               </span>
             </div>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-black text-white">5/7</span>
-              <span className="text-xs text-slate-400 font-semibold">ngày rèn luyện</span>
+              <span className="text-3xl font-black text-white">{t('metrics.weeklyGoal.value')}</span>
+              <span className="text-xs text-slate-400 font-semibold">{t('metrics.weeklyGoal.unit')}</span>
             </div>
             <div className="mt-3 w-full bg-slate-800 rounded-full h-2 overflow-hidden">
               <div className="bg-gradient-to-r from-indigo-500 to-cyan-400 h-full rounded-full transition-all duration-700" style={{ width: '71%' }} />
             </div>
             <p className="text-[11px] text-slate-400 mt-2 flex items-center gap-1">
-              <CheckCircle2 size={12} className="text-emerald-400" /> Còn 2 ngày để hoàn thành mục tiêu
+              <CheckCircle2 size={12} className="text-emerald-400" /> {t('metrics.weeklyGoal.footer')}
             </p>
           </div>
 
@@ -199,10 +201,10 @@ export function Dashboard() {
           <div className="rounded-2xl p-5 bg-gradient-to-br from-emerald-950/60 to-slate-900/80 border border-emerald-500/30 shadow-xl backdrop-blur-md relative overflow-hidden group hover:border-emerald-400/60 transition-colors">
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-black text-emerald-300 tracking-wide uppercase flex items-center gap-1.5">
-                <TrendingUp size={14} className="text-emerald-400" /> Độ chính xác TB
+                <TrendingUp size={14} className="text-emerald-400" /> {t('metrics.accuracy.label')}
               </span>
               <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                +4.2% tuần này
+                {t('metrics.accuracy.badge')}
               </span>
             </div>
             <div className="flex items-baseline gap-1">
@@ -213,7 +215,7 @@ export function Dashboard() {
               <div className="bg-gradient-to-r from-emerald-500 to-teal-400 h-full rounded-full transition-all duration-700" style={{ width: '82.4%' }} />
             </div>
             <p className="text-[11px] text-slate-400 mt-2 flex items-center gap-1">
-              <Sparkles size={12} className="text-emerald-400" /> Top 5% học viên xuất sắc toàn viện
+              <Sparkles size={12} className="text-emerald-400" /> {t('metrics.accuracy.footer')}
             </p>
           </div>
 
@@ -221,21 +223,21 @@ export function Dashboard() {
           <div className="rounded-2xl p-5 bg-gradient-to-br from-cyan-950/60 to-slate-900/80 border border-cyan-500/30 shadow-xl backdrop-blur-md relative overflow-hidden group hover:border-cyan-400/60 transition-colors">
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-black text-cyan-300 tracking-wide uppercase flex items-center gap-1.5">
-                <Flag size={14} className="text-cyan-400" /> Câu đã giải
+                <Flag size={14} className="text-cyan-400" /> {t('metrics.questionsSolved.label')}
               </span>
               <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                48 Chuyên đề
+                {t('metrics.questionsSolved.badge')}
               </span>
             </div>
             <div className="flex items-baseline gap-1.5">
               <span className="text-3xl font-black text-white">1,248</span>
-              <span className="text-xs text-slate-400 font-semibold">câu hoàn tất</span>
+              <span className="text-xs text-slate-400 font-semibold">{t('metrics.questionsSolved.unit')}</span>
             </div>
             <div className="mt-3 w-full bg-slate-800 rounded-full h-2 overflow-hidden">
               <div className="bg-gradient-to-r from-cyan-500 to-blue-500 h-full rounded-full transition-all duration-700" style={{ width: '65%' }} />
             </div>
             <p className="text-[11px] text-slate-400 mt-2 flex items-center gap-1">
-              <Flame size={12} className="text-amber-400" /> Chuỗi trả lời đúng liên tiếp: 18 câu
+              <Flame size={12} className="text-amber-400" /> {t('metrics.questionsSolved.footer')}
             </p>
           </div>
 
@@ -243,21 +245,21 @@ export function Dashboard() {
           <div className="rounded-2xl p-5 bg-gradient-to-br from-purple-950/60 to-slate-900/80 border border-purple-500/30 shadow-xl backdrop-blur-md relative overflow-hidden group hover:border-purple-400/60 transition-colors">
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-black text-purple-300 tracking-wide uppercase flex items-center gap-1.5">
-                <Trophy size={14} className="text-amber-400" /> Bảng vàng thứ hạng
+                <Trophy size={14} className="text-amber-400" /> {t('metrics.eloRank.label')}
               </span>
               <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                Hạng #3
+                {t('metrics.eloRank.badge')}
               </span>
             </div>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-black text-white">1,850</span>
-              <span className="text-xs text-purple-300 font-bold uppercase">Kim Cương III</span>
+              <span className="text-3xl font-black text-white">{t('metrics.eloRank.value')}</span>
+              <span className="text-xs text-purple-300 font-bold uppercase">{t('metrics.eloRank.tier')}</span>
             </div>
             <div className="mt-3 w-full bg-slate-800 rounded-full h-2 overflow-hidden">
               <div className="bg-gradient-to-r from-purple-500 to-rose-400 h-full rounded-full transition-all duration-700" style={{ width: '85%' }} />
             </div>
             <p className="text-[11px] text-slate-400 mt-2 flex items-center gap-1">
-              <ChevronRight size={12} className="text-purple-400" /> Còn 150 LP để lên Bậc Cao Thủ
+              <ChevronRight size={12} className="text-purple-400" /> {t('metrics.eloRank.footer')}
             </p>
           </div>
         </div>
@@ -271,13 +273,13 @@ export function Dashboard() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div>
                   <h2 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2.5">
-                    <span>Bản Đồ Năng Lực Nhận Thức 360°</span>
+                    <span>{t('radarPanel.title')}</span>
                     <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
-                      Chuẩn IRT CAT
+                      {t('radarPanel.badge')}
                     </span>
                   </h2>
                   <p className="text-xs text-slate-400 mt-1">
-                    Đánh giá tương quan giữa độ khó câu hỏi ($\theta$) và tỷ lệ phân hóa nhận thức thực tế
+                    {t('radarPanel.subtitle')}
                   </p>
                 </div>
 
@@ -286,13 +288,13 @@ export function Dashboard() {
                     onClick={() => setActiveTimeframe('week')}
                     className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${activeTimeframe === 'week' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40' : 'text-slate-400 hover:text-white'}`}
                   >
-                    Tuần này
+                    {t('radarPanel.thisWeek')}
                   </button>
                   <button
                     onClick={() => setActiveTimeframe('month')}
                     className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${activeTimeframe === 'month' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40' : 'text-slate-400 hover:text-white'}`}
                   >
-                    Tháng này
+                    {t('radarPanel.thisMonth')}
                   </button>
                 </div>
               </div>
@@ -301,7 +303,7 @@ export function Dashboard() {
               {loadingTopics ? (
                 <div className="h-80 flex flex-col items-center justify-center text-slate-500 gap-3">
                   <Loader2 className="animate-spin text-cyan-400" size={36} />
-                  <span className="text-xs font-bold">Đang tổng hợp dữ liệu năng lực IRT...</span>
+                  <span className="text-xs font-bold">{t('radar.loading')}</span>
                 </div>
               ) : (
                 <div className="h-80 w-full relative">
@@ -328,7 +330,7 @@ export function Dashboard() {
                         }} 
                       />
                       <Radar 
-                        name="Điểm thành thạo" 
+                        name={t('radar.seriesName')} 
                         dataKey="A" 
                         stroke="#06b6d4" 
                         strokeWidth={2.5} 
@@ -345,10 +347,10 @@ export function Dashboard() {
             <div className="mt-6 pt-5 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-4 text-xs">
               <div className="flex items-center gap-3">
                 <span className="flex items-center gap-1.5 text-slate-400 font-medium">
-                  <span className="w-2.5 h-2.5 rounded-full bg-cyan-400" /> Thế mạnh: <strong className="text-white">Công nghệ & IT (92%)</strong>
+                  <span className="w-2.5 h-2.5 rounded-full bg-cyan-400" /> {t('radar.strengthLabel')} <strong className="text-white">{t('radar.strengthValue')}</strong>
                 </span>
                 <span className="flex items-center gap-1.5 text-slate-400 font-medium">
-                  <span className="w-2.5 h-2.5 rounded-full bg-rose-400" /> Cần chú ý: <strong className="text-white">Toán & Logic (68%)</strong>
+                  <span className="w-2.5 h-2.5 rounded-full bg-rose-400" /> {t('radar.weaknessLabel')} <strong className="text-white">{t('radar.weaknessValue')}</strong>
                 </span>
               </div>
 
@@ -356,7 +358,7 @@ export function Dashboard() {
                 onClick={() => navigate('/practice')}
                 className="text-cyan-400 hover:text-cyan-300 font-bold inline-flex items-center gap-1 hover:underline cursor-pointer"
               >
-                Mở phòng luyện tập chi tiết <ChevronRight size={14} />
+                {t('radar.openPractice')} <ChevronRight size={14} />
               </button>
             </div>
           </div>
@@ -368,10 +370,10 @@ export function Dashboard() {
             <div className="rounded-3xl bg-slate-900/80 border border-slate-800/80 p-6 shadow-xl backdrop-blur-xl">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-base font-black text-white flex items-center gap-2">
-                  <Zap size={18} className="text-rose-400" /> Khu Vực Cần Cải Thiện
+                  <Zap size={18} className="text-rose-400" /> {t('focusAreas.title')}
                 </h3>
                 <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30">
-                  Ưu tiên cao
+                  {t('focusAreas.priority')}
                 </span>
               </div>
 
@@ -403,7 +405,7 @@ export function Dashboard() {
                 className="mt-5 w-full py-3 bg-gradient-to-r from-rose-600 to-orange-600 hover:brightness-110 text-white rounded-xl text-xs font-black shadow-lg shadow-rose-600/25 transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 <BookOpen size={16} />
-                <span>Ôn Luyện Điểm Yếu Ngay!</span>
+                <span>{t('focusAreas.cta')}</span>
               </button>
             </div>
 
@@ -416,21 +418,20 @@ export function Dashboard() {
                   <Brain size={16} />
                 </div>
                 <div>
-                  <h3 className="text-sm font-black text-white">AI Mentor • Gemini Coach</h3>
-                  <p className="text-[10px] text-slate-400">Tư vấn lộ trình học tập cá nhân hóa</p>
+                  <h3 className="text-sm font-black text-white">{t('aiMentor.title')}</h3>
+                  <p className="text-[10px] text-slate-400">{t('aiMentor.subtitle')}</p>
                 </div>
               </div>
 
               {loadingPlan ? (
                 <div className="flex items-center gap-2 text-slate-400 text-xs py-4">
                   <Loader2 size={16} className="animate-spin text-indigo-400" />
-                  <span>Đang tổng hợp lộ trình tối ưu...</span>
+                  <span>{t('aiMentor.loading')}</span>
                 </div>
               ) : (
                 <div className="bg-slate-950/70 border border-indigo-500/20 rounded-2xl p-3.5 mt-2">
                   <p className="text-xs text-slate-300 font-medium leading-relaxed whitespace-pre-line line-clamp-5">
-                    {planText ||
-                      '💡 Lời khuyên hôm nay: Bạn đã làm chủ 92% mảng IT và 88% Kỹ năng quản trị. Hãy dành 15 phút ôn tập 20 câu hỏi Toán & Logic để cân bằng hồ sơ năng lực 360°.'}
+                    {planText || t('aiMentor.fallbackPlan')}
                   </p>
                 </div>
               )}
@@ -440,7 +441,7 @@ export function Dashboard() {
                 className="mt-4 w-full py-2.5 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <Compass size={14} />
-                <span>Khám phá Lộ trình Đầy đủ →</span>
+                <span>{t('aiMentor.cta')}</span>
               </button>
             </div>
 

@@ -77,17 +77,17 @@ const ROLE_PERMISSIONS: Record<AppRoleType, PermissionType[]> = {
     Permission.ReportsTeam,    Permission.PracticeAccess,
     Permission.AdminAccess,
   ],
-  // ★ TeamLeader: quản lý nhóm, phân bổ đề thi, tạo & sở hữu câu hỏi/chủ đề nhóm
+  // ★ TeamLeader: quản lý nhóm được assign, giao đề luyện tập, xem tiến độ/báo cáo nhóm.
+  // [SSOT FIX] Trước đây danh sách này bị copy-paste từ Instructor (cấp nhầm
+  // QuestionsWrite/ExamsCreate/AdminAccess) — LỆCH với Backend AppRolePermissions
+  // (AppRole.cs), nơi ghi rõ TeamLeader "KHÔNG có: quản lý nội dung, quản lý user,
+  // truy cập /admin". Đồng bộ lại đúng 1:1 với Backend.
   [AppRole.TeamLeader]: [
-    Permission.QuestionsWrite,
-    Permission.QuestionsRead,
-    Permission.ExamsCreate,
     Permission.ExamsAssign,
     Permission.TeamViewMembers,
     Permission.TeamViewProgress,
     Permission.ReportsTeam,
     Permission.PracticeAccess,
-    Permission.AdminAccess,
   ],
   [AppRole.Learner]: [
     Permission.QuestionsRead,

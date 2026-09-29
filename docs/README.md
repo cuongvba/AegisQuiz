@@ -30,7 +30,6 @@ d:/Cuong/DuAn/mybank/AegisQuiz/docs/
 │
 ├── 🏛️ architecture/ (Kiến Trúc Phân Tầng)
 │   ├── BACKEND_WORLD_CLASS_SUPREME_AUDIT_REPORT.md   <-- [SUPREME 2026] Báo Cáo Kiểm Toán Toàn Diện Backend Đạt Cảnh Giới Tốt Nhất
-│   ├── WORLD_CLASS_AI_BENCHMARK_AND_SUPREMACY_ANALYSIS.md <-- [SUPREME 2026] Báo Cáo Đánh Giá AI Chuẩn Thế Giới & Cảnh Giới Đột Phá Vượt Trội Thời Đại
 │   ├── SYSTEM_ARCHITECTURE.md                        <-- Kiến trúc phân tầng, luồng dữ liệu, Clean Architecture, CQRS
 │   ├── DATA_MODELS.md                                <-- Sơ đồ ERD, Database Schema PostgreSQL, In-Memory State
 │   └── SECURITY_AND_PROCTORING.md                    <-- Phòng thi bảo mật (SecureExamRoom), chống gian lận & PKI Auth
@@ -43,7 +42,6 @@ d:/Cuong/DuAn/mybank/AegisQuiz/docs/
 │   ├── NATIONAL_DRIVING_LICENSE_MODULE.md            <-- Phân hệ Sát hạch Lái xe Quốc gia (GPLX A1-C, 60 điểm liệt & Sa hình AI)
 │   ├── UNIVERSAL_DYNAMIC_QUESTION_INGESTION_ENGINE.md <-- Động Cơ Nhận Diện & Bóc Tách Câu Hỏi Cấu Hình Động Vạn Năng (CIG Engine)
 │   ├── UNIVERSAL_COGNITIVE_EXCEL_INGESTION_STUDIO.md  <-- [SUPERLATIVE 2026] Universal Cognitive Ingestion Studio Cho Sổ Tính Excel Đa Ngành, Đa Quốc Gia
-│   ├── UNIVERSAL_SMART_URI_INGESTION_ENGINE.md        <-- [NEW 2026] Động Cơ Nạp Câu Hỏi Vạn Năng Từ Link Đám Mây (Google Docs, Sheets, OneDrive, Dropbox)
 │   ├── UNIVERSAL_MULTI_INDUSTRY_SEMANTIC_TAXONOMY.md <-- Động Cơ Tri Thức Đa Ngành Toàn Năng & Hệ Thống Thẻ Thông Minh (5D Taxonomy & GIN Index)
 │   └── UNIVERSAL_MULTI_TENANT_ADAPTIVE_GOVERNANCE.md <-- [NEW 2026] Kiến Trúc Quản Trị Đa Khách Thuê Tùy Biến Đa Tầng Từ Cá Nhân Đến Tập Đoàn Toàn Cầu
 │

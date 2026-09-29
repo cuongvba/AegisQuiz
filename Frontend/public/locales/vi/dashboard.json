@@ -1,0 +1,83 @@
+{
+  "greeting": {
+    "morning": "Chào buổi sáng",
+    "afternoon": "Chào buổi chiều",
+    "evening": "Chào buổi tối",
+    "defaultName": "Chuyên Gia Khảo Thí"
+  },
+  "hero": {
+    "eyebrow": "Aegis Enterprise AI Engine v4.0",
+    "badgeTeamLeader": "Trưởng Nhóm Khảo Thí",
+    "badgeAdmin": "Quản Trị Hệ Thống",
+    "badgeLearner": "Học Viên Ưu Tú",
+    "subheadline": "Hôm nay là thời điểm lý tưởng để bứt phá năng lực nhận thức. Động cơ IRT đã cá nhân hóa ma trận câu hỏi mới nhất cho bạn!"
+  },
+  "radarPanel": {
+    "title": "Bản Đồ Năng Lực Nhận Thức 360°",
+    "badge": "Chuẩn IRT CAT",
+    "subtitle": "Đánh giá tương quan giữa độ khó câu hỏi ($\\theta$) và tỷ lệ phân hóa nhận thức thực tế",
+    "thisWeek": "Tuần này",
+    "thisMonth": "Tháng này"
+  },
+  "actions": {
+    "practice": { "title": "Luyện Thi AI", "desc": "3,500+ Câu hỏi" },
+    "arena": { "title": "Đấu Trường", "desc": "Chuông Vàng & PvP" },
+    "team": { "title": "Đội Nhóm", "desc": "Tiến độ & đề Team" },
+    "adaptive": { "title": "Thi Đánh Giá", "desc": "Chuẩn Năng Lực IRT" }
+  },
+  "metrics": {
+    "weeklyGoal": {
+      "label": "Mục tiêu tuần",
+      "badge": "71% Đạt",
+      "value": "5/7",
+      "unit": "ngày rèn luyện",
+      "footer": "Còn 2 ngày để hoàn thành mục tiêu"
+    },
+    "accuracy": {
+      "label": "Độ chính xác TB",
+      "badge": "+4.2% tuần này",
+      "footer": "Top 5% học viên xuất sắc toàn viện"
+    },
+    "questionsSolved": {
+      "label": "Câu đã giải",
+      "badge": "48 Chuyên đề",
+      "unit": "câu hoàn tất",
+      "footer": "Chuỗi trả lời đúng liên tiếp: 18 câu"
+    },
+    "eloRank": {
+      "label": "Bảng vàng thứ hạng",
+      "badge": "Hạng #3",
+      "value": "1,850",
+      "tier": "Kim Cương III",
+      "footer": "Còn 150 LP để lên Bậc Cao Thủ"
+    }
+  },
+  "radar": {
+    "loading": "Đang tổng hợp dữ liệu năng lực IRT...",
+    "seriesName": "Điểm thành thạo",
+    "strengthLabel": "Thế mạnh:",
+    "strengthValue": "Công nghệ & IT (92%)",
+    "weaknessLabel": "Cần chú ý:",
+    "weaknessValue": "Toán & Logic (68%)",
+    "openPractice": "Mở phòng luyện tập chi tiết",
+    "topics": {
+      "math": "Toán học & Logic",
+      "tech": "Công nghệ & IT",
+      "language": "Ngoại ngữ (Anh)",
+      "process": "Quy trình & Luật",
+      "management": "Kỹ năng Quản trị"
+    }
+  },
+  "focusAreas": {
+    "title": "Khu Vực Cần Cải Thiện",
+    "priority": "Ưu tiên cao",
+    "cta": "Ôn Luyện Điểm Yếu Ngay!"
+  },
+  "aiMentor": {
+    "title": "AI Mentor • Gemini Coach",
+    "subtitle": "Tư vấn lộ trình học tập cá nhân hóa",
+    "loading": "Đang tổng hợp lộ trình tối ưu...",
+    "fallbackPlan": "💡 Lời khuyên hôm nay: Bạn đã làm chủ 92% mảng IT và 88% Kỹ năng quản trị. Hãy dành 15 phút ôn tập 20 câu hỏi Toán & Logic để cân bằng hồ sơ năng lực 360°.",
+    "cta": "Khám phá Lộ trình Đầy đủ →"
+  }
+}

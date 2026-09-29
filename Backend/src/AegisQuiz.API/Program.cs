@@ -7,8 +7,11 @@ using AegisQuiz.Infrastructure.Data;
 using AegisQuiz.Infrastructure.Excel;
 using AegisQuiz.Infrastructure.Services;
 using AegisQuiz.API.Hubs;
+using AegisQuiz.API.Security;
 using AegisQuiz.API.Services;
+using AegisQuiz.Domain.Entities;
 using AegisQuiz.Infrastructure.Arena;
+using Microsoft.AspNetCore.Authorization;
 using Serilog;
 
 // ===== [World-Class Upgrade] STRUCTURED LOGGING (học từ quiz-service) =====
@@ -73,13 +76,6 @@ builder.Services.AddHttpClient("irt-service", client =>
     client.Timeout     = TimeSpan.FromSeconds(30);
 });
 
-// Universal AI Gateway Clients (FinOps & Multi-Provider)
-builder.Services.AddHttpClient("DeepSeekClient", c => c.Timeout = TimeSpan.FromSeconds(60));
-builder.Services.AddHttpClient("OpenAiClient", c => c.Timeout = TimeSpan.FromSeconds(60));
-builder.Services.AddHttpClient("GeminiClient", c => c.Timeout = TimeSpan.FromSeconds(45));
-builder.Services.AddHttpClient("AnthropicClient", c => c.Timeout = TimeSpan.FromSeconds(60));
-builder.Services.AddHttpClient("OllamaClient", c => c.Timeout = TimeSpan.FromSeconds(60));
-
 // Services (S.O.L.I.D Interface bindings)
 builder.Services.AddSingleton<IVietnameseTextCorrectionService, VietnameseTextCorrectionService>();
 builder.Services.AddSingleton<ISmartOptionShufflerService, SmartOptionShufflerService>();
@@ -87,19 +83,9 @@ builder.Services.AddScoped<IExcelParserService, ExcelParserService>();
 builder.Services.AddScoped<IDocxParserService, DocxParserService>();
 builder.Services.AddScoped<IPdfExtractorService, PdfParserService>();
 builder.Services.AddScoped<IIrtClientService, IrtClientService>();
-builder.Services.AddScoped<IUrlDocumentFetcher, UrlDocumentFetcher>();
 
 // [FIX P1] IMemoryCache — dùng cho GeminiSolverService (TTL eviction thay static dict)
 builder.Services.AddMemoryCache();
-
-// [World-Class Supreme AI Architecture] Universal Multi-Provider AI Gateway & FinOps Key Pool
-builder.Services.AddSingleton<AegisQuiz.Infrastructure.AI.Adapters.IAiProviderAdapter, AegisQuiz.Infrastructure.AI.Adapters.DeepSeekAdapter>();
-builder.Services.AddSingleton<AegisQuiz.Infrastructure.AI.Adapters.IAiProviderAdapter, AegisQuiz.Infrastructure.AI.Adapters.OpenAiAdapter>();
-builder.Services.AddSingleton<AegisQuiz.Infrastructure.AI.Adapters.IAiProviderAdapter, AegisQuiz.Infrastructure.AI.Adapters.GoogleGeminiAdapter>();
-builder.Services.AddSingleton<AegisQuiz.Infrastructure.AI.Adapters.IAiProviderAdapter, AegisQuiz.Infrastructure.AI.Adapters.AnthropicClaudeAdapter>();
-builder.Services.AddSingleton<AegisQuiz.Infrastructure.AI.Adapters.IAiProviderAdapter, AegisQuiz.Infrastructure.AI.Adapters.LocalOllamaAdapter>();
-builder.Services.AddSingleton<AegisQuiz.Application.Interfaces.IUniversalAiRouter, AegisQuiz.Infrastructure.AI.UniversalAiRouter>();
-builder.Services.AddSingleton<AegisQuiz.Infrastructure.AI.MultiAgentCommitteeEngine>();
 
 // [FIX] GeminiGradingService dùng IHttpClientFactory (không còn new HttpClient)
 builder.Services.AddScoped<IGeminiGradingService, GeminiGradingService>();
@@ -121,9 +107,20 @@ builder.Services.AddScoped<IAiQuestionGeneratorService>(sp =>
 // [Universal Ingestion Engine Phase 4] AI Rule Autopilot (Gemini 1.5 Flash + Local Heuristic Sniffer)
 builder.Services.AddScoped<IAiRuleAutopilotService, GeminiRuleAutopilotService>();
 
+// [Cognitive Ingestion Grammar] Động cơ bóc tách câu hỏi động — singleton dùng chung với DocxStateMachineClassifier,
+// được gắn ScopeFactory để đồng bộ quy tắc với PostgreSQL (bảng QuestionParsingRules) khi khởi động.
+builder.Services.AddSingleton<IDynamicQuestionIngestionEngine>(sp =>
+    DynamicQuestionIngestionEngine.Instance.AttachInfrastructure(
+        sp.GetRequiredService<IServiceScopeFactory>(),
+        sp.GetRequiredService<ILogger<DynamicQuestionIngestionEngine>>()));
+
 // [Phase B] Multi-Tenancy — Scoped per request
 builder.Services.AddScoped<AegisQuiz.Application.Interfaces.ITenantContext,
                             AegisQuiz.Infrastructure.Services.TenantContext>();
+
+// [Ownership Scoping] Kiểm tra quyền sở hữu tài nguyên (Question/Topic) cho TeamLeader
+builder.Services.AddScoped<AegisQuiz.API.Security.IContentOwnershipGuard,
+                            AegisQuiz.API.Security.ContentOwnershipGuard>();
 
 // SignalR (WebSockets cho Proctoring + Webhook realtime + Gameshow Arena)
 builder.Services.AddSignalR(options =>
@@ -217,7 +214,28 @@ builder.Services.AddAuthentication(Microsoft.AspNetCore.Authentication.JwtBearer
             };
         }
     });
-builder.Services.AddAuthorization();
+// [RBAC — Privilege Ceiling Scoped RBAC] Role-Weight authorization handler
+// (thay thế dần cho so khớp chuỗi role thô — Commandment #7 PRIVILEGE-CEIL).
+builder.Services.AddSingleton<IAuthorizationHandler, RoleWeightAuthorizationHandler>();
+
+builder.Services.AddAuthorization(options =>
+{
+    // [CRITICAL FIX] Mặc định TỪ CHỐI truy cập ẩn danh cho MỌI endpoint không gắn
+    // [AllowAnonymous] tường minh. Trước đây chỉ 4/19 controller có [Authorize],
+    // khiến phần lớn API (kể cả /api/system/recreate-tables) mở toang cho anonymous.
+    options.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+
+    // Policy theo Role Weight — W(Caller) ≥ W(NgưỡngYêuCầu). Vai trò cao hơn tự
+    // động thỏa mãn policy của vai trò thấp hơn, không cần liệt kê thủ công.
+    options.AddPolicy(RoleWeightPolicies.SystemAdmin,    p => p.Requirements.Add(MinimumRoleWeightRequirement.ForRole(AppRoles.SystemAdmin)));
+    options.AddPolicy(RoleWeightPolicies.TenantAdmin,    p => p.Requirements.Add(MinimumRoleWeightRequirement.ForRole(AppRoles.TenantAdmin)));
+    options.AddPolicy(RoleWeightPolicies.ContentManager, p => p.Requirements.Add(MinimumRoleWeightRequirement.ForRole(AppRoles.ContentManager)));
+    options.AddPolicy(RoleWeightPolicies.OrgUnitManager, p => p.Requirements.Add(MinimumRoleWeightRequirement.ForRole(AppRoles.OrgUnitManager)));
+    options.AddPolicy(RoleWeightPolicies.TeamLeader,     p => p.Requirements.Add(MinimumRoleWeightRequirement.ForRole(AppRoles.TeamLeader)));
+    options.AddPolicy(RoleWeightPolicies.Learner,        p => p.Requirements.Add(MinimumRoleWeightRequirement.ForRole(AppRoles.Learner)));
+});
 
 // [World-Class Upgrade] Health Checks (học từ quiz-service)
 var hcBuilder = builder.Services.AddHealthChecks();
@@ -337,7 +355,9 @@ app.MapHealthChecks("/health/detail", new Microsoft.AspNetCore.Diagnostics.Healt
         });
         await context.Response.WriteAsync(result);
     }
-}).RequireRateLimiting("health-check");
+})
+.RequireRateLimiting("health-check")
+.AllowAnonymous(); // Health probe (K8s/Docker/Coolify) — nhất quán với /health, /health/live, /ping
 
 // [World-Class Upgrade] Database Migration — FAIL FAST pattern (học từ quiz-service)
 using (var scope = app.Services.CreateScope())
@@ -450,6 +470,18 @@ using (var scope = app.Services.CreateScope())
         {
             db.Database.EnsureCreated();
             log.LogInformation("[AegisQuiz] InMemory database created successfully for zero-friction local execution.");
+        }
+
+        // [BƯỚC 2b: CIG ENGINE] Đồng bộ quy tắc bóc tách câu hỏi từ CSDL vào bộ nhớ (0ms downtime, seed nếu bảng trống)
+        try
+        {
+            var cigEngine = scope.ServiceProvider.GetRequiredService<IDynamicQuestionIngestionEngine>();
+            var syncedRules = cigEngine.SyncRulesFromDatabaseAsync().GetAwaiter().GetResult();
+            log.LogInformation("[CIG Engine] SyncRulesFromDatabase | Provider={Provider} -> Synced {Count} rules", db.Database.ProviderName, syncedRules);
+        }
+        catch (Exception exCig)
+        {
+            log.LogWarning(exCig, "[CIG Engine] SyncRulesFromDatabase | Warning -> {Message}", exCig.Message);
         }
 
         // [BƯỚC 3: KHỞI TẠO TÀI KHOẢN GỐC ROOT ADMIN NẾU CHƯA CÓ]

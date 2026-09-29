@@ -4,6 +4,7 @@ import {
   Lightbulb, HelpCircle, CheckCircle2, Copy, Check, 
   Layers, Gauge, Zap, Database, X, RefreshCw
 } from 'lucide-react';
+import { MathRenderer } from '../common/MathRenderer';
 
 export interface PedagogicalWalkthroughData {
   questionId?: string;
@@ -217,9 +218,9 @@ ${walkthrough.extrapolatedCase}
                     Đáp án đúng: {walkthrough.correctAnswer}
                   </span>
                 </div>
-                <p className="text-sm font-medium text-slate-200 leading-relaxed">
-                  {walkthrough.questionContent}
-                </p>
+                <div className="text-sm font-medium text-slate-200 leading-relaxed">
+                  <MathRenderer content={walkthrough.questionContent} />
+                </div>
               </div>
 
               {/* 5 Cognitive Steps Grid */}

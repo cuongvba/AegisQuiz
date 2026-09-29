@@ -29,6 +29,7 @@ namespace AegisQuiz.API.Controllers
     {
         private readonly AegisQuizDbContext _db;
         private readonly IConfiguration _config;
+        private readonly Microsoft.Extensions.Hosting.IHostEnvironment _env;
         private readonly Microsoft.Extensions.Logging.ILogger<AuthController> _logger;
         private static bool _tableEnsured = false;
         private static readonly object _tableLock = new object();
@@ -36,10 +37,12 @@ namespace AegisQuiz.API.Controllers
         public AuthController(
             AegisQuizDbContext db, 
             IConfiguration config, 
+            Microsoft.Extensions.Hosting.IHostEnvironment env,
             Microsoft.Extensions.Logging.ILogger<AuthController> logger)
         {
             _db = db;
             _config = config;
+            _env = env;
             _logger = logger;
         }
 
@@ -149,6 +152,7 @@ namespace AegisQuiz.API.Controllers
         /// Đăng ký tài khoản học viên mới với bảo mật mật khẩu PBKDF2 và tự động phân luồng.
         /// </summary>
         [HttpPost("register")]
+        [AllowAnonymous]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
             EnsureUserAccountsTable();
@@ -243,6 +247,7 @@ namespace AegisQuiz.API.Controllers
         /// Đăng nhập tài khoản với cơ chế kiểm tra mật khẩu an toàn và chống tấn công Brute-force.
         /// </summary>
         [HttpPost("login")]
+        [AllowAnonymous]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
             EnsureUserAccountsTable();
@@ -396,6 +401,7 @@ namespace AegisQuiz.API.Controllers
         /// Đăng nhập / Đăng ký 1-chạm bằng tài khoản Google (OAuth 2.0 / OpenID Connect ID Token).
         /// </summary>
         [HttpPost("google")]
+        [AllowAnonymous]
         public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request)
         {
             EnsureUserAccountsTable();
@@ -562,6 +568,7 @@ namespace AegisQuiz.API.Controllers
         /// Sinh mã vé QR đăng nhập thời gian thực (Hết hạn sau 120 giây).
         /// </summary>
         [HttpPost("qr/generate")]
+        [AllowAnonymous]
         public IActionResult GenerateQrTicket([FromBody] QrGenerateRequest? request)
         {
             var now = DateTime.UtcNow;
@@ -610,6 +617,7 @@ namespace AegisQuiz.API.Controllers
         /// Kiểm tra trạng thái của vé QR đăng nhập (Polling từ màn hình đăng nhập máy tính).
         /// </summary>
         [HttpGet("qr/status")]
+        [AllowAnonymous]
         public async Task<IActionResult> CheckQrStatus([FromQuery] string ticket)
         {
             if (string.IsNullOrWhiteSpace(ticket) || !_qrTickets.TryGetValue(ticket, out var qrTicket))
@@ -657,6 +665,7 @@ namespace AegisQuiz.API.Controllers
         /// Điện thoại quét được mã QR -> Đánh dấu đã quét (Đổi trạng thái sang "scanned").
         /// </summary>
         [HttpPost("qr/scan")]
+        [AllowAnonymous]
         public IActionResult MarkQrScanned([FromBody] QrScanRequest request)
         {
             if (string.IsNullOrWhiteSpace(request.Ticket) || !_qrTickets.TryGetValue(request.Ticket, out var qrTicket))
@@ -678,8 +687,16 @@ namespace AegisQuiz.API.Controllers
 
         /// <summary>
         /// Người dùng bấm "Xác nhận đăng nhập" trên điện thoại.
+        /// [CRITICAL SECURITY FIX] Endpoint này TRƯỚC ĐÂY cho phép chiếm quyền BẤT KỲ
+        /// tài khoản nào (kể cả admin) mà không cần mật khẩu: (1) tin cậy "sub" claim từ
+        /// JWT chỉ decode bằng <c>ReadJwtToken</c> — KHÔNG xác minh chữ ký; (2) chấp nhận
+        /// trực tiếp <c>UserId</c>/<c>Email</c> do client tự khai không cần bằng chứng sở
+        /// hữu; (3) fallback lấy "user đầu tiên đang active" nếu không xác định được ai.
+        /// Nay bắt buộc [Authorize] — chỉ điện thoại ĐÃ đăng nhập hợp lệ (JWT được
+        /// Framework xác thực chữ ký/issuer/hạn dùng đầy đủ) mới xác nhận được QR.
         /// </summary>
         [HttpPost("qr/confirm")]
+        [Authorize]
         public async Task<IActionResult> ConfirmQrLogin([FromBody] QrConfirmRequest request)
         {
             if (string.IsNullOrWhiteSpace(request.Ticket) || !_qrTickets.TryGetValue(request.Ticket, out var qrTicket))
@@ -693,48 +710,18 @@ namespace AegisQuiz.API.Controllers
                 return BadRequest(new { message = "Mã QR đã hết hạn." });
             }
 
-            Guid targetUserId = Guid.Empty;
-
-            // 1. Nếu có token gửi từ điện thoại
-            var authHeader = Request.Headers["Authorization"].ToString();
-            if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
+            // Danh tính duy nhất được tin cậy: claim NameIdentifier từ JWT ĐÃ được
+            // Framework xác thực chữ ký (qua [Authorize] + JwtBearer middleware).
+            var subClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(subClaim) || !Guid.TryParse(subClaim, out var targetUserId))
             {
-                var tokenStr = authHeader.Substring(7);
-                var tokenHandler = new JwtSecurityTokenHandler();
-                try
-                {
-                    var jwt = tokenHandler.ReadJwtToken(tokenStr);
-                    var sub = jwt.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier || c.Type == "sub")?.Value;
-                    if (!string.IsNullOrEmpty(sub) && Guid.TryParse(sub, out var parsedUid))
-                    {
-                        targetUserId = parsedUid;
-                    }
-                }
-                catch { }
+                return Unauthorized(new { message = "Không xác định được người dùng từ phiên đăng nhập điện thoại." });
             }
 
-            // 2. Nếu gửi kèm UserId trực tiếp
-            if (targetUserId == Guid.Empty && request.UserId.HasValue)
+            var confirmingUser = await _db.UserAccounts.FirstOrDefaultAsync(u => u.Id == targetUserId && u.IsActive);
+            if (confirmingUser == null)
             {
-                targetUserId = request.UserId.Value;
-            }
-
-            // 3. Nếu gửi kèm Email/Password để xác thực nhanh trên điện thoại
-            if (targetUserId == Guid.Empty && !string.IsNullOrEmpty(request.Email))
-            {
-                var emailClean = request.Email.Trim().ToLowerInvariant();
-                var userCheck = await _db.UserAccounts.FirstOrDefaultAsync(u => u.Email == emailClean);
-                if (userCheck != null)
-                {
-                    targetUserId = userCheck.Id;
-                }
-            }
-
-            if (targetUserId == Guid.Empty)
-            {
-                // Fallback: Lấy user đầu tiên (hoặc admin) nếu không xác định
-                var anyUser = await _db.UserAccounts.FirstOrDefaultAsync(u => u.IsActive);
-                if (anyUser != null) targetUserId = anyUser.Id;
+                return Unauthorized(new { message = "Tài khoản không hợp lệ hoặc đã bị vô hiệu hóa." });
             }
 
             qrTicket.UserId = targetUserId;
@@ -745,10 +732,20 @@ namespace AegisQuiz.API.Controllers
 
         /// <summary>
         /// Mô phỏng quét mã QR nhanh (Demo Scanner) để kiểm thử ngay trên trình duyệt mà không cần mở điện thoại.
+        /// [CRITICAL SECURITY FIX] Endpoint này cho phép đăng nhập KHÔNG MẬT KHẨU vào bất kỳ
+        /// tài khoản nào theo Email tự khai (mặc định "admin@dehoc.vn" nếu bỏ trống!) — một
+        /// backdoor chiếm quyền admin hoàn toàn nếu vô tình bật ở Production. Nay CHỈ hoạt
+        /// động khi <c>ASPNETCORE_ENVIRONMENT=Development</c>.
         /// </summary>
         [HttpPost("qr/demo-confirm")]
+        [AllowAnonymous]
         public async Task<IActionResult> DemoConfirmQrLogin([FromBody] QrDemoConfirmRequest request)
         {
+            if (!_env.IsDevelopment())
+            {
+                return NotFound();
+            }
+
             if (string.IsNullOrWhiteSpace(request.Ticket) || !_qrTickets.TryGetValue(request.Ticket, out var qrTicket))
             {
                 return BadRequest(new { message = "Mã QR không hợp lệ hoặc đã hết hạn." });
@@ -868,6 +865,7 @@ namespace AegisQuiz.API.Controllers
         /// Yêu cầu gửi link đặt lại mật khẩu hoặc kích hoạt tài khoản qua email (NIST SP 800-63B / OWASP).
         /// </summary>
         [HttpPost("forgot-password")]
+        [AllowAnonymous]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
         {
             EnsureUserAccountsTable();
@@ -915,6 +913,7 @@ namespace AegisQuiz.API.Controllers
         /// Đặt lại mật khẩu và kích hoạt tài khoản bằng mã One-Time Token (OTT) gửi qua đường link email.
         /// </summary>
         [HttpPost("reset-password")]
+        [AllowAnonymous]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordWithTokenRequest request)
         {
             EnsureUserAccountsTable();
@@ -969,6 +968,7 @@ namespace AegisQuiz.API.Controllers
         /// [CG5 FIX] Sau khi webhook xác nhận payment → Cấp JWT mới với isPremium=true
         /// </summary>
         [HttpPost("refresh-premium")]
+        [AllowAnonymous]
         public async Task<IActionResult> RefreshPremiumToken([FromBody] RefreshPremiumRequest request)
         {
             var transaction = await _db.PaymentTransactions
@@ -1036,6 +1036,7 @@ namespace AegisQuiz.API.Controllers
         /// [CG6: BFF Pattern] PKCE Authorization Code Exchange
         /// </summary>
         [HttpPost("exchange")]
+        [AllowAnonymous]
         public async Task<IActionResult> ExchangeCode([FromBody] PkceExchangeRequest request)
         {
             if (string.IsNullOrEmpty(request.Code) || string.IsNullOrEmpty(request.CodeVerifier))
@@ -1163,6 +1164,7 @@ namespace AegisQuiz.API.Controllers
         /// Thẩm định mã 6 số Google Authenticator (hoặc mã dự phòng) khi đăng nhập bước 2.
         /// </summary>
         [HttpPost("2fa/verify")]
+        [AllowAnonymous]
         public async Task<IActionResult> VerifyTwoFactor([FromBody] VerifyTwoFactorRequest request)
         {
             if (string.IsNullOrWhiteSpace(request.TempToken) || string.IsNullOrWhiteSpace(request.Code))

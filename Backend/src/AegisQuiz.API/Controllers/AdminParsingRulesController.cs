@@ -1,5 +1,7 @@
 using System;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using AegisQuiz.API.Security;
 using AegisQuiz.Application.DTOs;
 using AegisQuiz.Application.Interfaces;
 using AegisQuiz.Infrastructure.Services;
@@ -9,9 +11,12 @@ namespace AegisQuiz.API.Controllers
     /// <summary>
     /// [Admin Cognitive Ingestion Rule Studio Controller]
     /// Cung cấp API quản lý danh mục quy tắc bóc tách câu hỏi và Live Sandbox.
+    /// [CRITICAL SECURITY FIX] Trước đây route mang tên "/api/admin/..." nhưng KHÔNG có
+    /// [Authorize] nào — nay yêu cầu Role-Weight ≥ TenantAdmin.
     /// </summary>
     [ApiController]
     [Route("api/admin/parsing-rules")]
+    [Authorize(Policy = RoleWeightPolicies.TenantAdmin)]
     public class AdminParsingRulesController : ControllerBase
     {
         private readonly IAiRuleAutopilotService _aiRuleAutopilotService;

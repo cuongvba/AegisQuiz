@@ -5,74 +5,107 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
 using AegisQuiz.Application.DTOs;
 using AegisQuiz.Application.Interfaces;
+using AegisQuiz.Domain.Entities;
+using AegisQuiz.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace AegisQuiz.Infrastructure.Services
 {
     /// <summary>
-    /// [Universal Dynamic Question Ingestion Engine]
-    /// Động cơ thông dịch Ngữ pháp Nhận thức Toàn cầu (CIG Engine):
-    /// - Quản lý các quy tắc nhận diện câu hỏi từ file JSON và CSDL.
-    /// - JIT Regex Compiled Cache với độ trễ <0.1ms mỗi lần khớp.
-    /// - Hỗ trợ Hot-reload tức thì 0ms downtime từ giao diện Admin.
-    /// - Cung cấp Live Document Sandbox để thử nghiệm trực tiếp trên Web.
+    /// [Universal Dynamic Question Ingestion Engine — CIG Engine / CHIP v3.0]
+    /// Động cơ thông dịch Ngữ pháp Nhận thức Toàn cầu (Cognitive Ingestion Grammar):
+    /// - Quản lý quy tắc nhận diện câu hỏi nạp từ <c>parsing_rules_registry.json</c> và PostgreSQL (bảng QuestionParsingRules).
+    /// - JIT Regex Compiled Cache, Hot-reload 0ms downtime, Live Sandbox thử nghiệm trên Web.
+    /// - Từ điển cấu trúc tài liệu (DocumentStructureDictionary) điều khiển 100% nhận diện phân đoạn, lời giải, bảng đáp án.
+    /// - Hồ sơ ngôn ngữ 2 lớp (Host / Subject) và Adaptive Rule Pruning — xem <c>DynamicQuestionIngestionEngine.Language.cs</c>.
+    ///
+    /// Lớp được tách thành các partial theo mối quan tâm:
+    ///   • <c>DynamicQuestionIngestionEngine.cs</c>            — vòng đời quy tắc (nạp / hot-reload / CSDL) & khớp điểm neo.
+    ///   • <c>DynamicQuestionIngestionEngine.Structure.cs</c>  — cấu trúc tài liệu (đề, chủ đề, phân đoạn, pha lời giải, bài đọc).
+    ///   • <c>DynamicQuestionIngestionEngine.Extraction.cs</c> — trích xuất phương án, đáp án inline, lời giải & Sandbox.
+    ///   • <c>DynamicQuestionIngestionEngine.Language.cs</c>   — nhận diện ngôn ngữ & lọc quy tắc thích ứng.
     /// </summary>
-    public class DynamicQuestionIngestionEngine
+    public partial class DynamicQuestionIngestionEngine : IDynamicQuestionIngestionEngine
     {
-        private static readonly Lazy<DynamicQuestionIngestionEngine> _instance = 
-            new Lazy<DynamicQuestionIngestionEngine>(() => new DynamicQuestionIngestionEngine());
+        private const string RegistryFileName = "parsing_rules_registry.json";
+        private const string RegistryVersion = "3.0.0";
+
+        private static readonly Lazy<DynamicQuestionIngestionEngine> _instance =
+            new(() => new DynamicQuestionIngestionEngine());
+
+        /// <summary>Singleton dùng chung cho toàn hệ thống (Classifier, Controller, Excel/PDF pipelines).</summary>
         public static DynamicQuestionIngestionEngine Instance => _instance.Value;
 
-        private readonly ConcurrentDictionary<string, Regex> _regexCache = new(StringComparer.OrdinalIgnoreCase);
+        private IServiceScopeFactory? _scopeFactory;
+        private ILogger<DynamicQuestionIngestionEngine>? _logger;
+
+        private readonly ConcurrentDictionary<string, Regex> _regexCache = new(StringComparer.Ordinal);
         private readonly List<QuestionParsingRuleDto> _rules = new();
+        private DocumentStructureDictionaryDto _structureDictionary = new();
         private readonly object _syncLock = new();
 
-        public DynamicQuestionIngestionEngine()
+        /// <summary>Từ điển cấu trúc tài liệu đang hiệu lực (chỉ đọc).</summary>
+        public DocumentStructureDictionaryDto StructureDictionary => _structureDictionary;
+
+        public DynamicQuestionIngestionEngine(IServiceScopeFactory? scopeFactory = null, ILogger<DynamicQuestionIngestionEngine>? logger = null)
         {
+            _scopeFactory = scopeFactory;
+            _logger = logger;
             LoadDefaultRules();
         }
 
         /// <summary>
-        /// Nạp các quy tắc mặc định từ file cấu hình parsing_rules_registry.json
+        /// Gắn hạ tầng (DI ScopeFactory + Logger) vào singleton <see cref="Instance"/> để bật đồng bộ quy tắc với CSDL.
+        /// Trả về chính instance để đăng ký DI dạng fluent.
         /// </summary>
+        public DynamicQuestionIngestionEngine AttachInfrastructure(IServiceScopeFactory scopeFactory, ILogger<DynamicQuestionIngestionEngine>? logger = null)
+        {
+            _scopeFactory = scopeFactory;
+            _logger ??= logger;
+            return this;
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // 1. Nạp & Hot-reload quy tắc
+        // ─────────────────────────────────────────────────────────────────────
+
+        /// <summary>Nạp các quy tắc mặc định từ file cấu hình <c>parsing_rules_registry.json</c> (fallback bộ quy tắc lõi nếu thiếu).</summary>
         public void LoadDefaultRules()
         {
             try
             {
-                var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-                var possiblePaths = new[]
+                string? registryPath = ResolveRegistryPath();
+                if (registryPath != null)
                 {
-                    Path.Combine(baseDir, "Config", "parsing_rules_registry.json"),
-                    Path.Combine(Directory.GetCurrentDirectory(), "Config", "parsing_rules_registry.json"),
-                    Path.Combine(Directory.GetCurrentDirectory(), "Backend", "src", "AegisQuiz.Infrastructure", "Config", "parsing_rules_registry.json"),
-                    @"D:\Cuong\DuAn\mybank\AegisQuiz\Backend\src\AegisQuiz.Infrastructure\Config\parsing_rules_registry.json"
-                };
-
-                string? foundPath = possiblePaths.FirstOrDefault(File.Exists);
-                if (foundPath != null)
-                {
-                    string json = File.ReadAllText(foundPath);
+                    string json = File.ReadAllText(registryPath);
                     if (!HotReloadRules(json) || _rules.Count == 0)
                     {
                         LoadHardcodedFallbackRules();
                     }
+                    _logger?.LogInformation("[DynamicIngestionEngine] LoadDefaultRules | Path={Path} -> {Count} rules", registryPath, _rules.Count);
                 }
                 else
                 {
-                    // Fallback bộ quy tắc cốt lõi nếu không tìm thấy file
                     LoadHardcodedFallbackRules();
+                    _logger?.LogWarning("[DynamicIngestionEngine] LoadDefaultRules | RegistryFile=NotFound -> Fallback to {Count} built-in rules", _rules.Count);
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[DynamicIngestionEngine] Cảnh báo khi nạp file config: {ex.Message}. Sử dụng Fallback.");
+                _logger?.LogWarning(ex, "[DynamicIngestionEngine] LoadDefaultRules | Error={Error} -> Fallback to built-in rules", ex.Message);
                 LoadHardcodedFallbackRules();
             }
         }
 
         /// <summary>
-        /// Hot-reload toàn bộ quy tắc từ chuỗi JSON (0ms downtime)
+        /// Hot-reload toàn bộ quy tắc (và từ điển cấu trúc nếu có) từ chuỗi JSON — 0ms downtime.
+        /// Trả về true khi có ít nhất một quy tắc được nạp.
         /// </summary>
         public bool HotReloadRules(string jsonConfig)
         {
@@ -81,38 +114,432 @@ namespace AegisQuiz.Infrastructure.Services
                 try
                 {
                     using var doc = JsonDocument.Parse(jsonConfig);
+                    var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+
+                    if (doc.RootElement.TryGetProperty("documentStructureDictionary", out var dictElement))
+                    {
+                        var dictionary = JsonSerializer.Deserialize<DocumentStructureDictionaryDto>(dictElement.GetRawText(), options);
+                        if (dictionary != null)
+                        {
+                            _structureDictionary = dictionary;
+                        }
+                    }
+
                     if (doc.RootElement.TryGetProperty("rules", out var rulesArray))
                     {
-                        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
                         var parsedRules = JsonSerializer.Deserialize<List<QuestionParsingRuleDto>>(rulesArray.GetRawText(), options);
                         if (parsedRules != null && parsedRules.Count > 0)
                         {
                             _rules.Clear();
                             _rules.AddRange(parsedRules.Where(r => r.IsActive).OrderBy(r => r.Priority));
                             _regexCache.Clear();
-
-                            // Pre-compile các regex chính
                             foreach (var rule in _rules)
                             {
-                                CompileAndCache(rule.AnchorSpec.RegexPattern);
-                                CompileAndCache(rule.InteractionSpec.OptionRegexPattern);
-                                CompileAndCache(rule.EvaluationSpec.AnswerRegexPattern);
+                                PrecompileRule(rule);
                             }
 
-                            Console.WriteLine($"[DynamicIngestionEngine] Đã nạp thành công {_rules.Count} quy tắc động vào bộ nhớ.");
+                            _logger?.LogInformation("[DynamicIngestionEngine] HotReloadRules | RulesCount={Count} -> Loaded dynamically with 0ms downtime", _rules.Count);
                             return true;
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[DynamicIngestionEngine] Lỗi hot-reload quy tắc: {ex.Message}");
+                    _logger?.LogError(ex, "[DynamicIngestionEngine] HotReloadRules | Error={Error} -> Hot reload aborted", ex.Message);
                 }
                 return false;
             }
         }
 
-        public IReadOnlyList<QuestionParsingRuleDto> GetAllRules()
+        public IReadOnlyList<QuestionParsingRuleDto> GetAllRules(Guid? tenantId = null) => SnapshotRules();
+
+        public IReadOnlyList<QuestionParsingRuleDto> GetAllRules() => GetAllRules(null);
+
+        /// <summary>Thêm mới hoặc cập nhật một quy tắc vào bộ nhớ + JIT Regex cache (tùy chọn ghi xuống file registry).</summary>
+        public void AddOrUpdateRule(QuestionParsingRuleDto newRule, bool persistToFile)
+        {
+            AddOrUpdateRuleInternal(newRule, persistToFile);
+        }
+
+        public bool AddOrUpdateRule(QuestionParsingRuleDto newRule) => AddOrUpdateRuleInternal(newRule, persistToFile: false);
+
+        private bool AddOrUpdateRuleInternal(QuestionParsingRuleDto newRule, bool persistToFile)
+        {
+            if (newRule == null || string.IsNullOrWhiteSpace(newRule.RuleCode)) return false;
+
+            lock (_syncLock)
+            {
+                _rules.RemoveAll(r => string.Equals(r.RuleCode, newRule.RuleCode, StringComparison.OrdinalIgnoreCase));
+                _rules.Add(newRule);
+                _rules.Sort((a, b) => a.Priority.CompareTo(b.Priority));
+                PrecompileRule(newRule);
+
+                _logger?.LogInformation("[DynamicIngestionEngine] UpsertRuleInMemory | RuleCode={RuleCode} | Name={RuleName} -> Registered and cached", newRule.RuleCode, newRule.RuleName);
+
+                if (persistToFile)
+                {
+                    PersistRegistryToFile();
+                }
+                return true;
+            }
+        }
+
+        /// <summary>Ghi toàn bộ trạng thái hiện tại (quy tắc + từ điển cấu trúc) xuống file registry — bảo toàn từ điển khi lưu.</summary>
+        private void PersistRegistryToFile()
+        {
+            try
+            {
+                string? registryPath = ResolveRegistryPath();
+                if (registryPath == null) return;
+
+                var registryObj = new
+                {
+                    version = RegistryVersion,
+                    lastUpdated = DateTime.UtcNow.ToString("o"),
+                    documentStructureDictionary = _structureDictionary,
+                    rules = _rules
+                };
+                var json = JsonSerializer.Serialize(registryObj, new JsonSerializerOptions
+                {
+                    WriteIndented = true,
+                    Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+                });
+                File.WriteAllText(registryPath, json);
+                _logger?.LogInformation("[DynamicIngestionEngine] PersistRuleToFile | FilePath={FilePath} -> Persisted {Count} rules", registryPath, _rules.Count);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "[DynamicIngestionEngine] PersistRuleToFile | Warning={Error} -> File persistence skipped", ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Tìm file registry theo thứ tự: thư mục chạy (Config/), thư mục làm việc, rồi đi ngược cây thư mục
+        /// để tìm <c>src/AegisQuiz.Infrastructure/Config/</c> (hỗ trợ chạy test / dotnet run từ bất kỳ thư mục con của repo).
+        /// </summary>
+        private static string? ResolveRegistryPath()
+        {
+            var candidates = new List<string>
+            {
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Config", RegistryFileName),
+                Path.Combine(Directory.GetCurrentDirectory(), "Config", RegistryFileName)
+            };
+
+            foreach (var root in new[] { Directory.GetCurrentDirectory(), AppDomain.CurrentDomain.BaseDirectory })
+            {
+                var dir = new DirectoryInfo(root);
+                for (int depth = 0; dir != null && depth < 8; depth++, dir = dir.Parent)
+                {
+                    candidates.Add(Path.Combine(dir.FullName, "src", "AegisQuiz.Infrastructure", "Config", RegistryFileName));
+                    candidates.Add(Path.Combine(dir.FullName, "Backend", "src", "AegisQuiz.Infrastructure", "Config", RegistryFileName));
+                }
+            }
+
+            return candidates.FirstOrDefault(File.Exists);
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // 2. Đồng bộ quy tắc với PostgreSQL (bảng QuestionParsingRules)
+        // ─────────────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Đồng bộ quy tắc từ CSDL vào bộ nhớ. Nếu bảng trống → seed bộ quy tắc hiện tại xuống CSDL.
+        /// Quy tắc CSDL trùng RuleCode sẽ ghi đè các trường biên tập (tên, mô tả, ưu tiên, 4 spec) nhưng giữ nguyên
+        /// ngôn ngữ / lifecycle của quy tắc gốc trong file để không phá vỡ Adaptive Rule Pruning.
+        /// </summary>
+        public async Task<int> SyncRulesFromDatabaseAsync(CancellationToken ct = default)
+        {
+            if (_scopeFactory == null) return 0;
+
+            try
+            {
+                using var scope = _scopeFactory.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AegisQuizDbContext>();
+
+                if (db.Database.IsRelational())
+                {
+                    await db.Database.ExecuteSqlRawAsync(EnsureRulesTableSql, ct);
+                }
+
+                var dbRules = await db.QuestionParsingRules.AsNoTracking()
+                    .Where(r => r.IsActive)
+                    .OrderBy(r => r.Priority)
+                    .ToListAsync(ct);
+
+                if (dbRules.Count == 0)
+                {
+                    await SeedDefaultRulesToDatabaseAsync(db, ct);
+                    return _rules.Count;
+                }
+
+                lock (_syncLock)
+                {
+                    int synced = 0;
+                    foreach (var entity in dbRules)
+                    {
+                        var dto = MapEntityToDto(entity, _rules.FirstOrDefault(r => string.Equals(r.RuleCode, entity.RuleCode, StringComparison.OrdinalIgnoreCase)));
+                        _rules.RemoveAll(r => string.Equals(r.RuleCode, dto.RuleCode, StringComparison.OrdinalIgnoreCase));
+                        _rules.Add(dto);
+                        PrecompileRule(dto);
+                        synced++;
+                    }
+                    _rules.Sort((a, b) => a.Priority.CompareTo(b.Priority));
+                    _logger?.LogInformation("[DynamicIngestionEngine] SyncRulesFromDatabase | Count={Count} -> Synced from PostgreSQL", synced);
+                    return synced;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "[DynamicIngestionEngine] SyncRulesFromDatabase | Warning={Message} -> Keeping in-memory rules", ex.Message);
+                return 0;
+            }
+        }
+
+        private async Task SeedDefaultRulesToDatabaseAsync(AegisQuizDbContext db, CancellationToken ct)
+        {
+            try
+            {
+                List<QuestionParsingRule> entities;
+                lock (_syncLock)
+                {
+                    entities = _rules.Select(rule => MapDtoToEntity(rule, new QuestionParsingRule { TenantId = Guid.Empty })).ToList();
+                }
+
+                await db.QuestionParsingRules.AddRangeAsync(entities, ct);
+                await db.SaveChangesAsync(ct);
+                _logger?.LogInformation("[DynamicIngestionEngine] SeedDefaultRules | Count={Count} -> Seeded into PostgreSQL", entities.Count);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "[DynamicIngestionEngine] SeedDefaultRules | Warning={Message}", ex.Message);
+            }
+        }
+
+        /// <summary>Lưu quy tắc vào bộ nhớ + file, đồng thời upsert xuống CSDL (nếu đã gắn hạ tầng).</summary>
+        public async Task<bool> SaveRuleToDatabaseAsync(QuestionParsingRuleDto ruleDto, Guid? tenantId = null, CancellationToken ct = default)
+        {
+            AddOrUpdateRule(ruleDto, persistToFile: true);
+            if (_scopeFactory == null) return true;
+
+            try
+            {
+                using var scope = _scopeFactory.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AegisQuizDbContext>();
+                var targetTenantId = tenantId ?? Guid.Empty;
+
+                var existing = await db.QuestionParsingRules
+                    .FirstOrDefaultAsync(r => r.RuleCode == ruleDto.RuleCode && (r.TenantId == targetTenantId || r.TenantId == Guid.Empty), ct);
+
+                if (existing != null)
+                {
+                    MapDtoToEntity(ruleDto, existing);
+                    existing.UpdatedAt = DateTime.UtcNow;
+                }
+                else
+                {
+                    db.QuestionParsingRules.Add(MapDtoToEntity(ruleDto, new QuestionParsingRule { TenantId = targetTenantId }));
+                }
+
+                await db.SaveChangesAsync(ct);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "[DynamicIngestionEngine] SaveRuleToDatabase | RuleCode={RuleCode} | Warning={Message}", ruleDto.RuleCode, ex.Message);
+                return false;
+            }
+        }
+
+        private static QuestionParsingRule MapDtoToEntity(QuestionParsingRuleDto dto, QuestionParsingRule entity)
+        {
+            entity.RuleCode = dto.RuleCode;
+            entity.RuleName = dto.RuleName;
+            entity.Description = dto.Description;
+            entity.Priority = dto.Priority;
+            entity.IsActive = dto.IsActive;
+            entity.Scope = string.IsNullOrWhiteSpace(dto.TargetExamType) ? "GLOBAL" : dto.TargetExamType;
+            entity.AnchorSpecJson = JsonSerializer.Serialize(dto.AnchorSpec);
+            entity.InteractionSpecJson = JsonSerializer.Serialize(dto.InteractionSpec);
+            entity.EvaluationSpecJson = JsonSerializer.Serialize(dto.EvaluationSpec);
+            entity.SemanticsSpecJson = JsonSerializer.Serialize(dto.StimulusSpec);
+            return entity;
+        }
+
+        private static QuestionParsingRuleDto MapEntityToDto(QuestionParsingRule entity, QuestionParsingRuleDto? baseRule)
+        {
+            var dto = baseRule ?? new QuestionParsingRuleDto
+            {
+                TargetExamType = string.IsNullOrWhiteSpace(entity.Scope) ? "GENERAL" : entity.Scope
+            };
+
+            dto.RuleCode = entity.RuleCode;
+            dto.RuleName = entity.RuleName;
+            dto.Description = entity.Description;
+            dto.Priority = entity.Priority;
+            dto.IsActive = entity.IsActive;
+            dto.AnchorSpec = SafeDeserialize<AnchorSpecDto>(entity.AnchorSpecJson) ?? dto.AnchorSpec;
+            dto.InteractionSpec = SafeDeserialize<InteractionSpecDto>(entity.InteractionSpecJson) ?? dto.InteractionSpec;
+            dto.EvaluationSpec = SafeDeserialize<EvaluationSpecDto>(entity.EvaluationSpecJson) ?? dto.EvaluationSpec;
+            dto.StimulusSpec = SafeDeserialize<StimulusSpecDto>(entity.SemanticsSpecJson) ?? dto.StimulusSpec;
+            return dto;
+        }
+
+        private static T? SafeDeserialize<T>(string? json) where T : class
+        {
+            if (string.IsNullOrWhiteSpace(json) || json == "{}") return null;
+            try
+            {
+                return JsonSerializer.Deserialize<T>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private const string EnsureRulesTableSql = @"
+            CREATE TABLE IF NOT EXISTS ""QuestionParsingRules"" (
+                ""Id"" uuid NOT NULL PRIMARY KEY,
+                ""TenantId"" uuid NOT NULL,
+                ""RuleCode"" character varying(100) NOT NULL,
+                ""RuleName"" character varying(250) NOT NULL,
+                ""Description"" character varying(1000) NULL,
+                ""Priority"" integer NOT NULL DEFAULT 100,
+                ""IsActive"" boolean NOT NULL DEFAULT true,
+                ""Scope"" text NOT NULL DEFAULT 'GLOBAL',
+                ""AnchorSpecJson"" text NOT NULL,
+                ""InteractionSpecJson"" text NOT NULL,
+                ""EvaluationSpecJson"" text NOT NULL,
+                ""SemanticsSpecJson"" text NOT NULL,
+                ""HitCount"" bigint NOT NULL DEFAULT 0,
+                ""CreatedAt"" timestamp with time zone NOT NULL DEFAULT (now() at time zone 'utc'),
+                ""UpdatedAt"" timestamp with time zone NULL
+            );
+            ALTER TABLE ""QuestionParsingRules"" ADD COLUMN IF NOT EXISTS ""Scope"" text NOT NULL DEFAULT 'GLOBAL';
+            CREATE UNIQUE INDEX IF NOT EXISTS ""IX_QuestionParsingRules_TenantId_RuleCode"" ON ""QuestionParsingRules"" (""TenantId"", ""RuleCode"");";
+
+        // ─────────────────────────────────────────────────────────────────────
+        // 3. Khớp điểm neo câu hỏi, phương án, đáp án, lời giải, điểm liệt
+        // ─────────────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Khớp điểm neo nhận diện câu hỏi từ một dòng văn bản.
+        /// Duyệt theo <paramref name="activeRules"/> (tập đã lọc theo hồ sơ ngôn ngữ) hoặc toàn bộ quy tắc theo Priority tăng dần.
+        /// Quy tắc mang ngôn ngữ yêu cầu bằng chứng (Hangul, Hanzi, Kana, dấu Pháp/Đức...) sẽ bị bỏ qua nếu dòng không có bằng chứng đó.
+        /// </summary>
+        public bool TryMatchQuestionAnchor(string line, out int questionNumber, out QuestionParsingRuleDto? matchedRule, IEnumerable<QuestionParsingRuleDto>? activeRules = null)
+        {
+            questionNumber = 0;
+            matchedRule = null;
+            if (string.IsNullOrWhiteSpace(line)) return false;
+
+            var candidates = activeRules != null ? activeRules.ToList() : SnapshotRules();
+            foreach (var rule in candidates)
+            {
+                if (!HasLanguageEvidenceForAnchor(rule.Language, line)) continue;
+
+                var match = GetOrAddRegex(rule.AnchorSpec.RegexPattern).Match(line);
+                if (!match.Success) continue;
+
+                matchedRule = rule;
+                if (rule.AnchorSpec.QuestionNumberGroupIndex <= match.Groups.Count - 1)
+                {
+                    int.TryParse(match.Groups[rule.AnchorSpec.QuestionNumberGroupIndex].Value, out questionNumber);
+                }
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>Khớp một phương án trả lời (Option) theo quy tắc.</summary>
+        public bool TryMatchOption(string line, QuestionParsingRuleDto rule, out string label, out string content)
+        {
+            label = string.Empty;
+            content = string.Empty;
+
+            var match = GetOrAddRegex(rule.InteractionSpec.OptionRegexPattern).Match(line);
+            if (!match.Success) return false;
+
+            int labelIdx = rule.InteractionSpec.OptionLabelGroupIndex;
+            if (labelIdx <= match.Groups.Count - 1 && !string.IsNullOrEmpty(match.Groups[labelIdx].Value))
+            {
+                label = match.Groups[labelIdx].Value.Trim();
+            }
+            else
+            {
+                for (int i = 1; i <= Math.Min(3, match.Groups.Count - 1); i++)
+                {
+                    if (!string.IsNullOrEmpty(match.Groups[i].Value))
+                    {
+                        label = match.Groups[i].Value.Trim();
+                        break;
+                    }
+                }
+            }
+
+            int contentIdx = rule.InteractionSpec.OptionContentGroupIndex;
+            content = contentIdx <= match.Groups.Count - 1 && !string.IsNullOrEmpty(match.Groups[contentIdx].Value)
+                ? match.Groups[contentIdx].Value.Trim()
+                : line.Substring(match.Length).Trim();
+            return true;
+        }
+
+        /// <summary>Khớp dòng đáp án đúng (Answer Key) theo quy tắc.</summary>
+        public bool TryMatchAnswer(string line, QuestionParsingRuleDto rule, out string answer)
+        {
+            answer = string.Empty;
+            var match = GetOrAddRegex(rule.EvaluationSpec.AnswerRegexPattern).Match(line);
+            if (!match.Success) return false;
+
+            int groupIdx = rule.EvaluationSpec.AnswerGroupIndex;
+            answer = groupIdx <= match.Groups.Count - 1 && !string.IsNullOrEmpty(match.Groups[groupIdx].Value)
+                ? match.Groups[groupIdx].Value.Trim()
+                : match.Value.Trim();
+            return true;
+        }
+
+        /// <summary>Nhận diện dòng bắt đầu phần Lời giải / Hướng dẫn giải theo quy tắc.</summary>
+        public bool TryMatchExplanation(string line, QuestionParsingRuleDto rule)
+        {
+            if (string.IsNullOrEmpty(rule.EvaluationSpec.ExplanationRegexPattern)) return false;
+            return GetOrAddRegex(rule.EvaluationSpec.ExplanationRegexPattern).IsMatch(line);
+        }
+
+        /// <summary>
+        /// Nhận diện câu điểm liệt / câu bắt buộc đúng: theo quy tắc khớp → toàn bộ quy tắc → từ điển cấu trúc → mẫu lõi dự phòng.
+        /// </summary>
+        public bool IsCriticalQuestion(string text, QuestionParsingRuleDto? rule = null)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return false;
+
+            if (rule != null && MatchesAnyCriticalMarker(text, rule)) return true;
+
+            foreach (var r in SnapshotRules())
+            {
+                if (MatchesAnyCriticalMarker(text, r)) return true;
+            }
+
+            if (MatchesAny(text, _structureDictionary.CriticalQuestionMarkers)) return true;
+
+            return GetOrAddRegex(BuiltInCriticalMarkerPattern).IsMatch(text);
+        }
+
+        private bool MatchesAnyCriticalMarker(string text, QuestionParsingRuleDto rule)
+        {
+            var spec = rule.EvaluationSpec;
+            if (spec == null) return false;
+            if (!string.IsNullOrEmpty(spec.CriticalQuestionMarkerRegex) && GetOrAddRegex(spec.CriticalQuestionMarkerRegex).IsMatch(text)) return true;
+            return MatchesAny(text, spec.CriticalMarkers);
+        }
+
+        private const string BuiltInCriticalMarkerPattern =
+            @"(?:\bDIEM[_\s]*LIET\b|\bĐIỂM[_\s]*LIỆT\b|mất\s*an\s*toàn\s*giao\s*thông\s*nghiêm\s*trọng|bị\s*nghiêm\s*cấm|\bnghiêm\s*cấm\b|nồng\s*độ\s*cồn|sử\s*dụng\s*ma\s*túy|đua\s*xe\s*trái\s*phép|\bFATAL\b|\bCRITICAL\b)";
+
+        // ─────────────────────────────────────────────────────────────────────
+        // 4. Hạ tầng dùng chung: snapshot, regex cache, tiện ích khớp
+        // ─────────────────────────────────────────────────────────────────────
+
+        private List<QuestionParsingRuleDto> SnapshotRules()
         {
             lock (_syncLock)
             {
@@ -120,429 +547,10 @@ namespace AegisQuiz.Infrastructure.Services
             }
         }
 
-        /// <summary>
-        /// Thêm mới hoặc cập nhật một quy tắc động vào bộ nhớ và JIT Regex cache (0ms downtime)
-        /// </summary>
-        public bool AddOrUpdateRule(QuestionParsingRuleDto newRule, bool persistToFile = false)
-        {
-            if (newRule == null || string.IsNullOrWhiteSpace(newRule.RuleCode)) return false;
-
-            lock (_syncLock)
-            {
-                // Xóa rule cũ nếu đã tồn tại
-                _rules.RemoveAll(r => string.Equals(r.RuleCode, newRule.RuleCode, StringComparison.OrdinalIgnoreCase));
-                _rules.Add(newRule);
-                _rules.Sort((a, b) => a.Priority.CompareTo(b.Priority));
-
-                // Pre-compile các regex của rule mới
-                CompileAndCache(newRule.AnchorSpec.RegexPattern);
-                CompileAndCache(newRule.InteractionSpec.OptionRegexPattern);
-                CompileAndCache(newRule.EvaluationSpec.AnswerRegexPattern);
-
-                Console.WriteLine($"[DynamicIngestionEngine] Đã nạp thành công quy tắc [{newRule.RuleCode}] {newRule.RuleName} vào hệ thống.");
-
-                if (persistToFile)
-                {
-                    try
-                    {
-                        var possiblePaths = new[]
-                        {
-                            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Config", "parsing_rules_registry.json"),
-                            Path.Combine(Directory.GetCurrentDirectory(), "Config", "parsing_rules_registry.json"),
-                            Path.Combine(Directory.GetCurrentDirectory(), "Backend", "src", "AegisQuiz.Infrastructure", "Config", "parsing_rules_registry.json"),
-                            @"D:\Cuong\DuAn\mybank\AegisQuiz\Backend\src\AegisQuiz.Infrastructure\Config\parsing_rules_registry.json"
-                        };
-                        string? foundPath = possiblePaths.FirstOrDefault(File.Exists);
-                        if (foundPath != null)
-                        {
-                            var registryObj = new
-                            {
-                                version = "1.0.0",
-                                lastUpdated = DateTime.UtcNow.ToString("o"),
-                                rules = _rules
-                            };
-                            var json = JsonSerializer.Serialize(registryObj, new JsonSerializerOptions { WriteIndented = true });
-                            File.WriteAllText(foundPath, json);
-                            Console.WriteLine($"[DynamicIngestionEngine] Đã lưu vĩnh viễn quy tắc vào tệp: {foundPath}");
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"[DynamicIngestionEngine] Cảnh báo khi lưu vĩnh viễn tệp JSON: {ex.Message}");
-                    }
-                }
-
-                return true;
-            }
-        }
-
-        /// <summary>
-        /// Khớp điểm neo nhận diện câu hỏi từ một dòng văn bản.
-        /// Rules được sắp xếp theo Priority tăng dần (số nhỏ = đặc thù nhất = kiểm tra trước).
-        /// Trả về rule khớp đầu tiên theo thứ tự ưu tiên đã sắp xếp.
-        /// </summary>
-        public bool TryMatchQuestionAnchor(string line, out int questionNumber, out QuestionParsingRuleDto? matchedRule)
-        {
-            questionNumber = 0;
-            matchedRule = null;
-
-            lock (_syncLock)
-            {
-                foreach (var rule in _rules)
-                {
-                    var regex = GetOrAddRegex(rule.AnchorSpec.RegexPattern);
-                    var match = regex.Match(line);
-                    if (match.Success)
-                    {
-                        matchedRule = rule;
-                        if (rule.AnchorSpec.QuestionNumberGroupIndex <= match.Groups.Count - 1)
-                        {
-                            var numStr = match.Groups[rule.AnchorSpec.QuestionNumberGroupIndex].Value;
-                            int.TryParse(numStr, out questionNumber);
-                        }
-                        return true;
-                    }
-                }
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Khớp một phương án trả lời (Option)
-        /// </summary>
-        public bool TryMatchOption(string line, QuestionParsingRuleDto rule, out string label, out string content)
-        {
-            label = string.Empty;
-            content = string.Empty;
-
-            var regex = GetOrAddRegex(rule.InteractionSpec.OptionRegexPattern);
-            var match = regex.Match(line);
-            if (match.Success)
-            {
-                int labelIdx = rule.InteractionSpec.OptionLabelGroupIndex;
-                if (labelIdx <= match.Groups.Count - 1 && !string.IsNullOrEmpty(match.Groups[labelIdx].Value))
-                {
-                    label = match.Groups[labelIdx].Value.Trim();
-                }
-                else
-                {
-                    for (int i = 1; i <= Math.Min(3, match.Groups.Count - 1); i++)
-                    {
-                        if (!string.IsNullOrEmpty(match.Groups[i].Value))
-                        {
-                            label = match.Groups[i].Value.Trim();
-                            break;
-                        }
-                    }
-                }
-
-                int contentIdx = rule.InteractionSpec.OptionContentGroupIndex;
-                if (contentIdx <= match.Groups.Count - 1 && !string.IsNullOrEmpty(match.Groups[contentIdx].Value))
-                {
-                    content = match.Groups[contentIdx].Value.Trim();
-                }
-                else
-                {
-                    content = line.Substring(match.Length).Trim();
-                }
-
-                return true;
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Khớp dòng đáp án đúng (Answer Key)
-        /// </summary>
-        public bool TryMatchAnswer(string line, QuestionParsingRuleDto rule, out string answer)
-        {
-            answer = string.Empty;
-            var regex = GetOrAddRegex(rule.EvaluationSpec.AnswerRegexPattern);
-            var match = regex.Match(line);
-            if (match.Success)
-            {
-                int groupIdx = rule.EvaluationSpec.AnswerGroupIndex;
-                if (groupIdx <= match.Groups.Count - 1 && !string.IsNullOrEmpty(match.Groups[groupIdx].Value))
-                {
-                    answer = match.Groups[groupIdx].Value.Trim();
-                }
-                else
-                {
-                    answer = match.Value.Trim();
-                }
-                return true;
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Nhận diện dòng bắt đầu phần Lời giải thích / Hướng dẫn giải
-        /// </summary>
-        public bool TryMatchExplanation(string line, QuestionParsingRuleDto rule)
-        {
-            if (string.IsNullOrEmpty(rule.EvaluationSpec.ExplanationRegexPattern)) return false;
-            var regex = GetOrAddRegex(rule.EvaluationSpec.ExplanationRegexPattern);
-            return regex.IsMatch(line);
-        }
-
-        /// <summary>
-        /// Nhận diện xem câu hỏi có phải là Câu Điểm Liệt tử thần hay không
-        /// </summary>
-        public bool IsCriticalQuestion(string text, QuestionParsingRuleDto? rule = null)
-        {
-            if (string.IsNullOrWhiteSpace(text)) return false;
-
-            if (rule != null && !string.IsNullOrEmpty(rule.EvaluationSpec.CriticalQuestionMarkerRegex))
-            {
-                var regex = GetOrAddRegex(rule.EvaluationSpec.CriticalQuestionMarkerRegex);
-                if (regex.IsMatch(text)) return true;
-            }
-
-            lock (_syncLock)
-            {
-                foreach (var r in _rules)
-                {
-                    if (!string.IsNullOrEmpty(r.EvaluationSpec.CriticalQuestionMarkerRegex))
-                    {
-                        var regex = GetOrAddRegex(r.EvaluationSpec.CriticalQuestionMarkerRegex);
-                        if (regex.IsMatch(text)) return true;
-                    }
-                }
-            }
-
-            return Regex.IsMatch(text, @"(?:\bĐIỂM\s*LIỆT\b|⚠️|TỬ\s*THẦN|\bBẮT\s*BUỘC\s*ĐÚNG\b|^\s*\*\s*(?:Câu|Question|\d+))", RegexOptions.IgnoreCase);
-        }
-
-        /// <summary>
-        /// [Admin Sandbox Engine] Phân tích một đoạn snippet văn bản thô theo quy tắc
-        /// </summary>
-        public ParseSnippetResponseDto ParseSnippet(string snippetText, string? specificRuleCode = null)
-        {
-            return ParseSnippetInternal(snippetText, null, specificRuleCode);
-        }
-
-        /// <summary>
-        /// Phân tích một đoạn snippet bằng một bộ quy tắc tùy biến truyền vào trực tiếp (dùng cho AI Autopilot Sandbox)
-        /// </summary>
-        public ParseSnippetResponseDto ParseSnippet(string snippetText, QuestionParsingRuleDto customRule)
-        {
-            return ParseSnippetInternal(snippetText, customRule, null);
-        }
-
-        private ParseSnippetResponseDto ParseSnippetInternal(string snippetText, QuestionParsingRuleDto? customRule, string? specificRuleCode)
-        {
-            var response = new ParseSnippetResponseDto();
-            if (string.IsNullOrWhiteSpace(snippetText))
-            {
-                response.Success = false;
-                response.ParsingLogs.Add("Văn bản thử nghiệm rỗng.");
-                return response;
-            }
-
-            var lines = snippetText.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
-            DocxImportPreviewDto? currentQ = null;
-            QuestionParsingRuleDto? activeRule = customRule;
-            var promptBuffer = new List<string>();
-
-            if (activeRule == null && !string.IsNullOrEmpty(specificRuleCode))
-            {
-                activeRule = _rules.FirstOrDefault(r => string.Equals(r.RuleCode, specificRuleCode, StringComparison.OrdinalIgnoreCase));
-            }
-
-            foreach (var rawLine in lines)
-            {
-                var line = rawLine.Trim();
-                if (string.IsNullOrEmpty(line)) continue;
-
-                // 1. Kiểm tra dòng bắt đầu câu hỏi (Anchor)
-                bool isAnchor = false;
-                int qNum = 0;
-                QuestionParsingRuleDto? matchedRule = null;
-
-                if (activeRule != null)
-                {
-                    var regex = GetOrAddRegex(activeRule.AnchorSpec.RegexPattern);
-                    var m = regex.Match(line);
-                    if (m.Success)
-                    {
-                        isAnchor = true;
-                        matchedRule = activeRule;
-                        int.TryParse(m.Groups[activeRule.AnchorSpec.QuestionNumberGroupIndex].Value, out qNum);
-                    }
-                }
-                else
-                {
-                    isAnchor = TryMatchQuestionAnchor(line, out qNum, out matchedRule);
-                }
-
-                if (isAnchor && matchedRule != null)
-                {
-                    if (currentQ != null)
-                    {
-                        response.Questions.Add(currentQ);
-                    }
-
-                    activeRule ??= matchedRule;
-                    response.MatchedRuleCode = matchedRule.RuleCode;
-
-                    currentQ = new DocxImportPreviewDto
-                    {
-                        Content = line,
-                        QuestionType = matchedRule.InteractionSpec.DefaultQuestionType,
-                        TopicCode = matchedRule.TargetExamType,
-                        IsCritical = IsCriticalQuestion(line, matchedRule)
-                    };
-
-                    promptBuffer.Clear();
-                    response.ParsingLogs.Add($"[Anchor Match] Nhận diện Câu #{qNum} bằng quy tắc {matchedRule.RuleCode}");
-                    continue;
-                }
-
-                var ruleToUse = activeRule ?? _rules.FirstOrDefault() ?? GetDefaultFallbackRules().First();
-
-                // 2. Nếu chưa có câu hỏi được khởi tạo (không có prefix "Câu 1:")
-                if (currentQ == null)
-                {
-                    // Kiểm tra xem dòng hiện tại có chứa các phương án inline trên cùng 1 dòng hay không
-                    var inlineOpts = ExtractInlineOptions(line);
-                    if (inlineOpts.Count >= 2)
-                    {
-                        var firstOpt = inlineOpts[0];
-                        var promptPart = line.Substring(0, firstOpt.StartIndex).Trim();
-                        var fullPrompt = promptBuffer.Count > 0 ? string.Join("\n", promptBuffer) + "\n" + promptPart : promptPart;
-                        currentQ = new DocxImportPreviewDto
-                        {
-                            Content = string.IsNullOrWhiteSpace(fullPrompt) ? "Câu hỏi" : fullPrompt,
-                            QuestionType = ruleToUse.InteractionSpec.DefaultQuestionType,
-                            TopicCode = ruleToUse.TargetExamType,
-                            IsCritical = IsCriticalQuestion(fullPrompt, ruleToUse)
-                        };
-                        foreach (var io in inlineOpts)
-                        {
-                            currentQ.Options.Add($"{io.Letter}. {io.Content}");
-                            if (io.IsMarkedCorrect) currentQ.SuggestedAnswer = (io.Letter - 'A' + 1).ToString();
-                        }
-                        promptBuffer.Clear();
-                        response.ParsingLogs.Add($"[Inline Options] Nhận diện {inlineOpts.Count} phương án inline");
-                        continue;
-                    }
-
-                    // Kiểm tra xem dòng hiện tại có phải là dòng bắt đầu phương án (A/B/C/D...) hay không
-                    if (TryMatchOption(line, ruleToUse, out string implicitOptLabel, out string implicitOptContent))
-                    {
-                        var implicitPrompt = promptBuffer.Count > 0 ? string.Join("\n", promptBuffer) : "Câu hỏi";
-                        currentQ = new DocxImportPreviewDto
-                        {
-                            Content = implicitPrompt,
-                            QuestionType = ruleToUse.InteractionSpec.DefaultQuestionType,
-                            TopicCode = ruleToUse.TargetExamType,
-                            IsCritical = IsCriticalQuestion(implicitPrompt, ruleToUse)
-                        };
-                        currentQ.Options.Add($"{implicitOptLabel}. {implicitOptContent}");
-                        promptBuffer.Clear();
-                        response.ParsingLogs.Add($"[Implicit Anchor] Khởi tạo câu hỏi tự động từ phương án {implicitOptLabel}");
-                        continue;
-                    }
-
-                    promptBuffer.Add(line);
-                    continue;
-                }
-
-                // 3. Kiểm tra dòng đáp án đúng
-                if (TryMatchAnswer(line, ruleToUse, out string answerKey))
-                {
-                    currentQ.SuggestedAnswer = answerKey;
-                    response.ParsingLogs.Add($"[Answer Match] Câu có đáp án: {answerKey}");
-                    continue;
-                }
-
-                // 4. Kiểm tra dòng giải thích
-                if (TryMatchExplanation(line, ruleToUse))
-                {
-                    currentQ.AiExplanation = line;
-                    response.ParsingLogs.Add($"[Explanation Match] Nhận diện lời giải: {line.Substring(0, Math.Min(30, line.Length))}...");
-                    continue;
-                }
-
-                // 5. Kiểm tra dòng phương án (Option)
-                if (TryMatchOption(line, ruleToUse, out string optLabel, out string optContent))
-                {
-                    currentQ.Options.Add($"{optLabel}. {optContent}");
-                    response.ParsingLogs.Add($"[Option Match] Thêm phương án {optLabel}");
-                    continue;
-                }
-
-                // 6. Nội dung bổ sung đề bài hoặc lời giải
-                if (!string.IsNullOrEmpty(currentQ.AiExplanation))
-                {
-                    currentQ.AiExplanation += "\n" + line;
-                }
-                else if (currentQ.Options.Count == 0)
-                {
-                    currentQ.Content += "\n" + line;
-                    if (IsCriticalQuestion(line, ruleToUse))
-                    {
-                        currentQ.IsCritical = true;
-                    }
-                }
-            }
-
-            if (currentQ != null)
-            {
-                response.Questions.Add(currentQ);
-            }
-
-            response.ParsedCount = response.Questions.Count;
-            response.Success = response.ParsedCount > 0;
-            return response;
-        }
-
-        /// <summary>
-        /// Bóc tách các phương án nằm cùng một dòng (inline options dạng A. ... B. ... hoặc 1. ... 2. ...)
-        /// </summary>
-        public static List<InlineOptionMatch> ExtractInlineOptions(string text)
-        {
-            var options = new List<InlineOptionMatch>();
-            if (string.IsNullOrWhiteSpace(text)) return options;
-
-            var regex = new Regex(@"(?:^|[\s\t\.\,\;\–\—]+|(?<=[a-z0-9\)]))(\*?)([A-G]|[1-4])(\*?)[\.\:\)]+\s*", RegexOptions.IgnoreCase);
-            var matches = regex.Matches(text);
-            if (matches.Count < 2) return options;
-
-            for (int i = 0; i < matches.Count; i++)
-            {
-                var match = matches[i];
-                char rawChar = match.Groups[2].Value[0];
-                char letter = char.IsDigit(rawChar) ? (char)('A' + (rawChar - '1')) : char.ToUpperInvariant(rawChar);
-                bool isCorrect = match.Groups[1].Value == "*" || match.Groups[3].Value == "*";
-
-                int contentStart = match.Index + match.Length;
-                int contentEnd = (i + 1 < matches.Count) ? matches[i + 1].Index : text.Length;
-
-                string content = text.Substring(contentStart, contentEnd - contentStart).Trim();
-                content = Regex.Replace(content, @"[\.\s\t]+$", "").Trim();
-
-                options.Add(new InlineOptionMatch
-                {
-                    Letter = letter,
-                    Content = content,
-                    IsMarkedCorrect = isCorrect,
-                    StartIndex = match.Index
-                });
-            }
-
-            return options;
-        }
-
         private Regex GetOrAddRegex(string pattern)
-        {
-            return _regexCache.GetOrAdd(pattern, p => new Regex(p, RegexOptions.IgnoreCase | RegexOptions.Compiled));
-        }
+            => _regexCache.GetOrAdd(pattern, p => new Regex(p, RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant));
 
-        private void CompileAndCache(string pattern)
+        private void CompileAndCache(string? pattern)
         {
             if (!string.IsNullOrWhiteSpace(pattern))
             {
@@ -550,37 +558,82 @@ namespace AegisQuiz.Infrastructure.Services
             }
         }
 
+        private void PrecompileRule(QuestionParsingRuleDto rule)
+        {
+            CompileAndCache(rule.AnchorSpec?.RegexPattern);
+            CompileAndCache(rule.InteractionSpec?.OptionRegexPattern);
+            CompileAndCache(rule.EvaluationSpec?.AnswerRegexPattern);
+        }
+
+        /// <summary>True nếu văn bản khớp bất kỳ mẫu regex nào trong danh sách (bỏ qua mẫu rỗng / lỗi cú pháp).</summary>
+        private bool MatchesAny(string text, IEnumerable<string>? patterns)
+        {
+            if (patterns == null) return false;
+            foreach (var pattern in patterns)
+            {
+                if (string.IsNullOrWhiteSpace(pattern)) continue;
+                try
+                {
+                    if (GetOrAddRegex(pattern).IsMatch(text)) return true;
+                }
+                catch (ArgumentException ex)
+                {
+                    _logger?.LogWarning("[DynamicIngestionEngine] InvalidPattern | Pattern={Pattern} -> Skipped: {Error}", pattern, ex.Message);
+                }
+            }
+            return false;
+        }
+
+        /// <summary>Trả về giá trị Group 1 (hoặc toàn bộ match) của mẫu đầu tiên khớp; null nếu không mẫu nào khớp.</summary>
+        private string? FirstCapture(string text, IEnumerable<string>? patterns)
+        {
+            if (patterns == null) return null;
+            foreach (var pattern in patterns)
+            {
+                if (string.IsNullOrWhiteSpace(pattern)) continue;
+                try
+                {
+                    var match = GetOrAddRegex(pattern).Match(text);
+                    if (match.Success)
+                    {
+                        return match.Groups.Count > 1 && match.Groups[1].Success ? match.Groups[1].Value.Trim() : match.Value.Trim();
+                    }
+                }
+                catch (ArgumentException ex)
+                {
+                    _logger?.LogWarning("[DynamicIngestionEngine] InvalidPattern | Pattern={Pattern} -> Skipped: {Error}", pattern, ex.Message);
+                }
+            }
+            return null;
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // 5. Bộ quy tắc lõi dự phòng (chỉ dùng khi không có file registry)
+        // ─────────────────────────────────────────────────────────────────────
+
         private void LoadHardcodedFallbackRules()
         {
             _rules.Clear();
             _rules.AddRange(GetDefaultFallbackRules());
             _regexCache.Clear();
-
             foreach (var rule in _rules)
             {
-                CompileAndCache(rule.AnchorSpec.RegexPattern);
-                CompileAndCache(rule.InteractionSpec.OptionRegexPattern);
-                CompileAndCache(rule.EvaluationSpec.AnswerRegexPattern);
+                PrecompileRule(rule);
             }
         }
 
-        private List<QuestionParsingRuleDto> GetDefaultFallbackRules()
+        private static List<QuestionParsingRuleDto> GetDefaultFallbackRules()
         {
             return new List<QuestionParsingRuleDto>
             {
-                new QuestionParsingRuleDto
+                new()
                 {
                     RuleCode = "VN_STANDARD_MULTIPLE_CHOICE",
                     RuleName = "Trắc Nghiệm Đơn Tiêu Chuẩn (A/B/C/D)",
                     TargetExamType = "GENERAL",
                     Language = "vi",
                     Priority = 10,
-                    IsActive = true,
-                    AnchorSpec = new AnchorSpecDto
-                    {
-                        RegexPattern = @"^(?:Câu|Question|Item|Bài|Q)\s*(\d+)",
-                        QuestionNumberGroupIndex = 1
-                    },
+                    AnchorSpec = new AnchorSpecDto { RegexPattern = @"^(?:Câu|Question|Item|Bài|Q)\s*(\d+)", QuestionNumberGroupIndex = 1 },
                     InteractionSpec = new InteractionSpecDto
                     {
                         DefaultQuestionType = "SINGLE",
@@ -596,19 +649,14 @@ namespace AegisQuiz.Infrastructure.Services
                         CriticalQuestionMarkerRegex = @"(?:\bĐIỂM\s*LIỆT\b|⚠️|TỬ\s*THẦN)"
                     }
                 },
-                new QuestionParsingRuleDto
+                new()
                 {
                     RuleCode = "VN_GDPT_2025_TRUE_FALSE_MATRIX",
                     RuleName = "Trắc Nghiệm Đúng / Sai Đa Mệnh Đề (GDPT 2025)",
                     TargetExamType = "GDPT_2025",
                     Language = "vi",
                     Priority = 20,
-                    IsActive = true,
-                    AnchorSpec = new AnchorSpecDto
-                    {
-                        RegexPattern = @"^(?:Câu|Question)\s*(\d+)",
-                        QuestionNumberGroupIndex = 1
-                    },
+                    AnchorSpec = new AnchorSpecDto { RegexPattern = @"^(?:Câu|Question)\s*(\d+)", QuestionNumberGroupIndex = 1 },
                     InteractionSpec = new InteractionSpecDto
                     {
                         DefaultQuestionType = "TRUE_FALSE",
@@ -623,19 +671,14 @@ namespace AegisQuiz.Infrastructure.Services
                         ExplanationRegexPattern = @"^(?:Lời\s*giải|Hướng\s*dẫn|HD|Giải\s*thích)\b"
                     }
                 },
-                new QuestionParsingRuleDto
+                new()
                 {
                     RuleCode = "VN_GDPT_2025_SHORT_ANSWER",
                     RuleName = "Trắc Nghiệm Trả Lời Ngắn / Điền Số (GDPT 2025)",
                     TargetExamType = "GDPT_2025",
                     Language = "vi",
                     Priority = 30,
-                    IsActive = true,
-                    AnchorSpec = new AnchorSpecDto
-                    {
-                        RegexPattern = @"^(?:Câu|Question)\s*(\d+)",
-                        QuestionNumberGroupIndex = 1
-                    },
+                    AnchorSpec = new AnchorSpecDto { RegexPattern = @"^(?:Câu|Question)\s*(\d+)", QuestionNumberGroupIndex = 1 },
                     InteractionSpec = new InteractionSpecDto
                     {
                         DefaultQuestionType = "SHORT_ANSWER",
@@ -643,23 +686,18 @@ namespace AegisQuiz.Infrastructure.Services
                     },
                     EvaluationSpec = new EvaluationSpecDto
                     {
-                        AnswerRegexPattern = @"^(?:ĐÁP\s*ÁN|ANSWER|KEY|KẾT\s*QUẢ)[\.\:\s\-]+([\\-\\+]?\\d+[\\,\\.]?\\d*)",
+                        AnswerRegexPattern = @"^(?:ĐÁP\s*ÁN|ANSWER|KEY|KẾT\s*QUẢ)[\.\:\s\-]+([\-\+]?\d+[\,\.]?\d*)",
                         AnswerGroupIndex = 1
                     }
                 },
-                new QuestionParsingRuleDto
+                new()
                 {
                     RuleCode = "GPLX_NATIONAL_DRIVING_TEST",
                     RuleName = "Sát Hạch Lái Xe Quốc Gia (GPLX 600 Câu & Điểm Liệt)",
                     TargetExamType = "GPLX",
                     Language = "vi",
                     Priority = 15,
-                    IsActive = true,
-                    AnchorSpec = new AnchorSpecDto
-                    {
-                        RegexPattern = @"^(?:Câu|Question)\s*(\d+)",
-                        QuestionNumberGroupIndex = 1
-                    },
+                    AnchorSpec = new AnchorSpecDto { RegexPattern = @"^(?:Câu|Question)\s*(\d+)", QuestionNumberGroupIndex = 1 },
                     InteractionSpec = new InteractionSpecDto
                     {
                         DefaultQuestionType = "SINGLE",
@@ -674,19 +712,14 @@ namespace AegisQuiz.Infrastructure.Services
                         CriticalQuestionMarkerRegex = @"(?:\bĐIỂM\s*LIỆT\b|⚠️|TỬ\s*THẦN)"
                     }
                 },
-                new QuestionParsingRuleDto
+                new()
                 {
                     RuleCode = "INTERNATIONAL_SAT_LOGIC",
                     RuleName = "Khảo Thí Quốc Tế SAT / GRE Logic (Format Không Dấu Chấm)",
                     TargetExamType = "SAT",
                     Language = "en",
                     Priority = 5,
-                    IsActive = true,
-                    AnchorSpec = new AnchorSpecDto
-                    {
-                        RegexPattern = @"^(?:Task|Problem)\s*#?(\d+)",
-                        QuestionNumberGroupIndex = 1
-                    },
+                    AnchorSpec = new AnchorSpecDto { RegexPattern = @"^(?:Task|Problem)\s*#?(\d+)", QuestionNumberGroupIndex = 1 },
                     InteractionSpec = new InteractionSpecDto
                     {
                         DefaultQuestionType = "SINGLE",
@@ -705,6 +738,7 @@ namespace AegisQuiz.Infrastructure.Services
         }
     }
 
+    /// <summary>Một phương án được bóc tách từ dòng chứa nhiều phương án liền nhau (A. ... B. ...).</summary>
     public class InlineOptionMatch
     {
         public char Letter { get; set; }

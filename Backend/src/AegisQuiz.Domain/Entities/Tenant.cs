@@ -8,6 +8,12 @@ namespace AegisQuiz.Domain.Entities
     /// </summary>
     public class Tenant
     {
+        /// <summary>
+        /// [Community-First Tenancy] Tenant Cộng đồng dùng chung — mọi cá nhân chưa thuộc tổ chức nào đều hội tụ tại đây.
+        /// </summary>
+        public static readonly Guid CommunityTenantId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+        public const string CommunityTenantCode = "community";
+
         public Guid   Id          { get; set; } = Guid.NewGuid();
         public string Code        { get; set; } = string.Empty; // "agribank", "vietcombank"
         public string Name        { get; set; } = string.Empty;
@@ -15,6 +21,9 @@ namespace AegisQuiz.Domain.Entities
         public string? PrimaryColor { get; set; } = "#1a73e8";
         public string? Domain     { get; set; }  // "agribank.aegisquiz.com"
         public bool   IsActive    { get; set; } = true;
+
+        /// <summary>Đánh dấu Tenant là Community Hub (không gian mở, nội dung công khai).</summary>
+        public bool   IsCommunityHub { get; set; } = false;
         public TenantPlan Plan    { get; set; } = TenantPlan.Professional;
         public TenantScaleType ScaleType { get; set; } = TenantScaleType.Enterprise;
         public int    MaxUsers    { get; set; } = 1000;

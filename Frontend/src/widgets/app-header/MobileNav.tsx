@@ -6,9 +6,11 @@
  */
 
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useNavItems } from './NavMenu';
 
 export function MobileNav() {
+  const { t }     = useTranslation();
   const navigate  = useNavigate();
   const location  = useLocation();
   const navItems  = useNavItems();
@@ -20,7 +22,7 @@ export function MobileNav() {
                  border-t border-[var(--nav-border)] z-[var(--z-sticky)]
                  flex items-center justify-around px-4"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-      aria-label="Menu điều hướng dưới"
+      aria-label={t('nav.bottomMenu')}
     >
       {navItems.map((item) => {
         const isActive = location.pathname === item.path;

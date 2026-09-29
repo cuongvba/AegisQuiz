@@ -44,6 +44,17 @@
 
     <!-- ── Inline critical: prevent FOUC before providers mount ─── -->
     <script>
+      // [i18n FOUC Fix] Áp dụng ngay ngôn ngữ đã lưu (cùng key 'i18nextLng' mà
+      // i18next-browser-languagedetector / useLearnerI18n dùng) trước khi React
+      // hydrate — tránh việc <html lang="vi"> cố định gây sai lệch với ngôn ngữ
+      // thực tế người dùng đã chọn ở lần truy cập trước (ảnh hưởng SEO/AX).
+      try {
+        var savedLang = localStorage.getItem('i18nextLng');
+        if (savedLang === 'en' || savedLang === 'vi') {
+          document.documentElement.lang = savedLang;
+        }
+      } catch (e) {}
+
       // Apply stored tenant theme instantly to prevent flash
       try {
         var cfg = localStorage.getItem('tenant_config');

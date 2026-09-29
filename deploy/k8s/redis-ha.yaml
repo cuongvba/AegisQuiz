@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: aegis-redis
+  namespace: aegisquiz-prod
+spec:
+  serviceName: aegis-redis-service
+  replicas: 3
+  selector:
+    matchLabels:
+      app: aegis-redis
+  template:
+    metadata:
+      labels:
+        app: aegis-redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7.2-alpine
+        command:
+        - redis-server
+        - "--appendonly"
+        - "yes"
+        - "--protected-mode"
+        - "no"
+        ports:
+        - name: redis
+          containerPort: 6379
+        resources:
+          requests:
+            cpu: "200m"
+            memory: "256Mi"
+          limits:
+            cpu: "1000m"
+            memory: "1024Mi"
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+  volumeClaimTemplates:
+  - metadata:
+      name: redis-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 10Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aegis-redis-service
+  namespace: aegisquiz-prod
+spec:
+  type: ClusterIP
+  selector:
+    app: aegis-redis
+  ports:
+  - name: redis
+    port: 6379
+    targetPort: 6379

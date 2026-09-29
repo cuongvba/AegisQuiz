@@ -13,15 +13,16 @@ namespace AegisQuiz.Domain.Factories
 
             QuestionBase question = cleanType switch
             {
-                "SINGLE"       => new SingleChoiceQuestion(),
-                "MULTI"        => new MultiChoiceQuestion(),
-                "TRUE_FALSE"   => new TrueFalseQuestion(),
-                "SHORT_ANSWER" => new ShortAnswerQuestion(),
-                "FILL_BLANK"   => new FillBlankQuestion(),
-                "ORDERING"     => new OrderingQuestion(),
-                "MATCHING"     => new MatchingQuestion(),
-                "MARCHING"     => new MatchingQuestion(), // alias Excel template
-                "ESSAY"        => new EssayQuestion(),
+                "SINGLE"           => new SingleChoiceQuestion(),
+                "MULTI"            => new MultiChoiceQuestion(),
+                "TRUE_FALSE"       => new TrueFalseQuestion(),
+                "MULTI_TRUE_FALSE" => new MultiTrueFalseQuestion(), // GDPT 2025: Đúng/Sai đa mệnh đề a) b) c) d)
+                "SHORT_ANSWER"     => new ShortAnswerQuestion(),
+                "FILL_BLANK"       => new FillBlankQuestion(),
+                "ORDERING"         => new OrderingQuestion(),
+                "MATCHING"         => new MatchingQuestion(),
+                "MARCHING"         => new MatchingQuestion(), // alias Excel template
+                "ESSAY"            => new EssayQuestion(),
                 _ => throw new ArgumentException($"Không hỗ trợ loại câu hỏi: {type}")
             };
 
@@ -36,6 +37,10 @@ namespace AegisQuiz.Domain.Factories
             if (string.IsNullOrWhiteSpace(raw)) return "SINGLE";
             var h = raw.Trim().ToUpperInvariant();
 
+            // Kiểm tra Đúng/Sai đa mệnh đề TRƯỚC "MULTI" để không bị nuốt thành MULTI
+            if (h.Contains("MULTI_TRUE") || h.Contains("MULTI_TF") || h.Contains("TF_CLUSTER")
+                || h.Contains("DUNG_SAI_DA_Y") || h.Contains("DUNG SAI DA Y") || h.Contains("MULTI TRUE"))
+                                                                   return "MULTI_TRUE_FALSE";
             if (h.Contains("MULTI"))                               return "MULTI";
             if (h.Contains("SINGLE"))                              return "SINGLE";
             if (h.Contains("TRUE") || h.Contains("FALSE")

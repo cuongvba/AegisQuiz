@@ -15,6 +15,7 @@ services:
       - Gemini__ApiKey=${GEMINI_API_KEY}
       - Webhook__SecretKey=${WEBHOOK_SECRET}
       - Jwt__Secret=${JWT_SECRET}
+      - System__MaintenanceConfirmToken=${MAINTENANCE_CONFIRM_TOKEN}
       - Oidc__Authority=http://keycloak:8080/realms/dehoc
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Development}
       # [Phase C] IRT/CAT Engine URL

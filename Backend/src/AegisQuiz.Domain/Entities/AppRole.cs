@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace AegisQuiz.Domain.Entities
 {
@@ -47,6 +49,12 @@ namespace AegisQuiz.Domain.Entities
         [Obsolete("Use AppRoles.Learner. Will be removed in Sprint 2.")]
         public const string Student        = Learner;
 
+        // ── Helper: Toàn bộ vai trò theo thứ tự trọng số giảm dần (Privilege Ceiling) ──
+        public static readonly string[] AllRolesInOrder =
+        {
+            SystemAdmin, TenantAdmin, OrgUnitManager, ContentManager, TeamLeader, Instructor, Learner, GuestViewer
+        };
+
         // ── Helper: Roles có quyền vào Admin Panel ───────────────────────────
         public static readonly string[] AdminPanelRoles =
         {
@@ -68,6 +76,73 @@ namespace AegisQuiz.Domain.Entities
 
         public static bool CanViewTeamData(string? role) =>
             Array.IndexOf(TeamDataRoles, role) >= 0;
+
+        // ── Privilege Ceiling: trọng số phân cấp quản trị (Assignment Ceiling) ──
+        /// <summary>
+        /// Trọng số phân cấp quản trị dùng cho trần đặc quyền khi GÁN vai trò / quản lý người dùng:
+        /// W(Actor) ≥ W(Target) mới được gán. Thứ tự khớp <see cref="AllRolesInOrder"/>.
+        /// Lưu ý: ngưỡng ủy quyền endpoint API dùng <see cref="AppRoleWeights"/> (bảng riêng, cho phép Instructor
+        /// truy cập dữ liệu nhóm theo <see cref="TeamDataRoles"/>).
+        /// Role không hợp lệ = -1.
+        /// </summary>
+        public static int GetRoleWeight(string? role) => role switch
+        {
+            SystemAdmin    => 100,
+            TenantAdmin    => 80,
+            OrgUnitManager => 60,
+            ContentManager => 50,
+            TeamLeader     => 40,
+            Instructor     => 30,
+            Learner        => 10,
+            GuestViewer    => 0,
+            _ => -1
+        };
+
+        /// <summary>Actor chỉ được gán vai trò có trọng số ≤ trọng số của chính mình (chống IDOR leo thang đặc quyền).</summary>
+        public static bool CanAssignRole(string? actorRole, string? targetRole)
+        {
+            if (string.IsNullOrWhiteSpace(actorRole) || string.IsNullOrWhiteSpace(targetRole)) return false;
+            int actorWeight = GetRoleWeight(actorRole);
+            int targetWeight = GetRoleWeight(targetRole);
+            if (actorWeight < 0 || targetWeight < 0) return false;
+            return actorWeight >= targetWeight;
+        }
+
+        /// <summary>Danh sách vai trò mà Actor được phép gán (theo thứ tự trọng số giảm dần).</summary>
+        public static string[] GetAssignableRoles(string? actorRole)
+        {
+            if (string.IsNullOrWhiteSpace(actorRole)) return Array.Empty<string>();
+            int actorWeight = GetRoleWeight(actorRole);
+            return AllRolesInOrder.Where(r => GetRoleWeight(r) <= actorWeight).ToArray();
+        }
+    }
+
+    // ── Role Weight (Privilege Ceiling) ────────────────────────────────────────
+    /// <summary>
+    /// [RBAC — Privilege Ceiling Scoped RBAC] Trọng số vai trò dùng để so sánh
+    /// W(Caller) ≥ W(Target/Yêu cầu) thay vì so khớp chuỗi role thô ("no string-based
+    /// role checking"). Dùng bởi <c>RoleWeightAuthorizationHandler</c> (API layer) để
+    /// hiện thực các Policy dạng "MinRole:{Role}" — vai trò càng cao trọng số càng lớn
+    /// và tự động kế thừa mọi quyền của vai trò thấp hơn.
+    /// </summary>
+    public static class AppRoleWeights
+    {
+        public static readonly IReadOnlyDictionary<string, int> Weights =
+            new Dictionary<string, int>
+            {
+                [AppRoles.SystemAdmin]    = 100,
+                [AppRoles.TenantAdmin]    = 90,
+                [AppRoles.ContentManager] = 70,
+                [AppRoles.Instructor]     = 70,
+                [AppRoles.OrgUnitManager] = 60,
+                [AppRoles.TeamLeader]     = 50,
+                [AppRoles.Learner]        = 10,
+                [AppRoles.GuestViewer]    = 0,
+            };
+
+        /// <summary>Trọng số của một role; role không xác định/không hợp lệ = 0 (thấp nhất, tương đương GuestViewer).</summary>
+        public static int GetWeight(string? role) =>
+            role != null && Weights.TryGetValue(role, out var weight) ? weight : 0;
     }
 
     // ── Permission Constants ──────────────────────────────────────────────────

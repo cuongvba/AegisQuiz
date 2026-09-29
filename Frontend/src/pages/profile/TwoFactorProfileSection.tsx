@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation, Trans } from 'react-i18next';
 import { 
   ShieldCheck, ShieldAlert, Smartphone, KeyRound, Copy, Check, 
   Download, RefreshCw, AlertCircle, CheckCircle2, Lock, X, Eye, EyeOff
@@ -15,6 +16,7 @@ export const TwoFactorProfileSection: React.FC<TwoFactorProfileSectionProps> = (
   user, 
   onProfileUpdated 
 }) => {
+  const { t } = useTranslation('profile');
   const isEnabled = Boolean(user?.isTwoFactorEnabled);
 
   // Setup Modal State
@@ -70,7 +72,7 @@ export const TwoFactorProfileSection: React.FC<TwoFactorProfileSectionProps> = (
       setShowSetupModal(true);
     } catch (err: any) {
       console.error('[2FA Setup Error]', err);
-      showToast('error', err.response?.data?.message || 'Không thể khởi tạo mã thiết lập 2FA.');
+      showToast('error', err.response?.data?.message || t('twoFactor.setupModal.errors.setupFailed'));
     } finally {
       setSetupLoading(false);
     }
@@ -80,7 +82,7 @@ export const TwoFactorProfileSection: React.FC<TwoFactorProfileSectionProps> = (
   const handleConfirmEnable = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!verifyCode || verifyCode.trim().length !== 6) {
-      setSetupError('Vui lòng nhập đủ 6 chữ số từ ứng dụng Google Authenticator.');
+      setSetupError(t('twoFactor.setupModal.errors.invalidCode'));
       return;
     }
 
@@ -95,11 +97,11 @@ export const TwoFactorProfileSection: React.FC<TwoFactorProfileSectionProps> = (
       });
 
       setShowSetupModal(false);
-      showToast('success', res.data.message || 'Đã kích hoạt bảo mật 2 bước Google Authenticator thành công!');
+      showToast('success', res.data.message || t('twoFactor.setupModal.successEnabled'));
       if (onProfileUpdated) onProfileUpdated();
     } catch (err: any) {
       console.error('[2FA Enable Error]', err);
-      setSetupError(err.response?.data?.message || 'Mã xác thực không đúng hoặc đã hết hạn.');
+      setSetupError(err.response?.data?.message || t('twoFactor.setupModal.errors.wrongOrExpired'));
     } finally {
       setVerifyLoading(false);
     }
@@ -109,7 +111,7 @@ export const TwoFactorProfileSection: React.FC<TwoFactorProfileSectionProps> = (
   const handleConfirmDisable = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!disablePassword && !disableTotp) {
-      setDisableError('Vui lòng nhập mật khẩu tài khoản hoặc mã TOTP để xác thực.');
+      setDisableError(t('twoFactor.disableModal.errors.requireOne'));
       return;
     }
 
@@ -124,11 +126,11 @@ export const TwoFactorProfileSection: React.FC<TwoFactorProfileSectionProps> = (
       setShowDisableModal(false);
       setDisablePassword('');
       setDisableTotp('');
-      showToast('success', res.data.message || 'Đã hủy kích hoạt xác thực 2 bước 2FA thành công.');
+      showToast('success', res.data.message || t('twoFactor.disableModal.success'));
       if (onProfileUpdated) onProfileUpdated();
     } catch (err: any) {
       console.error('[2FA Disable Error]', err);
-      setDisableError(err.response?.data?.message || 'Thông tin xác thực không chính xác.');
+      setDisableError(err.response?.data?.message || t('twoFactor.disableModal.errors.wrongCredentials'));
     } finally {
       setDisableLoading(false);
     }
@@ -138,7 +140,7 @@ export const TwoFactorProfileSection: React.FC<TwoFactorProfileSectionProps> = (
   const handleRegenerateCodes = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!regenTotp || regenTotp.trim().length !== 6) {
-      setRegenError('Vui lòng nhập mã 6 số từ Google Authenticator để xác nhận.');
+      setRegenError(t('twoFactor.regenModal.errors.invalidCode'));
       return;
     }
 
@@ -149,10 +151,10 @@ export const TwoFactorProfileSection: React.FC<TwoFactorProfileSectionProps> = (
         totpCode: regenTotp.trim()
       });
       setRegenCodes(res.data.recoveryCodes);
-      showToast('success', 'Đã tạo mới thành công 8 mã khôi phục dự phòng!');
+      showToast('success', t('twoFactor.regenModal.success'));
     } catch (err: any) {
       console.error('[2FA Regen Codes Error]', err);
-      setRegenError(err.response?.data?.message || 'Mã xác thực không hợp lệ.');
+      setRegenError(err.response?.data?.message || t('twoFactor.regenModal.errors.invalidVerification'));
     } finally {
       setRegenLoading(false);
     }
@@ -166,7 +168,7 @@ export const TwoFactorProfileSection: React.FC<TwoFactorProfileSectionProps> = (
   };
 
   const downloadBackupCodesFile = (codes: string[]) => {
-    const textContent = `=== AEGISQUIZ 2FA RECOVERY CODES ===\nUser: ${user?.email}\nGenerated: ${new Date().toISOString()}\n\nMỗi mã dưới đây chỉ dùng được 1 lần:\n${codes.map((c, i) => `${i + 1}. ${c}`).join('\n')}\n\nLưu ý: Bảo mật tập tin này cẩn thận, không chia sẻ cho bất kỳ ai.`;
+    const textContent = `=== AEGISQUIZ 2FA RECOVERY CODES ===\nUser: ${user?.email}\nGenerated: ${new Date().toISOString()}\n\n${t('twoFactor.setupModal.backupFileNote')}\n${codes.map((c, i) => `${i + 1}. ${c}`).join('\n')}\n\n${t('twoFactor.setupModal.backupFileWarning')}`;
     const element = document.createElement('a');
     const file = new Blob([textContent], { type: 'text/plain;charset=utf-8' });
     element.href = URL.createObjectURL(file);
@@ -183,10 +185,10 @@ export const TwoFactorProfileSection: React.FC<TwoFactorProfileSectionProps> = (
         <div>
           <h2 className="text-xl font-black text-white flex items-center gap-2">
             <Smartphone size={22} className="text-indigo-400" />
-            Xác Thực 2 Bước (Google Authenticator)
+            {t('twoFactor.title')}
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            Bảo vệ tài khoản theo chuẩn quốc tế RFC 6238 TOTP & NIST SP 800-63B AAL2. Ngăn chặn 99.9% nguy cơ bị đánh cắp mật khẩu.
+            {t('twoFactor.description')}
           </p>
         </div>
 
@@ -194,12 +196,12 @@ export const TwoFactorProfileSection: React.FC<TwoFactorProfileSectionProps> = (
           {isEnabled ? (
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
               <ShieldCheck size={14} />
-              ĐANG BẢO VỆ (ACTIVE)
+              {t('twoFactor.statusActive')}
             </span>
           ) : (
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
               <ShieldAlert size={14} />
-              CHƯA KÍCH HOẠT
+              {t('twoFactor.statusInactive')}
             </span>
           )}
         </div>
@@ -221,12 +223,12 @@ export const TwoFactorProfileSection: React.FC<TwoFactorProfileSectionProps> = (
       <div className="p-5 rounded-2xl bg-slate-950/60 border border-slate-800/80 flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-1.5">
           <h3 className="text-sm font-bold text-slate-200">
-            {isEnabled ? 'Tài khoản của bạn được bảo vệ bằng ứng dụng xác thực' : 'Kích hoạt xác thực 2 bước ngay hôm nay'}
+            {isEnabled ? t('twoFactor.mainCard.titleEnabled') : t('twoFactor.mainCard.titleDisabled')}
           </h3>
           <p className="text-xs text-slate-400 max-w-xl">
             {isEnabled
-              ? 'Mỗi khi đăng nhập bằng Mật khẩu, hệ thống sẽ yêu cầu thêm mã xác nhận 6 chữ số từ ứng dụng Google Authenticator hoặc Microsoft Authenticator trên điện thoại của bạn.'
-              : 'Tăng cường phòng vệ chủ động: Bạn sẽ cần quét mã QR bằng ứng dụng Google Authenticator để liên kết thiết bị trước khi có thể đăng nhập.'}
+              ? t('twoFactor.mainCard.descEnabled')
+              : t('twoFactor.mainCard.descDisabled')}
           </p>
         </div>
 
@@ -244,7 +246,7 @@ export const TwoFactorProfileSection: React.FC<TwoFactorProfileSectionProps> = (
                 className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-colors flex items-center gap-2"
               >
                 <KeyRound size={15} className="text-indigo-400" />
-                Mã dự phòng
+                {t('twoFactor.mainCard.backupCodesButton')}
               </button>
 
               <button
@@ -258,7 +260,7 @@ export const TwoFactorProfileSection: React.FC<TwoFactorProfileSectionProps> = (
                 className="px-4 py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs font-bold transition-colors flex items-center gap-2"
               >
                 <Lock size={15} />
-                Tắt 2FA
+                {t('twoFactor.mainCard.disableButton')}
               </button>
             </>
           ) : (
@@ -269,7 +271,7 @@ export const TwoFactorProfileSection: React.FC<TwoFactorProfileSectionProps> = (
               className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/25 transition-all flex items-center gap-2 disabled:opacity-50 cursor-pointer"
             >
               {setupLoading ? <RefreshCw size={15} className="animate-spin" /> : <Smartphone size={15} />}
-              {setupLoading ? 'Đang chuẩn bị...' : 'Bật Google Authenticator'}
+              {setupLoading ? t('twoFactor.mainCard.preparing') : t('twoFactor.mainCard.enableButton')}
             </button>
           )}
         </div>
@@ -292,10 +294,10 @@ export const TwoFactorProfileSection: React.FC<TwoFactorProfileSectionProps> = (
               <div>
                 <h3 className="text-xl font-bold text-white flex items-center gap-2">
                   <Smartphone size={22} className="text-indigo-400" />
-                  Kích hoạt Google Authenticator
+                  {t('twoFactor.setupModal.title')}
                 </h3>
                 <p className="text-xs text-slate-400 mt-1">
-                  Làm theo 3 bước bên dưới để hoàn tất bảo vệ 2 lớp cho tài khoản của bạn.
+                  {t('twoFactor.setupModal.subtitle')}
                 </p>
               </div>
 
@@ -310,7 +312,7 @@ export const TwoFactorProfileSection: React.FC<TwoFactorProfileSectionProps> = (
               <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
                 <div className="text-xs font-bold text-slate-200 flex items-center gap-2">
                   <span className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px]">1</span>
-                  Quét mã QR bằng ứng dụng Authenticator
+                  {t('twoFactor.setupModal.step1Title')}
                 </div>
                 <div className="flex flex-col sm:flex-row items-center gap-4 pt-1">
                   <div className="p-3 bg-white rounded-2xl shadow-md shrink-0">
@@ -318,10 +320,14 @@ export const TwoFactorProfileSection: React.FC<TwoFactorProfileSectionProps> = (
                   </div>
                   <div className="space-y-2 text-xs text-slate-400">
                     <p>
-                      Mở ứng dụng <strong className="text-slate-200">Google Authenticator</strong> hoặc <strong className="text-slate-200">Microsoft Authenticator</strong> trên điện thoại, chọn <em>"Quét mã QR"</em>.
+                      <Trans
+                        t={t}
+                        i18nKey="twoFactor.setupModal.step1Instructions"
+                        components={{ b: <strong className="text-slate-200" />, i: <em /> }}
+                      />
                     </p>
                     <div>
-                      <span className="text-[11px] text-slate-500 block mb-1">Hoặc nhập mã khóa bí mật thủ công:</span>
+                      <span className="text-[11px] text-slate-500 block mb-1">{t('twoFactor.setupModal.manualKeyLabel')}</span>
                       <div className="flex items-center gap-2">
                         <code className="px-2.5 py-1 rounded bg-slate-900 border border-slate-700 text-indigo-300 font-mono text-[11px] tracking-wider select-all">
                           {setupData.manualKey}
@@ -330,7 +336,7 @@ export const TwoFactorProfileSection: React.FC<TwoFactorProfileSectionProps> = (
                           type="button"
                           onClick={() => copyToClipboard(setupData.manualKey, setCopiedKey)}
                           className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
-                          title="Sao chép khóa"
+                          title={t('twoFactor.setupModal.copyKeyTitle')}
                         >
                           {copiedKey ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
                         </button>
@@ -345,7 +351,7 @@ export const TwoFactorProfileSection: React.FC<TwoFactorProfileSectionProps> = (
                 <div className="flex items-center justify-between">
                   <div className="text-xs font-bold text-slate-200 flex items-center gap-2">
                     <span className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px]">2</span>
-                    Lưu 8 mã khôi phục dự phòng khẩn cấp
+                    {t('twoFactor.setupModal.step2Title')}
                   </div>
                   <div className="flex items-center gap-2">
                     <button
@@ -354,7 +360,7 @@ export const TwoFactorProfileSection: React.FC<TwoFactorProfileSectionProps> = (
                       className="text-[11px] text-indigo-400 hover:text-indigo-300 flex items-center gap-1 font-medium"
                     >
                       {copiedCodes ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
-                      {copiedCodes ? 'Đã sao chép' : 'Sao chép'}
+                      {copiedCodes ? t('twoFactor.setupModal.copied') : t('twoFactor.setupModal.copy')}
                     </button>
                     <button
                       type="button"
@@ -362,7 +368,7 @@ export const TwoFactorProfileSection: React.FC<TwoFactorProfileSectionProps> = (
                       className="text-[11px] text-slate-400 hover:text-slate-200 flex items-center gap-1"
                     >
                       <Download size={12} />
-                      Tải file .txt
+                      {t('twoFactor.setupModal.downloadTxt')}
                     </button>
                   </div>
                 </div>
@@ -375,7 +381,7 @@ export const TwoFactorProfileSection: React.FC<TwoFactorProfileSectionProps> = (
                 </div>
                 <p className="text-[11px] text-amber-400/90 flex items-center gap-1">
                   <AlertCircle size={12} />
-                  Nếu bị mất điện thoại, bạn có thể dùng các mã này để đăng nhập. Mỗi mã chỉ dùng được 1 lần.
+                  {t('twoFactor.setupModal.backupWarning')}
                 </p>
               </div>
 
@@ -383,7 +389,7 @@ export const TwoFactorProfileSection: React.FC<TwoFactorProfileSectionProps> = (
               <form onSubmit={handleConfirmEnable} className="space-y-4">
                 <div className="text-xs font-bold text-slate-200 flex items-center gap-2">
                   <span className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px]">3</span>
-                  Nhập mã 6 chữ số hiển thị trên điện thoại để kích hoạt
+                  {t('twoFactor.setupModal.step3Title')}
                 </div>
                 <div className="flex items-center gap-3">
                   <input
@@ -402,7 +408,7 @@ export const TwoFactorProfileSection: React.FC<TwoFactorProfileSectionProps> = (
                     className="flex-1 py-3 px-5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/25 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
                   >
                     {verifyLoading ? <RefreshCw size={16} className="animate-spin" /> : <ShieldCheck size={16} />}
-                    {verifyLoading ? 'Đang xác minh...' : 'Xác Nhận & Kích Hoạt'}
+                    {verifyLoading ? t('twoFactor.setupModal.verifying') : t('twoFactor.setupModal.confirmActivate')}
                   </button>
                 </div>
               </form>
@@ -428,9 +434,9 @@ export const TwoFactorProfileSection: React.FC<TwoFactorProfileSectionProps> = (
                 <div className="w-12 h-12 rounded-2xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-400 mx-auto">
                   <Lock size={24} />
                 </div>
-                <h3 className="text-lg font-bold text-white">Hủy kích hoạt xác thực 2 bước</h3>
+                <h3 className="text-lg font-bold text-white">{t('twoFactor.disableModal.title')}</h3>
                 <p className="text-xs text-slate-400">
-                  Hành động này sẽ làm giảm mức độ bảo vệ của tài khoản. Vui lòng xác thực mật khẩu hoặc mã TOTP để tiếp tục.
+                  {t('twoFactor.disableModal.subtitle')}
                 </p>
               </div>
 
@@ -443,7 +449,7 @@ export const TwoFactorProfileSection: React.FC<TwoFactorProfileSectionProps> = (
 
               <div>
                 <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                  Mật khẩu hiện tại
+                  {t('twoFactor.disableModal.currentPasswordLabel')}
                 </label>
                 <div className="relative">
                   <input
@@ -465,13 +471,13 @@ export const TwoFactorProfileSection: React.FC<TwoFactorProfileSectionProps> = (
 
               <div className="relative flex py-1 items-center">
                 <div className="flex-grow border-t border-slate-800"></div>
-                <span className="flex-shrink mx-3 text-slate-500 text-[11px] uppercase tracking-wider">Hoặc</span>
+                <span className="flex-shrink mx-3 text-slate-500 text-[11px] uppercase tracking-wider">{t('twoFactor.disableModal.or')}</span>
                 <div className="flex-grow border-t border-slate-800"></div>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                  Mã 6 số từ Google Authenticator
+                  {t('twoFactor.disableModal.totpLabel')}
                 </label>
                 <input
                   type="text"
@@ -490,7 +496,7 @@ export const TwoFactorProfileSection: React.FC<TwoFactorProfileSectionProps> = (
                   onClick={() => setShowDisableModal(false)}
                   className="flex-1 py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-colors"
                 >
-                  Hủy bỏ
+                  {t('twoFactor.disableModal.cancel')}
                 </button>
                 <button
                   type="submit"
@@ -498,7 +504,7 @@ export const TwoFactorProfileSection: React.FC<TwoFactorProfileSectionProps> = (
                   className="flex-1 py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-lg shadow-rose-600/25 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
                 >
                   {disableLoading ? <RefreshCw size={14} className="animate-spin" /> : <Lock size={14} />}
-                  {disableLoading ? 'Đang xử lý...' : 'Xác nhận tắt 2FA'}
+                  {disableLoading ? t('twoFactor.disableModal.processing') : t('twoFactor.disableModal.confirmDisable')}
                 </button>
               </div>
             </form>
@@ -523,9 +529,9 @@ export const TwoFactorProfileSection: React.FC<TwoFactorProfileSectionProps> = (
                 <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 mx-auto">
                   <KeyRound size={24} />
                 </div>
-                <h3 className="text-lg font-bold text-white">Quản lý mã khôi phục khẩn cấp</h3>
+                <h3 className="text-lg font-bold text-white">{t('twoFactor.regenModal.title')}</h3>
                 <p className="text-xs text-slate-400">
-                  Tạo mới 8 mã dự phòng khẩn cấp sẽ vô hiệu hóa toàn bộ các mã dự phòng đã tạo trước đây.
+                  {t('twoFactor.regenModal.subtitle')}
                 </p>
               </div>
 
@@ -540,7 +546,7 @@ export const TwoFactorProfileSection: React.FC<TwoFactorProfileSectionProps> = (
                 <div className="space-y-4">
                   <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-bold text-slate-300">8 Mã dự phòng mới:</span>
+                      <span className="font-bold text-slate-300">{t('twoFactor.regenModal.newCodesLabel')}</span>
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
@@ -548,7 +554,7 @@ export const TwoFactorProfileSection: React.FC<TwoFactorProfileSectionProps> = (
                           className="text-indigo-400 hover:text-indigo-300 font-medium text-[11px] flex items-center gap-1"
                         >
                           {copiedCodes ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
-                          {copiedCodes ? 'Đã chép' : 'Sao chép'}
+                          {copiedCodes ? t('twoFactor.regenModal.copied') : t('twoFactor.regenModal.copy')}
                         </button>
                         <button
                           type="button"
@@ -556,7 +562,7 @@ export const TwoFactorProfileSection: React.FC<TwoFactorProfileSectionProps> = (
                           className="text-slate-400 hover:text-slate-200 text-[11px] flex items-center gap-1"
                         >
                           <Download size={12} />
-                          Lưu file
+                          {t('twoFactor.regenModal.saveFile')}
                         </button>
                       </div>
                     </div>
@@ -574,14 +580,14 @@ export const TwoFactorProfileSection: React.FC<TwoFactorProfileSectionProps> = (
                     onClick={() => setShowRegenModal(false)}
                     className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold"
                   >
-                    Đã lưu xong
+                    {t('twoFactor.regenModal.savedDone')}
                   </button>
                 </div>
               ) : (
                 <form onSubmit={handleRegenerateCodes} className="space-y-4">
                   <div>
                     <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                      Nhập mã 6 số từ Google Authenticator
+                      {t('twoFactor.regenModal.totpLabel')}
                     </label>
                     <input
                       type="text"
@@ -601,7 +607,7 @@ export const TwoFactorProfileSection: React.FC<TwoFactorProfileSectionProps> = (
                       onClick={() => setShowRegenModal(false)}
                       className="flex-1 py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-colors"
                     >
-                      Hủy bỏ
+                      {t('twoFactor.regenModal.cancel')}
                     </button>
                     <button
                       type="submit"
@@ -609,7 +615,7 @@ export const TwoFactorProfileSection: React.FC<TwoFactorProfileSectionProps> = (
                       className="flex-1 py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/25 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
                     >
                       {regenLoading ? <RefreshCw size={14} className="animate-spin" /> : <KeyRound size={14} />}
-                      {regenLoading ? 'Đang tạo...' : 'Tạo 8 mã mới'}
+                      {regenLoading ? t('twoFactor.regenModal.generating') : t('twoFactor.regenModal.generateButton')}
                     </button>
                   </div>
                 </form>

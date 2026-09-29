@@ -5,6 +5,8 @@ import {
   Settings, Save, Sliders, DollarSign, Layers, ArrowRight, Server
 } from 'lucide-react';
 import api from '@/shared/api/client';
+import { createLogger } from '@/shared/logger';
+const logger = createLogger('AiSettingsPage');
 
 interface ProviderConfig {
   providerType: number;
@@ -55,7 +57,7 @@ export const AiSettingsPage: React.FC = () => {
       const res = await api.get('/api/admin/ai/config');
       setConfig(res.data);
     } catch (err) {
-      console.error('Lỗi nạp cấu hình AI:', err);
+      logger.error('Lỗi nạp cấu hình AI:', err);
     } finally {
       setLoading(false);
     }
@@ -70,7 +72,7 @@ export const AiSettingsPage: React.FC = () => {
       setTimeout(() => setSaveSuccess(false), 3000);
       await fetchConfig();
     } catch (err) {
-      console.error('Lỗi lưu cấu hình:', err);
+      logger.error('Lỗi lưu cấu hình:', err);
       alert('Không thể lưu cấu hình AI. Vui lòng kiểm tra quyền quản trị.');
     } finally {
       setSaving(false);
@@ -84,7 +86,7 @@ export const AiSettingsPage: React.FC = () => {
       const res = await api.post('/api/admin/ai/test');
       setTestResults(res.data);
     } catch (err) {
-      console.error('Lỗi kiểm thử latency:', err);
+      logger.error('Lỗi kiểm thử latency:', err);
       alert('Kiểm thử kết nối thất bại.');
     } finally {
       setTesting(false);
@@ -358,3 +360,4 @@ export const AiSettingsPage: React.FC = () => {
   );
 };
 export default AiSettingsPage;
+

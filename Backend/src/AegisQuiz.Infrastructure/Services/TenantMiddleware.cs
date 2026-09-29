@@ -32,7 +32,12 @@ namespace AegisQuiz.Infrastructure.Services
         public void SetRole(string role)
         {
             _currentRole   = role;
-            _isSystemAdmin = role is AppRoles.SystemAdmin or AppRoles.TenantAdmin;
+            // [P0 CRITICAL FIX] TRƯỚC ĐÂY gộp chung TenantAdmin vào IsSystemAdmin, khiến
+            // Global Query Filter (AegisQuizDbContext) tắt hoàn toàn cách ly Tenant cho MỌI
+            // TenantAdmin — một TenantAdmin của Tenant A đọc/sửa/xóa được Topic/Question/
+            // OrgUnit/... của MỌI tenant khác. IsSystemAdmin (interface ghi rõ "Cho phép
+            // cross-tenant query") CHỈ được true với SystemAdmin thật sự.
+            _isSystemAdmin = role == AppRoles.SystemAdmin;
         }
     }
 
@@ -74,7 +79,10 @@ namespace AegisQuiz.Infrastructure.Services
             if (tenantContext is TenantContext ctx)
                 ctx.SetRole(resolvedRole);
 
-            var isAdmin = resolvedRole is AppRoles.SystemAdmin or AppRoles.TenantAdmin;
+            // [P0 CRITICAL FIX] Chỉ SystemAdmin (quản trị nền tảng xuyên-tenant hợp pháp)
+            // mới được đánh dấu isSystemAdmin=true → bypass Global Query Filter của EF Core.
+            // TenantAdmin PHẢI bị cách ly trong đúng Tenant của mình như mọi role khác.
+            var isSystemAdmin = resolvedRole == AppRoles.SystemAdmin;
 
             _logger.LogDebug("[RBAC] Resolved role: {RoleClaim} → {ResolvedRole}", roleClaim, resolvedRole);
 
@@ -84,15 +92,21 @@ namespace AegisQuiz.Infrastructure.Services
 
             if (tenantIdClaim != null && Guid.TryParse(tenantIdClaim.Value, out var tenantId))
             {
-                tenantContext.SetTenant(tenantId, tenantCodeClaim?.Value ?? "", isAdmin);
+                tenantContext.SetTenant(tenantId, tenantCodeClaim?.Value ?? "", isSystemAdmin);
                 _logger.LogDebug("[Tenant] Resolved from JWT: {TenantId}", tenantId);
             }
             // 2a. Fallback: X-Tenant-ID header (internal service-to-service)
-            else if (context.Request.Headers.TryGetValue("X-Tenant-ID", out var headerVal)
+            // [HIGH SECURITY FIX] TRƯỚC ĐÂY header này được tin cậy cho MỌI role khi JWT
+            // không mang "tenant_id" claim, cho phép một user hợp lệ ở Tenant A tự đặt
+            // header trỏ sang Tenant B và (do vai trò không được tra lại theo từng-tenant)
+            // thao túng dữ liệu của Tenant B. Nay CHỈ SystemAdmin (vai trò xuyên-tenant
+            // hợp pháp duy nhất) mới được phép override tenant qua header này.
+            else if (isSystemAdmin
+                     && context.Request.Headers.TryGetValue("X-Tenant-ID", out var headerVal)
                      && Guid.TryParse(headerVal, out var headerTenantId))
             {
-                tenantContext.SetTenant(headerTenantId, "", isAdmin);
-                _logger.LogDebug("[Tenant] Resolved from header: {TenantId}", headerTenantId);
+                tenantContext.SetTenant(headerTenantId, "", isSystemAdmin);
+                _logger.LogDebug("[Tenant] Resolved from header (SystemAdmin override): {TenantId}", headerTenantId);
             }
             // 2b. Fallback: Subdomain extraction
             else

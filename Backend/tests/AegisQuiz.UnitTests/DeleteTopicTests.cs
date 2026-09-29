@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using AegisQuiz.API.Controllers;
+using AegisQuiz.API.Security;
 using AegisQuiz.Application.Interfaces;
 using AegisQuiz.Domain.Entities;
 using AegisQuiz.Infrastructure.Data;
@@ -14,6 +16,12 @@ using Xunit;
 
 namespace AegisQuiz.UnitTests
 {
+    /// <summary>Test double: luôn cho phép — các test dưới đây kiểm tra logic xóa/cascade/tenant, không phải ownership.</summary>
+    internal class AllowAllOwnershipGuard : IContentOwnershipGuard
+    {
+        public Task<bool> CanManageAsync(ClaimsPrincipal user, string? creatorId, Guid? orgUnitId) => Task.FromResult(true);
+    }
+
     public class DeleteTopicTests : IDisposable
     {
         private readonly SqliteConnection _connection;
@@ -69,7 +77,7 @@ namespace AegisQuiz.UnitTests
             db.Questions.Add(q);
             await db.SaveChangesAsync();
 
-            var controller = new TopicsController(db);
+            var controller = new TopicsController(db, new AllowAllOwnershipGuard(), new TenantContext());
             var result = await controller.DeleteTopic(topic.Id, true);
 
             var okResult = Assert.IsType<OkObjectResult>(result);
@@ -101,7 +109,7 @@ namespace AegisQuiz.UnitTests
             db.Questions.Add(q);
             await db.SaveChangesAsync();
 
-            var controller = new TopicsController(db);
+            var controller = new TopicsController(db, new AllowAllOwnershipGuard(), new TenantContext());
             var result = await controller.DeleteTopic(topic.Id, false);
 
             var okResult = Assert.IsType<OkObjectResult>(result);
@@ -146,7 +154,7 @@ namespace AegisQuiz.UnitTests
             // User from Tenant A deletes SHARED_ROOT
             using (var dbTenantA = CreateSqliteDbContext(tenantContext))
             {
-                var controller = new TopicsController(dbTenantA);
+                var controller = new TopicsController(dbTenantA, new AllowAllOwnershipGuard(), tenantContext);
                 var sharedRoot = await dbTenantA.BankTopics.FirstOrDefaultAsync(t => t.Code == "SHARED_ROOT");
                 Assert.NotNull(sharedRoot);
 

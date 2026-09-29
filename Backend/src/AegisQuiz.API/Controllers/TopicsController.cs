@@ -2,9 +2,12 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using AegisQuiz.API.Security;
 using AegisQuiz.Application.DTOs;
+using AegisQuiz.Application.Interfaces;
 using AegisQuiz.Domain.Entities;
 using AegisQuiz.Infrastructure.Data;
 
@@ -13,14 +16,26 @@ namespace AegisQuiz.API.Controllers
     /// <summary>
     /// [World-Class Refactor] TopicsController — Quản lý Chủ đề câu hỏi.
     /// Route base: api/quiz/topics
+    /// [CRITICAL SECURITY FIX] Trước đây controller này KHÔNG có [Authorize] nào — chỉ
+    /// được bảo vệ "tình cờ" bởi FallbackPolicy toàn cục (yêu cầu đăng nhập), nhưng Learner/
+    /// GuestViewer vẫn tạo/sửa/xóa được Topic. Nay yêu cầu Role-Weight ≥ TeamLeader, khớp
+    /// với QuestionsController.
     /// </summary>
     [ApiController]
     [Route("api/quiz/topics")]
+    [Authorize(Policy = RoleWeightPolicies.TeamLeader)]
     public class TopicsController : ControllerBase
     {
-        private readonly AegisQuizDbContext _db;
+        private readonly AegisQuizDbContext     _db;
+        private readonly IContentOwnershipGuard _ownershipGuard;
+        private readonly ITenantContext         _tenant;
 
-        public TopicsController(AegisQuizDbContext db) => _db = db;
+        public TopicsController(AegisQuizDbContext db, IContentOwnershipGuard ownershipGuard, ITenantContext tenant)
+        {
+            _db             = db;
+            _ownershipGuard = ownershipGuard;
+            _tenant         = tenant;
+        }
 
         // ── GET api/quiz/topics ────────────────────────────────────────────────
         [HttpGet]
@@ -296,6 +311,15 @@ namespace AegisQuiz.API.Controllers
                 var allTopics  = await _db.BankTopics.AsNoTracking().ToListAsync();
                 var result     = new List<object>();
 
+                // [P2 Perf Fix] Trước đây BFS lại toàn bộ allTopics cho TỪNG topic
+                // (allTopics.Where(t => t.ParentId == parentId) lồng trong loop) → O(n²)
+                // trong bộ nhớ. Nay dựng sẵn 1 lần Dictionary<ParentId, List<Children>>,
+                // tra cứu O(1) mỗi bước BFS → tổng chi phí còn O(n).
+                var childrenByParentId = allTopics
+                    .Where(t => t.ParentId.HasValue)
+                    .GroupBy(t => t.ParentId!.Value)
+                    .ToDictionary(g => g.Key, g => g.ToList());
+
                 foreach (var topic in allTopics)
                 {
                     // BFS để lấy tất cả mã con (chống cycle lặp vô hạn)
@@ -307,7 +331,10 @@ namespace AegisQuiz.API.Controllers
                     while (queue.Count > 0)
                     {
                         var parentId = queue.Dequeue();
-                        foreach (var child in allTopics.Where(t => t.ParentId == parentId))
+                        if (!childrenByParentId.TryGetValue(parentId, out var children))
+                            continue;
+
+                        foreach (var child in children)
                         {
                             if (visited.Add(child.Id))
                             {
@@ -377,6 +404,9 @@ namespace AegisQuiz.API.Controllers
                 if (topic == null)
                     return NotFound(new { message = "Không tìm thấy chủ đề" });
 
+                if (!await _ownershipGuard.CanManageAsync(User, topic.CreatedByUserId?.ToString(), null))
+                    return Forbid();
+
                 topic.Code            = dto.Code.Trim().ToUpper();
                 topic.Name            = dto.Name;
                 topic.Description     = dto.Description;
@@ -419,7 +449,24 @@ namespace AegisQuiz.API.Controllers
                 if (topic == null)
                     return NotFound(new { message = "Không tìm thấy chủ đề" });
 
-                var allTopics = await _db.BankTopics.IgnoreQueryFilters().ToListAsync();
+                // [CRITICAL FIX] IgnoreQueryFilters() ở trên tắt cách ly Tenant hoàn toàn —
+                // nếu không kiểm tra lại thủ công, một ContentManager/TeamLeader ở Tenant A
+                // có thể xóa (kèm cascade toàn bộ câu hỏi trong nhánh) Topic của Tenant B chỉ
+                // bằng cách biết GUID. Khôi phục lại đúng quy tắc cách ly: chỉ Topic dùng
+                // chung (TenantId=Guid.Empty) hoặc thuộc đúng Tenant hiện tại mới được xóa.
+                if (!_tenant.IsSystemAdmin && topic.TenantId != Guid.Empty && topic.TenantId != _tenant.CurrentTenantId)
+                    return NotFound(new { message = "Không tìm thấy chủ đề" });
+
+                if (!await _ownershipGuard.CanManageAsync(User, topic.CreatedByUserId?.ToString(), null))
+                    return Forbid();
+
+                // [CRITICAL FIX] Cùng lý do trên — giới hạn allTopics (dùng để duyệt cây và
+                // tìm câu hỏi mồ côi) về đúng phạm vi Tenant + dữ liệu dùng chung, tránh việc
+                // xóa nhầm Topic/Question của tenant khác có trùng Code/CategoryCode.
+                var allTopics = await _db.BankTopics
+                    .IgnoreQueryFilters()
+                    .Where(t => _tenant.IsSystemAdmin || t.TenantId == Guid.Empty || t.TenantId == _tenant.CurrentTenantId)
+                    .ToListAsync();
 
                 if (deleteQuestions)
                 {
@@ -437,7 +484,8 @@ namespace AegisQuiz.API.Controllers
                     // 1. Xóa toàn bộ câu hỏi liên quan thuộc tất cả các chủ đề trong nhánh
                     var questionsToDelete = await _db.Questions
                         .IgnoreQueryFilters()
-                        .Where(q => allBranchCodes.Contains(q.CategoryCode))
+                        .Where(q => allBranchCodes.Contains(q.CategoryCode)
+                                 && (_tenant.IsSystemAdmin || q.TenantId == Guid.Empty || q.TenantId == _tenant.CurrentTenantId))
                         .ToListAsync();
                     if (questionsToDelete.Count > 0)
                     {
@@ -504,7 +552,8 @@ namespace AegisQuiz.API.Controllers
                     // Tìm các câu hỏi thuộc chủ đề bị xóa
                     var orphanQuestions = await _db.Questions
                         .IgnoreQueryFilters()
-                        .Where(q => q.CategoryCode == topic.Code || (!string.IsNullOrEmpty(topic.CategoryCode) && q.CategoryCode == topic.CategoryCode && !_db.BankTopics.Any(other => other.Id != topic.Id && other.Code == topic.CategoryCode)))
+                        .Where(q => (q.CategoryCode == topic.Code || (!string.IsNullOrEmpty(topic.CategoryCode) && q.CategoryCode == topic.CategoryCode && !_db.BankTopics.Any(other => other.Id != topic.Id && other.Code == topic.CategoryCode)))
+                                 && (_tenant.IsSystemAdmin || q.TenantId == Guid.Empty || q.TenantId == _tenant.CurrentTenantId))
                         .ToListAsync();
                     foreach (var q in orphanQuestions)
                     {

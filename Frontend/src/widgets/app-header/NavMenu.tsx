@@ -6,8 +6,8 @@
  */
 
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { BookOpen, Trophy, Shield, Gamepad2, Target, Zap, Users } from 'lucide-react';
-import { useLearnerI18n } from '@/lib/i18n';
 
 interface NavItem {
   name:  string;
@@ -20,18 +20,20 @@ interface NavMenuProps {
 }
 
 export function useNavItems(): NavItem[] {
+  const { t } = useTranslation();
   return [
-    { name: 'Tổng quan',    path: '/',                      icon: <BookOpen  className="w-4 h-4" aria-hidden="true" /> },
-    { name: 'Đội nhóm',     path: '/team',                  icon: <Users     className="w-4 h-4 text-emerald-500" aria-hidden="true" /> },
-    { name: 'Đấu trường',   path: '/arena',                 icon: <Zap       className="w-4 h-4 text-amber-500" aria-hidden="true" /> },
-    { name: 'Luyện thi',    path: '/practice',              icon: <Gamepad2  className="w-4 h-4 text-cyan-500" aria-hidden="true" /> },
-    { name: 'Thi thử',      path: '/quiz/attempt/mock-123', icon: <Target    className="w-4 h-4 text-rose-500" aria-hidden="true" /> },
-    { name: 'Bảng vàng',    path: '/leaderboard',           icon: <Trophy    className="w-4 h-4 text-amber-400" aria-hidden="true" /> },
-    { name: 'Thành tích',   path: '/achievements',          icon: <Shield    className="w-4 h-4 text-purple-500" aria-hidden="true" /> },
+    { name: t('nav.dashboard'),    path: '/dashboard',             icon: <BookOpen  className="w-4 h-4" aria-hidden="true" /> },
+    { name: t('nav.team'),        path: '/team',                   icon: <Users     className="w-4 h-4 text-emerald-500" aria-hidden="true" /> },
+    { name: t('nav.arena'),       path: '/arena',                  icon: <Zap       className="w-4 h-4 text-amber-500" aria-hidden="true" /> },
+    { name: t('nav.practice'),    path: '/practice',                icon: <Gamepad2  className="w-4 h-4 text-cyan-500" aria-hidden="true" /> },
+    { name: t('nav.mockExam'),    path: '/quiz/attempt/mock-123',   icon: <Target    className="w-4 h-4 text-rose-500" aria-hidden="true" /> },
+    { name: t('nav.leaderboard'), path: '/leaderboard',             icon: <Trophy    className="w-4 h-4 text-amber-400" aria-hidden="true" /> },
+    { name: t('nav.achievements'),path: '/achievements',            icon: <Shield    className="w-4 h-4 text-purple-500" aria-hidden="true" /> },
   ];
 }
 
 export function NavMenu({ className }: NavMenuProps) {
+  const { t }     = useTranslation();
   const navigate  = useNavigate();
   const location  = useLocation();
   const navItems  = useNavItems();
@@ -39,7 +41,7 @@ export function NavMenu({ className }: NavMenuProps) {
   return (
     <nav
       className={className}
-      aria-label="Menu chính"
+      aria-label={t('nav.mainMenu')}
     >
       <div className="flex items-center gap-1 p-1 bg-slate-900/60 backdrop-blur-xl rounded-2xl border border-slate-800/80 shadow-inner flex-shrink-0">
         {navItems.map((item) => {

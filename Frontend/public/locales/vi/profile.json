@@ -1,0 +1,178 @@
+{
+  "messages": {
+    "infoUpdateSuccess": "Hồ sơ cá nhân đã được cập nhật thành công!",
+    "infoUpdateError": "Có lỗi xảy ra khi cập nhật hồ sơ.",
+    "passwordTooShort": "Mật khẩu mới phải có tối thiểu 6 ký tự.",
+    "passwordMismatch": "Xác nhận mật khẩu mới không khớp.",
+    "passwordChangeSuccess": "Đổi mật khẩu thành công! Mật khẩu mới có hiệu lực ngay lập tức.",
+    "passwordChangeError": "Không thể đổi mật khẩu. Vui lòng kiểm tra lại mật khẩu cũ."
+  },
+  "passwordStrength": {
+    "empty": "Chưa nhập",
+    "weak": "Yếu",
+    "medium": "Trung bình",
+    "good": "Tốt",
+    "strong": "Rất mạnh (Chuẩn NIST)"
+  },
+  "roles": {
+    "systemAdmin": "Hệ Thống / Super Admin",
+    "tenantAdmin": "Quản Trị Viên Tổ Chức",
+    "teamLeader": "Trưởng Nhóm Khảo Thí",
+    "instructor": "Giảng Viên / Huấn Luyện",
+    "learner": "Học Viên / Thí Sinh"
+  },
+  "breadcrumb": {
+    "backTitle": "Quay lại giao diện trước",
+    "back": "Quay lại",
+    "home": "Trang chủ",
+    "current": "Hồ sơ cá nhân & Bảo mật",
+    "adminPortal": "Trang Quản Trị",
+    "closeTitle": "Đóng / Trở về giao diện trước"
+  },
+  "hero": {
+    "defaultAccountName": "Tài khoản AegisQuiz",
+    "defaultTenant": "Hệ sinh thái Giáo dục Dehoc",
+    "defaultOrgUnit": "Chưa gán đơn vị phòng ban"
+  },
+  "tabs": {
+    "info": "Hồ sơ cá nhân",
+    "subscription": "Gói dịch vụ & Đặc quyền",
+    "security": "Bảo mật & Đổi mật khẩu"
+  },
+  "infoTab": {
+    "title": "Thông tin tài khoản & Nhân sự",
+    "subtitle": "Cập nhật thông tin định danh cá nhân và liên hệ của bạn trong hệ sinh thái.",
+    "fullName": "Họ và Tên Đầy Đủ",
+    "fullNamePlaceholder": "Nguyễn Văn A",
+    "phoneNumber": "Số Điện Thoại Liên Hệ",
+    "phonePlaceholder": "0987654321",
+    "emailReadOnly": "Email Định Danh (Chỉ Đọc)",
+    "emailHelper": "Email được quản lý tập trung bởi hệ thống bảo mật.",
+    "avatarUrl": "Ảnh Đại Diện (URL hoặc Chọn mẫu)",
+    "avatarPresetsLabel": "Hoặc chọn nhanh Avatar phong cách Aegis:",
+    "avatarChooseTitle": "Chọn avatar {{name}}",
+    "hierarchyTitle": "Vị trí trong Cây Phân Cấp Tổ Chức (Hierarchical OU)",
+    "tenantLabel": "Tổ chức / Khách thuê:",
+    "orgUnitLabel": "Đơn vị / Phòng ban công tác:",
+    "defaultTenant": "Dehoc.vn Ecosystem",
+    "defaultOrgUnit": "Toàn tổ chức",
+    "saving": "Đang lưu...",
+    "save": "Lưu Thay Đổi"
+  },
+  "subscriptionTab": {
+    "title": "Gói Thuê Bao & Đặc Quyền Năng Lực",
+    "subtitle": "Thông tin gói đăng ký hiện tại và các đặc quyền khảo thí được mở khóa.",
+    "currentPlan": "Gói hiện tại",
+    "vipDescription": "Được mở khóa toàn bộ kho đề thi thích ứng AI, đo lường năng lực chuyên sâu và phòng thi bảo mật.",
+    "freeDescription": "Tài khoản tiêu chuẩn với quyền luyện thi và làm bài tập cơ bản.",
+    "upgradeCta": "Nâng Cấp Gói VIP",
+    "capabilitiesTitle": "Đặc Quyền Mở Khóa Của Tài Khoản",
+    "capabilities": {
+      "unlimitedQuiz": "Thi trắc nghiệm không giới hạn",
+      "adaptiveIrt": "Khảo thí tương thích thích ứng AI (Adaptive IRT)",
+      "secureExamRoom": "Phòng thi bảo mật chống gian lận (Secure Exam Room)",
+      "arenaGameshow": "Đấu trường trực tiếp Arena Gameshow",
+      "examHistory": "Lưu lịch sử bài thi & Giải chi tiết",
+      "prioritySupport": "Hỗ trợ kỹ thuật ưu tiên 24/7"
+    }
+  },
+  "securityTab": {
+    "changePasswordTitle": "Đổi Mật Khẩu Đăng Nhập",
+    "changePasswordSubtitle": "Đổi mật khẩu định kỳ để bảo vệ tài khoản theo tiêu chuẩn an toàn thông tin NIST SP 800-63B.",
+    "currentPassword": "Mật Khẩu Hiện Tại",
+    "newPassword": "Mật Khẩu Mới",
+    "strengthLabel": "Độ mạnh mật khẩu:",
+    "confirmPassword": "Xác Nhận Mật Khẩu Mới",
+    "changing": "Đang đổi mật khẩu...",
+    "changeCta": "Cập Nhật Mật Khẩu",
+    "sessionTitle": "Phiên Đăng Nhập & Thiết Bị Hiện Tại",
+    "sessionActive": "Phiên hiện tại (Active)",
+    "browserPlatform": "Trình duyệt & Nền tảng:",
+    "lastLogin": "Đăng nhập gần nhất:",
+    "lastLoginNow": "Hiện tại",
+    "securityStandard": "Tiêu chuẩn bảo mật:",
+    "webBrowser": "Web Browser",
+    "desktop": "Desktop",
+    "badges": {
+      "pbkdf2Title": "Mã Hóa PBKDF2/SHA-256",
+      "pbkdf2Desc": "Chuẩn bảo mật mật khẩu NIST",
+      "pkiTitle": "Xác Thực PKI / USB Token",
+      "pkiDesc": "Hỗ trợ phần cứng chữ ký số",
+      "ssoTitle": "SSO Keycloak Liên Đoàn",
+      "ssoDesc": "Hệ thống đăng nhập tập trung"
+    }
+  },
+  "twoFactor": {
+    "title": "Xác Thực 2 Bước (Google Authenticator)",
+    "description": "Bảo vệ tài khoản theo chuẩn quốc tế RFC 6238 TOTP & NIST SP 800-63B AAL2. Ngăn chặn 99.9% nguy cơ bị đánh cắp mật khẩu.",
+    "statusActive": "ĐANG BẢO VỆ (ACTIVE)",
+    "statusInactive": "CHƯA KÍCH HOẠT",
+    "mainCard": {
+      "titleEnabled": "Tài khoản của bạn được bảo vệ bằng ứng dụng xác thực",
+      "titleDisabled": "Kích hoạt xác thực 2 bước ngay hôm nay",
+      "descEnabled": "Mỗi khi đăng nhập bằng Mật khẩu, hệ thống sẽ yêu cầu thêm mã xác nhận 6 chữ số từ ứng dụng Google Authenticator hoặc Microsoft Authenticator trên điện thoại của bạn.",
+      "descDisabled": "Tăng cường phòng vệ chủ động: Bạn sẽ cần quét mã QR bằng ứng dụng Google Authenticator để liên kết thiết bị trước khi có thể đăng nhập.",
+      "backupCodesButton": "Mã dự phòng",
+      "disableButton": "Tắt 2FA",
+      "preparing": "Đang chuẩn bị...",
+      "enableButton": "Bật Google Authenticator"
+    },
+    "setupModal": {
+      "title": "Kích hoạt Google Authenticator",
+      "subtitle": "Làm theo 3 bước bên dưới để hoàn tất bảo vệ 2 lớp cho tài khoản của bạn.",
+      "step1Title": "Quét mã QR bằng ứng dụng Authenticator",
+      "step1Instructions": "Mở ứng dụng <b>Google Authenticator</b> hoặc <b>Microsoft Authenticator</b> trên điện thoại, chọn <i>\"Quét mã QR\"</i>.",
+      "manualKeyLabel": "Hoặc nhập mã khóa bí mật thủ công:",
+      "copyKeyTitle": "Sao chép khóa",
+      "step2Title": "Lưu 8 mã khôi phục dự phòng khẩn cấp",
+      "copied": "Đã sao chép",
+      "copy": "Sao chép",
+      "downloadTxt": "Tải file .txt",
+      "backupWarning": "Nếu bị mất điện thoại, bạn có thể dùng các mã này để đăng nhập. Mỗi mã chỉ dùng được 1 lần.",
+      "backupFileNote": "Mỗi mã dưới đây chỉ dùng được 1 lần:",
+      "backupFileWarning": "Lưu ý: Bảo mật tập tin này cẩn thận, không chia sẻ cho bất kỳ ai.",
+      "step3Title": "Nhập mã 6 chữ số hiển thị trên điện thoại để kích hoạt",
+      "verifying": "Đang xác minh...",
+      "confirmActivate": "Xác Nhận & Kích Hoạt",
+      "errors": {
+        "invalidCode": "Vui lòng nhập đủ 6 chữ số từ ứng dụng Google Authenticator.",
+        "wrongOrExpired": "Mã xác thực không đúng hoặc đã hết hạn.",
+        "setupFailed": "Không thể khởi tạo mã thiết lập 2FA."
+      },
+      "successEnabled": "Đã kích hoạt bảo mật 2 bước Google Authenticator thành công!"
+    },
+    "disableModal": {
+      "title": "Hủy kích hoạt xác thực 2 bước",
+      "subtitle": "Hành động này sẽ làm giảm mức độ bảo vệ của tài khoản. Vui lòng xác thực mật khẩu hoặc mã TOTP để tiếp tục.",
+      "currentPasswordLabel": "Mật khẩu hiện tại",
+      "or": "Hoặc",
+      "totpLabel": "Mã 6 số từ Google Authenticator",
+      "cancel": "Hủy bỏ",
+      "processing": "Đang xử lý...",
+      "confirmDisable": "Xác nhận tắt 2FA",
+      "errors": {
+        "requireOne": "Vui lòng nhập mật khẩu tài khoản hoặc mã TOTP để xác thực.",
+        "wrongCredentials": "Thông tin xác thực không chính xác."
+      },
+      "success": "Đã hủy kích hoạt xác thực 2 bước 2FA thành công."
+    },
+    "regenModal": {
+      "title": "Quản lý mã khôi phục khẩn cấp",
+      "subtitle": "Tạo mới 8 mã dự phòng khẩn cấp sẽ vô hiệu hóa toàn bộ các mã dự phòng đã tạo trước đây.",
+      "newCodesLabel": "8 Mã dự phòng mới:",
+      "copied": "Đã chép",
+      "copy": "Sao chép",
+      "saveFile": "Lưu file",
+      "savedDone": "Đã lưu xong",
+      "totpLabel": "Nhập mã 6 số từ Google Authenticator",
+      "cancel": "Hủy bỏ",
+      "generating": "Đang tạo...",
+      "generateButton": "Tạo 8 mã mới",
+      "errors": {
+        "invalidCode": "Vui lòng nhập mã 6 số từ Google Authenticator để xác nhận.",
+        "invalidVerification": "Mã xác thực không hợp lệ."
+      },
+      "success": "Đã tạo mới thành công 8 mã khôi phục dự phòng!"
+    }
+  }
+}

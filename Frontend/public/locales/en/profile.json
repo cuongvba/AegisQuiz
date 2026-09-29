@@ -1,0 +1,178 @@
+{
+  "messages": {
+    "infoUpdateSuccess": "Your profile has been updated successfully!",
+    "infoUpdateError": "An error occurred while updating your profile.",
+    "passwordTooShort": "The new password must be at least 6 characters long.",
+    "passwordMismatch": "Password confirmation does not match.",
+    "passwordChangeSuccess": "Password changed successfully! Your new password is now active.",
+    "passwordChangeError": "Could not change password. Please check your current password."
+  },
+  "passwordStrength": {
+    "empty": "Not entered",
+    "weak": "Weak",
+    "medium": "Medium",
+    "good": "Good",
+    "strong": "Very strong (NIST standard)"
+  },
+  "roles": {
+    "systemAdmin": "System / Super Admin",
+    "tenantAdmin": "Organization Administrator",
+    "teamLeader": "Assessment Team Leader",
+    "instructor": "Instructor / Trainer",
+    "learner": "Learner / Examinee"
+  },
+  "breadcrumb": {
+    "backTitle": "Go back to previous screen",
+    "back": "Back",
+    "home": "Home",
+    "current": "Profile & Security",
+    "adminPortal": "Admin Portal",
+    "closeTitle": "Close / Go back to previous screen"
+  },
+  "hero": {
+    "defaultAccountName": "AegisQuiz Account",
+    "defaultTenant": "Dehoc Education Ecosystem",
+    "defaultOrgUnit": "No department assigned"
+  },
+  "tabs": {
+    "info": "Personal Profile",
+    "subscription": "Plan & Privileges",
+    "security": "Security & Password"
+  },
+  "infoTab": {
+    "title": "Account & Personnel Information",
+    "subtitle": "Update your personal identification and contact information within the ecosystem.",
+    "fullName": "Full Name",
+    "fullNamePlaceholder": "John Doe",
+    "phoneNumber": "Contact Phone Number",
+    "phonePlaceholder": "0987654321",
+    "emailReadOnly": "Identity Email (Read-only)",
+    "emailHelper": "Email is centrally managed by the security system.",
+    "avatarUrl": "Avatar (URL or choose a preset)",
+    "avatarPresetsLabel": "Or quick-pick an Aegis-style avatar:",
+    "avatarChooseTitle": "Choose {{name}} avatar",
+    "hierarchyTitle": "Position in the Organizational Hierarchy (Hierarchical OU)",
+    "tenantLabel": "Organization / Tenant:",
+    "orgUnitLabel": "Department / Unit:",
+    "defaultTenant": "Dehoc.vn Ecosystem",
+    "defaultOrgUnit": "Entire organization",
+    "saving": "Saving...",
+    "save": "Save Changes"
+  },
+  "subscriptionTab": {
+    "title": "Subscription Plan & Competence Privileges",
+    "subtitle": "Information about your current plan and unlocked assessment privileges.",
+    "currentPlan": "Current plan",
+    "vipDescription": "Unlocks the full AI adaptive exam bank, in-depth competence measurement, and the secure exam room.",
+    "freeDescription": "A standard account with practice and basic exercise access.",
+    "upgradeCta": "Upgrade to VIP",
+    "capabilitiesTitle": "Unlocked Account Privileges",
+    "capabilities": {
+      "unlimitedQuiz": "Unlimited quiz practice",
+      "adaptiveIrt": "AI adaptive assessment (Adaptive IRT)",
+      "secureExamRoom": "Anti-cheating secure exam room",
+      "arenaGameshow": "Live Arena Gameshow",
+      "examHistory": "Exam history & detailed results",
+      "prioritySupport": "24/7 priority technical support"
+    }
+  },
+  "securityTab": {
+    "changePasswordTitle": "Change Login Password",
+    "changePasswordSubtitle": "Change your password periodically to protect your account per NIST SP 800-63B security standards.",
+    "currentPassword": "Current Password",
+    "newPassword": "New Password",
+    "strengthLabel": "Password strength:",
+    "confirmPassword": "Confirm New Password",
+    "changing": "Changing password...",
+    "changeCta": "Update Password",
+    "sessionTitle": "Current Login Session & Device",
+    "sessionActive": "Current session (Active)",
+    "browserPlatform": "Browser & Platform:",
+    "lastLogin": "Last login:",
+    "lastLoginNow": "Now",
+    "securityStandard": "Security standard:",
+    "webBrowser": "Web Browser",
+    "desktop": "Desktop",
+    "badges": {
+      "pbkdf2Title": "PBKDF2/SHA-256 Encryption",
+      "pbkdf2Desc": "NIST password security standard",
+      "pkiTitle": "PKI / USB Token Authentication",
+      "pkiDesc": "Hardware digital-signature support",
+      "ssoTitle": "Federated Keycloak SSO",
+      "ssoDesc": "Centralized login system"
+    }
+  },
+  "twoFactor": {
+    "title": "Two-Factor Authentication (Google Authenticator)",
+    "description": "Protect your account with the international RFC 6238 TOTP & NIST SP 800-63B AAL2 standard. Prevents 99.9% of password-theft risk.",
+    "statusActive": "PROTECTED (ACTIVE)",
+    "statusInactive": "NOT ENABLED",
+    "mainCard": {
+      "titleEnabled": "Your account is protected by an authenticator app",
+      "titleDisabled": "Enable two-factor authentication today",
+      "descEnabled": "Every time you sign in with a password, the system will require an additional 6-digit code from the Google Authenticator or Microsoft Authenticator app on your phone.",
+      "descDisabled": "Strengthen your proactive defense: you'll need to scan a QR code with the Google Authenticator app to link your device before you can sign in.",
+      "backupCodesButton": "Backup codes",
+      "disableButton": "Disable 2FA",
+      "preparing": "Preparing...",
+      "enableButton": "Enable Google Authenticator"
+    },
+    "setupModal": {
+      "title": "Enable Google Authenticator",
+      "subtitle": "Follow the 3 steps below to complete two-factor protection for your account.",
+      "step1Title": "Scan the QR code with your authenticator app",
+      "step1Instructions": "Open <b>Google Authenticator</b> or <b>Microsoft Authenticator</b> on your phone, then select <i>\"Scan QR code\"</i>.",
+      "manualKeyLabel": "Or enter the secret key manually:",
+      "copyKeyTitle": "Copy key",
+      "step2Title": "Save your 8 emergency backup codes",
+      "copied": "Copied",
+      "copy": "Copy",
+      "downloadTxt": "Download .txt file",
+      "backupWarning": "If you lose your phone, you can use these codes to sign in. Each code can only be used once.",
+      "backupFileNote": "Each code below can only be used once:",
+      "backupFileWarning": "Note: Keep this file secure and do not share it with anyone.",
+      "step3Title": "Enter the 6-digit code shown on your phone to activate",
+      "verifying": "Verifying...",
+      "confirmActivate": "Confirm & Activate",
+      "errors": {
+        "invalidCode": "Please enter all 6 digits from the Google Authenticator app.",
+        "wrongOrExpired": "Incorrect or expired verification code.",
+        "setupFailed": "Unable to initialize the 2FA setup code."
+      },
+      "successEnabled": "Google Authenticator two-factor security has been enabled successfully!"
+    },
+    "disableModal": {
+      "title": "Disable two-factor authentication",
+      "subtitle": "This action will reduce your account's level of protection. Please verify your password or TOTP code to continue.",
+      "currentPasswordLabel": "Current password",
+      "or": "Or",
+      "totpLabel": "6-digit code from Google Authenticator",
+      "cancel": "Cancel",
+      "processing": "Processing...",
+      "confirmDisable": "Confirm disable 2FA",
+      "errors": {
+        "requireOne": "Please enter your account password or TOTP code to authenticate.",
+        "wrongCredentials": "Incorrect authentication information."
+      },
+      "success": "Two-factor authentication (2FA) has been disabled successfully."
+    },
+    "regenModal": {
+      "title": "Manage emergency recovery codes",
+      "subtitle": "Generating 8 new emergency backup codes will invalidate all previously generated backup codes.",
+      "newCodesLabel": "8 new backup codes:",
+      "copied": "Copied",
+      "copy": "Copy",
+      "saveFile": "Save file",
+      "savedDone": "Saved",
+      "totpLabel": "Enter the 6-digit code from Google Authenticator",
+      "cancel": "Cancel",
+      "generating": "Generating...",
+      "generateButton": "Generate 8 new codes",
+      "errors": {
+        "invalidCode": "Please enter the 6-digit code from Google Authenticator to confirm.",
+        "invalidVerification": "Invalid verification code."
+      },
+      "success": "Successfully generated 8 new recovery codes!"
+    }
+  }
+}
