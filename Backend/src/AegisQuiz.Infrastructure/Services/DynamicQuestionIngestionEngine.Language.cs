@@ -39,7 +39,9 @@ namespace AegisQuiz.Infrastructure.Services
             ["en"] = new()
             {
                 Name = "English",
-                KeywordHints = new() { "Question", "Choose", "Answer", "Correct", "Which", "Following", "Part", "Section", "Listen", "Read", "Passage", "Complete", "Underlined", "Pronounced", "Task", "Item" }
+                KeywordHints = new() { "Question", "Choose", "Answer", "Correct", "Which", "Following", "Part", "Section", "Listen", "Read", "Passage", "Complete", "Underlined", "Pronounced", "Task", "Item", "Problem",
+                                       "the", "a", "an", "is", "are", "was", "were", "of", "to", "in", "on", "at", "for", "with", "and", "or", "that", "this", "his", "her", "their", "it", "you", "we", "they", "what", "who", "how", "from", "by", "about" },
+                RequireEvidenceForAnchor = true
             },
             ["zh"] = new() { Name = "Chinese", ScriptPatterns = new() { @"[\u4E00-\u9FFF]" }, KeywordHints = new() { "分", "下列", "题", "正确的", "选择题", "填空题", "解答题" }, RequireEvidenceForAnchor = true },
             ["ko"] = new() { Name = "Korean", ScriptPatterns = new() { @"[\uAC00-\uD7AF\u1100-\u11FF]" }, KeywordHints = new() { "점", "다음", "대화", "밑줄", "물음에", "답하시오" }, RequireEvidenceForAnchor = true },

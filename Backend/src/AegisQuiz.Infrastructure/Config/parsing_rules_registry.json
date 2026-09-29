@@ -1,6 +1,6 @@
 {
   "version": "3.0.0",
-  "lastUpdated": "2026-09-29T09:00:00Z",
+  "lastUpdated": "2026-09-29T10:30:00Z",
   "releaseNote": "Giai đoạn 7 (CHIP v3.0) — Khôi phục Document Structure Dictionary v2.1.0, bổ sung Language Signatures (Dual-Layer Language Cognition) và Fast Classification Spec; hợp nhất 18 quy tắc (THCS Toán / Tiếng Anh kích hoạt; ma trận đáp án & tự luận phân cấp ở trạng thái chờ kích hoạt).",
   "documentStructureDictionary": {
     "sectionMarkers": {
@@ -94,9 +94,41 @@
           "Underlined",
           "Pronounced",
           "Task",
-          "Item"
+          "Item",
+          "Problem",
+          "the",
+          "a",
+          "an",
+          "is",
+          "are",
+          "was",
+          "were",
+          "of",
+          "to",
+          "in",
+          "on",
+          "at",
+          "for",
+          "with",
+          "and",
+          "or",
+          "that",
+          "this",
+          "his",
+          "her",
+          "their",
+          "it",
+          "you",
+          "we",
+          "they",
+          "what",
+          "who",
+          "how",
+          "from",
+          "by",
+          "about"
         ],
-        "requireEvidenceForAnchor": false
+        "requireEvidenceForAnchor": true
       },
       "zh": {
         "name": "Chinese (Gaokao)",
@@ -787,9 +819,9 @@
       "language": "en",
       "priority": 11,
       "isActive": true,
-      "description": "Nhận diện đề thi khảo sát chất lượng và học kỳ môn Tiếng Anh THCS theo cấu trúc 4 phần Listening, Language Focus, Reading, Writing.",
+      "description": "Nhận diện đề thi khảo sát chất lượng và học kỳ môn Tiếng Anh THCS theo cấu trúc 4 phần Listening, Language Focus, Reading, Writing. Hỗ trợ điểm neo số trần (1. / 2) / 3.A.) khi dòng có bằng chứng tiếng Anh.",
       "anchorSpec": {
-        "regexPattern": "^(?:Question|Câu|Q\\.?)\\s*(\\d+)[\\.\\:\\s\\-]+",
+        "regexPattern": "^(?:(?:Question|Câu|Q\\.?)\\s*)?(\\d{1,3})\\s*[\\.\\:\\)\\-]?\\s*(?=[A-Za-z_“\"\\'(…\\.])",
         "questionNumberGroupIndex": 1,
         "sectionMarkers": [
           "PART A: LISTENING",
