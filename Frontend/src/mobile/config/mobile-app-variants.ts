@@ -14,12 +14,39 @@ export interface MobileAppVariant {
     badgeBg: string;
     badgeText: string;
   };
+  uiMode?: 'standard' | 'gamified_kids';
   features: string[];
   suggestedTags: string[];
   sampleTopics: { id: string; name: string; questionCount: number; icon: string }[];
 }
 
 export const MOBILE_APP_VARIANTS: Record<string, MobileAppVariant> = {
+  kids: {
+    id: 'kids',
+    code: 'KIDS_ENGLISH',
+    domainCode: 'KIDS_ENGLISH',
+    name: 'AegisKids — Bé Học Tiếng Anh',
+    shortName: 'Tiếng Anh Nhí',
+    tagline: 'Phiêu lưu ngôn ngữ cùng Bé Rồng Aegis qua các trò chơi tương tác kỳ thú!',
+    icon: 'Sparkles',
+    uiMode: 'gamified_kids',
+    colorScheme: {
+      primary: '#f59e0b', // Amber / Sun Yellow
+      primaryGlow: 'rgba(245, 158, 11, 0.45)',
+      accent: '#ec4899', // Candy Pink
+      bgGradient: 'from-amber-950/70 via-purple-950/60 to-slate-950',
+      badgeBg: 'bg-amber-400/20 border-amber-400/40',
+      badgeText: 'text-amber-300',
+    },
+    features: ['Từ Vựng Qua Hình Ảnh', 'Nghe Bản Xứ Chuẩn Mỹ', 'Mở Khóa Rương Kho Báu'],
+    suggestedTags: ['animals', 'colors', 'numbers', 'food', 'family'],
+    sampleTopics: [
+      { id: 'kid-animals', name: 'Thế Giới Động Vật (Animals) 🦁', questionCount: 25, icon: 'Cat' },
+      { id: 'kid-colors', name: 'Sắc Màu Kỳ Diệu (Colors) 🎨', questionCount: 20, icon: 'Palette' },
+      { id: 'kid-food', name: 'Món Ăn Bé Yêu (Yummy Food) 🍎', questionCount: 20, icon: 'Apple' },
+      { id: 'kid-family', name: 'Gia Đình Yêu Thương (Family) 👨‍👩‍👧', questionCount: 15, icon: 'Heart' },
+    ],
+  },
   driving: {
     id: 'driving',
     code: 'DRIVING',

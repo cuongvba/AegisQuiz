@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Clock, CheckCircle2, ChevronLeft, ChevronRight, Sparkles, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { useMobileApp } from '../context/MobileAppContext';
 import { offlineExamService } from '@/services/offline-exam.service';
+import { KidsPracticeView } from './KidsPracticeView';
 
 interface MobilePracticeRoomProps {
   topicName: string;
@@ -13,6 +14,12 @@ export const MobilePracticeRoom: React.FC<MobilePracticeRoomProps> = ({
   onExit,
 }) => {
   const { variant, triggerHaptic } = useMobileApp();
+
+  // If this variant is configured with Kids Gamified UI, render KidsPracticeView
+  if (variant.uiMode === 'gamified_kids') {
+    return <KidsPracticeView topicName={topicName} onExit={onExit} />;
+  }
+
   const [currentIdx, setCurrentIdx] = useState<number>(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
   const [showExplanation, setShowExplanation] = useState<boolean>(false);

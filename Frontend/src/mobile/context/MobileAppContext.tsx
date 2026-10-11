@@ -33,8 +33,9 @@ export const MobileAppProvider: React.FC<{ initialVariantId?: string; children: 
         return MOBILE_APP_VARIANTS[appQuery.toLowerCase()];
       }
 
-      // 3. Kiểm tra Subdomain (driving.dehoc.vn, banking.dehoc.vn...)
+      // 3. Kiểm tra Subdomain (driving.dehoc.vn, banking.dehoc.vn, kids.dehoc.vn...)
       const host = window.location.hostname.toLowerCase();
+      if (host.includes('kids') || host.includes('tienganh') || host.includes('treem')) return MOBILE_APP_VARIANTS.kids;
       if (host.includes('laixe') || host.includes('driving')) return MOBILE_APP_VARIANTS.driving;
       if (host.includes('nganhang') || host.includes('banking')) return MOBILE_APP_VARIANTS.banking;
       if (host.includes('thpt') || host.includes('toan')) return MOBILE_APP_VARIANTS.thpt;

@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { 
   Building2, Plus, Search, Shield, Globe, Users, 
-  CheckCircle2, AlertCircle, Edit, Power, RefreshCw, Layers
+  CheckCircle2, AlertCircle, Edit, Power, RefreshCw, Layers,
+  Smartphone, Sparkles
 } from 'lucide-react';
 import { apiClient } from '@/shared/api/client';
 
@@ -57,7 +58,8 @@ export function TenantsPage() {
   const [formMaxUsers, setFormMaxUsers] = useState(1000);
   const [formDomain, setFormDomain] = useState('');
   const [formCustomDomain, setFormCustomDomain] = useState('');
-  const [formPrimaryColor, setFormPrimaryColor] = useState('#06b6d4');
+  const [formPrimaryColor, setFormPrimaryColor] = useState('#f59e0b');
+  const [formMobileVariant, setFormMobileVariant] = useState('kids');
   const [formAdminEmail, setFormAdminEmail] = useState('');
   const [formAdminPassword, setFormAdminPassword] = useState('');
   const [formAdminName, setFormAdminName] = useState('');
@@ -454,6 +456,16 @@ export function TenantsPage() {
                     {/* Actions */}
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
+                        <a
+                          href="/m?app=kids"
+                          target="_blank"
+                          rel="noreferrer"
+                          className="p-1.5 hover:bg-amber-500/20 text-amber-400 hover:text-amber-300 rounded-lg transition-colors cursor-pointer"
+                          title="Mở ứng dụng Mobile kiểm chứng (AegisKids)"
+                        >
+                          <Smartphone size={16} />
+                        </a>
+
                         <button
                           onClick={() => { setSelectedTenant({ ...t }); setIsEditModalOpen(true); }}
                           className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg transition-colors cursor-pointer"
@@ -612,6 +624,35 @@ export function TenantsPage() {
                     <span className="text-xs font-mono text-slate-300">{formPrimaryColor}</span>
                   </div>
                 </div>
+              </div>
+
+              {/* [Metamorphic Engine] Lựa chọn biến thể giao diện Mobile */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
+                  <Smartphone size={13} className="text-amber-400" />
+                  Định Dạng Trải Nghiệm Mobile (Metamorphic Engine)
+                </label>
+                <select
+                  value={formMobileVariant}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setFormMobileVariant(v);
+                    if (v === 'kids') setFormPrimaryColor('#f59e0b');
+                    else if (v === 'driving') setFormPrimaryColor('#10b981');
+                    else if (v === 'banking') setFormPrimaryColor('#0284c7');
+                    else if (v === 'thpt') setFormPrimaryColor('#8b5cf6');
+                    else if (v === 'med') setFormPrimaryColor('#e11d48');
+                    else if (v === 'hse') setFormPrimaryColor('#ea580c');
+                  }}
+                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-amber-400 cursor-pointer"
+                >
+                  <option value="kids">🌟 AegisKids — Bé Học Tiếng Anh (Gamified 3D, Bé Rồng Mascot, Sao Thưởng)</option>
+                  <option value="driving">🚗 AegisDrive — Sát Hạch Lái Xe GPLX (60 Điểm Liệt & Sa Hình)</option>
+                  <option value="banking">🏦 AegisBank — Khảo Thí Ngân Hàng (Tín Dụng & Basel II)</option>
+                  <option value="thpt">🎓 Dehoc THPT — Luyện Thi Tốt Nghiệp & ĐGNL Quốc Gia</option>
+                  <option value="med">🏥 AegisMed — Y Khoa & Dược Phẩm Lâm Sàng</option>
+                  <option value="hse">🛡️ AegisSafety — An Toàn Lao Động & PCCC</option>
+                </select>
               </div>
 
               {/* Cấp tài khoản Admin ban đầu */}
