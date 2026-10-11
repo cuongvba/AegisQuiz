@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useLearnerI18n } from '@/lib/i18n';
 import { ChevronDown, Globe, Check } from 'lucide-react';
-import i18n, { SUPPORTED_LANGUAGES } from '@/i18n';
+import i18n, { SUPPORTED_LANGUAGES, isRTL } from '@/i18n';
 
 export function LanguageSwitcher() {
   const { lang, setLang } = useLearnerI18n();
@@ -70,14 +70,11 @@ export function LanguageSwitcher() {
                 <button
                   type="button"
                   onClick={() => {
-                    if (l.code === 'vi' || l.code === 'en') {
-                      setLang(l.code);
-                      // [Bridge Fix] Đồng bộ sang hệ i18n react-i18next (namespace JSON) —
-                      // trước đây setLang() chỉ cập nhật hệ dictionary cũ (lib/i18n.ts),
-                      // khiến mọi component dùng useTranslation()/t() (vd trang Landing)
-                      // không đổi ngôn ngữ theo cho tới khi tải lại trang.
-                      i18n.changeLanguage(l.code);
-                    }
+                    setLang(l.code as any);
+                    i18n.changeLanguage(l.code);
+                    const rtl = isRTL(l.code);
+                    document.documentElement.dir = rtl ? 'rtl' : 'ltr';
+                    document.documentElement.lang = l.code;
                     setIsOpen(false);
                   }}
                   className={`w-full text-start px-2.5 py-2 text-xs rounded-xl font-bold transition-all

@@ -21,6 +21,7 @@ const ArenaHubPage = lazy(() => import('@/pages/arena/ArenaHubPage').then(m => (
 const ArenaRoomPage = lazy(() => import('@/pages/arena/ArenaRoomPage').then(m => ({ default: m.ArenaRoomPage })));
 const ArenaStudioPage = lazy(() => import('@/pages/arena/ArenaStudioPage').then(m => ({ default: m.ArenaStudioPage })));
 const TeamDashboard = lazy(() => import('@/pages/team-leader/TeamDashboard').then(m => ({ default: m.TeamDashboard })));
+const UniversalSymposiumPage = lazy(() => import('@/pages/symposium/UniversalSymposiumPage').then(m => ({ default: m.UniversalSymposiumPage })));
 
 // Admin Lazy Pages
 const AdminLayout = lazy(() => import('@/pages/admin/AdminLayout').then(m => ({ default: m.AdminLayout })));
@@ -30,6 +31,8 @@ const AdminNotebooksPage = lazy(() => import('@/pages/admin/AdminNotebooksPage')
 const AdminUsersPage = lazy(() => import('@/pages/admin/AdminUsersPage').then(m => ({ default: m.AdminUsersPage })));
 const AdminPaymentsPage = lazy(() => import('@/pages/admin/AdminPaymentsPage').then(m => ({ default: m.AdminPaymentsPage })));
 const AdminExamsPage = lazy(() => import('@/pages/admin/AdminExamsPage').then(m => ({ default: m.AdminExamsPage })));
+const AiSettingsPage = lazy(() => import('@/pages/admin/ai/AiSettingsPage').then(m => ({ default: m.AiSettingsPage })));
+const PromptForgeAdminPage = lazy(() => import('@/pages/admin/PromptForgeAdminPage').then(m => ({ default: m.PromptForgeAdminPage })));
 
 // Auth Lazy Pages
 const LoginPage = lazy(() => import('@/pages/auth/LoginPage').then(m => ({ default: m.LoginPage })));
@@ -64,6 +67,7 @@ export default function App() {
                 <Route path="paths" element={<PathExplorer />} />
                 <Route path="arena" element={<ArenaHubPage />} />
                 <Route path="team" element={<TeamDashboard />} />
+                <Route path="symposium" element={<UniversalSymposiumPage />} />
               </Route>
 
               {/* [P1 Security] Admin Nested Routes — chỉ Admin mới vào được */}
@@ -81,6 +85,10 @@ export default function App() {
                 <Route path="users" element={<AdminUsersPage />} />
                 <Route path="payments" element={<AdminPaymentsPage />} />
                 <Route path="exams" element={<AdminExamsPage />} />
+                <Route path="ai-settings" element={<AiSettingsPage />} />
+                <Route path="ai" element={<AiSettingsPage />} />
+                <Route path="prompt-forge" element={<PromptForgeAdminPage />} />
+                <Route path="symposium" element={<UniversalSymposiumPage />} />
               </Route>
 
               {/* Auth Routes */}

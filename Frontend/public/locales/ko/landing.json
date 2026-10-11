@@ -1,0 +1,128 @@
+{
+  "nav": {
+    "features": "주요 기능",
+    "gameshows": "게임쇼",
+    "pricing": "요금제",
+    "login": "로그인",
+    "cta": "무료로 시작하기",
+    "adminPortal": "관리자 포털",
+    "enterLearning": "학습 시작"
+  },
+  "hero": {
+    "eyebrow": "Aegis Enterprise AI Engine v4.0",
+    "headline": "진정한 역량을 측정하다.",
+    "headlineHighlight": "최고의 학습 잠재력을 깨우다.",
+    "subheadline": "AI 적응형 역량 평가 플랫폼 (IRT 3-PL), 6대 클래식 학술 게임쇼, 엔터프라이즈 멀티 테넌트 아키텍처 — 개인, 학교, 글로벌 기업 및 금융권을 위한 차세대 평가 생태계.",
+    "ctaPrimary": "개인 학습자 — 무료로 시작하기",
+    "ctaSecondary": "기업 / 금융권 — 데모 신청",
+    "previewCaption": "AI가 실시간으로 문제 매트릭스를 최적화하는 과정을 확인하세요"
+  },
+  "socialProof": {
+    "title": "엄격한 기준을 요구하는 글로벌 조직들이 신뢰합니다",
+    "stats": [
+      { "value": "3,500+", "label": "문항 은행 내 보유 문항" },
+      { "value": "6", "label": "학술 게임쇼 포맷" },
+      { "value": "<2ms", "label": "아레나 버저 응답 지연 시간" },
+      { "value": "99.9%", "label": "엔터프라이즈 인프라 가동률" }
+    ],
+    "segments": ["금융 및 은행", "다지점 기업", "대학교 및 교육기관", "운전면허 및 자격시험 센터"]
+  },
+  "features": {
+    "title": "AegisQuiz만의 6가지 혁신 기술",
+    "subtitle": "단순한 퀴즈 도구가 아닌, 차세대 인지 역량 평가 생태계입니다.",
+    "items": [
+      { "title": "AI 뇌 적응형 테스트 (CAT/IRT)", "desc": "CAT/IRT 3-PL 엔진이 매 문항마다 난이도를 동적으로 조정하여 단순 암기가 아닌 진짜 역량을 측정합니다." },
+      { "title": "라이브 게임쇼 아레나 스튜디오", "desc": "2밀리초 미만의 초저지연 버저 판정으로 6대 TV 학술 게임쇼를 완벽히 구현합니다." },
+      { "title": "군사 등급의 보안 시험실", "desc": "고위험 시험을 위한 실시간 AI 부정행위 방지 감독과 PKI USB 토큰 디지털 서명을 지원합니다." },
+      { "title": "1초 무암호 로그인", "desc": "QR 코드 또는 Google 계정으로 즉시 시험실에 입장하여 비밀번호 기억의 부담을 없앱니다." },
+      { "title": "1클릭 문항 은행 디지털화", "desc": "Word/MathType, Excel, PDF에서 몇 분 만에 자동 추출하여 종이 문항을 즉시 디지털화합니다." },
+      { "title": "소크라테스 AI 튜터", "desc": "문답법을 통해 단계별로 사고력을 넓혀주는 24시간 맞춤형 학습 동반자입니다." }
+    ]
+  },
+  "gameshows": {
+    "title": "6대 학술 게임쇼 — 놀이를 통한 학습",
+    "subtitle": "전설적인 TV 게임쇼의 규칙을 그대로 재현하여 몰입도 높은 복습 경험을 선사합니다.",
+    "items": [
+      { "name": "올림피아로 가는 길", "desc": "워밍업, 장애물, 가속, 피니시 라인의 4개 라운드를 완벽히 재현했습니다." },
+      { "name": "휠 오브 포춘 (행운의 바퀴)", "desc": "물리 엔진 기반의 60fps 룰렛과 럭키, 턴 넘김, 더블 슬롯 퍼즐 보드를 제공합니다." },
+      { "name": "유니버시티 챌린지", "desc": "4대4 대학 대항전, 스타터 버저와 팀 회의가 가능한 3문항 보너스 라운드를 제공합니다." },
+      { "name": "제퍼디! (Jeopardy!)", "desc": "30칸 점수 매트릭스, 질문 형식으로 답해야 하는 클래식 퀴즈 쇼입니다." },
+      { "name": "라이트닝 패스트", "desc": "10계단 클라이밍 머신 — 정답 시 한 계단 상승, 한 번 오답 시 0으로 리셋됩니다." },
+      { "name": "골든벨", "desc": "대규모 서바이벌 퀴즈, 끝까지 살아남아 골든벨을 울리는 최종 결정전에 도전하세요." }
+    ]
+  },
+  "segments": {
+    "title": "모든 산업군을 위한 맞춤형 솔루션",
+    "subtitle": "조직마다 직면한 과제가 다릅니다 — AegisQuiz는 완벽하게 맞춤 적응합니다.",
+    "tabs": [
+      { "id": "banking", "label": "금융 및 은행", "painPoint": "수만 명의 임직원을 대상으로 한 채용 시험, 정기 직무 자격 인증, 자금세탁방지(AML) 표준화.", "solution": "지점별 멀티 테넌트 완전 격리, SHA-256 위변조 방지 감사 로그, 법적 효력을 갖춘 PKI 전자서명." },
+      { "id": "enterprise", "label": "다지점 기업", "painPoint": "여러 지역에 분산된 사내 교육으로 일관된 역량 측정이 어려움.", "solution": "팀 리더가 자체 문항 은행을 직접 운영하고 지점별 진도율을 실시간으로 추적." },
+      { "id": "university", "label": "대학교 및 교육기관", "painPoint": "방대한 종이 시험지 아카이브로 학생별 맞춤형 피드백 제공 불가.", "solution": "Word/MathType에서 1클릭 디지털화, 실제 능력치에 맞춘 AI 적응형 시험." },
+      { "id": "driving", "label": "운전면허 및 자격시험", "painPoint": "국가 표준 학과 시험 및 과락 점수 문항의 정밀 시뮬레이션 필요.", "solution": "핵심 문항 자동 과락 판정 및 AI 기반 도로 상황 시뮬레이션 연습." }
+    ]
+  },
+  "pricing": {
+    "title": "모든 규모에 맞춘 투명한 요금제",
+    "subtitle": "무료로 시작하고 조직이 성장함에 따라 업그레이드하세요.",
+    "tiers": [
+      {
+        "name": "커뮤니티",
+        "price": "무료",
+        "period": "",
+        "description": "스스로 공부하는 개인 학습자를 위한 플랜.",
+        "features": ["커뮤니티 문항 은행 이용", "기본 AI 적응형 연습", "게임쇼 아레나 참여", "순위표 랭킹 추적"],
+        "cta": "무료로 시작하기",
+        "highlighted": false
+      },
+      {
+        "name": "프로 / 팀",
+        "price": "문의",
+        "period": "/ 월",
+        "description": "소규모 팀을 이끄는 팀 리더를 위한 플랜.",
+        "features": ["커뮤니티의 모든 기능 포함", "독립 팀 문항 은행", "시험 배정 및 팀 진도 추적", "Word/Excel에서 1클릭 가져오기"],
+        "cta": "Pro 체험하기",
+        "highlighted": true
+      },
+      {
+        "name": "엔터프라이즈",
+        "price": "맞춤 견적",
+        "period": "",
+        "description": "대형 은행, 글로벌 기업 및 대학교를 위한 플랜.",
+        "features": ["멀티 테넌트 완전 격리", "SSO / PKI USB 토큰 로그인", "SHA-256 위변조 방지 감사 로그", "전담 SLA 및 기술 지원"],
+        "cta": "데모 신청",
+        "highlighted": false
+      }
+    ]
+  },
+  "trust": {
+    "title": "국제 수준의 보안 및 규제 준수",
+    "badges": [
+      { "label": "NIST SP 800-63B", "desc": "비밀번호 및 인증 보안 표준" },
+      { "label": "PBKDF2 / SHA-256", "desc": "암호화 해시 및 불변 감사 로그" },
+      { "label": "PKI USB Token", "desc": "기업용 공인 전자서명" },
+      { "label": "Multi-Tenant Isolation", "desc": "테넌트 간 완벽한 데이터 격리" }
+    ]
+  },
+  "finalCta": {
+    "title": "AegisQuiz로 역량 향상을 가속화할 준비가 되셨나요?",
+    "subtitle": "매일 AegisQuiz를 신뢰하는 수천 명의 학습자와 수십 개의 조직과 함께하세요.",
+    "ctaPrimary": "지금 무료로 시작하기",
+    "ctaSecondary": "엔터프라이즈 데모 신청"
+  },
+  "footer": {
+    "tagline": "진정한 역량을 측정하다. 최고의 학습 잠재력을 깨우다.",
+    "product": "제품",
+    "company": "회사 소개",
+    "legal": "법적 고지",
+    "links": {
+      "features": "주요 기능",
+      "gameshows": "게임쇼",
+      "pricing": "요금제",
+      "about": "회사 소개",
+      "contact": "문의하기",
+      "privacy": "개인정보 처리방침",
+      "terms": "서비스 이용약관"
+    },
+    "copyright": "All rights reserved."
+  }
+}

@@ -8,6 +8,9 @@
 /* ── Step 1: Tailwind CSS ──────────────────────────────────────────── */
 @import "tailwindcss";
 
+/* ── Step 1b: KaTeX Mathematical Stylesheet (Global) ───────────── */
+@import "katex/dist/katex.min.css";
+
 /* ── Step 2: Design Token System (3 tiers — thứ tự bắt buộc) ─────── */
 @import "@/shared/design-system/tokens/primitive.css";   /* Tier 1: Raw values   */
 @import "@/shared/design-system/tokens/semantic.css";    /* Tier 2: Semantic      */
@@ -117,4 +120,117 @@
   .text-start { text-align: start; }
   .text-end   { text-align: end; }
 }
+
+/* ══════════════════════════════════════════════════════════════════
+ * KATEX ENHANCEMENTS & HIGH-DPI / DARK THEME VISIBILITY FIXES
+ * ══════════════════════════════════════════════════════════════════ */
+.katex {
+  font-size: 1.1em !important;
+  text-rendering: auto;
+  line-height: 1.2;
+}
+
+/* Đảm bảo căn thức \sqrt luôn hiển thị rõ nét trên cả Dark Mode và Light Mode */
+.katex .sqrt {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.katex .sqrt > .vlist-t {
+  display: inline-table !important;
+}
+
+.katex .sqrt svg {
+  fill: currentColor !important;
+  stroke: currentColor !important;
+  fill-opacity: 1 !important;
+  stroke-opacity: 1 !important;
+  display: block !important;
+  position: absolute !important;
+  height: inherit !important;
+  width: 100% !important;
+}
+
+/* Đảm bảo dấu vectơ \overrightarrow & \overleftarrow luôn hiển thị đầy đủ, sắc nét mũi tên trên mọi trình duyệt */
+.katex .hide-tail {
+  overflow: hidden !important;
+  position: relative !important;
+  width: 100% !important;
+}
+
+.katex .hide-tail svg {
+  height: inherit !important;
+  min-height: 0 !important;
+  position: absolute !important;
+  top: 0 !important;
+  fill: currentColor !important;
+  stroke: currentColor !important;
+  display: block !important;
+}
+
+/* \overrightarrow (mũi tên sang phải): đầu mũi tên nằm ở tận cùng bên phải (xMax), neo sát mép phải để giấu phần đuôi thừa bên trái */
+.katex .hide-tail svg[preserveAspectRatio*="xMax"],
+.katex .svg-align .hide-tail svg {
+  width: 400em !important;
+  right: 0 !important;
+  left: auto !important;
+}
+
+/* \overleftarrow (mũi tên sang trái): đầu mũi tên nằm ở bên trái (xMin), neo sát mép trái để giấu phần đuôi thừa bên phải */
+.katex .hide-tail svg[preserveAspectRatio*="xMin"] {
+  width: 400em !important;
+  left: 0 !important;
+  right: auto !important;
+}
+
+.katex .hide-tail svg path {
+  fill: currentColor !important;
+  stroke: currentColor !important;
+  stroke-width: 0.5px !important;
+}
+
+.katex .svg-align {
+  text-align: left !important;
+}
+
+.katex .accent-body > svg,
+.katex .svg-align > svg {
+  fill: currentColor !important;
+  stroke: currentColor !important;
+}
+
+/* Đảm bảo đường kẻ ngang phân số \frac luôn rõ ràng, không bị mờ đục */
+.katex .frac-line {
+  border-bottom-width: 0.08em !important;
+  min-height: 1.5px !important;
+  border-bottom-color: currentColor !important;
+}
+
+/* Căn chỉnh inline-math hài hòa với dòng chữ xung quanh: chuẩn xác 1.1em so với text cùng dòng */
+.inline-math {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: -0.2em;
+  margin: 0 0.15em;
+  font-size: 1em;
+}
+
+.inline-math .katex {
+  font-size: 1.1em !important;
+  line-height: 1;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+ * IMAGE & DIAGRAM VISIBILITY — TRẢ VỀ NỀN TRẮNG RÕ NÉT CHO ĐỒ THỊ
+ * ══════════════════════════════════════════════════════════════════ */
+.math-rendered img,
+.inline-math img,
+.question-media,
+.exam-image,
+img[src^="data:image/"] {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+
 

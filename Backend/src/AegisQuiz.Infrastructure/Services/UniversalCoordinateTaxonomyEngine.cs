@@ -46,8 +46,8 @@ namespace AegisQuiz.Infrastructure.Services
 
             var combinedHeader = string.Join("\n", bannerList);
             var combinedAll = $"{fileName} {sheetName} {combinedHeader} " +
-                              $"{string.Join(" ", sampleContents?.Take(15) ?? Enumerable.Empty<string>())} " +
-                              $"{string.Join(" ", sampleReferences?.Take(15) ?? Enumerable.Empty<string>())}";
+                              $"{string.Join(" ", (sampleContents ?? Enumerable.Empty<string>()).Take(15).Select(SanitizeSample))} " +
+                              $"{string.Join(" ", (sampleReferences ?? Enumerable.Empty<string>()).Take(15).Select(SanitizeSample))}";
 
             result.BenchmarkYear = DetectYear(bannerList, fileName, sheetName);
             result.TargetLevel = DetectTargetLevel(bannerList, fileName, sheetName, combinedAll, dynamicContext);
@@ -375,6 +375,25 @@ namespace AegisQuiz.Infrastructure.Services
         // ─────────────────────────────────────────────────────────────────────
         // Tiện ích dùng chung
         // ─────────────────────────────────────────────────────────────────────
+
+        /// <summary>Giới hạn ký tự mỗi mẫu nội dung đưa vào nhận diện tọa độ — tín hiệu phân loại nằm ở vài nghìn ký tự đầu.</summary>
+        private const int MaxSampleChars = 4000;
+
+        private static readonly Regex EmbeddedMediaPattern =
+            new(@"!\[[^\]]*\]\([^)]*\)|data:[a-z0-9.+/-]+;base64,[A-Za-z0-9+/=\r\n]+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+        /// <summary>
+        /// Loại bỏ ảnh nhúng (data URI / markdown image) và cắt ngắn mẫu nội dung: ảnh base64 có thể dài hàng trăm KB,
+        /// không mang tín hiệu tọa độ nhưng làm mọi Regex phía sau quét hàng GB trên tài liệu lớn.
+        /// </summary>
+        private static string SanitizeSample(string? sample)
+        {
+            if (string.IsNullOrEmpty(sample)) return string.Empty;
+            var cleaned = sample.Contains("data:", StringComparison.OrdinalIgnoreCase) || sample.Contains("![", StringComparison.Ordinal)
+                ? EmbeddedMediaPattern.Replace(sample, " ")
+                : sample;
+            return cleaned.Length > MaxSampleChars ? cleaned.Substring(0, MaxSampleChars) : cleaned;
+        }
 
         /// <summary>Tìm preset của Tenant theo loại tọa độ có nhãn hoặc từ đồng nghĩa xuất hiện trong văn bản.</summary>
         private static string? MatchPreset(DynamicDomainContext? dynamicContext, string coordinateType, string combinedAll)

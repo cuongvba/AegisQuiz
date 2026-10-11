@@ -81,6 +81,37 @@ d) Phương trình f(x) = 0 có đúng 3 nghiệm thực.
         }
 
         [Fact]
+        public void ParseGdpt2025TrueFalse_WithSectionHeaderAndInstruction_ShouldParseSingleQuestionWithFourSubItems()
+        {
+            var engine = new DynamicQuestionIngestionEngine();
+            var snippet = @"
+PHẦN II. Câu trắc nghiệm đúng sai. Thí sinh trả lời từ câu 1 đến câu 4.
+Trong mỗi ý a), b), c), d) ở mỗi câu, thí sinh chọn đúng hoặc sai.
+Câu 1. Một hộp chứa các viên bi có kích thước và khối lượng như nhau gồm 6 bi trắng, 7 bi đỏ và 4 bi xanh. Chọn ngẫu nhiên 6 viên bi từ hộp; trong đó có viên bi trắng, viên bi đỏ và viên bi xanh. Các khẳng định sau đúng hay sai?
+a) Xác suất chọn được ít nhất 5 viên bi màu trắng là .
+b) Xác suất chọn được 6 viên bi đủ ba màu, đồng thời ba số theo thứ tự lập thành cấp số cộng là .
+c) Xác suất chọn được 6 viên bi toàn màu đỏ là .
+d) Xác suất chọn được ít nhất một viên bi màu xanh nhỏ hơn 0,95 .
+ĐÁP ÁN: a) Đúng, b) Sai, c) Đúng, d) Đúng
+";
+
+            var result = engine.ParseSnippet(snippet);
+
+            Assert.True(result.Success);
+            Assert.Single(result.Questions);
+            var q = result.Questions.First();
+            Assert.Equal("TRUE_FALSE", q.QuestionType);
+            Assert.Equal(4, q.Options.Count);
+            Assert.StartsWith("a)", q.Options[0]);
+            Assert.StartsWith("b)", q.Options[1]);
+            Assert.StartsWith("c)", q.Options[2]);
+            Assert.StartsWith("d)", q.Options[3]);
+            Assert.Contains("a) Đúng", q.SuggestedAnswer);
+            Assert.Contains("b) Sai", q.SuggestedAnswer);
+            _output.WriteLine($"[PASS] GDPT 2025 Header + Instructions parsed 100% correctly with 4 sub-items: Answer={q.SuggestedAnswer}");
+        }
+
+        [Fact]
         public void ParseDrivingLicense_ShouldDetectCriticalQuestion()
         {
             var engine = new DynamicQuestionIngestionEngine();

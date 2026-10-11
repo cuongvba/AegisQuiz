@@ -209,6 +209,16 @@ export const quizApi = {
     return res.data;
   },
 
+  async bulkDeleteQuestions(questionIds: string[]): Promise<unknown> {
+    const res = await apiClient.post(`${QUIZ_API}/questions/bulk-delete`, { questionIds });
+    return res.data;
+  },
+
+  async cleanupOrphanQuestions(): Promise<unknown> {
+    const res = await apiClient.post(`${QUIZ_API}/questions/cleanup-orphans`);
+    return res.data;
+  },
+
   async getTopicCounts(): Promise<unknown[]> {
     try {
       const res = await apiClient.get(`${QUIZ_API}/topics/counts`);
@@ -474,4 +484,62 @@ export const quizApi = {
     const res = await apiClient.delete(`${QUIZ_API}/org-units/${id}`);
     return res.data;
   },
+
+  async importQuestionsFromUrl(url: string, useAi = false): Promise<any> {
+    const res = await apiClient.post(`${QUIZ_API}/questions/import-url`, {
+      url: url.trim(),
+      useAi,
+    }, {
+      timeout: 120000,
+    });
+    return res.data;
+  },
+
+  // ── Math Dictionary & Typography Engine ────────────────────────────────────
+
+  async getMathDictionary(): Promise<any> {
+    const res = await apiClient.get(`${QUIZ_API}/math-dictionary`);
+    return res.data;
+  },
+
+  async reloadMathDictionary(jsonContent?: string): Promise<any> {
+    const res = await apiClient.post(`${QUIZ_API}/math-dictionary/reload`, jsonContent ? { jsonContent } : {});
+    return res.data;
+  },
+
+  async upsertSymbolGlyph(entry: unknown): Promise<any> {
+    const res = await apiClient.post(`${QUIZ_API}/math-dictionary/symbol`, entry);
+    return res.data;
+  },
+
+  async upsertOmmlToken(request: { token: string; latex: string }): Promise<any> {
+    const res = await apiClient.post(`${QUIZ_API}/math-dictionary/omml-token`, request);
+    return res.data;
+  },
+
+  async upsertStructuralRule(rule: unknown): Promise<any> {
+    const res = await apiClient.post(`${QUIZ_API}/math-dictionary/structural-rule`, rule);
+    return res.data;
+  },
+
+  async deleteStructuralRule(id: string): Promise<any> {
+    const res = await apiClient.delete(`${QUIZ_API}/math-dictionary/structural-rule/${encodeURIComponent(id)}`);
+    return res.data;
+  },
+
+  async toggleStructuralRule(id: string): Promise<any> {
+    const res = await apiClient.patch(`${QUIZ_API}/math-dictionary/structural-rule/${encodeURIComponent(id)}/toggle`);
+    return res.data;
+  },
+
+  async getMathEngineSettings(): Promise<any> {
+    const res = await apiClient.get(`${QUIZ_API}/math-dictionary/settings`);
+    return res.data?.data ?? res.data;
+  },
+
+  async updateMathEngineSettings(settings: unknown): Promise<any> {
+    const res = await apiClient.put(`${QUIZ_API}/math-dictionary/settings`, settings);
+    return res.data;
+  },
 };
+

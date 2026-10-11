@@ -145,7 +145,7 @@ namespace AegisQuiz.Application.DTOs
         /// Mẫu tách các phương án nằm cùng một dòng (A. ... B. ... C. ... D. ...).
         /// Group 1/3 = dấu * đánh dấu đáp án đúng, Group 2 = nhãn phương án.
         /// </summary>
-        public string InlineOptionDelimiterPattern { get; set; } = @"(?:^|[\s\t\–\—]+)(\*?)((?-i:[A-H])|[1-4])(\*?)[\.\:\)][\s\t]+";
+        public string InlineOptionDelimiterPattern { get; set; } = @"(?:^|[\s\t\–\—]+)(?:<u>|\*|\*\*|\<b\>)?(\*?)((?-i:[A-H])|[1-4])(\*?)(?:</u>|\*|\*\*|\</b\>)?[\.\:\)](?:</u>|\</b\>)?[\s\t]+";
 
         /// <summary>Phân nhóm chuyên đề con (SubCategory) theo từ khóa nội dung, ví dụ GPLX: SA_HINH, BIEN_BAO.</summary>
         public Dictionary<string, List<string>> SubCategoryPatterns { get; set; } = new(StringComparer.OrdinalIgnoreCase)

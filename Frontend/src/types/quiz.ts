@@ -2,6 +2,7 @@ export type QuestionType =
   | 'SINGLE'
   | 'MULTI'
   | 'TRUE_FALSE'
+  | 'MULTI_TRUE_FALSE'
   | 'SHORT_ANSWER'
   | 'FILL_BLANK'
   | 'ORDERING'
@@ -97,7 +98,7 @@ export interface PracticeTopicConfig {
 }
 
 export type PracticeMode = 'study' | 'exam' | 'kids' | 'paper';
-export type LearnerLanguage = 'vi' | 'en';
+export type LearnerLanguage = 'vi' | 'en' | 'ja' | 'ko' | 'ar';
 
 export interface PracticeConfig {
   mode: PracticeMode;
@@ -129,6 +130,7 @@ export interface LearnerAnswer {
   shortText?: string;
   ordering?: string[];
   matching?: Record<string, string>;
+  matrixAnswer?: Record<string, boolean>;
   essay?: string;
 }
 

@@ -1,0 +1,75 @@
+{
+  "header": {
+    "title": "Đại Hội Thảo Bách Khoa Vạn Vật Tri Thức",
+    "badge": "Live Dialectic",
+    "subtitle": "Sàn biện chứng đa viện quy tụ {{count}} Viện Hàn Lâm tự tiến hóa (OCP) • Neo giữ bằng chứng Deep Research • Hợp nhất chân lý",
+    "zeroHardcode": "Zero Hard-code",
+    "multiModelCot": "Multi-Model CoT",
+    "refresh": "Làm mới ({{count}} Viện)",
+    "refreshing": "Đang làm mới..."
+  },
+  "conveneBar": {
+    "topicTitleLabel": "Chủ đề Đại Hội Thảo",
+    "topicTitlePlaceholder": "Nhập chủ đề hội thảo (ví dụ: Bản chất của ý thức và cơ học lượng tử...)",
+    "coreProblemLabel": "Nan đề khởi thảo cốt lõi",
+    "coreProblemPlaceholder": "Mô tả chi tiết nan đề, bối cảnh thực tiễn hoặc mâu thuẫn nhận thức cần giải quyết...",
+    "presetLabel": "Chủ đề mẫu:",
+    "teleologyLabel": "Định hướng mục tiêu (Teleology Mode)",
+    "teleologyAuto": "Tự động phân tích (Auto-Detect)",
+    "teleologyEmpirical": "Thực nghiệm & Giải pháp thực thi",
+    "teleologyEpistemic": "Khởi sinh Tri thức & Nan đề tầm vóc",
+    "teleologyHybrid": "Toàn năng Lai ghép (Master Hybrid)",
+    "adversarialCritique": "Kích hoạt Ghế Phản Biện Đối Kháng (Devil's Advocate)",
+    "selectCouncils": "Chọn Viện tham gia",
+    "autoSelectNotice": "Hệ thống sẽ tự động tuyển chọn Viện phù hợp và Viện đối trọng theo thuật toán OCP",
+    "conveneButton": "Triệu tập Đại Hội Thảo",
+    "conveningButton": "Đang điều phối tranh biện..."
+  },
+  "drawer": {
+    "title": "Danh bạ Viện Hàn Lâm Nhận Thức",
+    "subtitle": "Quản trị các Viện chuyên ngành & phân bổ Bầy Sói (Wolfpack Swarm)",
+    "selectAll": "Chọn tất cả",
+    "autoMode": "Tự động chọn",
+    "prestigeElo": "ELO Uy tín:",
+    "taxonomy": "Taxonomy:",
+    "seats": "Ghế chuyên gia",
+    "statusReady": "Sẵn sàng",
+    "statusDegraded": "Cảnh báo",
+    "statusOffline": "Ngoại tuyến"
+  },
+  "phases": {
+    "phase0": "Trinh sát Thực nghiệm Tiền Hội Thảo",
+    "phase1": "Đặt Vấn Đề Khởi Nguyên",
+    "phase2": "Vấn Đáp Xuyên Ngành",
+    "phase3": "Phản Biện Đối Kháng",
+    "phase4": "Hợp Nhất Siêu Lý Thuyết",
+    "phase5": "Thẩm Định Độc Lập Ma Trận Rubric 5 Trục",
+    "phase6": "Kiến Tạo 5 Khối Tri Thức & Nghị Quyết Chung Cuộc"
+  },
+  "rubric": {
+    "title": "Ma Trận Thẩm Định Độc Lập 5 Trục",
+    "groundingRate": "Tỷ lệ trích dẫn thực nghiệm [E#]:",
+    "r1": "Độ chặt chẽ Logic & Toán học",
+    "r2": "Khả năng Phản nghiệm Popper",
+    "r3": "Chiều sâu Bản thể & Nhân văn",
+    "r4": "Tính Khả thi Ứng dụng",
+    "r5": "Khả năng Kháng Bẫy Ngụy biện",
+    "compositeScore": "Điểm tổng hợp",
+    "evolutionIndex": "Chỉ số Tiến Hóa Nhận Thức (EEI):",
+    "evaluatedBy": "Thẩm định độc lập bởi:"
+  },
+  "multiRound": {
+    "round": "Vòng {{round}}",
+    "nextRoundButton": "Mở Vòng Biện Chứng Tiếp Theo",
+    "socraticDirective": "Chỉ đạo & Chất vấn Socratic",
+    "addDocuments": "Nạp thêm tư liệu / văn kiện",
+    "finalRound": "Đây là vòng chung cuộc",
+    "consensusReached": "Hội đồng đã đạt được chân lý chung cuộc!"
+  },
+  "export": {
+    "button": "Xuất sang Notebook Hub",
+    "exporting": "Đang kết tinh kỷ yếu...",
+    "success": "Đã xuất Kỷ yếu thành công sang AegisNotebook Hub!",
+    "openNotebook": "Mở Notebook ngay"
+  }
+}

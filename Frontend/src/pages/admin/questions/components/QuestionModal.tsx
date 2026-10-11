@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { X, Plus, Trash2, Save, Edit, Lock, Unlock, BookOpen, Sparkles, Check, Users, User, ShieldCheck } from 'lucide-react';
 import type { LearnerQuestion, QuestionType } from '@/types/quiz';
-import { LETTERS, getCorrectAnswerPlaceholder, type BankTopic, isOptionSelectedAsCorrect } from '../types';
-import { getTopicFullPath } from '../types';
+import { LETTERS, getCorrectAnswerPlaceholder, type BankTopic, isOptionSelectedAsCorrect, getTopicFullPath } from '../types';
 import { MathRenderer } from '@/components/common/MathRenderer';
 import { canManageResource, type UserProfile } from '@/types/auth';
+import { parseMultiTfAnswer, serializeMultiTfAnswer, serializeMultiTfVector, formatMultiTfDisplay, convertMultiToMultiTf, convertMultiTfToMulti } from '@/shared/lib/quiz/normalizers';
 
 interface QuestionModalProps {
   isOpen: boolean;
@@ -121,7 +121,7 @@ export function QuestionModal({
 
   if (!isOpen) return null;
 
-  const hasOptions = questionType === 'SINGLE' || questionType === 'MULTI' || questionType === 'ORDERING' || questionType === 'MATCHING';
+  const hasOptions = questionType === 'SINGLE' || questionType === 'MULTI' || questionType === 'ORDERING' || questionType === 'MATCHING' || questionType === 'MULTI_TRUE_FALSE';
 
   const activeQuestion = questions.find(q => q.id === editingId);
   const isManageable = editingId ? canManageResource(currentUser, activeQuestion) : hasWritePermission;
@@ -336,26 +336,84 @@ export function QuestionModal({
 
                   <div className="space-y-2">
                     {options.map((opt, idx) => {
-                      const isCorrect = isOptionSelectedAsCorrect(opt, idx, correctAnswer, questionType, options);
+                      const isMultiTf = questionType === 'MULTI_TRUE_FALSE';
+                      const tfKey = String.fromCharCode('a'.charCodeAt(0) + idx);
+                      const tfMap = isMultiTf ? parseMultiTfAnswer(correctAnswer) : {};
+                      const tfVal = tfMap[tfKey];
+                      const isCorrect = isMultiTf
+                        ? tfVal === true
+                        : isOptionSelectedAsCorrect(opt, idx, correctAnswer, questionType, options);
 
                       return (
                         <div
                           key={idx}
                           className={`flex items-start gap-2 p-2 rounded-2xl border transition-all ${
-                            isCorrect
+                            isMultiTf
+                              ? tfVal === true
+                                ? 'bg-emerald-950/20 border-emerald-500/50 shadow-sm shadow-emerald-950/40 ring-1 ring-emerald-500/20'
+                                : tfVal === false
+                                ? 'bg-rose-950/20 border-rose-500/50 shadow-sm shadow-rose-950/40 ring-1 ring-rose-500/20'
+                                : 'border-transparent bg-slate-900/30'
+                              : isCorrect
                               ? 'bg-emerald-950/20 border-emerald-500/50 shadow-sm shadow-emerald-950/40 ring-1 ring-emerald-500/20'
                               : 'border-transparent'
                           }`}
                         >
                           <div className="flex flex-col items-center gap-1 shrink-0 mt-1">
-                            <span className={`w-12 text-center text-[10px] font-black py-2 rounded-xl border select-none transition-colors ${
-                              isCorrect
-                                ? 'bg-emerald-500 text-slate-950 border-emerald-400 font-extrabold shadow-sm'
-                                : 'bg-slate-950 border-slate-800 text-slate-400'
-                            }`}>
-                              {LETTERS[idx] ?? String(idx + 1)} ({idx + 1})
-                            </span>
-                            {(questionType === 'SINGLE' || questionType === 'MULTI') && (
+                            {isMultiTf ? (
+                              <span className={`w-12 text-center text-[11px] font-black py-1.5 rounded-xl border select-none transition-colors ${
+                                tfVal === true
+                                  ? 'bg-emerald-500 text-slate-950 border-emerald-400 font-extrabold shadow-sm'
+                                  : tfVal === false
+                                  ? 'bg-rose-500 text-slate-950 border-rose-400 font-extrabold shadow-sm'
+                                  : 'bg-purple-950/80 border-purple-800 text-purple-300 font-mono'
+                              }`}>
+                                {tfKey})
+                              </span>
+                            ) : (
+                              <span className={`w-12 text-center text-[10px] font-black py-2 rounded-xl border select-none transition-colors ${
+                                isCorrect
+                                  ? 'bg-emerald-500 text-slate-950 border-emerald-400 font-extrabold shadow-sm'
+                                  : 'bg-slate-950 border-slate-800 text-slate-400'
+                              }`}>
+                                {LETTERS[idx] ?? String(idx + 1)} ({idx + 1})
+                              </span>
+                            )}
+
+                            {isMultiTf ? (
+                              <div className="flex flex-col gap-1 w-12">
+                                <button
+                                  type="button"
+                                  disabled={!isEditing}
+                                  onClick={() => {
+                                    const next = { ...tfMap, [tfKey]: true };
+                                    setCorrectAnswer(serializeMultiTfAnswer(next));
+                                  }}
+                                  className={`text-[9px] py-0.5 rounded font-black border transition-all cursor-pointer ${
+                                    tfVal === true
+                                      ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-sm'
+                                      : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+                                  }`}
+                                >
+                                  Đúng
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={!isEditing}
+                                  onClick={() => {
+                                    const next = { ...tfMap, [tfKey]: false };
+                                    setCorrectAnswer(serializeMultiTfAnswer(next));
+                                  }}
+                                  className={`text-[9px] py-0.5 rounded font-black border transition-all cursor-pointer ${
+                                    tfVal === false
+                                      ? 'bg-rose-500 text-slate-950 border-rose-400 shadow-sm'
+                                      : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+                                  }`}
+                                >
+                                  Sai
+                                </button>
+                              </div>
+                            ) : (questionType === 'SINGLE' || questionType === 'MULTI') && (
                               <label className={`flex items-center gap-1 cursor-pointer px-2 py-0.5 rounded-lg border transition-all select-none ${
                                 isCorrect
                                   ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300 font-bold shadow-sm shadow-emerald-500/20'
@@ -464,13 +522,23 @@ export function QuestionModal({
                     <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Loại câu hỏi</label>
                     <select
                       value={questionType}
-                      onChange={e => setQuestionType(e.target.value as QuestionType)}
+                      onChange={e => {
+                        const newType = e.target.value as QuestionType;
+                        const oldType = questionType;
+                        if (newType === 'MULTI_TRUE_FALSE' && oldType !== 'MULTI_TRUE_FALSE') {
+                          setCorrectAnswer(convertMultiToMultiTf(correctAnswer, options.length));
+                        } else if (oldType === 'MULTI_TRUE_FALSE' && (newType === 'MULTI' || newType === 'SINGLE')) {
+                          setCorrectAnswer(convertMultiTfToMulti(correctAnswer));
+                        }
+                        setQuestionType(newType);
+                      }}
                       disabled={!isEditing}
                       className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500 transition-colors cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed"
                     >
                       <option value="SINGLE">Trắc nghiệm 1 đáp án</option>
                       <option value="MULTI">Nhiều đáp án đúng</option>
                       <option value="TRUE_FALSE">Đúng / Sai</option>
+                      <option value="MULTI_TRUE_FALSE">Đúng / Sai 4 ý (GDPT 2025)</option>
                       <option value="SHORT_ANSWER">Trả lời ngắn</option>
                       <option value="FILL_BLANK">Điền vào chỗ trống</option>
                       <option value="ORDERING">Sắp xếp thứ tự</option>
@@ -493,6 +561,54 @@ export function QuestionModal({
                           type="button" onClick={() => setCorrectAnswer('2')} disabled={!isEditing}
                           className={`flex-1 py-2 px-3 rounded-xl border text-xs font-black transition-all cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed ${correctAnswer === '2' ? 'bg-rose-950/40 border-rose-500 text-rose-400 shadow-sm shadow-rose-500/20' : 'bg-slate-950 border-slate-800 text-slate-500 hover:border-slate-700'}`}
                         >Sai (2)</button>
+                      </div>
+                    ) : questionType === 'MULTI_TRUE_FALSE' ? (
+                      <div className="space-y-2 p-2.5 bg-slate-950/90 border border-slate-800 rounded-2xl shadow-inner">
+                        <div className="flex flex-col gap-1 pb-1 border-b border-slate-850">
+                          <div className="text-[10px] text-cyan-400 uppercase font-black tracking-wider flex items-center justify-between">
+                            <span>Ma trận Đúng / Sai (GDPT 2025):</span>
+                            <span className="text-[10px] font-mono text-amber-400 bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-800/40">
+                              {serializeMultiTfVector(parseMultiTfAnswer(correctAnswer))}
+                            </span>
+                          </div>
+                          <span className="text-[10px] font-mono text-slate-400 font-normal truncate">
+                            {serializeMultiTfAnswer(parseMultiTfAnswer(correctAnswer)) || 'Chưa thiết lập'}
+                          </span>
+                        </div>
+                        {['a', 'b', 'c', 'd'].map((letter, i) => {
+                          const currentMap = parseMultiTfAnswer(correctAnswer);
+                          const userVal = currentMap[letter];
+                          return (
+                            <div key={letter} className="flex items-center justify-between gap-2 p-2 bg-slate-900/60 rounded-xl border border-slate-800/80">
+                              <span className="font-bold text-xs text-purple-400 font-mono w-6 text-center">{letter})</span>
+                              <span className="text-xs text-slate-300 truncate flex-1 font-medium">{options[i] || `(Mệnh đề ${letter})`}</span>
+                              <div className="flex gap-1.5 shrink-0">
+                                <button
+                                  type="button"
+                                  disabled={!isEditing}
+                                  onClick={() => {
+                                    const next = { ...currentMap, [letter]: true };
+                                    setCorrectAnswer(serializeMultiTfAnswer(next));
+                                  }}
+                                  className={`px-3 py-1 rounded-lg text-[11px] font-black transition-all cursor-pointer disabled:cursor-not-allowed ${
+                                    userVal === true ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-500/40 ring-1 ring-emerald-400' : 'bg-slate-800 text-slate-400 hover:text-white'
+                                  }`}
+                                >Đúng</button>
+                                <button
+                                  type="button"
+                                  disabled={!isEditing}
+                                  onClick={() => {
+                                    const next = { ...currentMap, [letter]: false };
+                                    setCorrectAnswer(serializeMultiTfAnswer(next));
+                                  }}
+                                  className={`px-3 py-1 rounded-lg text-[11px] font-black transition-all cursor-pointer disabled:cursor-not-allowed ${
+                                    userVal === false ? 'bg-rose-600 text-white shadow-sm shadow-rose-500/40 ring-1 ring-rose-400' : 'bg-slate-800 text-slate-400 hover:text-white'
+                                  }`}
+                                >Sai</button>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     ) : (questionType === 'SINGLE' || questionType === 'MULTI') ? (
                       <div className="space-y-2">

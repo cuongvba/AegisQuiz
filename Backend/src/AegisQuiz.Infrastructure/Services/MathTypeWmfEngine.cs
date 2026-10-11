@@ -124,6 +124,74 @@ namespace AegisQuiz.Infrastructure.Services
         };
 
         /// <summary>
+        /// Tối ưu hóa tính tương phản và làm phẳng nền trắng (Alpha Flattening) cho hình ảnh trích xuất:
+        /// - Xử lý triệt để các ảnh đồ thị, sơ đồ có kênh Alpha trong suốt (thường gặp khi copy từ Word/GeoGebra/Cabri)
+        /// - Chuyển đổi mọi pixel trong suốt (alpha < 255) thành nền trắng tinh khiết (#FFFFFF)
+        /// - Đảm bảo hình ảnh giữ trọn vẹn nét vẽ gốc (đen/màu), hiển thị rõ ràng, tương phản hoàn hảo trên mọi nền (Dark/Light mode)
+        /// </summary>
+        public static byte[] FlattenImageToWhiteBackground(byte[] bytes)
+        {
+            if (bytes == null || bytes.Length == 0) return bytes;
+
+            try
+            {
+                using var msIn = new MemoryStream(bytes);
+                using var srcBitmap = SKBitmap.Decode(msIn);
+                if (srcBitmap == null) return bytes;
+
+                // Nếu ảnh đã hoàn toàn đục (Opaque), không có kênh trong suốt thì giữ nguyên
+                if (srcBitmap.AlphaType == SKAlphaType.Opaque)
+                {
+                    return bytes;
+                }
+
+                int w = srcBitmap.Width;
+                int h = srcBitmap.Height;
+                bool hasTransparency = false;
+
+                // Kiểm tra nhanh mẫu pixel xem có độ trong suốt không
+                int stepY = Math.Max(1, h / 25);
+                int stepX = Math.Max(1, w / 25);
+                for (int y = 0; y < h && !hasTransparency; y += stepY)
+                {
+                    for (int x = 0; x < w; x += stepX)
+                    {
+                        if (srcBitmap.GetPixel(x, y).Alpha < 250)
+                        {
+                            hasTransparency = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!hasTransparency)
+                {
+                    return bytes;
+                }
+
+                // Tạo surface nền trắng tinh khiết cùng kích thước
+                var info = new SKImageInfo(w, h, SKColorType.Rgba8888, SKAlphaType.Premul);
+                using var surface = SKSurface.Create(info);
+                if (surface == null) return bytes;
+
+                var canvas = surface.Canvas;
+                canvas.Clear(SKColors.White); // Phủ nền trắng #FFFFFF
+                canvas.DrawBitmap(srcBitmap, 0, 0); // Vẽ đè hình ảnh lên nền trắng
+                canvas.Flush();
+
+                using var image = surface.Snapshot();
+                using var pngData = image.Encode(SKEncodedImageFormat.Png, 100);
+                using var msOut = new MemoryStream();
+                pngData.SaveTo(msOut);
+                return msOut.ToArray();
+            }
+            catch
+            {
+                return bytes;
+            }
+        }
+
+        /// <summary>
         /// Chuyển đổi tệp media nhúng sang chuỗi Data URI chuẩn W3C
         /// </summary>
         public static string ConvertMediaToDataUri(string filename, byte[] bytes)
@@ -141,6 +209,13 @@ namespace AegisQuiz.Infrastructure.Services
                 return "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxIiBoZWlnaHQ9IjEiIHZpZXdCb3g9IjAgMCAxIDEiPjwvc3ZnPg==";
             }
 
+            // Tự động làm phẳng nền trắng cho ảnh có kênh alpha (PNG, WebP, GIF...)
+            // Đảm bảo đồ thị tọa độ và sơ đồ không bị tối đen khi hiển thị trên giao diện nền tối
+            if (ext == ".png" || ext == ".webp" || ext == ".gif")
+            {
+                bytes = FlattenImageToWhiteBackground(bytes);
+            }
+
             string mime = ext switch
             {
                 ".jpg" or ".jpeg" => "image/jpeg",
@@ -154,6 +229,29 @@ namespace AegisQuiz.Infrastructure.Services
         }
 
         /// <summary>
+        /// Đường dẫn binary wmf2svg (Linux container: /usr/bin/wmf2svg hoặc trên PATH). Null nếu không có — khi đó bỏ qua tầng 1
+        /// để không tạo tiến trình / file tạm vô ích trên mỗi công thức WMF.
+        /// </summary>
+        private static readonly Lazy<string?> Wmf2SvgBinaryPath = new(() =>
+        {
+            if (File.Exists("/usr/bin/wmf2svg")) return "/usr/bin/wmf2svg";
+            var pathDirs = (Environment.GetEnvironmentVariable("PATH") ?? string.Empty).Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var dir in pathDirs)
+            {
+                foreach (var candidate in new[] { "wmf2svg", "wmf2svg.exe" })
+                {
+                    try
+                    {
+                        var full = Path.Combine(dir.Trim(), candidate);
+                        if (File.Exists(full)) return full;
+                    }
+                    catch { }
+                }
+            }
+            return null;
+        });
+
+        /// <summary>
         /// Chuyển đổi WMF sang SVG hoặc PNG qua kiến trúc Fallback 4 tầng
         /// </summary>
         public static string ConvertWmfToSvgOrPng(byte[] bytes)
@@ -161,49 +259,56 @@ namespace AegisQuiz.Infrastructure.Services
             if (bytes == null || bytes.Length == 0) return string.Empty;
 
             // 1. Thử dùng wmf2svg CLI (Vector SVG siêu nét chuẩn W3C trên Linux Container)
-            try
+            //    Chỉ chạy khi binary thực sự tồn tại — tránh ghi file tạm vô ích (rò rỉ hàng trăm nghìn file trong %TEMP%) trên Windows.
+            var wmfBin = Wmf2SvgBinaryPath.Value;
+            if (wmfBin != null)
             {
                 var tempWmf = Path.Combine(Path.GetTempPath(), $"wmf_{Guid.NewGuid():N}.wmf");
                 var tempSvg = Path.Combine(Path.GetTempPath(), $"wmf_{Guid.NewGuid():N}.svg");
-                File.WriteAllBytes(tempWmf, bytes);
-
-                string wmfBin = File.Exists("/usr/bin/wmf2svg") ? "/usr/bin/wmf2svg" : "wmf2svg";
-
-                var psi = new ProcessStartInfo
+                try
                 {
-                    FileName = wmfBin,
-                    RedirectStandardOutput = false,
-                    RedirectStandardError = false,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                };
-                psi.ArgumentList.Add("-o");
-                psi.ArgumentList.Add(tempSvg);
-                psi.ArgumentList.Add(tempWmf);
+                    File.WriteAllBytes(tempWmf, bytes);
 
-                using var process = Process.Start(psi);
-                if (process != null)
-                {
-                    process.WaitForExit(8000);
-                    if (File.Exists(tempSvg))
+                    var psi = new ProcessStartInfo
                     {
-                        var svgBytes = File.ReadAllBytes(tempSvg);
-                        try { File.Delete(tempWmf); } catch { }
-                        try { File.Delete(tempSvg); } catch { }
+                        FileName = wmfBin,
+                        RedirectStandardOutput = false,
+                        RedirectStandardError = false,
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    };
+                    psi.ArgumentList.Add("-o");
+                    psi.ArgumentList.Add(tempSvg);
+                    psi.ArgumentList.Add(tempWmf);
 
-                        if (svgBytes.Length > 0)
+                    using var process = Process.Start(psi);
+                    if (process != null)
+                    {
+                        if (!process.WaitForExit(8000))
                         {
-                            var svgStr = Encoding.Latin1.GetString(svgBytes);
-                            svgStr = SanitizeMathTypeSvg(svgStr);
-                            return "data:image/svg+xml;base64," + Convert.ToBase64String(Encoding.UTF8.GetBytes(svgStr));
+                            try { process.Kill(entireProcessTree: true); } catch { }
+                        }
+                        if (File.Exists(tempSvg))
+                        {
+                            var svgBytes = File.ReadAllBytes(tempSvg);
+                            if (svgBytes.Length > 0)
+                            {
+                                var svgStr = Encoding.Latin1.GetString(svgBytes);
+                                svgStr = SanitizeMathTypeSvg(svgStr);
+                                return "data:image/svg+xml;base64," + Convert.ToBase64String(Encoding.UTF8.GetBytes(svgStr));
+                            }
                         }
                     }
                 }
-                try { if (File.Exists(tempWmf)) File.Delete(tempWmf); } catch { }
-            }
-            catch
-            {
-                // Fallback nếu wmf2svg không có sẵn
+                catch
+                {
+                    // Fallback nếu wmf2svg lỗi
+                }
+                finally
+                {
+                    try { if (File.Exists(tempWmf)) File.Delete(tempWmf); } catch { }
+                    try { if (File.Exists(tempSvg)) File.Delete(tempSvg); } catch { }
+                }
             }
 
             // 2. Thử decode WMF bytes bằng SkiaSharp (cross-platform)
@@ -216,11 +321,20 @@ namespace AegisQuiz.Infrastructure.Services
                     using var srcBitmap = SKBitmap.Decode(msIn);
                     if (srcBitmap != null)
                     {
-                        using var skImage = SKImage.FromBitmap(srcBitmap);
-                        using var pngData = skImage.Encode(SKEncodedImageFormat.Png, 100);
-                        using var msOut = new MemoryStream();
-                        pngData.SaveTo(msOut);
-                        return "data:image/png;base64," + Convert.ToBase64String(msOut.ToArray());
+                        var info = new SKImageInfo(srcBitmap.Width, srcBitmap.Height, SKColorType.Rgba8888, SKAlphaType.Premul);
+                        using var surface = SKSurface.Create(info);
+                        if (surface != null)
+                        {
+                            var canvas = surface.Canvas;
+                            canvas.Clear(SKColors.White);
+                            canvas.DrawBitmap(srcBitmap, 0, 0);
+                            canvas.Flush();
+                            using var skImage = surface.Snapshot();
+                            using var pngData = skImage.Encode(SKEncodedImageFormat.Png, 100);
+                            using var msOut = new MemoryStream();
+                            pngData.SaveTo(msOut);
+                            return "data:image/png;base64," + Convert.ToBase64String(msOut.ToArray());
+                        }
                     }
                 }
                 catch { }

@@ -13,7 +13,7 @@
  *   └── index.tsx                        — File này (orchestrator)
  */
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { FileUp, Plus, HelpCircle, Star, Sparkles, Layers, ArrowUpDown, Eye, Edit, ToggleLeft, ToggleRight, Loader2, FolderOpen, Brain, Wand2, Cpu, BookOpen, X, CheckCircle2, Unlink, Tag, Trash2, AlertTriangle, Network, FileSpreadsheet, Users, User, ShieldCheck, UploadCloud } from 'lucide-react';
+import { FileUp, Plus, HelpCircle, Star, Sparkles, Layers, ArrowUpDown, Eye, Edit, ToggleLeft, ToggleRight, Loader2, FolderOpen, Brain, Wand2, Cpu, BookOpen, X, CheckCircle2, Unlink, Tag, Trash2, AlertTriangle, Network, FileSpreadsheet, Users, User, ShieldCheck, UploadCloud, ChevronDown } from 'lucide-react';
 import { learnerQuizService } from '@/services/learner-quiz.service';
 import type { LearnerQuestion, QuestionType } from '@/types/quiz';
 import { useAuthContext } from '@/app/providers/AuthProvider';
@@ -249,6 +249,8 @@ export function AdminQuestionsPage() {
     docxPreviewList, setDocxPreviewList,
     showDocxPreviewModal, setShowDocxPreviewModal,
     isDocxProcessing, setIsDocxProcessing,
+    processingFileName,
+    processingDurationMs,
     excelPreviewData, setExcelPreviewData,
     showExcelPreviewModal, setShowExcelPreviewModal,
     showExcelStudioModal, setShowExcelStudioModal,
@@ -535,6 +537,48 @@ export function AdminQuestionsPage() {
     }
   };
 
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
+  const handleBulkDeleteQuestions = async () => {
+    if (selectedQuestionIds.length === 0) return;
+    const count = selectedQuestionIds.length;
+    if (!window.confirm(`⚠️ BẠN CÓ CHẮC CHẮN MUỐN XÓA VĨNH VIỄN ${count} CÂU HỎI ĐÃ CHỌN?\n\nThao tác này sẽ xóa hoàn toàn các câu hỏi khỏi ngân hàng đề thi và không thể hoàn tác.`)) {
+      return;
+    }
+
+    setIsBulkDeleting(true);
+    try {
+      const res = await learnerQuizService.bulkDeleteQuestions(selectedQuestionIds);
+      alert(res?.message || `Đã xóa thành công ${count} câu hỏi.`);
+      setSelectedQuestionIds([]);
+      await fetchData();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Lỗi khi xóa hàng loạt câu hỏi.');
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  };
+
+  const [isCleaningOrphans, setIsCleaningOrphans] = useState(false);
+
+  const handleCleanupOrphans = async () => {
+    if (!window.confirm('🧹 BẠN CÓ MUỐN DỌN DẸP TOÀN BỘ CÂU HỎI MỒ CÔI KHÔNG?\n\nHệ thống sẽ tự động quét và xóa tất cả các câu hỏi không còn thuộc bất kỳ chủ đề hợp lệ nào trong danh mục.')) {
+      return;
+    }
+
+    setIsCleaningOrphans(true);
+    try {
+      const res = await learnerQuizService.cleanupOrphanQuestions();
+      alert(res?.message || 'Đã hoàn tất dọn dẹp câu hỏi mồ côi.');
+      setSelectedQuestionIds([]);
+      await fetchData();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Lỗi khi dọn dẹp câu hỏi mồ côi.');
+    } finally {
+      setIsCleaningOrphans(false);
+    }
+  };
+
   const handleSuggestAnswer = async (q: LearnerQuestion) => {
     setIsDocxProcessing(true);
     try {
@@ -679,131 +723,180 @@ export function AdminQuestionsPage() {
     finally { setLoading(false); }
   };
 
-  const handleLoadPresetSample = async (preset: 'MATH' | 'GPLX' | 'GPLX_F2023') => {
-    setLoading(true);
-    try {
-      const res = await learnerQuizService.loadPresetSample(preset);
-      alert(`⚡ Nạp thành công: ${res.message || res.count + ' câu hỏi'}`);
-      await fetchData();
-    } catch (err: any) {
-      alert(err.response?.data?.message || 'Lỗi nạp bộ đề mẫu.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // ── RENDER ───────────────────────────────────────────────────────────────────
   return (
-    <div className="space-y-8 font-sans">
-      {/* Missing answers banner */}
-      {missingAnswersCount > 0 && (
-        <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30 rounded-2xl p-4 flex items-center justify-between gap-4 backdrop-blur-md">
-          <div className="flex items-center gap-3">
-            <span className="w-10 h-10 bg-amber-500/20 text-amber-400 rounded-xl flex items-center justify-center font-bold text-lg">⚠️</span>
-            <div className="text-left text-white">
-              <h4 className="text-sm font-bold text-slate-200">Phát hiện câu hỏi chưa có đáp án</h4>
-              <p className="text-xs text-slate-400 mt-0.5">Hệ thống quét thấy có {missingAnswersCount} câu hỏi chưa được cấu hình đáp án đúng.</p>
+    <div className="space-y-6 font-sans">
+      {/* ── Page Header: Streamlined, Minimalist, High-Efficiency ──────────── */}
+      <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-4 pb-1">
+        <div className="space-y-1.5">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-100 tracking-tight">
+              Ngân hàng Câu hỏi
+            </h1>
+            <div className="flex items-center gap-2 text-xs font-semibold">
+              <span className="px-2.5 py-0.5 rounded-full bg-slate-800/80 text-slate-300 border border-slate-700/60 font-mono">
+                {questions.length} câu hỏi
+              </span>
+              <span className="px-2.5 py-0.5 rounded-full bg-slate-800/80 text-slate-300 border border-slate-700/60 font-mono">
+                {topics.length} chủ đề
+              </span>
+              {missingAnswersCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowMissingOnly(!showMissingOnly)}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold transition-all border cursor-pointer ${
+                    showMissingOnly
+                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/60 shadow-sm shadow-amber-500/20'
+                      : 'bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20'
+                  }`}
+                  title="Lọc nhanh danh sách câu hỏi chưa được gán đáp án đúng"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                  <span>{missingAnswersCount} chưa có đáp án</span>
+                  <span className="text-[10px] underline ml-0.5">{showMissingOnly ? '(Bỏ lọc)' : '(Lọc ngay)'}</span>
+                </button>
+              )}
             </div>
           </div>
-          <button onClick={() => setShowMissingOnly(!showMissingOnly)} className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer ${showMissingOnly ? 'bg-amber-500 text-slate-950 border-amber-500' : 'bg-slate-950 text-amber-400 border-amber-500/30'}`}>
-            {showMissingOnly ? 'Hiển thị tất cả' : 'Lọc xử lý ngay'}
-          </button>
+          <p className="text-xs sm:text-sm text-slate-400 font-medium">
+            Quản trị ngân hàng đề thi, bóc tách tài liệu tự động và phân cấp chủ đề.
+          </p>
         </div>
-      )}
 
-      {/* Page header */}
-      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400 tracking-tight">Ngân hàng Câu hỏi</h1>
-          <p className="text-sm text-slate-400 mt-1 font-medium">Bảng điều phối, nhập xuất Excel và quản trị chủ đề.</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Role switcher */}
-          <div className="flex items-center gap-1.5 bg-slate-950/60 border border-slate-850 rounded-xl px-2.5 py-1.5 text-xs select-none">
-            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Vai trò:</span>
-            <button onClick={() => setUserRoleOverride('admin')} className={`px-2.5 py-0.5 rounded-lg text-[10px] font-black transition-colors cursor-pointer ${userRoleOverride === 'admin' ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30' : 'text-slate-400 hover:text-white border border-transparent'}`}>Admin</button>
-            <button onClick={() => setUserRoleOverride('viewer')} className={`px-2.5 py-0.5 rounded-lg text-[10px] font-black transition-colors cursor-pointer ${userRoleOverride === 'viewer' ? 'bg-amber-600/20 text-amber-400 border border-amber-500/30' : 'text-slate-400 hover:text-white border border-transparent'}`}>Viewer</button>
+        {/* ── Action Toolbar: Consolidated & Elegant ────────────────────── */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Compact Role Switcher */}
+          <div className="flex items-center bg-slate-900/90 border border-slate-800 rounded-xl p-0.5 text-xs select-none">
+            <button
+              type="button"
+              onClick={() => setUserRoleOverride('admin')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                userRoleOverride === 'admin'
+                  ? 'bg-blue-600/30 text-blue-300 border border-blue-500/40 shadow-sm shadow-blue-500/20'
+                  : 'text-slate-400 hover:text-slate-200 border border-transparent'
+              }`}
+            >
+              Admin
+            </button>
+            <button
+              type="button"
+              onClick={() => setUserRoleOverride('viewer')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                userRoleOverride === 'viewer'
+                  ? 'bg-amber-600/30 text-amber-300 border border-amber-500/40 shadow-sm shadow-amber-500/20'
+                  : 'text-slate-400 hover:text-slate-200 border border-transparent'
+              }`}
+            >
+              Viewer
+            </button>
           </div>
+
           {hasWritePermission && (
             <>
-              {/* Nút Nạp Nhanh Bộ Đề Mẫu */}
+              {/* Phân tầng & Ngành */}
+              <button
+                type="button"
+                onClick={() => setShowGovernanceModal(true)}
+                className="flex items-center gap-1.5 bg-slate-900/90 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 hover:border-slate-700 px-3 py-1.5 rounded-xl font-semibold text-xs transition-all cursor-pointer shadow-sm active:scale-95"
+                title="Quản trị Cây phân cấp 5 tầng (HQ -> Chi nhánh -> Phòng ban) & Danh mục Ngành động"
+              >
+                <Network size={14} className="text-sky-400" />
+                <span className="hidden sm:inline">Phân tầng & Ngành</span>
+              </button>
+
+              {/* Thêm Chủ đề */}
+              <button
+                type="button"
+                onClick={openAddTopicModal}
+                className="flex items-center gap-1.5 bg-slate-900/90 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 hover:border-slate-700 px-3 py-1.5 rounded-xl font-semibold text-xs transition-all cursor-pointer shadow-sm active:scale-95"
+              >
+                <FolderOpen size={14} className="text-amber-400" />
+                <span>+ Chủ đề</span>
+              </button>
+
+              {/* Nhập đề thi / Studio Dropdown */}
               <div className="relative group">
                 <button
                   type="button"
-                  className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white px-3.5 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-emerald-500/25 active:scale-95 text-xs cursor-pointer border border-emerald-400/30"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center gap-1.5 bg-slate-900/90 hover:bg-slate-800 text-emerald-300 hover:text-emerald-200 border border-emerald-500/40 px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer shadow-sm active:scale-95"
+                  title="Nhấp để tải tệp hoặc rê chuột để mở Cognitive Studio"
                 >
-                  <Sparkles size={14} className="text-amber-300 animate-pulse" />
-                  ⚡ Nạp Nhanh Đề Mẫu
+                  <UploadCloud size={14} className="text-emerald-400" />
+                  <span>Nhập đề thi</span>
+                  <ChevronDown size={12} className="text-emerald-400/80 transition-transform group-hover:rotate-180" />
                 </button>
-                <div className="absolute right-0 mt-1 w-72 bg-slate-900/95 border border-slate-700 rounded-xl shadow-2xl p-2 hidden group-hover:block z-50 backdrop-blur-xl">
-                  <div className="text-[10px] font-bold text-slate-400 px-3 py-1 uppercase tracking-wider">Bộ câu hỏi thực tế sẵn có</div>
+                <div className="absolute right-0 mt-1.5 w-60 bg-slate-900/95 border border-slate-700/80 rounded-2xl shadow-2xl p-1.5 hidden group-hover:block z-50 backdrop-blur-xl animate-in fade-in">
                   <button
-                    onClick={() => handleLoadPresetSample('GPLX_F2023')}
-                    className="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-slate-200 hover:bg-slate-800 hover:text-sky-400 flex items-center justify-between transition-colors cursor-pointer"
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-200 hover:bg-slate-800 hover:text-emerald-300 flex items-center gap-2.5 transition-colors cursor-pointer"
                   >
-                    <span>🚦 GPLX 2023 (Biển Báo & Sa Hình)</span>
-                    <span className="text-[10px] bg-sky-500/20 text-sky-300 px-1.5 py-0.5 rounded border border-sky-500/30">GPLXf2023.pdf</span>
+                    <FileUp size={14} className="text-emerald-400" />
+                    <div>
+                      <div className="font-bold">Tải tệp Word / PDF / Excel</div>
+                      <div className="text-[10px] text-slate-400">Bóc tách & lập barem tự động</div>
+                    </div>
                   </button>
                   <button
-                    onClick={() => handleLoadPresetSample('MATH')}
-                    className="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-slate-200 hover:bg-slate-800 hover:text-emerald-400 flex items-center justify-between transition-colors cursor-pointer mt-1"
+                    type="button"
+                    onClick={handleOpenExcelStudio}
+                    className="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-200 hover:bg-slate-800 hover:text-cyan-300 flex items-center gap-2.5 transition-colors cursor-pointer mt-0.5 border-t border-slate-800/80"
                   >
-                    <span>📐 Đề Toán GDPT 2025</span>
-                    <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-500/30">DOCX 215 câu</span>
-                  </button>
-                  <button
-                    onClick={() => handleLoadPresetSample('GPLX')}
-                    className="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-slate-200 hover:bg-slate-800 hover:text-amber-400 flex items-center justify-between transition-colors cursor-pointer mt-1"
-                  >
-                    <span>🚗 600 Câu Sát Hạch GPLX</span>
-                    <span className="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded border border-amber-500/30">PDF Điểm liệt</span>
-                  </button>
-                  <button
-                    onClick={handleLoadStudioSample}
-                    className="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-emerald-300 hover:bg-emerald-950/60 hover:text-emerald-200 flex items-center justify-between transition-colors cursor-pointer border border-emerald-500/30 mt-1"
-                  >
-                    <span className="flex items-center gap-1.5">
-                      <FileSpreadsheet size={13} className="text-emerald-400" />
-                      🏦 Mở Studio: Đề Tín Dụng (240 câu)
-                    </span>
-                    <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-500/30 font-mono">UCIS</span>
+                    <FileSpreadsheet size={14} className="text-cyan-400" />
+                    <div>
+                      <div className="font-bold flex items-center gap-1.5">
+                        <span>Cognitive Studio</span>
+                        <span className="text-[9px] bg-cyan-500/20 text-cyan-300 px-1 py-0.2 rounded font-mono">v3.0</span>
+                      </div>
+                      <div className="text-[10px] text-slate-400">Soi chiếu đa Sheet & AI Copilot</div>
+                    </div>
                   </button>
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={handleOpenExcelStudio}
-                className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-500 hover:to-teal-500 text-white px-3.5 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-emerald-900/30 active:scale-95 text-xs cursor-pointer border border-emerald-400/30"
-                title="Mở Universal Cognitive Ingestion Studio (UCIS v3.0) - Soi chiếu đa Sheet, Tự động phát hiện lược đồ, Radar nhận thức & AI Copilot"
-              >
-                <FileSpreadsheet size={15} className="text-emerald-200 animate-pulse" />
-                <span>Cognitive Ingestion Studio</span>
-                <span className="bg-emerald-400/20 text-emerald-300 text-[10px] px-1.5 py-0.2 rounded border border-emerald-400/40 font-mono">v3.0</span>
-              </button>
-              <button
-                onClick={() => setShowAiGenerateModal(true)}
-                className="flex items-center gap-2 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white px-4 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-purple-500/25 active:scale-95 text-xs cursor-pointer border border-purple-400/30"
-              >
-                <Brain size={15} className="text-purple-200 animate-pulse" />
-                Tạo câu hỏi AI từ tài liệu
-              </button>
-              <button
-                onClick={() => setShowGovernanceModal(true)}
-                className="flex items-center gap-2 bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-800 hover:from-blue-600 hover:to-indigo-600 text-white px-3.5 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-indigo-900/30 active:scale-95 text-xs cursor-pointer border border-indigo-400/30"
-                title="Quản trị Cây phân cấp 5 tầng (HQ -> Chi nhánh -> Phòng ban) & Danh mục Ngành động"
-              >
-                <Network size={14} className="text-cyan-300" />
-                Phân Tầng & Ngành Động
-              </button>
-              <button onClick={openAddTopicModal} className="flex items-center gap-2 bg-slate-900 hover:bg-slate-850 text-slate-350 border border-slate-800 px-4 py-2.5 rounded-xl font-bold transition-all text-xs cursor-pointer active:scale-95"><FolderOpen size={14} /> Thêm Chủ đề mới</button>
-              <button onClick={openAddModal} className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-blue-500/10 active:scale-95 text-xs cursor-pointer"><Plus size={14} /> Thêm câu hỏi thủ công</button>
+              {/* Primary Action: Thêm câu hỏi (Soạn thủ công / Tạo bằng AI) */}
+              <div className="relative group">
+                <button
+                  type="button"
+                  onClick={openAddModal}
+                  className="flex items-center gap-1.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all shadow-md shadow-indigo-900/30 active:scale-95 cursor-pointer border border-indigo-400/30"
+                >
+                  <Plus size={14} />
+                  <span>Thêm câu hỏi</span>
+                  <ChevronDown size={12} className="text-white/80 transition-transform group-hover:rotate-180" />
+                </button>
+                <div className="absolute right-0 mt-1.5 w-56 bg-slate-900/95 border border-slate-700/80 rounded-2xl shadow-2xl p-1.5 hidden group-hover:block z-50 backdrop-blur-xl animate-in fade-in">
+                  <button
+                    type="button"
+                    onClick={openAddModal}
+                    className="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-200 hover:bg-slate-800 hover:text-blue-300 flex items-center gap-2.5 transition-colors cursor-pointer"
+                  >
+                    <Plus size={14} className="text-blue-400" />
+                    <div>
+                      <div className="font-bold">Soạn thảo thủ công</div>
+                      <div className="text-[10px] text-slate-400">Tạo câu hỏi với barem chuẩn</div>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowAiGenerateModal(true)}
+                    className="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-200 hover:bg-slate-800 hover:text-purple-300 flex items-center gap-2.5 transition-colors cursor-pointer mt-0.5 border-t border-slate-800/80"
+                  >
+                    <Brain size={14} className="text-purple-400" />
+                    <div>
+                      <div className="font-bold">Tạo tự động bằng AI</div>
+                      <div className="text-[10px] text-slate-400">Trích xuất từ tài liệu qua Gemini</div>
+                    </div>
+                  </button>
+                </div>
+              </div>
             </>
           )}
         </div>
       </div>
 
-      {/* Upload zone */}
+      {/* ── Smart Slim Dropzone (Thay thế khối 220px cồng kềnh) ─────────────── */}
       <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".xlsx,.xls,.docx,.pdf" className="hidden" />
       {hasWritePermission && (
         <div
@@ -822,24 +915,51 @@ export function AdminQuestionsPage() {
               }
             }
           }}
-          onClick={() => fileInputRef.current?.click()}
-          className={`border-2 border-dashed rounded-3xl p-10 text-center transition-all cursor-pointer backdrop-blur-md relative overflow-hidden group ${dragActive ? 'border-blue-500 bg-blue-500/10' : 'border-slate-800 bg-slate-900/40 hover:border-slate-700 hover:bg-slate-900/60'}`}
+          className={`rounded-2xl border transition-all backdrop-blur-md px-4 py-2.5 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left ${
+            dragActive
+              ? 'border-blue-500 bg-blue-500/15 shadow-lg shadow-blue-500/20 scale-[1.01]'
+              : 'border-slate-800/80 bg-slate-900/40 hover:border-slate-700/80 hover:bg-slate-900/60'
+          }`}
         >
-          <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full blur-2xl group-hover:scale-150 transition-transform" />
-          <div className="w-16 h-16 bg-slate-950/60 border border-slate-800 rounded-full flex items-center justify-center text-slate-400 mx-auto mb-4 group-hover:scale-110 transition-transform"><FileUp size={28} /></div>
-          <h3 className="font-bold text-lg text-slate-200">Kéo thả file Excel (.xlsx) / Word (.docx) / PDF (.pdf) hoặc Nhấp vào đây để tải lên</h3>
-          <p className="text-xs text-slate-500 mt-2 font-medium max-w-md mx-auto leading-relaxed">
-            Nhập nhanh câu hỏi qua <span className="text-green-400 font-semibold">Excel</span>, hoặc tải tệp <span className="text-purple-400 font-semibold">Word (DOCX)</span> / <span className="text-red-400 font-semibold">PDF</span> có sẵn câu hỏi để Gemini AI tự động giải đề & lập barem.
-          </p>
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+          <div
+            className="flex items-center gap-3 cursor-pointer group select-none"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0 group-hover:scale-105 transition-transform">
+              <UploadCloud size={16} className={dragActive ? 'animate-bounce' : ''} />
+            </div>
+            <div>
+              <div className="text-xs sm:text-sm font-semibold text-slate-200 flex items-center gap-1.5 flex-wrap">
+                <span>Kéo thả tệp</span>
+                <span className="text-emerald-400 font-bold font-mono text-xs">DOCX</span>
+                <span className="text-slate-600">/</span>
+                <span className="text-red-400 font-bold font-mono text-xs">PDF</span>
+                <span className="text-slate-600">/</span>
+                <span className="text-blue-400 font-bold font-mono text-xs">Excel</span>
+                <span className="text-slate-400 font-normal">vào đây hoặc nhấp để bóc tách câu hỏi</span>
+              </div>
+              <p className="text-[11px] text-slate-500">
+                Nhận diện cấu trúc đề, công thức LaTeX, MathType WMF và bảng biểu tự động
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); handleOpenExcelStudio(); }}
-              className="flex items-center gap-2 bg-slate-900/90 hover:bg-emerald-950/60 text-emerald-400 border border-emerald-500/40 px-4 py-2 rounded-xl font-bold text-xs cursor-pointer transition-all hover:scale-105 shadow-md shadow-emerald-900/20"
+              onClick={() => fileInputRef.current?.click()}
+              className="px-3 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs cursor-pointer transition-all active:scale-95"
             >
-              <FileSpreadsheet size={14} className="text-emerald-300" />
-              Mở Universal Cognitive Ingestion Studio (UCIS)
-              <span className="bg-emerald-500/20 text-emerald-300 text-[10px] px-1.5 py-0.2 rounded font-mono">v3.0</span>
+              Chọn tệp...
+            </button>
+            <button
+              type="button"
+              onClick={handleOpenExcelStudio}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-950/40 hover:bg-emerald-900/50 text-emerald-300 border border-emerald-500/30 font-bold text-xs cursor-pointer transition-all active:scale-95"
+              title="Mở Universal Cognitive Ingestion Studio (UCIS v3.0)"
+            >
+              <FileSpreadsheet size={13} className="text-emerald-400" />
+              <span>Studio v3.0</span>
             </button>
           </div>
         </div>
@@ -993,6 +1113,34 @@ export function AdminQuestionsPage() {
             </div>
           ) : activeTab === 'questions' ? (
             <div className="w-full overflow-x-auto">
+              {/* Orphan Questions Alert Banner */}
+              {questions.length > 0 && (topics.length === 0 || questions.some(q => !topics.some(t => t.code === q.topicCode || t.categoryCode === q.topicCode || (t.code && q.topicCode && t.code.replace(/[-_]/g, '').toUpperCase() === q.topicCode.replace(/[-_]/g, '').toUpperCase())))) && (
+                <div className="mx-4 mt-3 mb-3 p-4 bg-gradient-to-r from-amber-950/40 via-amber-900/20 to-slate-900/60 border border-amber-500/40 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+                  <div className="flex items-start sm:items-center gap-3 text-amber-200">
+                    <span className="text-xl p-2 bg-amber-500/10 border border-amber-500/20 rounded-xl">⚠️</span>
+                    <div>
+                      <p className="font-bold text-xs sm:text-sm text-amber-300">
+                        {topics.length === 0 
+                          ? `Đã xóa hết chủ đề nhưng vẫn còn ${questions.length} câu hỏi độc lập trong cơ sở dữ liệu!`
+                          : `Phát hiện câu hỏi chưa liên kết với chủ đề hợp lệ nào (Câu hỏi mồ côi).`}
+                      </p>
+                      <p className="text-[11px] text-amber-400/80 mt-0.5">
+                        Kiến trúc bảo toàn câu hỏi giữ lại dữ liệu an toàn. Bạn có thể chọn tick để xóa hoặc bấm nút bên cạnh để làm sạch hoàn toàn.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+                    <button
+                      type="button"
+                      disabled={isCleaningOrphans}
+                      onClick={handleCleanupOrphans}
+                      className="px-4 py-2 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-md shadow-red-600/30 active:scale-95 transition-all disabled:opacity-50"
+                    >
+                      <Trash2 size={13} /> {isCleaningOrphans ? 'Đang dọn dẹp...' : '🧹 Dọn Sạch Câu Hỏi Mồ Côi'}
+                    </button>
+                  </div>
+                </div>
+              )}
               <table className="w-full text-left border-collapse min-w-[750px]">
                 <thead>
                   <tr className="border-b border-slate-850 text-slate-400 text-xs font-black tracking-wider uppercase bg-slate-900/20 select-none">
@@ -1397,6 +1545,8 @@ export function AdminQuestionsPage() {
       <DocxPreviewModal
         isOpen={showDocxPreviewModal} isProcessing={isDocxProcessing} isAiSolving={isAiSolving}
         isConvertingLatex={isConvertingLatex}
+        processingFileName={processingFileName}
+        processingDurationMs={processingDurationMs}
         docxPreviewList={docxPreviewList} topics={topics} loading={loading}
         setDocxPreviewList={setDocxPreviewList}
         onClose={() => setShowDocxPreviewModal(false)}
@@ -1676,6 +1826,15 @@ export function AdminQuestionsPage() {
             title="Gỡ bài đọc hiểu chung khỏi các câu đã chọn"
           >
             <Unlink size={12} /> Gỡ bài đọc
+          </button>
+          <button
+            type="button"
+            disabled={isBulkDeleting}
+            onClick={handleBulkDeleteQuestions}
+            className="px-3.5 py-2 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-bold rounded-xl flex items-center gap-1.5 cursor-pointer shadow-lg shadow-red-600/30 active:scale-95 transition-all whitespace-nowrap disabled:opacity-50"
+            title="Xóa vĩnh viễn các câu hỏi đã chọn khỏi hệ thống"
+          >
+            <Trash2 size={13} /> {isBulkDeleting ? 'Đang xóa...' : '🗑️ Xóa đã chọn'}
           </button>
           <button
             type="button"

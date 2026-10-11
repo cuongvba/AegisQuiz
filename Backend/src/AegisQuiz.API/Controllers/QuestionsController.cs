@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -43,6 +44,9 @@ namespace AegisQuiz.API.Controllers
         private readonly IAiQuestionGeneratorService         _aiGenerator;
         private readonly IVietnameseTextCorrectionService    _textCorrectionService;
         private readonly IContentOwnershipGuard              _ownershipGuard;
+        private readonly IExamDeduplicationEngine            _deduplicationEngine;
+        private readonly ITenantContext                      _tenantContext;
+        private readonly IDynamicDomainContextService        _domainContextService;
 
         public QuestionsController(
             AegisQuizDbContext                  db,
@@ -52,7 +56,10 @@ namespace AegisQuiz.API.Controllers
             IGeminiSolverService                geminiSolver,
             IAiQuestionGeneratorService         aiGenerator,
             IVietnameseTextCorrectionService    textCorrectionService,
-            IContentOwnershipGuard              ownershipGuard)
+            IContentOwnershipGuard              ownershipGuard,
+            IExamDeduplicationEngine            deduplicationEngine,
+            ITenantContext                      tenantContext,
+            IDynamicDomainContextService        domainContextService)
         {
             _db                   = db;
             _excelParser          = excelParser;
@@ -62,6 +69,9 @@ namespace AegisQuiz.API.Controllers
             _aiGenerator          = aiGenerator;
             _textCorrectionService = textCorrectionService;
             _ownershipGuard       = ownershipGuard;
+            _deduplicationEngine  = deduplicationEngine;
+            _tenantContext        = tenantContext;
+            _domainContextService = domainContextService;
         }
 
         // ── GET api/quiz/questions (Paged) ─────────────────────────────────────
@@ -74,7 +84,13 @@ namespace AegisQuiz.API.Controllers
 
                 // Filters
                 if (!string.IsNullOrWhiteSpace(query.CategoryCode))
-                    q = q.Where(x => x.CategoryCode == query.CategoryCode);
+                {
+                    var targetCode = query.CategoryCode.Trim();
+                    var targetTag = targetCode.StartsWith("#") ? targetCode : "#" + targetCode;
+                    q = q.Where(x => x.CategoryCode == targetCode 
+                                  || x.Tags.Contains(targetCode) 
+                                  || x.Tags.Contains(targetTag));
+                }
 
                 if (!string.IsNullOrWhiteSpace(query.DomainCode) && query.DomainCode != "ALL")
                     q = q.Where(x => x.DomainCode == query.DomainCode);
@@ -233,6 +249,19 @@ namespace AegisQuiz.API.Controllers
                 if (!await _ownershipGuard.CanManageAsync(User, question.CreatorId, question.OrgUnitId))
                     return Forbid();
 
+                var normType = QuestionFactory.NormalizeType(dto.QuestionType);
+                if (question.QuestionType != normType)
+                {
+                    // Thay đổi Discriminator bằng SQL thuần để tránh lỗi EF Core TPH discriminator immutability
+                    await _db.Database.ExecuteSqlRawAsync(
+                        "UPDATE \"Questions\" SET \"QuestionType\" = {0} WHERE \"Id\" = {1}",
+                        normType, id);
+                    _db.Entry(question).State = EntityState.Detached;
+                    question = await _db.Questions.FindAsync(id);
+                    if (question == null)
+                        return StatusCode(500, new { message = "Lỗi nạp lại câu hỏi sau khi đổi loại." });
+                }
+
                 ApplyDto(question, dto);
                 await _db.SaveChangesAsync();
                 return Ok(question);
@@ -266,6 +295,116 @@ namespace AegisQuiz.API.Controllers
             }
         }
 
+        // ── POST api/quiz/questions/bulk-delete ───────────────────────────────
+        [HttpPost("questions/bulk-delete")]
+        public async Task<IActionResult> BulkDeleteQuestions([FromBody] BulkDeleteQuestionsRequest request)
+        {
+            try
+            {
+                if (request?.QuestionIds == null || request.QuestionIds.Count == 0)
+                    return BadRequest(new { message = "Danh sách mã câu hỏi cần xóa không được để trống." });
+
+                var tenantId = _tenantContext.CurrentTenantId;
+                var isSysAdmin = _tenantContext.IsSystemAdmin;
+
+                var defaultTenantId = new Guid("00000000-0000-0000-0000-000000000001");
+                var questions = await _db.Questions
+                    .IgnoreQueryFilters()
+                    .Where(q => (isSysAdmin || q.TenantId == Guid.Empty || q.TenantId == defaultTenantId || q.TenantId == tenantId) && request.QuestionIds.Contains(q.Id))
+                    .ToListAsync();
+
+                if (questions.Count == 0)
+                    return Ok(new { success = true, deletedCount = 0, message = "Không tìm thấy câu hỏi nào phù hợp để xóa." });
+
+                // Kiểm tra quyền OwnershipGuard
+                var allowedToDelete = new List<QuestionBase>();
+                foreach (var q in questions)
+                {
+                    if (await _ownershipGuard.CanManageAsync(User, q.CreatorId, q.OrgUnitId))
+                    {
+                        allowedToDelete.Add(q);
+                    }
+                }
+
+                if (allowedToDelete.Count == 0)
+                    return Forbid();
+
+                _db.Questions.RemoveRange(allowedToDelete);
+                await _db.SaveChangesAsync();
+
+                return Ok(new
+                {
+                    success = true,
+                    deletedCount = allowedToDelete.Count,
+                    message = $"Đã xóa thành công {allowedToDelete.Count} câu hỏi khỏi hệ thống."
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = $"Lỗi xóa hàng loạt câu hỏi: {ex.Message}" });
+            }
+        }
+
+        // ── POST api/quiz/questions/cleanup-orphans ───────────────────────────
+        [HttpPost("questions/cleanup-orphans")]
+        [HttpDelete("questions/orphans")]
+        public async Task<IActionResult> CleanupOrphanQuestions()
+        {
+            try
+            {
+                var tenantId = _tenantContext.CurrentTenantId;
+                var isSysAdmin = _tenantContext.IsSystemAdmin;
+                var defaultTenantId = new Guid("00000000-0000-0000-0000-000000000001");
+
+                // Lấy tất cả topic codes hợp lệ
+                var validTopics = await _db.BankTopics
+                    .IgnoreQueryFilters()
+                    .Where(t => isSysAdmin || t.TenantId == Guid.Empty || t.TenantId == defaultTenantId || t.TenantId == tenantId)
+                    .Select(t => t.Code)
+                    .ToListAsync();
+
+                var validCodes = new HashSet<string>(validTopics.Where(c => !string.IsNullOrWhiteSpace(c)), StringComparer.OrdinalIgnoreCase);
+
+                // Lấy tất cả câu hỏi trong tenant
+                var allQuestions = await _db.Questions
+                    .IgnoreQueryFilters()
+                    .Where(q => isSysAdmin || q.TenantId == Guid.Empty || q.TenantId == defaultTenantId || q.TenantId == tenantId)
+                    .ToListAsync();
+
+                // Lọc câu hỏi mồ côi: CategoryCode không khớp bất kỳ Code nào và không phải GENERAL (trừ khi GENERAL cũng không tồn tại)
+                var orphanQuestions = allQuestions.Where(q =>
+                {
+                    if (string.IsNullOrWhiteSpace(q.CategoryCode)) return true;
+                    // Chuẩn hóa dấu gạch nối và gạch dưới để kiểm tra tương đồng
+                    var normCat = q.CategoryCode.Replace("-", "").Replace("_", "").ToUpperInvariant();
+                    bool hasMatch = validCodes.Any(c => c.Replace("-", "").Replace("_", "").ToUpperInvariant() == normCat);
+                    return !hasMatch;
+                }).ToList();
+
+                if (orphanQuestions.Count == 0)
+                    return Ok(new { success = true, deletedCount = 0, message = "Không phát hiện câu hỏi mồ côi nào. Cơ sở dữ liệu hoàn toàn nhất quán." });
+
+                _db.Questions.RemoveRange(orphanQuestions);
+                await _db.SaveChangesAsync();
+
+                return Ok(new
+                {
+                    success = true,
+                    deletedCount = orphanQuestions.Count,
+                    message = $"Đã dọn dẹp thành công {orphanQuestions.Count} câu hỏi mồ côi không thuộc chủ đề nào."
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = $"Lỗi dọn dẹp câu hỏi mồ côi: {ex.Message}" });
+            }
+        }
+
+        public class BulkDeleteQuestionsRequest
+        {
+            public List<Guid> QuestionIds { get; set; } = new();
+        }
+
         // ── POST api/quiz/questions/import (Excel — preview, DOT-2026 Smart Format) ──
         [HttpPost("questions/import")]
         public async Task<IActionResult> ImportQuestionsExcel(IFormFile file)
@@ -291,12 +430,24 @@ namespace AegisQuiz.API.Controllers
                         warnings = preview.Warnings
                     });
 
+                // [Exam Deduplication & Ontology Detection]
+                var allSheetQuestions = preview.Sheets.SelectMany(sh => sh.Questions).ToList();
+                var tenantId = _tenantContext.CurrentTenantId;
+                var dedupReport = await _deduplicationEngine.AnalyzeAndTagDuplicatesAsync(allSheetQuestions, tenantId);
+                preview.DuplicateCount = dedupReport.DuplicateCount;
+                preview.UniqueCount = dedupReport.UniqueCount;
+                preview.DetectedExamClusters = dedupReport.ClusterMatches;
+
                 // Trả về dữ liệu thanh tra toàn diện cho Universal Cognitive Ingestion Studio (UCIS)
                 return Ok(new
                 {
                     fileName                  = preview.FileName,
                     totalSheets               = preview.TotalSheets,
                     totalQuestions            = preview.TotalQuestions,
+                    duplicateCount            = preview.DuplicateCount,
+                    uniqueCount               = preview.UniqueCount,
+                    deduplicationRatePercentage = preview.DeduplicationRatePercentage,
+                    detectedExamClusters      = preview.DetectedExamClusters,
                     warnings                  = preview.Warnings,
                     detectedDomainCode        = preview.DetectedDomainCode,
                     detectedTargetLevel       = preview.DetectedTargetLevel,
@@ -415,11 +566,21 @@ namespace AegisQuiz.API.Controllers
                 if (file == null || file.Length == 0)
                     return BadRequest(new { message = "Vui lòng chọn file DOCX để tải lên." });
 
+                var tenantId = _tenantContext.CurrentTenantId;
+                var dynamicContext = await _domainContextService.BuildContextAsync(tenantId);
+
                 using var stream = file.OpenReadStream();
-                var rawQuestions = _docxParser.ParseDocxFile(stream);
+                var rawQuestions = _docxParser.ParseDocxFile(stream, dynamicContext);
 
                 if (rawQuestions == null || rawQuestions.Count == 0)
                     return BadRequest(new { message = "Không tìm thấy câu hỏi hợp lệ trong file DOCX." });
+
+                foreach (var q in rawQuestions)
+                {
+                    if (string.IsNullOrWhiteSpace(q.SourceFileName)) q.SourceFileName = file.FileName;
+                }
+
+                await _deduplicationEngine.AnalyzeAndTagDuplicatesAsync(rawQuestions, tenantId);
 
                 // Chỉ kích hoạt Gemini AI khi người dùng chỉ định useAi=true
                 if (useAi)
@@ -450,6 +611,14 @@ namespace AegisQuiz.API.Controllers
 
                 if (rawQuestions == null || rawQuestions.Count == 0)
                     return BadRequest(new { message = "Không tìm thấy câu hỏi định dạng sẵn trong file PDF. Nếu đây là tài liệu giáo trình/văn bản nội dung, vui lòng sử dụng tính năng 'Tự động tạo câu hỏi AI từ tài liệu' (Kịch bản B)." });
+
+                foreach (var q in rawQuestions)
+                {
+                    if (string.IsNullOrWhiteSpace(q.SourceFileName)) q.SourceFileName = file.FileName;
+                }
+
+                var tenantId = _tenantContext.CurrentTenantId;
+                await _deduplicationEngine.AnalyzeAndTagDuplicatesAsync(rawQuestions, tenantId);
 
                 if (useAi)
                 {
@@ -776,16 +945,68 @@ namespace AegisQuiz.API.Controllers
                 }
                 await _db.SaveChangesAsync();
 
-                foreach (var item in items)
+                // [Pha khử trùng lặp & Hợp nhất lịch sử xuất hiện]
+                var duplicates = items.Where(i => i.IsDuplicate && i.ExistingQuestionId.HasValue).ToList();
+                var news = items.Where(i => !i.IsDuplicate || !i.ExistingQuestionId.HasValue).ToList();
+
+                int mergedCount = 0;
+                if (duplicates.Count > 0)
+                {
+                    var dupIds = duplicates.Select(d => d.ExistingQuestionId!.Value).Distinct().ToList();
+                    var existingQuestions = await _db.Questions.Where(q => dupIds.Contains(q.Id)).ToListAsync();
+                    var existingMap = existingQuestions.ToDictionary(q => q.Id);
+
+                    foreach (var item in duplicates)
+                    {
+                        if (existingMap.TryGetValue(item.ExistingQuestionId!.Value, out var eq))
+                        {
+                            var appearance = new ProvenanceAppearance
+                            {
+                                SourceFile = item.SourceFileName ?? "UnknownSource",
+                                ExamTitleInFile = item.SourceExamName,
+                                SectionInFile = item.SourceSectionName,
+                                OriginalQuestionNo = item.SourceQuestionNo,
+                                RowIndex = item.SourceRowIndex,
+                                ImportedAt = DateTime.UtcNow
+                            };
+                            _deduplicationEngine.MergeProvenanceAppearance(eq, appearance);
+                            if (!string.IsNullOrWhiteSpace(item.TopicCode))
+                            {
+                                _deduplicationEngine.AssociateTopicToQuestion(eq, item.TopicCode.Trim(), item.TopicName);
+                            }
+                            mergedCount++;
+                        }
+                    }
+                }
+
+                foreach (var item in news)
                 {
                     var type = QuestionFactory.NormalizeType(item.QuestionType);
+
+                    // Tự động nhận diện MULTI_TRUE_FALSE (GDPT 2025):
+                    // 1. Phân loại gốc là TRUE_FALSE và có từ 3 tiểu mục trở lên (a, b, c, d)
+                    // 2. Hoặc nếu đáp án gợi ý là ma trận Đúng/Sai đa mệnh đề rõ ràng (ví dụ: "a) Đúng, b) Sai, c) Đúng, d) Sai")
+                    if (type == "TRUE_FALSE" && item.Options?.Count >= 3)
+                    {
+                        type = "MULTI_TRUE_FALSE";
+                    }
+                    else if (!string.IsNullOrWhiteSpace(item.SuggestedAnswer) &&
+                             Regex.IsMatch(item.SuggestedAnswer, @"[a-d][\)\:\.\s]+(đúng|sai|true|false)", RegexOptions.IgnoreCase))
+                    {
+                        type = "MULTI_TRUE_FALSE";
+                    }
+
                     QuestionBase q = type switch
                     {
-                        "MULTI"        => new MultiChoiceQuestion(),
-                        "TRUE_FALSE"   => new TrueFalseQuestion(),
-                        "ESSAY"        => new EssayQuestion(),
-                        "SHORT_ANSWER" => new ShortAnswerQuestion(),
-                        _              => new SingleChoiceQuestion()
+                        "MULTI"            => new MultiChoiceQuestion(),
+                        "TRUE_FALSE"       => new TrueFalseQuestion(),
+                        "MULTI_TRUE_FALSE" => new MultiTrueFalseQuestion(),
+                        "SHORT_ANSWER"     => new ShortAnswerQuestion(),
+                        "FILL_BLANK"       => new FillBlankQuestion(),
+                        "ORDERING"         => new OrderingQuestion(),
+                        "MATCHING"         => new MatchingQuestion(),
+                        "ESSAY"            => new EssayQuestion(),
+                        _                  => new SingleChoiceQuestion()
                     };
 
                     q.Id            = Guid.NewGuid();
@@ -817,13 +1038,23 @@ namespace AegisQuiz.API.Controllers
                     q.DomainCode = string.IsNullOrWhiteSpace(item.DomainCode) ? "GENERAL" : item.DomainCode.Trim();
                     q.Tags = item.Tags ?? new List<string>();
 
-                    if ((type == "SINGLE" || type == "MATCHING" || type == "ORDERING") && q is SingleChoiceQuestion sq)
+                    var canonicalHash = item.CanonicalContentHash ?? _deduplicationEngine.ComputeCanonicalContentHash(item.Content, item.Options);
+                    var initialAppearance = new ProvenanceAppearance
                     {
-                        sq.Options = item.Options;
-                        // Bảo toàn chỉ mục số chuẩn 1, 2, 3, 4 đồng bộ tuyệt đối với Payload.correctAnswer
-                        sq.CorrectOption = !string.IsNullOrWhiteSpace(item.SuggestedAnswer) ? item.SuggestedAnswer.Trim() : "1";
+                        SourceFile = item.SourceFileName ?? "OriginalSource",
+                        ExamTitleInFile = item.SourceExamName,
+                        SectionInFile = item.SourceSectionName,
+                        OriginalQuestionNo = item.SourceQuestionNo,
+                        RowIndex = item.SourceRowIndex,
+                        ImportedAt = DateTime.UtcNow
+                    };
+
+                    if ((type == "SINGLE" || type == "MATCHING" || type == "ORDERING" || type == "FILL_BLANK") && (q is SingleChoiceQuestion sq || q is OrderingQuestion || q is MatchingQuestion || q is FillBlankQuestion))
+                    {
+                        q.Options = item.Options;
+                        q.CorrectOption = !string.IsNullOrWhiteSpace(item.SuggestedAnswer) ? item.SuggestedAnswer.Trim() : "1";
                         var optPayload = item.Options.Select((o, idx) => new { id = (idx + 1).ToString(), text = o }).ToArray();
-                        sq.Payload = JsonSerializer.SerializeToDocument(new
+                        q.Payload = JsonSerializer.SerializeToDocument(new
                         {
                             enabled           = true,
                             options           = optPayload,
@@ -848,7 +1079,22 @@ namespace AegisQuiz.API.Controllers
                             orgUnitName       = item.OrgUnitName,
                             scope             = string.IsNullOrWhiteSpace(item.Scope) ? "COMMUNITY" : item.Scope,
                             visibilityScope   = string.IsNullOrWhiteSpace(item.VisibilityScope) ? "PUBLIC" : item.VisibilityScope,
-                            contributionStatus = item.ContributionStatus
+                            contributionStatus = item.ContributionStatus,
+                            canonicalContentHash = canonicalHash,
+                            sourceFileName    = item.SourceFileName,
+                            sourceExamName    = item.SourceExamName,
+                            sourceSectionName = item.SourceSectionName,
+                            sourceQuestionNo  = item.SourceQuestionNo,
+                            sourceRowIndex    = item.SourceRowIndex,
+                            occurrenceCount   = 1,
+                            _provenance       = new
+                            {
+                                canonicalContentHash = canonicalHash,
+                                occurrences          = 1,
+                                firstIngestedAt      = DateTime.UtcNow.ToString("o"),
+                                lastSeenAt           = DateTime.UtcNow.ToString("o"),
+                                appearances          = new[] { initialAppearance }
+                            }
                         });
                     }
                     else if (type == "ESSAY" && q is EssayQuestion eq)
@@ -878,12 +1124,28 @@ namespace AegisQuiz.API.Controllers
                             orgUnitName       = item.OrgUnitName,
                             scope             = string.IsNullOrWhiteSpace(item.Scope) ? "COMMUNITY" : item.Scope,
                             visibilityScope   = string.IsNullOrWhiteSpace(item.VisibilityScope) ? "PUBLIC" : item.VisibilityScope,
-                            contributionStatus = item.ContributionStatus
+                            contributionStatus = item.ContributionStatus,
+                            canonicalContentHash = canonicalHash,
+                            sourceFileName    = item.SourceFileName,
+                            sourceExamName    = item.SourceExamName,
+                            sourceSectionName = item.SourceSectionName,
+                            sourceQuestionNo  = item.SourceQuestionNo,
+                            sourceRowIndex    = item.SourceRowIndex,
+                            occurrenceCount   = 1,
+                            _provenance       = new
+                            {
+                                canonicalContentHash = canonicalHash,
+                                occurrences          = 1,
+                                firstIngestedAt      = DateTime.UtcNow.ToString("o"),
+                                lastSeenAt           = DateTime.UtcNow.ToString("o"),
+                                appearances          = new[] { initialAppearance }
+                            }
                         });
                     }
                     else if (type == "MULTI" && q is MultiChoiceQuestion mq)
                     {
                         mq.Options = item.Options;
+                        mq.CorrectOption = !string.IsNullOrWhiteSpace(item.SuggestedAnswer) ? item.SuggestedAnswer.Trim() : string.Empty;
                         var optPayload = item.Options.Select((o, idx) => new { id = (idx + 1).ToString(), text = o }).ToArray();
                         var correctAnswersArray = (item.SuggestedAnswer ?? "")
                             .Split(new[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries)
@@ -895,6 +1157,7 @@ namespace AegisQuiz.API.Controllers
                             enabled           = true,
                             options           = optPayload,
                             correctAnswers    = correctAnswersArray,
+                            correctAnswer     = mq.CorrectOption,
                             explanation       = item.AiExplanation,
                             rubric            = rubric,
                             durationSeconds   = q.DurationSeconds,
@@ -915,7 +1178,22 @@ namespace AegisQuiz.API.Controllers
                             orgUnitName       = item.OrgUnitName,
                             scope             = string.IsNullOrWhiteSpace(item.Scope) ? "COMMUNITY" : item.Scope,
                             visibilityScope   = string.IsNullOrWhiteSpace(item.VisibilityScope) ? "PUBLIC" : item.VisibilityScope,
-                            contributionStatus = item.ContributionStatus
+                            contributionStatus = item.ContributionStatus,
+                            canonicalContentHash = canonicalHash,
+                            sourceFileName    = item.SourceFileName,
+                            sourceExamName    = item.SourceExamName,
+                            sourceSectionName = item.SourceSectionName,
+                            sourceQuestionNo  = item.SourceQuestionNo,
+                            sourceRowIndex    = item.SourceRowIndex,
+                            occurrenceCount   = 1,
+                            _provenance       = new
+                            {
+                                canonicalContentHash = canonicalHash,
+                                occurrences          = 1,
+                                firstIngestedAt      = DateTime.UtcNow.ToString("o"),
+                                lastSeenAt           = DateTime.UtcNow.ToString("o"),
+                                appearances          = new[] { initialAppearance }
+                            }
                         });
                     }
                     else if (type == "TRUE_FALSE" && q is TrueFalseQuestion tq)
@@ -950,7 +1228,22 @@ namespace AegisQuiz.API.Controllers
                             orgUnitName       = item.OrgUnitName,
                             scope             = string.IsNullOrWhiteSpace(item.Scope) ? "COMMUNITY" : item.Scope,
                             visibilityScope   = string.IsNullOrWhiteSpace(item.VisibilityScope) ? "PUBLIC" : item.VisibilityScope,
-                            contributionStatus = item.ContributionStatus
+                            contributionStatus = item.ContributionStatus,
+                            canonicalContentHash = canonicalHash,
+                            sourceFileName    = item.SourceFileName,
+                            sourceExamName    = item.SourceExamName,
+                            sourceSectionName = item.SourceSectionName,
+                            sourceQuestionNo  = item.SourceQuestionNo,
+                            sourceRowIndex    = item.SourceRowIndex,
+                            occurrenceCount   = 1,
+                            _provenance       = new
+                            {
+                                canonicalContentHash = canonicalHash,
+                                occurrences          = 1,
+                                firstIngestedAt      = DateTime.UtcNow.ToString("o"),
+                                lastSeenAt           = DateTime.UtcNow.ToString("o"),
+                                appearances          = new[] { initialAppearance }
+                            }
                         });
                     }
                     else if (type == "SHORT_ANSWER" && q is ShortAnswerQuestion saq)
@@ -980,17 +1273,100 @@ namespace AegisQuiz.API.Controllers
                             orgUnitName       = item.OrgUnitName,
                             scope             = string.IsNullOrWhiteSpace(item.Scope) ? "COMMUNITY" : item.Scope,
                             visibilityScope   = string.IsNullOrWhiteSpace(item.VisibilityScope) ? "PUBLIC" : item.VisibilityScope,
-                            contributionStatus = item.ContributionStatus
+                            contributionStatus = item.ContributionStatus,
+                            canonicalContentHash = canonicalHash,
+                            sourceFileName    = item.SourceFileName,
+                            sourceExamName    = item.SourceExamName,
+                            sourceSectionName = item.SourceSectionName,
+                            sourceQuestionNo  = item.SourceQuestionNo,
+                            sourceRowIndex    = item.SourceRowIndex,
+                            occurrenceCount   = 1,
+                            _provenance       = new
+                            {
+                                canonicalContentHash = canonicalHash,
+                                occurrences          = 1,
+                                firstIngestedAt      = DateTime.UtcNow.ToString("o"),
+                                lastSeenAt           = DateTime.UtcNow.ToString("o"),
+                                appearances          = new[] { initialAppearance }
+                            }
+                        });
+                    }
+                    else if (type == "MULTI_TRUE_FALSE" && q is MultiTrueFalseQuestion mtq)
+                    {
+                        mtq.Options = item.Options ?? new List<string>();
+                        mtq.CorrectOption = !string.IsNullOrWhiteSpace(item.SuggestedAnswer) ? item.SuggestedAnswer.Trim() : string.Empty;
+                        var expectedMap = MultiTrueFalseQuestion.ExtractExpectedMap(null, mtq.CorrectOption, mtq.Options);
+                        var subItemsPayload = mtq.Options.Select((o, idx) => {
+                            string id = ((char)('a' + idx)).ToString();
+                            bool isCorrect = expectedMap.TryGetValue(id, out var val) && val;
+                            return new { id, text = o, expected = isCorrect };
+                        }).ToArray();
+                        var optPayload = mtq.Options.Select((o, idx) => new { id = ((char)('a' + idx)).ToString(), text = o }).ToArray();
+
+                        mtq.Payload = JsonSerializer.SerializeToDocument(new
+                        {
+                            enabled              = true,
+                            options              = optPayload,
+                            subItems             = subItemsPayload,
+                            correctMap           = expectedMap,
+                            correctAnswer        = mtq.CorrectOption,
+                            scoringScheme        = "TNPT_2025",
+                            explanation          = item.AiExplanation,
+                            rubric               = rubric,
+                            durationSeconds      = q.DurationSeconds,
+                            mediaUrl             = item.MediaUrl,
+                            contextId            = q.ContextId,
+                            contextTitle         = q.Context?.Title ?? item.ContextTitle,
+                            contextContent       = q.Context?.Content ?? item.ContextContent,
+                            domainCode           = q.DomainCode,
+                            tags                 = q.Tags,
+                            targetLevel          = item.TargetLevel,
+                            assessmentPurpose    = item.AssessmentPurpose,
+                            issuingOrg           = item.IssuingOrg,
+                            benchmarkYear        = item.BenchmarkYear,
+                            benchmarkStandard    = item.BenchmarkStandard,
+                            creatorId            = item.CreatorId,
+                            creatorName          = item.CreatorName,
+                            orgUnitId            = item.OrgUnitId,
+                            orgUnitName          = item.OrgUnitName,
+                            scope                = string.IsNullOrWhiteSpace(item.Scope) ? "COMMUNITY" : item.Scope,
+                            visibilityScope      = string.IsNullOrWhiteSpace(item.VisibilityScope) ? "PUBLIC" : item.VisibilityScope,
+                            contributionStatus   = item.ContributionStatus,
+                            canonicalContentHash = canonicalHash,
+                            sourceFileName       = item.SourceFileName,
+                            sourceExamName       = item.SourceExamName,
+                            sourceSectionName    = item.SourceSectionName,
+                            sourceQuestionNo     = item.SourceQuestionNo,
+                            sourceRowIndex       = item.SourceRowIndex,
+                            occurrenceCount      = 1,
+                            _provenance          = new
+                            {
+                                canonicalContentHash = canonicalHash,
+                                occurrences          = 1,
+                                firstIngestedAt      = DateTime.UtcNow.ToString("o"),
+                                lastSeenAt           = DateTime.UtcNow.ToString("o"),
+                                appearances          = new[] { initialAppearance }
+                            }
                         });
                     }
 
                     toSave.Add(q);
                 }
 
-                _db.Questions.AddRange(toSave);
+                if (toSave.Count > 0)
+                {
+                    _db.Questions.AddRange(toSave);
+                }
                 await _db.SaveChangesAsync();
                 if (transaction != null) await transaction.CommitAsync();
-                return Ok(new { success = true, count = toSave.Count });
+                return Ok(new
+                {
+                    success = true,
+                    count = toSave.Count,
+                    createdCount = toSave.Count,
+                    mergedDuplicateCount = mergedCount,
+                    totalProcessed = items.Count
+                });
             }
             catch (Exception ex)
             {
@@ -1313,6 +1689,9 @@ namespace AegisQuiz.API.Controllers
                     .GroupBy(t => t.Code)
                     .ToDictionary(g => g.Key, g => g.First());
 
+                var tenantId = _tenantContext.CurrentTenantId;
+                var dynamicContext = await _domainContextService.BuildContextAsync(tenantId);
+
                 foreach (var group in grouped)
                 {
                     var topicCode = group.Key;
@@ -1327,7 +1706,8 @@ namespace AegisQuiz.API.Controllers
                         topicCode,
                         new[] { topicName, topic?.Description ?? "" },
                         sampleContents,
-                        sampleRefs);
+                        sampleRefs,
+                        dynamicContext);
 
                     sampleResults.Add(new
                     {
@@ -1547,17 +1927,18 @@ namespace AegisQuiz.API.Controllers
         // ── Private Helpers ────────────────────────────────────────────────────
         private static QuestionBase BuildQuestion(QuestionUpsertDto dto)
         {
-            var question = dto.QuestionType.ToUpper() switch
+            var normType = QuestionFactory.NormalizeType(dto.QuestionType);
+            var question = normType switch
             {
-                "SINGLE"       => (QuestionBase)new SingleChoiceQuestion(),
-                "MULTI"        => new MultiChoiceQuestion(),
-                "TRUE_FALSE"   => new TrueFalseQuestion(),
-                "SHORT_ANSWER" => new ShortAnswerQuestion(),
-                "FILL_BLANK"   => new FillBlankQuestion(),
-                "ORDERING"     => new OrderingQuestion(),
-                "MATCHING"     => new MatchingQuestion(),
-                "ESSAY"        => new EssayQuestion(),
-                _              => new SingleChoiceQuestion()
+                "MULTI"            => (QuestionBase)new MultiChoiceQuestion(),
+                "TRUE_FALSE"       => new TrueFalseQuestion(),
+                "MULTI_TRUE_FALSE" => new MultiTrueFalseQuestion(),
+                "SHORT_ANSWER"     => new ShortAnswerQuestion(),
+                "FILL_BLANK"       => new FillBlankQuestion(),
+                "ORDERING"         => new OrderingQuestion(),
+                "MATCHING"         => new MatchingQuestion(),
+                "ESSAY"            => new EssayQuestion(),
+                _                  => new SingleChoiceQuestion()
             };
 
             question.Id              = Guid.NewGuid();
@@ -1587,6 +1968,21 @@ namespace AegisQuiz.API.Controllers
             {
                 dict["correctAnswer"] = dto.CorrectOption ?? "";
                 dict["options"] = dto.Options ?? new List<string>();
+            }
+            if (normType == "MULTI")
+            {
+                var rawAns = dto.CorrectOption ?? string.Empty;
+                var tokens = rawAns.Split(new[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()).ToArray();
+                dict["correctAnswers"] = tokens;
+                dict["correctAnswer"] = rawAns;
+            }
+            if (normType == "MULTI_TRUE_FALSE")
+            {
+                dict["scoringScheme"] = "TNPT_2025";
+                if (!string.IsNullOrWhiteSpace(dto.CorrectOption))
+                {
+                    dict["correctMap"] = MultiTrueFalseQuestion.ExtractExpectedMap(null, dto.CorrectOption, dto.Options);
+                }
             }
             if (!string.IsNullOrWhiteSpace(dto.TargetLevel)) dict["targetLevel"] = dto.TargetLevel;
             if (!string.IsNullOrWhiteSpace(dto.AssessmentPurpose)) dict["assessmentPurpose"] = dto.AssessmentPurpose;
@@ -1633,6 +2029,18 @@ namespace AegisQuiz.API.Controllers
             {
                 dict["correctAnswer"] = dto.CorrectOption ?? question.CorrectOption ?? "";
                 dict["options"] = dto.Options ?? question.Options ?? new List<string>();
+            }
+            if (question is MultiChoiceQuestion)
+            {
+                var rawAns = question.CorrectOption ?? string.Empty;
+                var tokens = rawAns.Split(new[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()).ToArray();
+                dict["correctAnswers"] = tokens;
+                dict["correctAnswer"] = rawAns;
+            }
+            if (question is MultiTrueFalseQuestion)
+            {
+                dict["scoringScheme"] = "TNPT_2025";
+                dict["correctMap"] = MultiTrueFalseQuestion.ExtractExpectedMap(null, question.CorrectOption, question.Options);
             }
             if (!string.IsNullOrWhiteSpace(dto.TargetLevel)) dict["targetLevel"] = dto.TargetLevel;
             if (!string.IsNullOrWhiteSpace(dto.AssessmentPurpose)) dict["assessmentPurpose"] = dto.AssessmentPurpose;

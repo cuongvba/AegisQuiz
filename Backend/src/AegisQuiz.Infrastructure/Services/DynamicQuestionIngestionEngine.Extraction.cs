@@ -95,13 +95,23 @@ namespace AegisQuiz.Infrastructure.Services
             var matches = GetOrAddRegex(pattern).Matches(line);
             if (matches.Count == 0) return result;
 
+            // Nếu chỉ có 1 nhãn số trên dòng (1., 2...) và quy tắc không phải là GPLX,
+            // thì đây là mệnh đề liệt kê trong đề bài (ví dụ: "1. Nước sôi...", "2. Kim loại..."), không phải phương án trắc nghiệm
+            if (matches.Count == 1 && matches[0].Groups.Count >= 3 && !string.IsNullOrEmpty(matches[0].Groups[2].Value) && char.IsDigit(matches[0].Groups[2].Value[0]))
+            {
+                bool isGplx = matchedRule?.RuleCode == "VN_GPLX_600_STANDARD" || matchedRule?.TargetExamType == "GPLX";
+                if (!isGplx) return result;
+            }
+
             for (int i = 0; i < matches.Count; i++)
             {
                 var match = matches[i];
                 if (match.Groups.Count < 3 || string.IsNullOrEmpty(match.Groups[2].Value)) continue;
 
                 char letter = match.Groups[2].Value[0];
-                bool isMarked = !string.IsNullOrEmpty(match.Groups[1].Value) || (match.Groups.Count > 3 && !string.IsNullOrEmpty(match.Groups[3].Value));
+                bool isMarked = match.Value.Contains("<u>") || match.Value.Contains("<b>") 
+                    || !string.IsNullOrEmpty(match.Groups[1].Value) 
+                    || (match.Groups.Count > 3 && !string.IsNullOrEmpty(match.Groups[3].Value));
 
                 int contentStart = match.Index + match.Length;
                 int contentEnd = i + 1 < matches.Count ? matches[i + 1].Index : line.Length;
@@ -211,10 +221,52 @@ namespace AegisQuiz.Infrastructure.Services
                 activeRule = rules.FirstOrDefault(r => string.Equals(r.RuleCode, specificRuleCode, StringComparison.OrdinalIgnoreCase));
             }
 
+            string currentSection = string.Empty;
+
             foreach (var rawLine in lines)
             {
                 var line = rawLine.Trim();
                 if (string.IsNullOrEmpty(line)) continue;
+
+                // 0a. Nhận diện tiêu đề phân đoạn (Section Header: PHẦN I, PHẦN II, PHẦN III, PART A, etc.)
+                if (TryMatchSectionHeader(line, out string detectedSection))
+                {
+                    if (currentQ != null)
+                    {
+                        response.Questions.Add(currentQ);
+                        currentQ = null;
+                    }
+
+                    currentSection = detectedSection;
+                    response.ParsingLogs.Add($"[Section Match] Phát hiện phân đoạn {detectedSection}");
+
+                    // Tự động định tuyến sang quy tắc tương ứng nếu không bị chỉ định cứng
+                    if (customRule == null && string.IsNullOrEmpty(specificRuleCode))
+                    {
+                        var sectionRule = rules.FirstOrDefault(r =>
+                            (detectedSection == "TRUE_FALSE" && (r.RuleCode == "VN_GDPT_2025_TRUE_FALSE_MATRIX" || r.InteractionSpec?.DefaultQuestionType == "TRUE_FALSE")) ||
+                            (detectedSection == "SHORT_ANSWER" && (r.RuleCode == "VN_GDPT_2025_SHORT_ANSWER" || r.InteractionSpec?.DefaultQuestionType == "SHORT_ANSWER")) ||
+                            (detectedSection == "SINGLE" && (r.RuleCode == "VN_STANDARD_MULTIPLE_CHOICE" || r.InteractionSpec?.DefaultQuestionType == "SINGLE")) ||
+                            string.Equals(r.InteractionSpec?.DefaultQuestionType, detectedSection, StringComparison.OrdinalIgnoreCase));
+
+                        if (sectionRule != null)
+                        {
+                            activeRule = sectionRule;
+                            response.MatchedRuleCode = sectionRule.RuleCode;
+                            response.ParsingLogs.Add($"[Section Routing] Kích hoạt quy tắc {sectionRule.RuleCode} cho phân đoạn {detectedSection}");
+                        }
+                    }
+
+                    promptBuffer.Clear();
+                    continue;
+                }
+
+                // 0b. Bỏ qua các dòng chỉ dẫn khảo thí / thông tin kỳ thi
+                if (IsExamInstructionOrMeta(line))
+                {
+                    response.ParsingLogs.Add($"[Instruction Skip] Bỏ qua dòng chỉ dẫn: {line}");
+                    continue;
+                }
 
                 // 1. Điểm neo câu hỏi (Anchor)
                 bool isAnchor;
@@ -244,15 +296,18 @@ namespace AegisQuiz.Infrastructure.Services
 
                     activeRule ??= matchedRule;
                     response.MatchedRuleCode = matchedRule.RuleCode;
+
+                    string determinedType = matchedRule.InteractionSpec.DefaultQuestionType;
+
                     currentQ = new DocxImportPreviewDto
                     {
                         Content = line,
-                        QuestionType = matchedRule.InteractionSpec.DefaultQuestionType,
+                        QuestionType = determinedType,
                         TopicCode = matchedRule.TargetExamType,
                         IsCritical = IsCriticalQuestion(line, matchedRule)
                     };
                     promptBuffer.Clear();
-                    response.ParsingLogs.Add($"[Anchor Match] Nhận diện Câu #{qNum} bằng quy tắc {matchedRule.RuleCode}");
+                    response.ParsingLogs.Add($"[Anchor Match] Nhận diện Câu #{qNum} ({determinedType}) bằng quy tắc {matchedRule.RuleCode}");
                     continue;
                 }
 
@@ -303,7 +358,33 @@ namespace AegisQuiz.Infrastructure.Services
                     continue;
                 }
 
-                // 3. Đáp án đúng
+                // 3. Đáp án đúng cho Đúng/Sai đa mệnh đề GDPT 2025
+                if (currentQ.QuestionType == "MULTI_TRUE_FALSE" || currentQ.QuestionType == "TRUE_FALSE")
+                {
+                    var matchMultiTfAns = Regex.Match(line, @"^(?:ĐÁP\s*ÁN|ANSWER|KEY|HƯỚNG\s*DẪN)[\.\:\s\-]+(.*)", RegexOptions.IgnoreCase);
+                    if (matchMultiTfAns.Success)
+                    {
+                        var remainder = matchMultiTfAns.Groups[1].Value.Trim();
+                        var tfMatches = Regex.Matches(remainder, @"(?:^|\b|\,)([a-d])[\)\:\.\s\-]+(đúng|sai|true|false|đ|s|t|f)\b", RegexOptions.IgnoreCase);
+                        if (tfMatches.Count > 0)
+                        {
+                            var parts = new List<string>();
+                            foreach (Match tm in tfMatches)
+                            {
+                                string ltr = tm.Groups[1].Value.ToLowerInvariant();
+                                string vt = tm.Groups[2].Value.ToLowerInvariant();
+                                string val = (vt.StartsWith("đ") || vt.StartsWith("d") || vt.StartsWith("t")) ? "Đúng" : "Sai";
+                                parts.Add($"{ltr}) {val}");
+                            }
+                            parts.Sort();
+                            currentQ.SuggestedAnswer = string.Join(", ", parts);
+                            response.ParsingLogs.Add($"[Multi-TF Answer] Nhận diện ma trận đáp án: {currentQ.SuggestedAnswer}");
+                            continue;
+                        }
+                    }
+                }
+
+                // 3b. Đáp án đúng tiêu chuẩn
                 if (TryMatchAnswer(line, ruleToUse, out string answerKey))
                 {
                     currentQ.SuggestedAnswer = answerKey;
@@ -319,7 +400,40 @@ namespace AegisQuiz.Infrastructure.Services
                     continue;
                 }
 
-                // 5. Phương án (Option)
+                // 5a. Nhận diện tiểu mục Đúng / Sai đa mệnh đề GDPT 2025 (a, b, c, d...)
+                bool isTfQuestion = currentQ.QuestionType == "TRUE_FALSE" || currentQ.QuestionType == "MULTI_TRUE_FALSE"
+                    || Regex.IsMatch(currentQ.Content ?? "", @"(?:đúng\s*[-–\/\s]*sai|chọn\s+đúng\s+hoặc\s+sai|mệnh\s+đề\s+đúng\s+hay\s+sai|true\s*[-–\/\s]*false)", RegexOptions.IgnoreCase);
+
+                if (isTfQuestion)
+                {
+                    var mSub = Regex.Match(line, @"^(?:([a-d])|[\(]([a-d])[\)])[\)\.\:\s\-]+(.*)", RegexOptions.IgnoreCase);
+                    if (mSub.Success)
+                    {
+                        string subLetter = (!string.IsNullOrEmpty(mSub.Groups[1].Value) ? mSub.Groups[1].Value : mSub.Groups[2].Value).ToLowerInvariant();
+                        string subContent = mSub.Groups[3].Value.Trim();
+                        currentQ.QuestionType = "TRUE_FALSE";
+                        currentQ.Options.Add($"{subLetter}) {subContent}");
+                        response.ParsingLogs.Add($"[Multi-TF Sub-Item] Thêm mệnh đề {subLetter})");
+
+                        // Trích xuất đáp án nếu có dấu hiệu Đúng / Sai kèm theo
+                        var matchTf = Regex.Match(subContent, @"(?:\[|\(|\b)(đúng|sai|true|false|đ|s|t|f)(?:\]|\)|\b)", RegexOptions.IgnoreCase);
+                        if (matchTf.Success)
+                        {
+                            string valToken = matchTf.Groups[1].Value.ToLowerInvariant();
+                            string val = (valToken.StartsWith("đ") || valToken.StartsWith("d") || valToken.StartsWith("t")) ? "Đúng" : "Sai";
+                            var parts = (currentQ.SuggestedAnswer ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                .Select(p => p.Trim())
+                                .Where(p => !p.StartsWith(subLetter + ":", StringComparison.OrdinalIgnoreCase) && !p.StartsWith(subLetter + ")", StringComparison.OrdinalIgnoreCase))
+                                .ToList();
+                            parts.Add($"{subLetter}) {val}");
+                            parts.Sort();
+                            currentQ.SuggestedAnswer = string.Join(", ", parts);
+                        }
+                        continue;
+                    }
+                }
+
+                // 5b. Phương án (Option) tiêu chuẩn A/B/C/D
                 if (TryMatchOption(line, ruleToUse, out string optLabel, out string optContent))
                 {
                     currentQ.Options.Add($"{optLabel}. {optContent}");
@@ -369,13 +483,23 @@ namespace AegisQuiz.Infrastructure.Services
         }
 
         /// <summary>
+        /// Kiểm tra dòng văn bản có phải là chỉ dẫn khảo thí, tiêu đề biểu mẫu kỳ thi hoặc thông tin thí sinh không.
+        /// </summary>
+        public static bool IsExamInstructionOrMeta(string line)
+        {
+            if (string.IsNullOrWhiteSpace(line)) return false;
+            var trimmed = line.Trim();
+            return Regex.IsMatch(trimmed, @"^(?:Thí\s*sinh\s*trả\s*lời|Trong\s*mỗi\s*ý|Mỗi\s*câu\s*hỏi\s*thí\s*sinh|Thời\s*gian\s*làm\s*bài|Đề\s*thi\s*gồm|Mã\s*đề\s*thi|Họ(?:\s*,|\s*và)?\s*tên\s*thí\s*sinh|Số\s*báo\s*danh)\b", RegexOptions.IgnoreCase);
+        }
+
+        /// <summary>
         /// Bóc tách các phương án nằm cùng một dòng (A. ... B. ... hoặc 1. ... 2. ...) — API tĩnh dùng cho Excel/PDF pipelines.
         /// Chữ số 1-4 được quy đổi sang chữ cái A-D.
         /// </summary>
         public static List<InlineOptionMatch> ExtractInlineOptions(string text)
         {
             var options = new List<InlineOptionMatch>();
-            if (string.IsNullOrWhiteSpace(text)) return options;
+            if (string.IsNullOrWhiteSpace(text) || IsExamInstructionOrMeta(text)) return options;
 
             var regex = new Regex(@"(?:^|[\s\t\.\,\;\–\—]+|(?<=[a-z0-9\)]))(\*?)([A-G]|[1-4])(\*?)[\.\:\)]+\s*", RegexOptions.IgnoreCase);
             var matches = regex.Matches(text);
@@ -401,6 +525,13 @@ namespace AegisQuiz.Infrastructure.Services
                     StartIndex = match.Index
                 });
             }
+
+            // Loại bỏ trường hợp chuỗi chỉ dẫn (vd: Trong mỗi ý a), b), c), d)... các phương án không có nội dung thực)
+            if (options.Count(o => !string.IsNullOrWhiteSpace(o.Content) && !Regex.IsMatch(o.Content, @"^[,\.\s\)]+$")) < 2)
+            {
+                return new List<InlineOptionMatch>();
+            }
+
             return options;
         }
     }

@@ -29,7 +29,7 @@ namespace AegisQuiz.Infrastructure.Services
         private static readonly string[] SectionKeySpecificityOrder =
             { "SHORT_ANSWER", "TRUE_FALSE", "MULTI", "MATCHING", "ORDERING", "ESSAY", "SINGLE" };
 
-        private const string BuiltInExamHeadingPattern = @"^(?:ĐỀ|D[E|Ê]|EXAM|TEST|MOCK\s*TEST)\b[^\d\n\r]*?(\d+)\b";
+        private const string BuiltInExamHeadingPattern = @"^(?:ĐỀ|D[E|Ê]|EXAM|TEST|MOCK\s*TEST)\s*(?:SỐ|THI|KIỂM\s*TRA|TEST|NO\.?|NUMBER|CODE|MÃ)?\s*(\d{1,3})\b";
         private const string BuiltInTopicHeadingPattern = @"^(?:Chủ\s*đề|Chương|Lĩnh\s*vực|Môn\s*thi|Môn|Học\s*phần|Mã\s*CĐ|Topic|Subject)[\.\:\s\-]+([^\n\r]+)";
         private const string BuiltInSolutionPhasePattern = @"^(?:LỜI\s*GIẢI|L[\.\?\s]*I\s*GI[\.\?\s]*I|HƯỚNG\s*DẪN\s*GIẢI|HU[\.\?\s]*NG\s*D[\.\?\s]*N\s*GI[\.\?\s]*I|SOLUTIONS?|EXPLANATIONS?|MARK\s*SCHEME)\s+(?:THAM\s*KHẢO|CHI\s*TIẾT|DETAILS?|APPENDIX)[.\:\s\-]*$";
         private const string BuiltInAnswerPhasePattern = @"^(?:ĐÁP\s*ÁN|D[\.\?\s]*P\s*[\.\?\s]*N|ANSWER\s*KEY|KEY|ANSWERS?)\s*(?:THAM\s*KHẢO|CHI\s*TIẾT)?[.\:\s\-]*$";
@@ -46,6 +46,13 @@ namespace AegisQuiz.Infrastructure.Services
             examCode = string.Empty;
             if (string.IsNullOrWhiteSpace(line)) return false;
 
+            // Loại trừ dòng tiêu đề tài liệu chứa năm thi / tốt nghiệp nếu không có định danh số đề rõ ràng
+            if (Regex.IsMatch(line, @"(?i)\b(?:TỐT\s*NGHIỆP|THPT|ĐẠI\s*HỌC|HỌC\s*KỲ|HK\d|NĂM\s*HỌC|NĂM\s*\d{4})\b")
+                && !Regex.IsMatch(line, @"(?i)\b(?:ĐỀ|EXAM|TEST|MÃ\s*ĐỀ)\s*(?:SỐ\s*|NO\.?\s*)?\d{1,3}\b"))
+            {
+                return false;
+            }
+
             var captured = FirstCapture(line, _structureDictionary.ExamBoundaryMarkers);
             if (captured == null)
             {
@@ -58,6 +65,13 @@ namespace AegisQuiz.Infrastructure.Services
             captured ??= FirstCapture(line, new[] { BuiltInExamHeadingPattern });
 
             if (captured == null) return false;
+
+            // Loại trừ hoàn toàn số năm (1900..2099)
+            if (int.TryParse(captured, out int examNum) && examNum >= 1900 && examNum <= 2099)
+            {
+                return false;
+            }
+
             examCode = captured;
             return true;
         }
@@ -97,6 +111,32 @@ namespace AegisQuiz.Infrastructure.Services
             sectionKey = string.Empty;
             if (string.IsNullOrWhiteSpace(line)) return false;
 
+            var upper = line.ToUpperInvariant();
+
+            // 1. Ưu tiên tuyệt đối ngữ nghĩa rõ ràng của tiêu đề phân đoạn
+            if (upper.Contains("TỰ LUẬN") || upper.Contains("TU LUAN") || upper.Contains("ESSAY") || upper.Contains("FREE RESPONSE") || upper.Contains("XỬ LÝ TÌNH HUỐNG") || upper.Contains("解答题"))
+            {
+                sectionKey = "ESSAY";
+                return true;
+            }
+            if (upper.Contains("TRẢ LỜI NGẮN") || upper.Contains("TRA LOI NGAN") || upper.Contains("SHORT ANSWER") || upper.Contains("ĐIỀN ĐÁP SỐ") || upper.Contains("ĐIỀN KẾT QUẢ") || upper.Contains("填空题"))
+            {
+                sectionKey = "SHORT_ANSWER";
+                return true;
+            }
+            if (upper.Contains("ĐÚNG SAI") || upper.Contains("DUNG SAI") || upper.Contains("ĐÚNG - SAI") || upper.Contains("ĐÚNG/SAI") || upper.Contains("TRUE FALSE") || upper.Contains("TRUE/FALSE") || upper.Contains("判断题"))
+            {
+                sectionKey = "TRUE_FALSE";
+                return true;
+            }
+            if ((upper.Contains("TRẮC NGHIỆM") || upper.Contains("MULTIPLE CHOICE") || upper.Contains("ĐƠN LỰA CHỌN") || upper.Contains("NHIỀU LỰA CHỌN") || upper.Contains("单项选择") || upper.Contains("ĐỌC HIỂU") || upper.Contains("READING") || upper.Contains("LISTENING"))
+                && !upper.Contains("ĐÚNG") && !upper.Contains("TRUE"))
+            {
+                sectionKey = "SINGLE";
+                return true;
+            }
+
+            // 2. Khớp theo từ điển cấu trúc của tài liệu
             if (TryMatchSectionMapping(line, _structureDictionary.SectionMarkers, out sectionKey)) return true;
 
             foreach (var rule in SnapshotRules())
@@ -104,26 +144,20 @@ namespace AegisQuiz.Infrastructure.Services
                 if (TryMatchSectionMapping(line, rule.LifecycleSpec?.SectionHeaderMapping, out sectionKey)) return true;
             }
 
-            // Mẫu lõi dự phòng — kiểm tra từ đặc thù đến tổng quát
-            var upper = line.ToUpperInvariant();
-            if (GetOrAddRegex(@"\b(?:PHẦN|PHAN|PART|SECTION)\s+(?:III|3|C)\b").IsMatch(upper) || upper.Contains("TRẢ LỜI NGẮN") || upper.Contains("SHORT ANSWER") || upper.Contains("填空题"))
+            // 3. Mẫu lõi dự phòng theo số thứ tự La Mã thuần túy (khi không kèm từ khóa ngữ nghĩa)
+            if (GetOrAddRegex(@"\b(?:PHẦN|PHAN|PART|SECTION)\s+(?:III|3|C)\b").IsMatch(upper))
             {
                 sectionKey = "SHORT_ANSWER";
                 return true;
             }
-            if (GetOrAddRegex(@"\b(?:PHẦN|PHAN|PART|SECTION)\s+(?:II|2|B)\b").IsMatch(upper) || upper.Contains("ĐÚNG SAI") || upper.Contains("TRUE FALSE") || upper.Contains("TRUE/FALSE") || upper.Contains("判断题"))
+            if (GetOrAddRegex(@"\b(?:PHẦN|PHAN|PART|SECTION)\s+(?:II|2)\b").IsMatch(upper))
             {
                 sectionKey = "TRUE_FALSE";
                 return true;
             }
-            if (GetOrAddRegex(@"\b(?:PHẦN|PHAN|PART|SECTION)\s+(?:I|1|A)\b").IsMatch(upper) || upper.Contains("TRẮC NGHIỆM") || upper.Contains("MULTIPLE CHOICE") || upper.Contains("单项选择"))
+            if (GetOrAddRegex(@"\b(?:PHẦN|PHAN|PART|SECTION)\s+(?:I|1|A)\b").IsMatch(upper))
             {
                 sectionKey = "SINGLE";
-                return true;
-            }
-            if (upper.Contains("TỰ LUẬN") || upper.Contains("ESSAY") || upper.Contains("FREE RESPONSE") || upper.Contains("XỬ LÝ TÌNH HUỐNG") || upper.Contains("解答题"))
-            {
-                sectionKey = "ESSAY";
                 return true;
             }
             return false;

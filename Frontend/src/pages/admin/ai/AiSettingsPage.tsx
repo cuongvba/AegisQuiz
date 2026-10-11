@@ -1,131 +1,43 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
-  Brain, Zap, Shield, Database, Cpu, Activity, 
-  Key, RefreshCw, CheckCircle2, AlertTriangle, 
-  Settings, Save, Sliders, DollarSign, Layers, ArrowRight, Server
+  Brain, Zap, Plus, RefreshCw, Layers, Sparkles 
 } from 'lucide-react';
-import api from '@/shared/api/client';
-import { createLogger } from '@/shared/logger';
-const logger = createLogger('AiSettingsPage');
+import { CouncilDetailModal } from '@/features/symposium/components/CouncilDetailModal';
+import { SeatSwarmConfigModal } from '@/features/symposium/components/SeatSwarmConfigModal';
+import { AddCouncilSeatModal } from '@/features/symposium/components/AddCouncilSeatModal';
+import { EditCouncilModal } from '@/features/symposium/components/EditCouncilModal';
+import { ModelDetailModal } from '@/features/admin/ai-settings/components/ModelDetailModal';
+import { ModelUpsertModal } from '@/features/admin/ai-settings/components/ModelUpsertModal';
+import { GatewayCatalogModal } from '@/features/admin/ai-settings/components/GatewayCatalogModal';
+import { useAuth } from '@/hooks/useAuth';
 
-interface ProviderConfig {
-  providerType: number;
-  displayName: string;
-  baseUrl: string;
-  apiKeys: string[];
-  defaultModel: string;
-  isEnabled: boolean;
-  priority: number;
-  costPerMillionInputTokens: number;
-  costPerMillionOutputTokens: number;
-}
+import { useAiSettingsState } from './components/useAiSettingsState';
+import { SwarmRegistryTab } from './components/SwarmRegistryTab';
+import { UniversalSymposiumTab } from './components/UniversalSymposiumTab';
+import { ConveneSymposiumModal } from './components/ConveneSymposiumModal';
+import { SymposiumProceedingsCard } from './components/SymposiumProceedingsCard';
 
-interface FinOpsTelemetry {
-  totalRequestsProcessed: number;
-  cacheHitsCount: number;
-  cacheHitRatio: number;
-  estimatedCostSavedUsd: number;
-  totalSpentUsd: number;
-  requestCountByProvider: Record<string, number>;
-}
-
-interface AiSystemConfig {
-  providers: ProviderConfig[];
-  taskRoutingMap: Record<string, number>;
-  enableSemanticCache: boolean;
-  semanticCacheSimilarityThreshold: number;
-  enableMultiAgentCommittee: boolean;
-  keyQuarantineSeconds: number;
-  telemetry: FinOpsTelemetry;
-}
-
+/**
+ * AiSettingsPage — Universal AI Swarm Orchestrator (Zero-Monolith & OCP Compliant)
+ * Phân rã từ 1,259 dòng code thành Orchestrator tinh giản <= 250 LOC theo chuẩn AGENTS.md.
+ */
 export const AiSettingsPage: React.FC = () => {
-  const [config, setConfig] = useState<AiSystemConfig | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [testing, setTesting] = useState(false);
-  const [testResults, setTestResults] = useState<Record<string, { success: boolean; latencyMs: number; message: string }> | null>(null);
-  const [saveSuccess, setSaveSuccess] = useState(false);
+  const { t } = useTranslation('ai_settings');
+  const { isAdmin } = useAuth();
+  const state = useAiSettingsState();
 
-  useEffect(() => {
-    fetchConfig();
-  }, []);
-
-  const fetchConfig = async () => {
-    try {
-      setLoading(true);
-      const res = await api.get('/api/admin/ai/config');
-      setConfig(res.data);
-    } catch (err) {
-      logger.error('Lỗi nạp cấu hình AI:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSaveConfig = async () => {
-    if (!config) return;
-    try {
-      setSaving(true);
-      await api.post('/api/admin/ai/config', config);
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
-      await fetchConfig();
-    } catch (err) {
-      logger.error('Lỗi lưu cấu hình:', err);
-      alert('Không thể lưu cấu hình AI. Vui lòng kiểm tra quyền quản trị.');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleTestLatency = async () => {
-    try {
-      setTesting(true);
-      setTestResults(null);
-      const res = await api.post('/api/admin/ai/test');
-      setTestResults(res.data);
-    } catch (err) {
-      logger.error('Lỗi kiểm thử latency:', err);
-      alert('Kiểm thử kết nối thất bại.');
-    } finally {
-      setTesting(false);
-    }
-  };
-
-  const updateProviderKeys = (providerType: number, keysText: string) => {
-    if (!config) return;
-    const keysArray = keysText
-      .split('\n')
-      .map(k => k.trim())
-      .filter(k => k.length > 0);
-
-    const updated = config.providers.map(p => 
-      p.providerType === providerType ? { ...p, apiKeys: keysArray, isEnabled: keysArray.length > 0 } : p
-    );
-    setConfig({ ...config, providers: updated });
-  };
-
-  const toggleProviderEnabled = (providerType: number) => {
-    if (!config) return;
-    const updated = config.providers.map(p => 
-      p.providerType === providerType ? { ...p, isEnabled: !p.isEnabled } : p
-    );
-    setConfig({ ...config, providers: updated });
-  };
-
-  if (loading) {
+  if (state.loading && state.loadingModels) {
     return (
       <div className="p-8 flex flex-col items-center justify-center min-h-[60vh] space-y-3">
         <RefreshCw className="w-8 h-8 text-indigo-400 animate-spin" />
-        <p className="text-slate-400 text-sm">Đang tải cấu hình Hệ Điều Hành Tác Tử AI...</p>
+        <p className="text-slate-400 text-sm">{t('loading_orchestrator')}</p>
       </div>
     );
   }
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-8 text-slate-100">
-      
       {/* Top Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-800">
         <div className="flex items-center gap-3">
@@ -134,230 +46,189 @@ export const AiSettingsPage: React.FC = () => {
           </div>
           <div>
             <h1 className="text-2xl font-black tracking-tight text-white flex items-center gap-2">
-              Hệ Điều Hành Tác Tử AI & FinOps Gateway
+              {t('title')}
               <span className="text-xs px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-semibold">
-                ACM-OS 2026
+                {t('sovereign_badge')}
               </span>
             </h1>
             <p className="text-sm text-slate-400">
-              Định tuyến Đa nhà cung cấp (DeepSeek, Gemini, OpenAI, Claude, Ollama) • Bể API Key tự phục hồi • Semantic Cache (0$)
+              {t('subtitle')}
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
           <button
-            onClick={handleTestLatency}
-            disabled={testing}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold transition-all border border-slate-700 shadow-sm"
+            onClick={() => state.setShowGatewayModal(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-300 border border-amber-500/30 text-sm font-bold transition-all shadow-lg shadow-amber-500/10 cursor-pointer"
           >
-            <Activity className={`w-4 h-4 text-emerald-400 ${testing ? 'animate-spin' : ''}`} />
-            {testing ? 'Đang đo độ trễ...' : 'Kiểm Thử Kết Nối (Latency)'}
+            <Zap className="w-4 h-4 text-amber-400" />
+            {t('buttons.gateway_quick_import', '⚡ Nạp Nhanh Gateway')}
           </button>
-          
           <button
-            onClick={handleSaveConfig}
-            disabled={saving}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-sm font-bold transition-all shadow-lg shadow-indigo-600/30"
+            onClick={() => { state.setSelectedModelToEdit(null); state.setShowUpsertModal(true); }}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-sm font-bold transition-all shadow-lg shadow-indigo-600/30 cursor-pointer"
           >
-            <Save className="w-4 h-4" />
-            {saving ? 'Đang lưu...' : 'Lưu Cấu Hình'}
+            <Plus className="w-4 h-4" />
+            {t('buttons.register_model')}
           </button>
         </div>
       </div>
 
-      {saveSuccess && (
-        <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 flex items-center gap-2 text-sm">
-          <CheckCircle2 className="w-5 h-5" />
-          Cập nhật cấu hình Hệ Điều Hành AI thành công! Các Key mới đã được đồng bộ vào Bể chứa (Key Pool).
+      {/* Tab Selector */}
+      <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-slate-900 border border-slate-800 w-fit flex-wrap">
+        <button
+          onClick={() => state.setCurrentTab('swarm-registry')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            state.currentTab === 'swarm-registry'
+              ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <Layers className="w-4 h-4" />
+          {t('tabs.model_catalog')}
+          <span className="px-1.5 py-0.5 rounded-full bg-white/20 text-white text-[10px]">
+            {t('tabs.models_count', { count: state.models.length })}
+          </span>
+        </button>
+
+        <button
+          onClick={() => state.setCurrentTab('universal-symposium')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            state.currentTab === 'universal-symposium'
+              ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <Sparkles className="w-4 h-4 text-amber-300" />
+          {t('tabs.isomorphic_councils')}
+          <span className="px-1.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 text-[10px]">
+            {t('tabs.councils_count', { count: state.councils.length })}
+          </span>
+        </button>
+      </div>
+
+      {/* Tab Content */}
+      {state.currentTab === 'swarm-registry' ? (
+        <SwarmRegistryTab
+          models={state.models}
+          loadingModels={state.loadingModels}
+          selectedProviderFilter={state.selectedProviderFilter}
+          setSelectedProviderFilter={state.setSelectedProviderFilter}
+          modelSearchQuery={state.modelSearchQuery}
+          setModelSearchQuery={state.setModelSearchQuery}
+          pingingModelCode={state.pingingModelCode}
+          modelPingResults={state.modelPingResults}
+          handlePingModel={state.handlePingModel}
+          handleDeleteModel={state.handleDeleteModel}
+          setSelectedModelForDetail={state.setSelectedModelForDetail}
+          isAdmin={isAdmin}
+          t={t}
+        />
+      ) : (
+        <div className="space-y-6">
+          <UniversalSymposiumTab
+            councils={state.councils}
+            councilCategoryFilter={state.councilCategoryFilter}
+            setCouncilCategoryFilter={state.setCouncilCategoryFilter}
+            setSelectedCouncilForDetail={state.setSelectedCouncilForDetail}
+            setEditingCouncil={state.setEditingCouncil}
+            setSelectedSeatForSwarm={state.setSelectedSeatForSwarm}
+            handleDeleteSeat={state.handleDeleteSeat}
+            onOpenConveneModal={() => {
+              state.setConveneTopic('');
+              state.setConveneProblem('');
+              state.setSelectedCouncilCodes([]);
+              state.setShowConveneModal(true);
+            }}
+            t={t}
+          />
+          <SymposiumProceedingsCard symposiumResult={state.symposiumResult} t={t} />
         </div>
       )}
 
-      {/* FinOps AI Dashboard Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        
-        <div className="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-sm flex items-center gap-4">
-          <div className="p-3 rounded-xl bg-indigo-500/20 text-indigo-400">
-            <Cpu className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="text-2xl font-black text-white">
-              {config?.telemetry.totalRequestsProcessed.toLocaleString() || 0}
-            </div>
-            <div className="text-xs text-slate-400 font-medium">Tổng yêu cầu AI đã xử lý</div>
-          </div>
-        </div>
+      {/* Modals */}
+      <ConveneSymposiumModal
+        isOpen={state.showConveneModal}
+        onClose={() => state.setShowConveneModal(false)}
+        conveneTopic={state.conveneTopic}
+        setConveneTopic={state.setConveneTopic}
+        conveneProblem={state.conveneProblem}
+        setConveneProblem={state.setConveneProblem}
+        selectedCouncilCodes={state.selectedCouncilCodes}
+        setSelectedCouncilCodes={state.setSelectedCouncilCodes}
+        councils={state.councils}
+        convening={state.convening}
+        handleConveneSymposium={state.handleConveneSymposium}
+        t={t}
+      />
 
-        <div className="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-sm flex items-center gap-4">
-          <div className="p-3 rounded-xl bg-emerald-500/20 text-emerald-400">
-            <Database className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="text-2xl font-black text-emerald-400">
-              {config?.telemetry.cacheHitRatio.toFixed(1) || '0.0'}%
-            </div>
-            <div className="text-xs text-slate-400 font-medium">
-              Tỷ lệ Semantic Cache (0$ Token)
-            </div>
-          </div>
-        </div>
+      <ModelDetailModal
+        model={state.selectedModelForDetail}
+        isOpen={Boolean(state.selectedModelForDetail)}
+        onClose={() => state.setSelectedModelForDetail(null)}
+        onEdit={(m) => { state.setSelectedModelToEdit(m); state.setShowUpsertModal(true); }}
+        onDelete={state.handleDeleteModel}
+        userKeys={state.myKeys}
+        systemProviders={state.config?.providers || []}
+        onUpdateProviderKeys={state.handleUpdateProviderKeys}
+        onToggleProviderEnabled={state.toggleProviderEnabled}
+        onRefreshKeys={state.fetchMyKeys}
+        onPingModel={state.handlePingModel}
+        pingResult={state.selectedModelForDetail ? state.modelPingResults[state.selectedModelForDetail.modelCode] : undefined}
+        isPinging={state.selectedModelForDetail ? state.pingingModelCode === state.selectedModelForDetail.modelCode : false}
+      />
 
-        <div className="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-sm flex items-center gap-4">
-          <div className="p-3 rounded-xl bg-amber-500/20 text-amber-400">
-            <DollarSign className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="text-2xl font-black text-amber-300">
-              ${config?.telemetry.estimatedCostSavedUsd.toFixed(2) || '0.00'}
-            </div>
-            <div className="text-xs text-slate-400 font-medium">Ngân sách tiết kiệm (FinOps)</div>
-          </div>
-        </div>
+      <ModelUpsertModal
+        isOpen={state.showUpsertModal}
+        onClose={() => state.setShowUpsertModal(false)}
+        modelToEdit={state.selectedModelToEdit}
+        onSaved={(saved) => {
+          state.fetchModels();
+          if (state.selectedModelForDetail && state.selectedModelForDetail.id === saved.id) {
+            state.setSelectedModelForDetail(saved);
+          }
+        }}
+      />
 
-        <div className="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-sm flex items-center gap-4">
-          <div className="p-3 rounded-xl bg-purple-500/20 text-purple-400">
-            <Layers className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="text-2xl font-black text-purple-300">
-              {config?.providers.filter(p => p.isEnabled).length || 0} / {config?.providers.length || 0}
-            </div>
-            <div className="text-xs text-slate-400 font-medium">Providers đang hoạt động</div>
-          </div>
-        </div>
+      <GatewayCatalogModal
+        isOpen={state.showGatewayModal}
+        onClose={() => state.setShowGatewayModal(false)}
+        onImportSuccess={() => state.fetchModels()}
+      />
 
-      </div>
+      <CouncilDetailModal
+        council={state.selectedCouncilForDetail}
+        isOpen={!!state.selectedCouncilForDetail}
+        onClose={() => state.setSelectedCouncilForDetail(null)}
+        isSelected={false}
+        onToggleSelect={() => {}}
+      />
 
-      {/* Latency Test Results Banner */}
-      {testResults && (
-        <div className="p-5 rounded-2xl bg-slate-950/80 border border-indigo-500/30 space-y-3">
-          <h3 className="text-sm font-bold text-indigo-300 flex items-center gap-2">
-            <Activity className="w-4 h-4 text-emerald-400" />
-            Kết Quả Đo Độ Trễ & Sức Khỏe Kết Nối (Health Ping):
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">
-            {Object.entries(testResults).map(([provider, res]) => (
-              <div key={provider} className="p-3 rounded-xl bg-slate-900/90 border border-slate-800 flex items-center justify-between text-xs">
-                <span className="font-semibold text-slate-200">{provider}</span>
-                {res.success ? (
-                  <span className="flex items-center gap-1 font-bold text-emerald-400">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> {res.latencyMs}ms
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-1 text-rose-400" title={res.message}>
-                    <AlertTriangle className="w-3.5 h-3.5" /> Lỗi
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <SeatSwarmConfigModal
+        seat={state.selectedSeatForSwarm?.seat || null}
+        councilName={state.selectedSeatForSwarm?.councilName || ''}
+        isOpen={!!state.selectedSeatForSwarm}
+        onClose={() => state.setSelectedSeatForSwarm(null)}
+        availableModels={state.models}
+        userKeys={state.myKeys}
+        onSaved={() => { state.fetchCouncils(); state.setSelectedSeatForSwarm(null); }}
+      />
 
-      {/* Provider Cards Matrix */}
-      <div className="space-y-4">
-        <h2 className="text-lg font-bold text-white flex items-center gap-2">
-          <Server className="w-5 h-5 text-indigo-400" />
-          Ma Trận Các Nhà Cung Cấp AI & Bể Khóa (Key Pool)
-        </h2>
+      <AddCouncilSeatModal
+        council={state.addingSeatToCouncil}
+        isOpen={!!state.addingSeatToCouncil}
+        onClose={() => state.setAddingSeatToCouncil(null)}
+        availableModels={state.models}
+        onAdded={() => { state.fetchCouncils(); state.setAddingSeatToCouncil(null); }}
+      />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          {config?.providers.map(p => (
-            <div 
-              key={p.providerType}
-              className={`p-5 rounded-2xl border transition-all ${
-                p.isEnabled 
-                  ? 'bg-slate-900/90 border-slate-800 hover:border-indigo-500/40 shadow-lg' 
-                  : 'bg-slate-950/40 border-slate-800/50 opacity-60'
-              }`}
-            >
-              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                <div className="flex items-center gap-2.5">
-                  <div className={`w-3 h-3 rounded-full ${p.isEnabled ? 'bg-emerald-400 shadow-md shadow-emerald-400/50' : 'bg-slate-600'}`} />
-                  <div>
-                    <h3 className="font-bold text-white text-base">{p.displayName}</h3>
-                    <p className="text-xs text-slate-400 font-mono">{p.defaultModel}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300">
-                    Ưu tiên #{p.priority}
-                  </span>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      checked={p.isEnabled} 
-                      onChange={() => toggleProviderEnabled(p.providerType)}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                  </label>
-                </div>
-              </div>
-
-              <div className="pt-4 space-y-3">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-400 flex items-center gap-1">
-                    <Key className="w-3.5 h-3.5 text-amber-400" />
-                    Bể API Keys ({p.apiKeys.length} keys hoạt động):
-                  </span>
-                  <span className="text-slate-500 text-[11px]">Mỗi dòng 1 Key (Cân bằng tải Round-Robin)</span>
-                </div>
-
-                <textarea
-                  rows={3}
-                  value={p.apiKeys.join('\n')}
-                  onChange={(e) => updateProviderKeys(p.providerType, e.target.value)}
-                  placeholder="Dán API Key tại đây (Hệ thống tự động xoay tua Round-Robin)..."
-                  className="w-full px-3 py-2 text-xs font-mono bg-slate-950/80 border border-slate-800 rounded-xl text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors"
-                />
-
-                <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
-                  <span>Chi phí: ~${p.costPerMillionInputTokens}/1M in • ${p.costPerMillionOutputTokens}/1M out</span>
-                  <span>Tự cách ly khi gặp 429: Có (60s)</span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Task Routing Section */}
-      <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
-              <Sliders className="w-5 h-5 text-indigo-400" />
-              Định Tuyến Tác Vụ Thông Minh Theo Sở Trường (Task-Specific Routing)
-            </h2>
-            <p className="text-xs text-slate-400">
-              Tự động phân bổ tác vụ cho model có năng lực cao nhất với chi phí rẻ nhất
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
-          {[
-            { task: 'SolveQuestions', label: 'Giải Đề Toán & Nghiệp Vụ', desc: 'Ưu tiên DeepSeek-R1 (Chi phí siêu rẻ, logic sâu)' },
-            { task: 'CognitiveWalkthrough', label: 'Bản Đồ Tư Duy Sư Phạm', desc: 'DeepSeek-R1 / Claude 3.5 Sonnet' },
-            { task: 'GenerateQuestions', label: 'Bóc Tách & Sinh Đề Từ File', desc: 'Google Gemini 2.0 Flash (Tốc độ & Context lớn)' },
-            { task: 'GradeEssay', label: 'Chấm Điểm Tự Luận Barem', desc: 'Anthropic Claude 3.5 Sonnet' },
-            { task: 'ArenaAdversary', label: 'Kẻ Đi Săn Đấu Trường', desc: 'OpenAI GPT-4o-mini / Gemini' },
-          ].map(t => (
-            <div key={t.task} className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-1.5">
-              <div className="font-bold text-slate-200">{t.label}</div>
-              <p className="text-[11px] text-slate-500">{t.desc}</p>
-              <div className="pt-1 text-indigo-400 font-medium">
-                Khuyên dùng: {t.task === 'GradeEssay' ? 'Anthropic' : t.task === 'GenerateQuestions' ? 'Google Gemini' : 'DeepSeek'}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
+      <EditCouncilModal
+        council={state.editingCouncil}
+        isOpen={!!state.editingCouncil}
+        onClose={() => state.setEditingCouncil(null)}
+        onSaved={() => { state.fetchCouncils(); state.setEditingCouncil(null); }}
+      />
     </div>
   );
 };
-export default AiSettingsPage;
-

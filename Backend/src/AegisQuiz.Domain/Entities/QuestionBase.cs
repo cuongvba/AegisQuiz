@@ -181,6 +181,98 @@ namespace AegisQuiz.Domain.Entities
             }
         }
 
+        /// <summary>Mã băm vân tay chuẩn tắc phục vụ đối soát và khử trùng lặp (SHA-256)</summary>
+        [System.Text.Json.Serialization.JsonPropertyName("canonicalContentHash")]
+        public string? CanonicalContentHash
+        {
+            get => TryGetPayloadProperty(Payload, "canonicalContentHash", out var el) && el.ValueKind == JsonValueKind.String ? el.GetString() : null;
+        }
+
+        /// <summary>Tên file nguồn xuất xứ của câu hỏi</summary>
+        [System.Text.Json.Serialization.JsonPropertyName("sourceFileName")]
+        public string? SourceFileName
+        {
+            get => TryGetPayloadProperty(Payload, "sourceFileName", out var el) && el.ValueKind == JsonValueKind.String ? el.GetString() : null;
+        }
+
+        /// <summary>Tên đề thi / Sheet nguồn xuất xứ của câu hỏi</summary>
+        [System.Text.Json.Serialization.JsonPropertyName("sourceExamName")]
+        public string? SourceExamName
+        {
+            get => TryGetPayloadProperty(Payload, "sourceExamName", out var el) && el.ValueKind == JsonValueKind.String ? el.GetString() : null;
+        }
+
+        /// <summary>Tên phần / chương trong đề thi nguồn</summary>
+        [System.Text.Json.Serialization.JsonPropertyName("sourceSectionName")]
+        public string? SourceSectionName
+        {
+            get => TryGetPayloadProperty(Payload, "sourceSectionName", out var el) && el.ValueKind == JsonValueKind.String ? el.GetString() : null;
+        }
+
+        /// <summary>Số thứ tự câu hỏi hoặc vị trí gốc trong file nguồn</summary>
+        [System.Text.Json.Serialization.JsonPropertyName("sourceQuestionNo")]
+        public string? SourceQuestionNo
+        {
+            get => TryGetPayloadProperty(Payload, "sourceQuestionNo", out var el) && el.ValueKind == JsonValueKind.String ? el.GetString() : null;
+        }
+
+        /// <summary>Dòng số mấy trong file nguồn (Excel row, Word position)</summary>
+        [System.Text.Json.Serialization.JsonPropertyName("sourceRowIndex")]
+        public int? SourceRowIndex
+        {
+            get => TryGetPayloadProperty(Payload, "sourceRowIndex", out var el) && el.ValueKind == JsonValueKind.Number && el.TryGetInt32(out var r) ? r : null;
+        }
+
+        /// <summary>Tổng số lần câu hỏi này xuất hiện qua các đề / tài liệu khác nhau</summary>
+        [System.Text.Json.Serialization.JsonPropertyName("occurrenceCount")]
+        public int OccurrenceCount
+        {
+            get => TryGetPayloadProperty(Payload, "occurrenceCount", out var el) && el.ValueKind == JsonValueKind.Number && el.TryGetInt32(out var c) ? c : 1;
+        }
+
+        /// <summary>Danh sách đầy đủ các vị trí xuất hiện (Lịch sử nguồn gốc đa đề thi / đa tệp)</summary>
+        [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+        [System.Text.Json.Serialization.JsonPropertyName("appearances")]
+        public List<ProvenanceAppearance>? Appearances
+        {
+            get
+            {
+                if (TryGetPayloadProperty(Payload, "_provenance", out var provEl) && provEl.ValueKind == JsonValueKind.Object)
+                {
+                    if (provEl.TryGetProperty("appearances", out var appEl) && appEl.ValueKind == JsonValueKind.Array)
+                    {
+                        try
+                        {
+                            return JsonSerializer.Deserialize<List<ProvenanceAppearance>>(appEl.GetRawText());
+                        }
+                        catch { }
+                    }
+                }
+                return null;
+            }
+        }
+
+        /// <summary>Danh sách các mã chủ đề / đề thi mà câu hỏi này thuộc về (Quan hệ N - M)</summary>
+        [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+        [System.Text.Json.Serialization.JsonPropertyName("linkedTopicCodes")]
+        public List<string> LinkedTopicCodes
+        {
+            get
+            {
+                var list = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                if (!string.IsNullOrWhiteSpace(CategoryCode)) list.Add(CategoryCode);
+                if (TryGetPayloadProperty(Payload, "linkedTopicCodes", out var ltcEl) && ltcEl.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var item in ltcEl.EnumerateArray())
+                    {
+                        var s = item.GetString();
+                        if (!string.IsNullOrWhiteSpace(s)) list.Add(s);
+                    }
+                }
+                return list.ToList();
+            }
+        }
+
         public abstract double EvaluateAnswer(string studentAnswerJson);
 
         // Helper: đọc JsonDocument an toàn

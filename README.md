@@ -113,6 +113,8 @@ Toàn bộ tài liệu chi tiết từ thiết kế kiến trúc, lược đồ 
 - 🌐 **[Bản Thiết Kế Tối Thượng Chuẩn Quốc Tế v3.0](docs/AEGISQUIZ_GLOBAL_SUPREMACY_BLUEPRINT_V3.0.md)**: Bản thiết kế 4 Trụ Cột: Military-Grade IT, AI Neuroscience CAT/IRT, Obsessive Gamification, Platform Economics.
 - 🗺️ **[Mục Lục Điều Hướng Toàn Diện docs/README.md](docs/README.md)**: Bản đồ điều hướng và chỉ mục của toàn bộ hệ thống.
 - 🏛️ **Kiến Trúc & Bảo Mật**:
+  - 🛡️ **[BÁO CÁO ĐÁNH GIÁ TOÀN DIỆN HỆ THỐNG THEO TIÊU CHUẨN CAO NHẤT THẾ GIỚI (GLOBAL SUPREME AUDIT 2026)](docs/architecture/AEGISQUIZ_GLOBAL_SUPREME_AUDIT_REPORT_2026.md)** *(Mới nhất - Đánh giá đa chiều ISO 25010, OWASP ASVS v4.0, Psychometrics IRT 3-PL, CLEAR Architecture)*
+  - [Báo Cáo Kiểm Toán Toàn Diện Backend Đạt Cảnh Giới Tối Cao](docs/architecture/BACKEND_WORLD_CLASS_SUPREME_AUDIT_REPORT.md)
   - [Kiến Trúc Tổng Thể Hệ Thống (System Architecture)](docs/architecture/SYSTEM_ARCHITECTURE.md)
   - [Lược Đồ Cơ Sở Dữ Liệu & Entity Models (Data Models)](docs/architecture/DATA_MODELS.md)
   - [Phòng Thi Bảo Mật & Chống Gian Lận (Security & Proctoring)](docs/architecture/SECURITY_AND_PROCTORING.md)

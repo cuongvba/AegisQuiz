@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { FileUp, Plus, HelpCircle, Star, Sparkles, Trash2, Edit, X, Loader2, Save, FolderOpen, Layers, ArrowUpDown, Eye, EyeOff, Lock, Unlock, ToggleLeft, ToggleRight } from 'lucide-react';
 import { learnerQuizService } from '@/services/learner-quiz.service';
 import type { LearnerQuestion, QuestionType } from '@/types/quiz';
+import { parseMultiTfAnswer, serializeMultiTfAnswer, serializeMultiTfVector } from '@/shared/lib/quiz/normalizers';
 
 interface BankTopic {
   id: string;
@@ -133,6 +134,7 @@ export function AdminQuestionsPage() {
       SINGLE: 'Trắc nghiệm 1 đáp án',
       MULTI: 'Nhiều đáp án đúng',
       TRUE_FALSE: 'Đúng / Sai',
+      MULTI_TRUE_FALSE: 'Đúng / Sai 4 ý (GDPT 2025)',
       SHORT_ANSWER: 'Trả lời ngắn',
       FILL_BLANK: 'Điền vào chỗ trống',
       ORDERING: 'Sắp xếp thứ tự',
@@ -144,6 +146,10 @@ export function AdminQuestionsPage() {
 
   const getCorrectAnswerDisplay = (q: LearnerQuestion): { label: string; text: string } | null => {
     if (!q.answerRaw || !q.answerRaw.trim()) return null;
+
+    if (q.questionType === 'MULTI_TRUE_FALSE') {
+      return { label: q.answerRaw, text: 'Ma trận Đúng/Sai (GDPT 2025)' };
+    }
 
     if (q.questionType === 'SINGLE' || q.questionType === 'TRUE_FALSE') {
       const idx = parseInt(q.answerRaw) - 1;
@@ -187,6 +193,8 @@ export function AdminQuestionsPage() {
         return 'Ví dụ: A,C (các phương án đúng cách nhau bởi dấu phẩy)';
       case 'TRUE_FALSE':
         return 'Điền 1 (Đúng) hoặc 2 (Sai)';
+      case 'MULTI_TRUE_FALSE':
+        return 'Ví dụ: a) Đúng, b) Sai, c) Đúng, d) Sai';
       case 'SHORT_ANSWER':
       case 'FILL_BLANK':
         return 'Điền từ/cụm từ chính xác (Ví dụ: quang hợp)';
@@ -802,6 +810,7 @@ export function AdminQuestionsPage() {
                   <option value="SINGLE">Trắc nghiệm 1 đáp án</option>
                   <option value="MULTI">Nhiều đáp án đúng</option>
                   <option value="TRUE_FALSE">Đúng / Sai</option>
+                  <option value="MULTI_TRUE_FALSE">Đúng / Sai 4 ý (GDPT 2025)</option>
                   <option value="SHORT_ANSWER">Trả lời ngắn</option>
                   <option value="FILL_BLANK">Điền vào chỗ trống</option>
                   <option value="ORDERING">Sắp xếp thứ tự</option>
@@ -1348,6 +1357,7 @@ export function AdminQuestionsPage() {
                           <option value="SINGLE">Trắc nghiệm 1 đáp án</option>
                           <option value="MULTI">Nhiều đáp án đúng</option>
                           <option value="TRUE_FALSE">Đúng / Sai</option>
+                          <option value="MULTI_TRUE_FALSE">Đúng / Sai 4 ý (GDPT 2025)</option>
                           <option value="SHORT_ANSWER">Trả lời ngắn</option>
                           <option value="FILL_BLANK">Điền vào chỗ trống</option>
                           <option value="ORDERING">Sắp xếp thứ tự</option>
@@ -1385,6 +1395,54 @@ export function AdminQuestionsPage() {
                             >
                               Sai (2)
                             </button>
+                          </div>
+                        ) : questionType === 'MULTI_TRUE_FALSE' ? (
+                          <div className="space-y-2 p-2.5 bg-slate-950/90 border border-slate-800 rounded-2xl shadow-inner">
+                            <div className="flex flex-col gap-0.5 pb-1 border-b border-slate-850">
+                              <div className="text-[10px] text-cyan-400 uppercase font-black tracking-wider flex items-center justify-between">
+                                <span>Ma trận Đúng / Sai:</span>
+                                <span className="text-[10px] font-mono text-amber-400 bg-amber-950/50 px-1.5 py-0.2 rounded border border-amber-800/50">
+                                  {serializeMultiTfVector(parseMultiTfAnswer(correctAnswer))}
+                                </span>
+                              </div>
+                              <span className="text-[10px] font-mono text-slate-400 truncate">
+                                {serializeMultiTfAnswer(parseMultiTfAnswer(correctAnswer)) || 'Chưa thiết lập'}
+                              </span>
+                            </div>
+                            {['a', 'b', 'c', 'd'].map((letter, i) => {
+                              const currentMap = parseMultiTfAnswer(correctAnswer);
+                              const userVal = currentMap[letter];
+                              return (
+                                <div key={letter} className="flex items-center justify-between gap-2 p-1.5 bg-slate-900/60 rounded-xl border border-slate-800/80">
+                                  <span className="font-bold text-xs text-purple-400 font-mono w-6 text-center">{letter})</span>
+                                  <span className="text-xs text-slate-300 truncate flex-1 font-medium">{options[i] || `(Ý ${letter})`}</span>
+                                  <div className="flex gap-1 shrink-0">
+                                    <button
+                                      type="button"
+                                      disabled={!isEditing}
+                                      onClick={() => {
+                                        const next = { ...currentMap, [letter]: true };
+                                        setCorrectAnswer(serializeMultiTfAnswer(next));
+                                      }}
+                                      className={`px-2.5 py-0.5 rounded-lg text-[10px] font-black transition-all cursor-pointer disabled:cursor-not-allowed ${
+                                        userVal === true ? 'bg-emerald-600 text-white shadow-sm ring-1 ring-emerald-400' : 'bg-slate-800 text-slate-400 hover:text-white'
+                                      }`}
+                                    >Đúng</button>
+                                    <button
+                                      type="button"
+                                      disabled={!isEditing}
+                                      onClick={() => {
+                                        const next = { ...currentMap, [letter]: false };
+                                        setCorrectAnswer(serializeMultiTfAnswer(next));
+                                      }}
+                                      className={`px-2.5 py-0.5 rounded-lg text-[10px] font-black transition-all cursor-pointer disabled:cursor-not-allowed ${
+                                        userVal === false ? 'bg-rose-600 text-white shadow-sm ring-1 ring-rose-400' : 'bg-slate-800 text-slate-400 hover:text-white'
+                                      }`}
+                                    >Sai</button>
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
                         ) : (
                           <input 

@@ -13,11 +13,25 @@
  *   widgets/app-header/UserProfileDropdown.tsx
  */
 
-import { Outlet } from 'react-router-dom';
+import { useState } from 'react';
+import { Outlet, useLocation } from 'react-router-dom';
 import { AppHeader } from '@/widgets/app-header/AppHeader';
 import { MobileNav } from '@/widgets/app-header/MobileNav';
+import { AegisCoPilotSidecar, CoPilotTriggerOrb } from '@/features/copilot';
 
 export function MainLayout() {
+  const [isCoPilotOpen, setIsCoPilotOpen] = useState(false);
+  const location = useLocation();
+
+  const getScreenName = () => {
+    const path = location.pathname;
+    if (path.includes('dashboard')) return 'Dashboard';
+    if (path.includes('arena')) return 'Arena Sân Đấu';
+    if (path.includes('symposium')) return 'Đại Hội Thảo AI';
+    if (path.includes('practice')) return 'Luyện Tập Khảo Thí';
+    return 'Tổng Quan AegisQuiz';
+  };
+
   return (
     <div
       className="min-h-screen selection:bg-cyan-500/30 selection:text-cyan-200 bg-slate-950 text-slate-100"
@@ -38,6 +52,17 @@ export function MainLayout() {
 
       {/* ── Mobile Bottom Nav ── */}
       <MobileNav />
+
+      {/* ── Aegis Sovereign Co-Pilot Sidecar & Trigger Orb ── */}
+      <CoPilotTriggerOrb
+        isOpen={isCoPilotOpen}
+        onToggle={() => setIsCoPilotOpen(!isCoPilotOpen)}
+      />
+      <AegisCoPilotSidecar
+        isOpen={isCoPilotOpen}
+        onClose={() => setIsCoPilotOpen(false)}
+        currentScreen={getScreenName()}
+      />
     </div>
   );
 }

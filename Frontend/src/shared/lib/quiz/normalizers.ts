@@ -57,6 +57,10 @@ const TYPE_ALIAS_MAP: Record<string, QuestionType> = {
   MULTI_SELECT:    'MULTI',
   TRUE_FALSE:      'TRUE_FALSE',
   TRUEFALSE:       'TRUE_FALSE',
+  MULTI_TRUE_FALSE:'MULTI_TRUE_FALSE',
+  MULTI_TF:        'MULTI_TRUE_FALSE',
+  TF_CLUSTER:      'MULTI_TRUE_FALSE',
+  DUNG_SAI_DA_Y:   'MULTI_TRUE_FALSE',
   SHORT_ANSWER:    'SHORT_ANSWER',
   SHORTANSWER:     'SHORT_ANSWER',
   FILL_BLANK:      'FILL_BLANK',
@@ -67,7 +71,7 @@ const TYPE_ALIAS_MAP: Record<string, QuestionType> = {
 };
 
 const ALLOWED_TYPES: QuestionType[] = [
-  'SINGLE', 'MULTI', 'TRUE_FALSE', 'SHORT_ANSWER',
+  'SINGLE', 'MULTI', 'TRUE_FALSE', 'MULTI_TRUE_FALSE', 'SHORT_ANSWER',
   'FILL_BLANK', 'ORDERING', 'MATCHING', 'ESSAY',
 ];
 
@@ -228,8 +232,15 @@ export function normalizeQuestion(data: unknown, idx: number): LearnerQuestion {
     '',
   ).trim();
 
-  // Nếu answerRaw là text dài trùng với một trong các options → ánh xạ về index 1-based
-  if (rawAnswer && !/^\d+$/.test(rawAnswer) && rawOptions.length > 0) {
+  // Auto-detect MULTI_TRUE_FALSE từ các dấu hiệu tiểu mục a) b) c) d) và đáp án Đúng/Sai
+  const isMultiTfDetected =
+    normalizedType === 'MULTI_TRUE_FALSE' ||
+    ((normalizedType === 'SINGLE' || normalizedType === 'TRUE_FALSE') &&
+      ((rawOptions.length >= 3 && rawOptions.some(o => /^[a-d][\)\.]/i.test(o.trim()))) ||
+       (/(?:^|\b|\,)[a-d][\)\:\.\s]+(?:đúng|sai|true|false)/i.test(rawAnswer))));
+
+  // Nếu answerRaw là text dài trùng với một trong các options → ánh xạ về index 1-based (CHỈ cho SINGLE)
+  if (!isMultiTfDetected && normalizedType === 'SINGLE' && rawAnswer && !/^\d+$/.test(rawAnswer) && rawOptions.length > 0) {
     const cleanRaw = rawAnswer.trim().toLowerCase();
     const foundIdx = rawOptions.findIndex((opt) => {
       const cleanOpt    = (opt ?? '').trim().toLowerCase();
@@ -246,26 +257,37 @@ export function normalizeQuestion(data: unknown, idx: number): LearnerQuestion {
     if (foundIdx !== -1) rawAnswer = String(foundIdx + 1);
   }
 
-  const inferredMatching   = looksLikeMatchingFromTwoColumns(normalizedType, rawOptions);
+  const inferredMatching   = !isMultiTfDetected && looksLikeMatchingFromTwoColumns(normalizedType, rawOptions);
   const matchingNormalized = inferredMatching
     ? normalizeMatchingFromTwoColumns(rawOptions, rawAnswer)
     : { options: rawOptions, answerRaw: rawAnswer };
 
-  const inferredMulti = !inferredMatching && looksLikeMultiFromAnswer(normalizedType, matchingNormalized.answerRaw);
+  const inferredMulti = !isMultiTfDetected && !inferredMatching && looksLikeMultiFromAnswer(normalizedType, matchingNormalized.answerRaw);
 
   // Auto-detect ESSAY khi không có options hoặc payload có rubric
   const isEssayFallback =
+    !isMultiTfDetected &&
     !rawType &&
     (rawOptions.length === 0 || !!payload.rubric || !!payload.gradingRubric || rawAnswer.toLowerCase().includes('barem'));
 
-  const effectiveType = isEssayFallback ? 'ESSAY' : normalizedType;
-  const finalType: QuestionType = inferredMatching ? 'MATCHING' : inferredMulti ? 'MULTI' : effectiveType;
+  const effectiveType = isMultiTfDetected ? 'MULTI_TRUE_FALSE' : isEssayFallback ? 'ESSAY' : normalizedType;
+  const finalType: QuestionType = isMultiTfDetected
+    ? 'MULTI_TRUE_FALSE'
+    : inferredMatching
+    ? 'MATCHING'
+    : inferredMulti
+    ? 'MULTI'
+    : effectiveType;
 
-  const optionsArray = Array.isArray(source.options)
+  const optionsArray = Array.isArray(source.options) && source.options.length > 0
     ? source.options.map((x) => String(x ?? ''))
-    : Array.isArray(payload.options)
+    : Array.isArray(payload.options) && (payload.options as unknown[]).length > 0
     ? (payload.options as unknown[]).map((x) =>
         typeof x === 'object' && x ? String((x as Record<string, unknown>).text ?? (x as Record<string, unknown>).value ?? '') : String(x ?? ''),
+      )
+    : Array.isArray(payload.subItems) && (payload.subItems as unknown[]).length > 0
+    ? (payload.subItems as unknown[]).map((x) =>
+        typeof x === 'object' && x ? String((x as Record<string, unknown>).text ?? '') : String(x ?? ''),
       )
     : [];
 
@@ -335,3 +357,131 @@ export function normalizeQuestion(data: unknown, idx: number): LearnerQuestion {
     contributionStatus:  (pickFirst(source, payload, ['contributionStatus', 'contribution_status']) as any) || undefined,
   };
 }
+
+// ── Multi True-False & Binary Vector Helpers ─────────────────────────────────
+
+export function parseMultiTfAnswer(answerStr: string | undefined | null): Record<string, boolean> {
+  const map: Record<string, boolean> = {};
+  if (!answerStr) return map;
+
+  const raw = String(answerStr).trim();
+
+  // Pattern bao phủ: [1:1; 2:0; 3:1; 4:1], a:1, b:0, a) Đúng, b) Sai, 1:Đ; 2:S
+  const regex = /(?:\[|\(|^|\b|\;|\,)\s*([a-z0-9]+)\s*[\:\=\)\.\-]\s*([01]|đúng|sai|true|false|đ|s|t|f)\b/gi;
+  let m: RegExpExecArray | null;
+
+  while ((m = regex.exec(raw)) !== null) {
+    const rawKey = m[1].toLowerCase();
+    // Convert 1..26 -> a..z nếu key là số
+    let key = rawKey;
+    const num = parseInt(rawKey, 10);
+    if (!isNaN(num) && num >= 1 && num <= 26) {
+      key = String.fromCharCode('a'.charCodeAt(0) + num - 1);
+    }
+    const valStr = m[2].toLowerCase();
+    const isTrue = valStr === '1' || valStr === 'đúng' || valStr === 'đ' || valStr === 'true' || valStr === 't';
+    map[key] = isTrue;
+  }
+
+  // Fallback dạng rút gọn không key: "Đ,S,Đ,Đ" hoặc "1,0,1,1" nếu không có dấu hai chấm
+  if (Object.keys(map).length === 0 && !raw.includes(':')) {
+    const tokens = raw.split(/[;, \t\[\]]+/).filter(Boolean);
+    tokens.forEach((tok, idx) => {
+      const key = String.fromCharCode('a'.charCodeAt(0) + idx);
+      const t = tok.toLowerCase();
+      map[key] = t === '1' || t === 'đ' || t === 'đúng' || t === 't' || t === 'true';
+    });
+  }
+
+  return map;
+}
+
+export function serializeMultiTfAnswer(map: Record<string, boolean>): string {
+  const keys = Object.keys(map).sort();
+  if (keys.length === 0) return '';
+  return keys.map(k => `${k}) ${map[k] ? 'Đúng' : 'Sai'}`).join(', ');
+}
+
+export function serializeMultiTfVector(map: Record<string, boolean>): string {
+  const keys = Object.keys(map).sort();
+  if (keys.length === 0) return '[]';
+  const parts = keys.map((k, idx) => {
+    const num = k.charCodeAt(0) - 'a'.charCodeAt(0) + 1;
+    const itemIdx = num >= 1 && num <= 26 ? num : idx + 1;
+    return `${itemIdx}:${map[k] ? '1' : '0'}`;
+  });
+  return `[${parts.join('; ')}]`;
+}
+
+export function formatMultiTfDisplay(answerStr: string | undefined | null): {
+  vector: string;
+  human: string;
+  map: Record<string, boolean>;
+} {
+  const map = parseMultiTfAnswer(answerStr);
+  return {
+    vector: serializeMultiTfVector(map),
+    human: serializeMultiTfAnswer(map),
+    map,
+  };
+}
+
+/**
+ * Chuyển đổi thông minh từ MULTI (chọn nhiều ý đúng, vd: "1, 3" hoặc "A, C")
+ * sang MULTI_TRUE_FALSE (ma trận vector Đúng/Sai toàn phần: a Đúng, b Sai, c Đúng, d Sai)
+ */
+export function convertMultiToMultiTf(
+  multiAnswer: string | undefined | null,
+  optionCount: number = 4
+): string {
+  const map: Record<string, boolean> = {};
+  const total = Math.max(optionCount, 2);
+
+  // Mặc định tất cả các ý đều là False
+  for (let i = 0; i < total; i++) {
+    const key = String.fromCharCode('a'.charCodeAt(0) + i);
+    map[key] = false;
+  }
+
+  if (multiAnswer) {
+    const tokens = String(multiAnswer).split(/[;, \t\[\]]+/).filter(Boolean);
+    tokens.forEach(tok => {
+      const clean = tok.trim().toUpperCase();
+      // Nếu là số 1..26
+      const num = parseInt(clean, 10);
+      if (!isNaN(num) && num >= 1 && num <= total) {
+        const key = String.fromCharCode('a'.charCodeAt(0) + num - 1);
+        map[key] = true;
+      } else if (clean.length === 1 && clean >= 'A' && clean <= 'Z') {
+        const key = clean.toLowerCase();
+        if (key in map) {
+          map[key] = true;
+        }
+      }
+    });
+  }
+
+  return serializeMultiTfAnswer(map);
+}
+
+/**
+ * Chuyển đổi thông minh từ MULTI_TRUE_FALSE (vd: [1:1; 2:0; 3:1; 4:1] hoặc "a) Đúng, b) Sai...")
+ * sang MULTI (tập hợp chỉ số các phương án Đúng, vd: "1, 3, 4")
+ */
+export function convertMultiTfToMulti(tfAnswer: string | undefined | null): string {
+  const map = parseMultiTfAnswer(tfAnswer);
+  const correctIndices: number[] = [];
+
+  const keys = Object.keys(map).sort();
+  keys.forEach((key, idx) => {
+    if (map[key] === true) {
+      const num = key.charCodeAt(0) - 'a'.charCodeAt(0) + 1;
+      const index = num >= 1 && num <= 26 ? num : idx + 1;
+      correctIndices.push(index);
+    }
+  });
+
+  return correctIndices.sort((a, b) => a - b).join(', ');
+}
+
+

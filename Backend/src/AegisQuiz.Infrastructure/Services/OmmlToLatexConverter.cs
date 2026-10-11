@@ -141,11 +141,25 @@ namespace AegisQuiz.Infrastructure.Services
                     var begChr = dPr?.Element(M + "begChr")?.Attribute(M + "val")?.Value ?? "(";
                     var endChr = dPr?.Element(M + "endChr")?.Attribute(M + "val")?.Value ?? ")";
                     var dContent = ConvertContainer(el.Element(M + "e"));
-                    if (begChr == "{" && string.IsNullOrEmpty(endChr))
+
+                    bool hasLines = dContent.Contains(@"\\");
+                    if (begChr == "{" && (string.IsNullOrEmpty(endChr) || endChr == "."))
                     {
                         return $"\\begin{{cases}} {dContent} \\end{{cases}}";
                     }
-                    return $"\\left{begChr}{dContent}\\right{endChr}";
+                    if (begChr == "[" && (string.IsNullOrEmpty(endChr) || endChr == "."))
+                    {
+                        if (hasLines && !dContent.Contains(@"\begin{"))
+                            return $"\\left[\\begin{{matrix}} {dContent} \\end{{matrix}}\\right.";
+                        return $"\\left[{dContent}\\right.";
+                    }
+
+                    string rightDelim = string.IsNullOrEmpty(endChr) ? "." : endChr;
+                    if (hasLines && !dContent.Contains(@"\begin{"))
+                    {
+                        dContent = $"\\begin{{matrix}} {dContent} \\end{{matrix}}";
+                    }
+                    return $"\\left{begChr}{dContent}\\right{rightDelim}";
 
                 case "acc": // [MỚI] Accent: Vector, Dấu mũ góc, Dấu gạch trên, Prime
                     {
@@ -163,14 +177,14 @@ namespace AegisQuiz.Infrastructure.Services
                         // Tier 3: Hardcoded Fail-Safe Fallback
                         return chr switch
                         {
-                            "⃗" or "→" or "⟶" => baseContent.Length > 2 ? $"\\overrightarrow{{{baseContent}}}" : $"\\vec{{{baseContent}}}",
+                            "⃗" or "→" or "⟶" => baseContent.Length >= 2 ? $"\\overrightarrow{{{baseContent}}}" : $"\\vec{{{baseContent}}}",
                             "^" or "̂" => $"\\widehat{{{baseContent}}}",
                             "¯" or "_" or "‾" => $"\\overline{{{baseContent}}}",
                             "′" or "'" => $"{{{baseContent}}}'",
                             "″" or "\"" => $"{{{baseContent}}}''",
                             "~" or "̃" => $"\\tilde{{{baseContent}}}",
                             "." or "̇" => $"\\dot{{{baseContent}}}",
-                            _ => baseContent.Length > 2 ? $"\\overrightarrow{{{baseContent}}}" : $"\\vec{{{baseContent}}}"
+                            _ => baseContent.Length >= 2 ? $"\\overrightarrow{{{baseContent}}}" : $"\\vec{{{baseContent}}}"
                         };
                     }
 
@@ -214,9 +228,22 @@ namespace AegisQuiz.Infrastructure.Services
                         "∮" => "\\oint",
                         _ => nChr
                     };
+                    bool hasSubNary = !string.IsNullOrEmpty(nSub);
+                    bool hasSupNary = !string.IsNullOrEmpty(nSup);
+                    if (op == "\\int")
+                    {
+                        if (hasSubNary && hasSupNary)
+                            return $"{op}_{{{nSub}}}^{{{nSup}}}{{{nBody}}}";
+                        if (hasSubNary)
+                            return $"{op}_{{{nSub}}}{{{nBody}}}";
+                        if (hasSupNary)
+                            return $"{op}_{{}}^{{{nSup}}}{{{nBody}}}";
+                        return $"{op}_{{}}{{{nBody}}}";
+                    }
+
                     string limits = "";
-                    if (!string.IsNullOrEmpty(nSub)) limits += $"_{{{nSub}}}";
-                    if (!string.IsNullOrEmpty(nSup)) limits += $"^{{{nSup}}}";
+                    if (hasSubNary) limits += $"_{{{nSub}}}";
+                    if (hasSupNary) limits += $"^{{{nSup}}}";
                     return $"{op}{limits} {{{nBody}}}";
 
                 case "func": // function

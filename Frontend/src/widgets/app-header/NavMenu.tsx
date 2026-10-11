@@ -7,7 +7,7 @@
 
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { BookOpen, Trophy, Shield, Gamepad2, Target, Zap, Users } from 'lucide-react';
+import { BookOpen, Trophy, Shield, Gamepad2, Target, Zap, Users, Atom } from 'lucide-react';
 
 interface NavItem {
   name:  string;
@@ -23,6 +23,7 @@ export function useNavItems(): NavItem[] {
   const { t } = useTranslation();
   return [
     { name: t('nav.dashboard'),    path: '/dashboard',             icon: <BookOpen  className="w-4 h-4" aria-hidden="true" /> },
+    { name: 'Hội Thảo AI',         path: '/symposium',             icon: <Atom      className="w-4 h-4 text-cyan-400" aria-hidden="true" /> },
     { name: t('nav.team'),        path: '/team',                   icon: <Users     className="w-4 h-4 text-emerald-500" aria-hidden="true" /> },
     { name: t('nav.arena'),       path: '/arena',                  icon: <Zap       className="w-4 h-4 text-amber-500" aria-hidden="true" /> },
     { name: t('nav.practice'),    path: '/practice',                icon: <Gamepad2  className="w-4 h-4 text-cyan-500" aria-hidden="true" /> },

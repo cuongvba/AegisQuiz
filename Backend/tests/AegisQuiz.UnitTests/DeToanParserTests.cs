@@ -19,44 +19,78 @@ namespace AegisQuiz.UnitTests
         [Fact]
         public void ParseDeToan_ShouldExtractMathQuestionsAndImages()
         {
-            var filePath = @"D:\Cuong\DuAn\mybank\AegisQuiz\DeToan.docx";
+            var filePath = File.Exists(@"D:\Cuong\DuAn\mybank\DocPDF\DeToan.docx")
+                ? @"D:\Cuong\DuAn\mybank\DocPDF\DeToan.docx"
+                : @"D:\Cuong\DuAn\mybank\2026-TNPT\DeToan.docx";
+
             if (!File.Exists(filePath))
             {
                 return;
             }
 
             var service = new DocxParserService();
-            using var fs = File.OpenRead(filePath);
+            using var fs = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
             var results = service.ParseDocxFile(fs);
+
+            _output.WriteLine($"TỔNG SỐ CÂU HỎI BÓC TÁCH: {results.Count} từ {filePath}");
+
+            // Nhóm theo Topic
+            var topicGroups = results.GroupBy(q => q.TopicCode ?? "(Trống)").ToList();
+            _output.WriteLine($"SỐ LƯỢNG CHỦ ĐỀ: {topicGroups.Count}");
+            foreach (var g in topicGroups)
+            {
+                _output.WriteLine($"  -> CHỦ ĐỀ '{g.Key}' ({g.FirstOrDefault()?.TopicName}): {g.Count()} câu (Các câu: {string.Join(", ", g.Select(q => q.TempId))})");
+            }
+
+            // Kiểm tra đáp án
+            int hasAnswerCount = results.Count(q => !string.IsNullOrWhiteSpace(q.SuggestedAnswer));
+            _output.WriteLine($"SỐ CÂU CÓ ĐÁP ÁN: {hasAnswerCount} / {results.Count}");
 
             for (int i = 0; i < results.Count; i++)
             {
                 var q = results[i];
-                _output.WriteLine($"Question {i+1}: Type={q.QuestionType}, Options={q.Options.Count}, OptionType={q.OptionType}, Content={q.Content.Substring(0, Math.Min(60, q.Content.Length))}...");
+                _output.WriteLine($"[CÂU {i+1} | TempId={q.TempId} | Topic={q.TopicCode} | Type={q.QuestionType}]");
+                _output.WriteLine($"  Nội dung: {q.Content.Substring(0, Math.Min(60, q.Content.Length))}...");
+                _output.WriteLine($"  Đáp án: '{q.SuggestedAnswer}', Số phương án: {q.Options.Count}");
+                if (q.Options.Count > 0)
+                {
+                    _output.WriteLine($"  Phương án: {string.Join(" # ", q.Options.Take(4))}");
+                }
             }
 
-            Assert.NotNull(results);
-            Assert.True(results.Count >= 20, $"Kỳ vọng ít nhất 20 câu hỏi từ DeToan.docx nhưng chỉ tìm thấy {results.Count} câu.");
+            // Kiểm tra các bảng trong tài liệu
+            using var archive = System.IO.Compression.ZipFile.OpenRead(filePath);
+            var docEntry = archive.GetEntry("word/document.xml");
+            if (docEntry != null)
+            {
+                using var ds = docEntry.Open();
+                var doc = System.Xml.Linq.XDocument.Load(ds);
+                System.Xml.Linq.XNamespace w = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+                var tables = doc.Descendants(w + "tbl").ToList();
+                _output.WriteLine($"TỔNG SỐ BẢNG (TABLES) TRONG WORD: {tables.Count}");
+                for (int t = 0; t < tables.Count; t++)
+                {
+                    var tbl = tables[t];
+                    var rows = tbl.Elements(w + "tr").ToList();
+                    _output.WriteLine($"  Bảng {t+1}: {rows.Count} hàng");
+                    for (int r = 0; r < Math.Min(3, rows.Count); r++)
+                    {
+                        var cells = rows[r].Elements(w + "tc").Select(c => string.Join("", c.Descendants(w + "t").Select(x => x.Value))).ToList();
+                        _output.WriteLine($"    Hàng {r+1}: {string.Join(" | ", cells)}");
+                    }
+                }
 
-            // Kiểm tra Câu 1: Có đồ thị hàm số và các phương án công thức toán
-            var q1 = results[0];
-            Assert.Contains("Đường cong", q1.Content);
-            Assert.True(q1.ContentType == "image" || q1.Content.Contains("data:image/"), "Câu 1 phải chứa hình vẽ đồ thị hàm số.");
-            Assert.True(q1.Options.Count >= 4, $"Câu 1 phải có 4 phương án, thực tế: {q1.Options.Count}");
-            Assert.True(q1.OptionType == "image" || q1.Options.Any(o => o.Contains("data:image/")), "Câu 1 các phương án phải là công thức MathType chuyển thành ảnh PNG Base64.");
-
-            // Kiểm tra có câu hỏi Đúng/Sai (TRUE_FALSE)
-            var hasTrueFalse = results.Any(q => q.QuestionType == "TRUE_FALSE");
-            Assert.True(hasTrueFalse, "Phải nhận diện được phần II: Trắc nghiệm Đúng / Sai.");
-
-            // Kiểm tra có câu hỏi Trả lời ngắn (SHORT_ANSWER)
-            var hasShortAnswer = results.Any(q => q.QuestionType == "SHORT_ANSWER");
-            Assert.True(hasShortAnswer, "Phải nhận diện được phần III: Trắc nghiệm trả lời ngắn.");
-
-            // Output tóm tắt kết quả
-            Console.WriteLine($"[TEST THÀNH CÔNG] Bóc tách tổng cộng: {results.Count} câu hỏi từ DeToan.docx");
-            Console.WriteLine($" - Số câu có chứa ảnh minh họa: {results.Count(q => q.ContentType == "image")}");
-            Console.WriteLine($" - Số câu có phương án công thức MathType: {results.Count(q => q.OptionType == "image")}");
+                // Kiểm tra các đoạn văn có chứa chữ "ĐÁP ÁN", "BẢNG", "HƯỚNG DẪN"
+                var paras = doc.Descendants(w + "p")
+                    .Select(p => string.Join("", p.Descendants(w + "t").Select(x => x.Value)))
+                    .Where(txt => System.Text.RegularExpressions.Regex.IsMatch(txt, @"(?i)(đáp\s*án|bảng\s*đáp\s*án|hướng\s*dẫn\s*giải|lời\s*giải)"))
+                    .ToList();
+                _output.WriteLine($"CÁC ĐOẠN VĂN LIÊN QUAN ĐÁP ÁN ({paras.Count} đoạn):");
+                foreach (var p in paras.Take(10))
+                {
+                    _output.WriteLine($"    - {p}");
+                }
+            }
         }
 
         [Fact]

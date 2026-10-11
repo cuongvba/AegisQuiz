@@ -11,7 +11,7 @@
 1. [Lời Mở Đầu & Tuyên Ngôn Khảo Thí Thế Hệ Mới](#1-lời-mở-đầu--tuyên-ngôn-khảo-thí-thế-hệ-mới)
 2. [Bảng So Sánh Đối Đầu: AegisQuiz vs. Thế Giới Khảo Thí & Gameshow Cũ](#2-bảng-so-sánh-đối-đầu-aegisquiz-vs-thế-giới-khảo-thí--gameshow-cũ)
 3. [Kiến Trúc Lõi "Vạn Năng & Bất Tử" (Architecture Supreme)](#3-kiến-trúc-lõi-vạn-năng--bất-tử-architecture-supreme)
-4. [Mười Bảy Kỳ Quan Đột Phá Công Nghệ (Core Breakthroughs Có Minh Họa Vui Vẻ)](#4-mười-bảy-kỳ-quan-đột-phá-công-nghệ-core-breakthroughs-có-minh-họa-vui-vẻ)
+4. [Hai Mươi Kỳ Quan Đột Phá Công Nghệ (Core Breakthroughs Có Minh Họa Vui Vẻ)](#4-hai-mươi-kỳ-quan-đột-phá-công-nghệ-core-breakthroughs-có-minh-họa-vui-vẻ)
    - [Kỳ quan 1: Đấu Trường Cắm Rút (Arena Plugin Engine) & Đồng Hồ Xung Nhịp Microsecond](#kỳ-quan-1-đấu-trường-cắm-rút-arena-plugin-engine--đồng-hồ-xung-nhịp-microsecond)
    - [Kỳ quan 2: Khảo Thí Thích Ứng Động (CAT / IRT 3-PL Python Engine)](#kỳ-quan-2-khảo-thí-thích-ứng-động-cat--irt-3-pl-python-engine)
    - [Kỳ quan 3: Bộ Bóc Tách Đa Phương Thức Docx/WMF & Bộ Hóa Giải Công Thức MathType Sang LaTeX](#kỳ-quan-3-bộ-bóc-tách-đa-phương-thức-docxwmf--bộ-hóa-giải-công-thức-mathtype-sang-latex)
@@ -29,6 +29,10 @@
    - [Kỳ quan 15: Cơ Chế Xóa Cây Phân Cấp Đệ Quy An Toàn & Miễn Nhiễm Lỗi Khóa Ngoại (Decoupled Recursive Hierarchy Topic Deletion Engine)](#kỳ-quan-15-cơ-chế-xóa-cây-phân-cấp-đệ-quy-an-toàn--miễn-nhiễm-lỗi-khóa-ngoại)
    - [Kỳ quan 16: Kiến Trúc Quản Trị Đa Tầng Tiệm Tiến & Ngành Động Thích Ứng Từ Cá Nhân Đến Toàn Cầu (Progressive Adaptive Governance & Dynamic Domain Ontology)](#kỳ-quan-16-kiến-trúc-quản-trị-đa-tầng-tiệm-tiến--ngành-động-thích-ứng-từ-cá-nhân-đến-toàn-cầu)
    - [Kỳ quan 17: Đồ Thị Nhận Thức Phân Cấp Tri Thức Toàn Cầu Vượt Thời Đại & Phả Hệ Cụ Thể Hóa $O(1)$ (Universal Cognitive Taxonomy, Materialized Path & Multi-Tenancy Scope)](#kỳ-quan-17-đồ-thị-nhận-thức-phân-cấp-tri-thức-toàn-cầu-vượt-thời-đại--phả-hệ-cụ-thể-hóa-o1-universal-cognitive-taxonomy-materialized-path--multi-tenancy-scope)
+   - [Kỳ quan 18: Đại Hội Thảo Bách Khoa Vạn Vật Tri Thức & Viện Hàn Lâm Nhận Thức Tự Tiến Hóa (Universal Epistemic Symposium Engine & 9 Sovereign Councils)](#kỳ-quan-18-đại-hội-thảo-bách-khoa-vạn-vật-tri-thức--viện-hàn-lâm-nhận-thức-tự-tiến-hóa-universal-epistemic-symposium-engine--9-sovereign-councils)
+   - [Kỳ quan 19: Không Gian Tri Thức Sống Đa Nguồn & Nhà Máy Khảo Thí Tình Huống Liên Nguồn Bloom 5-6 (AegisNotebook Sovereign V2.0 & Dual-Pane Studio)](#kỳ-quan-19-không-gian-tri-thức-sống-đa-nguồn--nhà-máy-khảo-thí-tình-huống-liên-nguồn-bloom-5-6-aegisnotebook-sovereign-v20--dual-pane-studio)
+   - [Kỳ quan 20: Cổng Điều Phối AI Vạn Năng 4 Chiều & Quản Trị FinOps Đa Mô Hình (UniversalAiRouter Gateway, BYOK & Dynamic Registry)](#kỳ-quan-20-cổng-điều-phối-ai-vạn-năng-4-chiều--quản-trị-finops-đa-mô-hình-universalairouter-gateway-byok--dynamic-registry)
+   - [Kỳ quan 21: Không Gian Làm Việc Đại Tác Nhân & Khung Điều Khiển Phụ Tương Tác Sống (Aegis Sovereign Co-Pilot Studio & Antigravity Agentic Sidecar)](#kỳ-quan-21-không-gian-làm-việc-đại-tác-nhân--khung-điều-khiển-phụ-tương-tác-sống-aegis-sovereign-co-pilot-studio--antigravity-agentic-sidecar)
 5. [Đại Sảnh 6 Gameshow Kinh Điển & Cơ Chế Vận Hành Chi Tiết](#5-đại-sảnh-6-gameshow-kinh-điển--cơ-chế-vận-hành-chi-tiết)
 6. [Phân Hệ Khảo Thí & Sát Hạch Lái Xe Quốc Gia (GPLX 600 Câu, 60 Điểm Liệt Tử Thần & Sa Hình AI)](#6-phân-hệ-khảo-thí--sát-hạch-lái-xe-quốc-gia-gplx-600-câu-60-điểm-liệt-tử-thần--sa-hình-ai)
 7. [Mô Hình Dữ Liệu & Giao Thức Kết Nối Real-Time](#7-mô-hình-dữ-liệu--giao-thức-kết-nối-real-time)
@@ -58,6 +62,9 @@ Trong suốt nửa thế kỷ qua, nền giáo dục và sát hạch nghiệp v�
 | **Khả Năng Chống Gian Lận** | Rất yếu: Thí sinh mở thêm tab, dùng ChatGPT giải hộ thoải mái. | Không có cơ chế giám sát kỳ thi chính thức. | **Omni-Shield**: Khóa toàn màn hình, bẫy DevTools F12, cảm biến rời tab, ký số PKI không thể chối bỏ. |
 | **Sát Hạch Lái Xe Quốc Gia (GPLX A1 - C)** | Không hỗ trợ quy chuẩn điểm liệt hoặc luật giao thông Việt Nam. | Không hỗ trợ sa hình hoặc biển báo chuẩn QCVN. | **Chuẩn Quốc Gia 600 Câu**: Bộ khóa 60 câu điểm liệt tử thần, giải mã sa hình AI, tự động chia đề A1, B1, B2, C. |
 | **Trải Nghiệm Thể Thao / Gameshow** | Nhàm chán, giao diện như bảng tính kế toán. | Vui nhộn nhưng nghèo nàn về thể thức (chỉ có 1 kiểu trắc nghiệm đếm giờ). | **Đấu trường Studio 6 Gameshow**: Olympia 4 vòng, Rung Chuông Vàng 100 ghế, Bánh xe quay vật lý 60fps, Thang dốc tụt về 0. |
+| **Cổng Điều Phối & Quản Trị AI (AI Gateway & FinOps)** | **Không có**: Không tích hợp AI hoặc phụ thuộc 1 API tĩnh đơn lẻ, chi phí đắt đỏ. | **Không có**: Chỉ là logic minigame thô sơ, không có trí tuệ nhân tạo nhận thức. | **UniversalAiRouter 4D Epistemic Gateway**: Định tuyến 4 chiều (Archetype x FinOps ELO/$ x P99 SLA x Context Window), Circuit Breaker Key Pool, BYOK Multi-Tenant, Semantic Cache SHA-256 $0 cost. |
+| **Hội Thảo Tranh Biện AI Đa Tác Nhân (AI Symposium)** | **Không có**: Hoàn toàn vắng bóng tư duy đa mô hình và phản biện nhận thức. | **Không có**: Hoàn toàn là công cụ minigame đóng băng. | **Universal Epistemic Symposium**: 9 Viện Hàn Lâm tối cao, 6 pha biện chứng liên viện (Scout -> Formulation -> Cross-Exam -> Adversarial Critique -> Secretariat Synthesis -> Independent Rubric Judge), xuất kỷ yếu sang Notebook. |
+| **Không Gian Tri Thức & Nghiên Cứu Đa Nguồn (Notebook)** | **Kho tài liệu tĩnh**: Chỉ tải file PDF/Word về lưu trữ dạng file kho, không có trí tuệ. | **Không có**: Chỉ lưu bộ flashcard thô sơ (Quizlet) hoặc tóm tắt thụ động (NotebookLM). | **AegisNotebook Sovereign V2.0**: Mạng lưới Tri thức Đa nguồn (PDF/DOCX/XLSX/Web), Phân tầng thẩm quyền, Cảm biến xung đột văn bản, Nhà máy tạo câu hỏi tình huống liên nguồn Bloom 5-6, Studio đối sánh song song. |
 
 ---
 
@@ -464,6 +471,97 @@ Giải quyết triệt để bài toán mở rộng và phân cấp tri thức l
     - **Folder Accordion Cây Phả Hệ**: Thư mục cha `2026-DOT2` hiển thị badge `19 chuyên đề con`, `3.891 câu hỏi`, kèm nút **"1-Chạm Chọn Tất Cả" (1-Click Bulk Select)** cho phép thí sinh ôn trọn vẹn toàn bộ đợt thi chỉ trong 1 click chuột, hoặc mở rộng mũi tên để tùy biến số câu và chế độ ngẫu nhiên cho từng chuyên đề con riêng biệt.
 - **Bộ Đệm Câu Hỏi Tức Thời (`QuestionCountCached`) & Định Danh Vĩnh Cửu (`Urn`)**:
   * Đạt chuẩn định danh toàn cầu `urn:aegis:topic:{domain}:{code}`, bộ đệm câu hỏi nâng tốc độ tải trang thiết lập phòng thi lên gấp 10 lần.
+
+---
+
+### 🏛️ Kỳ quan 18: Đại Hội Thảo Bách Khoa Vạn Vật Tri Thức & Viện Hàn Lâm Nhận Thức Tự Tiến Hóa (Universal Epistemic Symposium Engine & 9 Sovereign Councils)
+
+#### Bản Chất Kỹ Thuật:
+Giải phóng hệ thống khỏi sự hạn chế của mô hình AI đơn lẻ bằng một dàn nhạc giao hưởng biện chứng đa tác nhân liên viện (Multi-Agent Dialectical Epistemic Engine) vận hành theo thời gian thực:
+- **9 Viện Hàn Lâm Tối Cao ([UniversalAiCouncils](file:///Backend/src/AegisQuiz.Domain/Entities/UniversalAiCouncil.cs))**: 
+  1. `COSMOLOGY`: Viện Vũ Trụ & Vật Lý Lượng Tử (`/UNIVERSE/PHYSICS/QUANTUM`).
+  2. `MATHEMATICS`: Viện Toán Học & Logic Hình Thức (`/UNIVERSE/MATHEMATICS/LOGIC`).
+  3. `LIFE_SCIENCES`: Viện Khoa Học Sự Sống & Sinh Quyển (`/NATURE/BIOLOGY/EVOLUTION`).
+  4. `NEUROSCIENCE`: Viện Não Bộ & Nhận Thức Học (`/NATURE/NEUROSCIENCE/COGNITION`).
+  5. `PHILOSOPHY`: Viện Triết Học & Ý Thức (`/HUMANITY/PHILOSOPHY/EPISTEMOLOGY`).
+  6. `ARTS_AESTHETICS`: Viện Nghệ Thuật & Mỹ Học Đương Đại (`/CULTURE/ARTS/AESTHETICS`).
+  7. `JURISPRUDENCE`: Viện Pháp Lý & Quản Trị Văn Minh (`/SOCIETY/LAW/JURISPRUDENCE`).
+  8. `ECONOMICS`: Viện Kinh Tế Chính Trị & Địa Chiến Lược (`/SOCIETY/ECONOMICS/GEOPOLITICS`).
+  9. `AGI_CYBERNETICS`: Viện Siêu Trí Tuệ & Điều Khiển Học (`/AI/SUPERINTELLIGENCE/ALIGNMENT`).
+- **Quy Trình Tranh Biện 6 Pha Biện Chứng Tuyệt Đối ([UniversalSymposiumEngine.cs](file:///Backend/src/AegisQuiz.Infrastructure/AI/UniversalSymposiumEngine.cs))**:
+  - *Pha 0: Trinh Sát Bằng Chứng Thực Nghiệm & Phân Vai Động Học*: [EpistemicDeepResearchScout.cs](file:///Backend/src/AegisQuiz.Infrastructure/AI/Research/EpistemicDeepResearchScout.cs) thu thập chứng cứ, dữ kiện định lượng và trích dẫn khoa học; [SpatioTemporalRoleAllocator.cs](file:///Backend/src/AegisQuiz.Infrastructure/AI/Roles/SpatioTemporalRoleAllocator.cs) phân bổ lập trường học thuyết không - thời gian.
+  - *Pha 1: Đặt Vấn Đề Khởi Nguyên (Problem Formulation)*: Các Viện Trưởng xác lập khung tham chiếu tiên đề thông qua bộ ghép prompt phân tầng 6 lớp ([SymposiumPromptComposer.cs](file:///Backend/src/AegisQuiz.Infrastructure/AI/Prompt/SymposiumPromptComposer.cs)).
+  - *Pha 2: Vấn Đáp Xuyên Ngành Socrates (Socratic Cross-Examination)*: Chất vấn chéo giữa các viện đối trọng để làm lộ diện các điểm mù phương pháp luận.
+  - *Pha 3: Phản Biện Đối Kháng (Adversarial Critique)*: Kích hoạt các chuyên gia phản biện đối lập (Devil's Advocate) để bẻ gãy các ngụy biện ngoại suy tuyến tính và lỗ hổng kiểm chứng Popper.
+  - *Pha 4: Hợp Nhất Siêu Lý Thuyết Qua Hội Đồng Thư Ký (Secretariat Synthesis Cascade)*: [SymposiumSecretariatCouncil.cs](file:///Backend/src/AegisQuiz.Infrastructure/AI/Secretariat/SymposiumSecretariatCouncil.cs) tổng hợp đa góc nhìn thành một hợp đề tối cao hoàn chỉnh.
+  - *Pha 5: Chấm Điểm Ma Trận Đa Trục Qua Trọng Tài Độc Lập*: [IndependentSymposiumJudge.cs](file:///Backend/src/AegisQuiz.Infrastructure/AI/Judges/IndependentSymposiumJudge.cs) đánh giá phiên thảo luận theo ma trận Rubric đa chiều (Độ sâu biện chứng, Bằng chứng thực nghiệm, Tính nhất quán, Giá trị ứng dụng).
+  - *Pha 6: Ban Hành Nghị Quyết Tối Cao & Xuất Kỷ Yếu*: [SymposiumResolutionComposer.cs](file:///Backend/src/AegisQuiz.Infrastructure/AI/Resolution/SymposiumResolutionComposer.cs) đúc kết bản tuyên ngôn hành động và tự động chuyển hóa thành hồ sơ nghiên cứu trong AegisNotebook Sovereign thông qua `ExportSymposiumToNotebookAsync`.
+- **Phát Sóng Trực Tuyến Từng Bước (Realtime Live Broadcasting)**: Tích hợp [SymposiumHub.cs](file:///Backend/src/AegisQuiz.API/Hubs/SymposiumHub.cs) truyền tải từng lượt phát biểu, chỉ số đo đạc và tiến trình từng pha qua SignalR WebSockets đến giao diện [UniversalSymposiumPage.tsx](file:///Frontend/src/pages/symposium/UniversalSymposiumPage.tsx).
+
+---
+
+### 📚 Kỳ quan 19: Không Gian Tri Thức Sống Đa Nguồn & Nhà Máy Khảo Thí Tình Huống Liên Nguồn Bloom 5-6 (AegisNotebook Sovereign V2.0 & Dual-Pane Studio)
+
+#### Bản Chất Kỹ Thuật:
+Xóa bỏ hoàn toàn sự giới hạn của các công cụ đọc tài liệu thế hệ thứ nhất (như Google NotebookLM, Knowt hay Quizlet) vốn chỉ tóm tắt thụ động các tệp tin đơn lẻ, đưa tri thức vào không gian đa chiều:
+- **Mạng Lưới Tri Thức Hợp Nhất Đa Nguồn (Multi-Source Knowledge Mesh)**:
+  - Tiếp nhận và xử lý đồng thời đa định dạng trong cùng 1 Hub: PDF, Word DOCX, bảng tính Excel XLSX và Web URLs tham chiếu qua [NotebooksController.cs](file:///Backend/src/AegisQuiz.API/Controllers/NotebooksController.cs).
+  - **Phân Tầng Cấp Thẩm Quyền Tài Liệu (Authority Hierarchies)**: Gán trọng số pháp lý rành mạch: *Cấp 1 - Thẩm Quyền Tối Cao (Luật, Nghị định, ISO)*, *Cấp 2 - Hướng Dẫn Nội Bộ (Thông tư, Quy trình tác nghiệp SOP)*, *Cấp 3 - Dữ Liệu Thực Chứng (Báo cáo, Số liệu)*, *Cấp 4 - Tài Liệu Tham Khảo*.
+- **Cảm Biến Phát Hiện Xung Đột & Bất Cập Quy Chuẩn (Conflict & Discrepancy Detector)**:
+  - Tự động đối chiếu chéo giữa các nguồn tài liệu để phát hiện mâu thuẫn giữa quy định nội bộ và văn bản quy phạm pháp luật cấp trên, cảnh báo trực quan các điều khoản bị lỗi thời hoặc không tương thích trên giao diện Tab `conflicts`.
+- **Nhà Máy Khảo Thí Tình Huống Phức Hợp Bloom Cấp 5-6 (Cross-Source Situational Exam Generator)**:
+  - Cho phép người ra đề điều chỉnh thanh trượt tỷ lệ % câu hỏi đơn nguồn và câu hỏi tình huống liên nguồn.
+  - Tự động sinh ra các bài toán nghiệp vụ phức hợp đòi hỏi người học phải vận dụng đối sánh nhiều văn kiện cùng lúc để ra quyết định xử lý tình huống thực tế (Bloom Cấp 5: Đánh giá & Cấp 6: Sáng tạo).
+- **Phòng Thu Nhận Thức Đối Sánh Song Song ([NotebookDualPaneStudio.tsx](file:///Frontend/src/pages/admin/notebooks/NotebookDualPaneStudio.tsx))**:
+  - Giao diện chia đôi màn hình (Dual-Pane Split-Screen): Bên trái là giáo trình có cấu trúc và văn bản nguồn trích xuất, bên phải là không gian tương tác với 5 thẻ nhận thức (`topics`, `sources`, `conflicts`, `persona`, `exam`).
+  - Hỗ trợ công thức Toán học MathType/LaTeX sắc nét qua `MathRenderer`.
+- **Hội Đồng Bầy Sói Thẩm Định Độc Lập (WolfPack Swarm Audit)**:
+  - Trước khi xuất bản câu hỏi vào Ngân hàng đề thi, hệ thống kích hoạt đàn mô hình AI đa tác nhân thẩm định tính đúng đắn của đáp án, độ tương thích barem và giải thích chi tiết.
+- **Đồng Bộ Hoàn Hảo $O(1)$ Vào Ngân Hàng Đề Thi**:
+  - Xuất bản trực tiếp các câu hỏi đã thẩm định vào cây chủ đề [BankTopics](file:///Backend/src/AegisQuiz.Domain/Entities/BankTopic.cs) với đầy đủ tọa độ tri thức và thông số tâm trắc học IRT 3-PL.
+
+---
+
+### ⚡ Kỳ quan 20: Cổng Điều Phối AI Vạn Năng 4 Chiều & Quản Trị FinOps Đa Mô Hình (UniversalAiRouter Gateway, BYOK & Dynamic Registry)
+
+#### Bản Chất Kỹ Thuật:
+Hiện thực hóa chủ quyền điều hành AI tối thượng thông qua cổng định tuyến nhận thức trung tâm [UniversalAiRouter.cs](file:///Backend/src/AegisQuiz.Infrastructure/AI/UniversalAiRouter.cs):
+- **Ma Trận Định Tuyến Nhận Thức 4 Chiều (4D Epistemic Routing Matrix)**:
+  1. *Chiều 1 - Mẫu Hình Nhận Thức (Cognitive Archetypes)*: Phân luồng chính xác từng tác vụ vào mô hình sở trường: `DeepReasoner` (DeepSeek-R1 / Qwen-2.5-72B cho Toán học, Suy luận chuỗi dài CoT), `MassiveContext` (Gemini 1.5 Pro / Flash cho tài liệu khổng lồ hàng triệu tokens), `BalancedArbiter` (Claude 3.5 Sonnet / GPT-4o cho thẩm định, nghị quyết), `UltraFastScanner` (Mistral 7B / Llama-3 8B cho trinh sát tức thời).
+  2. *Chiều 2 - FinOps Pareto Efficiency*: Tối ưu hóa tỉ lệ giữa chỉ số năng lực ELO Benchmark trên chi phí Token USD ($\frac{\text{ELO}}{\text{Cost}}$), ưu tiên tối đa các mô hình mã nguồn mở hiệu năng cao và các endpoint miễn phí (OpenRouter Free Tier).
+  3. *Chiều 3 - Cam Kết Độ Trễ SLA Thời Gian Thực & Hedged Execution*: Tự động chạy đua song song (Parallel Hedging) khi phát hiện độ trễ P99 vượt ngưỡng, bảo đảm thời gian phản hồi luôn mượt mà.
+  4. *Chiều 4 - Bảo Chứng Dung Lượng Ngữ Cảnh (Context Window Protection)*: Kiểm soát ngưỡng token đầu vào, tự động phân đoạn văn bản tránh lỗi tràn cửa sổ ngữ cảnh.
+- **100% Database-Driven & Hot-Reload 0ms**: Toàn bộ danh mục mô hình, endpoint, giá token và ELO được quản trị trong bảng PostgreSQL `AiModelRegistries`, cập nhật tức thì không cần biên dịch lại mã nguồn C#.
+- **Bộ Quản Trị Bể Khóa Động & Ngắt Mạch Thông Minh (Key Pool Circuit Breaker)**: Quản lý nhiều API Key song song; tự động phát hiện mã lỗi `429 Too Many Requests`, cách ly khóa lỗi trong 60 giây và chuyển tiếp trơn tru sang khóa khả dụng.
+- **Mô Hình BYOK Độc Lập Cho Doanh Nghiệp (Multi-Tenant BYOK)**: Hỗ trợ từng tổ chức/doanh nghiệp cấu hình API Key độc lập, cô lập ngân sách và dữ liệu theo chuẩn Multi-Tenancy nghiêm ngặt.
+- **Bộ Nhớ Đệm Ngữ Nghĩa SHA-256 Vector Cache Không Chi Phí**: Băm nội dung truy vấn thành mã SHA-256 kết hợp bộ đệm phân tán Redis. Các yêu cầu phân tích tài liệu hoặc câu hỏi đã được giải quyết lập tức trả về kết quả với **$0$ chi phí và $0\text{ms}$ độ trễ**.
+
+---
+
+### ⚡ Kỳ quan 21: Không Gian Làm Việc Đại Tác Nhân & Khung Điều Khiển Phụ Tương Tác Sống (Aegis Sovereign Co-Pilot Studio & Antigravity Agentic Sidecar)
+
+#### Bản Chất Kỹ Thuật:
+Hiện thực hóa trải nghiệm tương tác nhận thức thế hệ mới phong cách Antigravity, biến AegisQuiz thành một Hệ điều hành Khảo thí Tác nhân (Cognitive Assessment Operating System) toàn năng:
+- **Kiến Trúc Sidecar 3 Trạng Thái Linh Hoạt (Tri-State Responsive Sidecar)**:
+  - *Chế độ Ghim Cố Định (Docked Right)*: Song hành cùng không gian làm việc chính (Ma trận Đề thi, Sơ đồ Tri thức V2.0, WYSIWYG Soạn Đề).
+  - *Chế độ Mở Rộng Toàn Năng (Expanded Studio)*: Cho phép xem chi tiết vết suy luận CoT nhiều bước và cây phả hệ tranh biện.
+  - *Chế độ Quả Cầu Phát Sáng Nổi (Floating Trigger Orb)*: Thu gọn tinh tế góc phải màn hình kèm hiệu ứng nhịp đập Pulse và phím tắt toàn cục `Ctrl + J` / `Cmd + J`.
+- **Động Cơ Đa Nhân Cách Nhận Thức Ngữ Cảnh (Context-Aware Tri-Persona Engine)**:
+  - `AssessmentArchitect`: Trợ lý chuyên gia khảo thí, thẩm định Bloom 1-6, hiệu chuẩn thông số phân biệt $a$, độ khó $b$ của mô hình IRT 3-PL.
+  - `SocraticMentor`: Gia sư phát vấn gợi mở tư duy cho thí sinh, nghiêm cấm mớm đáp án trực tiếp, dẫn dắt bằng câu hỏi phản tư.
+  - `GovernanceFinOps`: Cố vấn quản trị ngân sách token AI, kiểm toán độ tin cậy và phát hiện rủi ro gian lận.
+  - `ResearchScholar`: Nhà nghiên cứu tri thức liên nguồn, điều phối Kỷ yếu Đại Hội Thảo Bách Khoa Vạn Vật Tri Thức.
+- **Kiến Trúc Phản Hồi 4 Lớp Trực Quan (Antigravity Cognitive UI Stack)**:
+  1. *Tầng 1 - Vết Suy Luận Ngầm ([CognitiveTraceViewer.tsx](file:///Frontend/src/features/copilot/components/CognitiveTraceViewer.tsx))*: Hiển thị minh bạch chuỗi tư duy `Thinking...` thu gọn/mở rộng.
+  2. *Tầng 2 - Thẻ Tác Vụ Thời Gian Thực ([ToolActionPill.tsx](file:///Frontend/src/features/copilot/components/ToolActionPill.tsx))*: Trực quan hóa các lệnh gọi công cụ hệ thống (`[Tool: BloomTaxonomyAligner]`, `[Tool: IrtParameterCalibrator]`, `[Tool: SummonEpistemicCouncils]`).
+  3. *Tầng 3 - Biện Luận Toán Học KaTeX*: Định dạng công thức giải tích sắc nét, hiển thị bảng biểu Markdown cấu trúc cao.
+  4. *Tầng 4 - Hiện Vật Tương Tác Sống ([ArtifactCardRenderer.tsx](file:///Frontend/src/features/copilot/components/ArtifactCardRenderer.tsx))*: Render trực tiếp thẻ câu hỏi trắc nghiệm, ma trận Bloom, hoặc đồ thị đồng thuận kèm nút **"Áp Dụng Vào Canvas (1-Click Apply)"** và **"Sao chép LaTeX"**.
+- **Bộ Lệnh Phản Ứng Siêu Tốc (Slash Command Taxonomy)**:
+  - `/soan [chủ_đề]`: Thiết kế câu hỏi chuẩn quốc tế kèm 3 phương án bẫy nhận thức và công thức KaTeX.
+  - `/hoithao [chủ_đề]`: Triệu tập 9 Viện Hàn Lâm tranh biện biện chứng đa chiều.
+  - `/ma-tran`: Lập ma trận đặc tả đề thi 6 cấp độ Bloom (Biết: 20%, Hiểu: 25%, Vận dụng: 30%, Vận dụng cao: 25%).
+  - `/gia-su`: Kích hoạt chế độ hướng dẫn giải phương pháp Socratic.
+  - `/kiem-dinh`: Quét cú pháp công thức toán và kiểm định tính đơn nghĩa của đáp án.
 
 ---
 

@@ -26,16 +26,26 @@ Nguyen Tac Lap Trinh Chuan Tac Hang Dau The Gioi
 
 ### Dinh Nghia Vai Tro "No.1"
 
-No.1 la kien truc su truong (Principal Architect) cua he thong AegisQuiz.
+No.1 la:
+> **Lead System Analyst, Master Living Documentarian, IT Architect, AI, Design, Education & Economic Specialist**  
+> *(Tong Cong Trinh Su & Chu Nhiem Kien Truc He Sinh Thai AegisQuiz)*
+
 Vai tro nay khong don thuan la "viet code" — ma la thiet ke he sinh thai phan mem song dong,
 co kha nang tu mo rong, tu thich nghi va ton tai ben vung qua nhieu the he ky thuat.
 
 Cam ket cot loi:
 - Correctness : Code phai dung logic nghiep vu 100%, khong nhap nhang
 - Clarity     : Bat ky ky su moi nao cung doc hieu duoc trong < 5 phut
-- Scalability : Them tinh nang moi khong can sua code cu (OCP)
+- Scalability : Them tinh nang moi khong can sua code cu (OCP — Open/Closed Principle)
 - Resilience  : He thong tu phuc hoi, log ro rang, khong crash tham lang
 - Elegance    : Code dep la code don gian nhat giai quyet dung bai toan
+
+### 5 Tru Cot Thich Nghi Vo Han (Infinite Adaptive Pillars):
+1. **Dang cau hoi moi**: Mo rong qua TPH + JSONB Payload + Dynamic Evaluator Strategy (Khong sua doi Core Entity).
+2. **The loai de thi moi**: Mo rong qua Ngu phap Nhan thuc CIG luu trong DB (0ms Hot-Reload, khong sua C# Parser).
+3. **Da ngon ngu toan cau**: i18n 3 tang (Type-Safe UI + Tu khoa UCTE tu DB + RTL automatic).
+4. **Loai hinh to chuc**: Pho thich ung 3 muc (Express -> Pro -> Enterprise) + Materialized Path O(1) bat bien.
+5. **Tuy bien ca nhan/doanh nghiep**: 100% Database-Driven White-Labeling (CSS Variables & Feature Flags tu DB, 0ms redeploy).
 
 ---
 
@@ -367,6 +377,38 @@ const { mutate: saveQuestion } = useMutation({
   },
   onSettled: () => queryClient.invalidateQueries(['questions']),
 });
+```
+
+### 6.4 Kỷ Luật Zero-Monolith Component (Ngưỡng $\le$ 250 LOC)
+
+Tuyệt đối cấm viết các component "quái vật" (Monolithic God-Components) chứa hàng ngàn dòng code. Mọi UI Component phải tuân thủ nghiêm ngặt:
+* **Ngưỡng cứng**: Tối đa **250 dòng code / file**. File vượt quá 300 dòng là vi phạm luật kiến trúc và bắt buộc phải refactor.
+* **Mô hình phân rã 3 tầng**:
+  1. **Smart Container**: Quản lý state, mutation, query data qua Custom Hooks chuyên biệt (`useDocxImport`, `useQuestionFilter`).
+  2. **Presentational Dumb Views**: Nhận props thuần túy, render UI không side-effects (`DocxQuestionList`, `DocxInlineEditor`).
+  3. **Sub-Modals / Sub-Drawers**: Tách thành các file độc lập trong thư mục `components/` của tính năng.
+
+### 6.5 Bắt Buộc Code Splitting & Bundle Size Optimization ($\le$ 150KB gzip chunk)
+
+* **Route-based Lazy Loading**: 100% các trang trong `pages/` phải được import qua `React.lazy()` và bọc bởi `Suspense`.
+* **Heavy Library Isolation**: Các thư viện nặng (KaTeX, Three.js Arena 3D, Chart.js, XLSX, Heavy Parser Engines) KHÔNG ĐƯỢC đóng gói vào Main Vendor Bundle. Bắt buộc tách thành dynamic chunks tải theo nhu cầu.
+* **Kích thước chunk tải ban đầu**: Main Initial Bundle Chunk tối đa **$\le$ 150KB gzip** để đạt FCP < 0.8s trên mọi mạng di động 4G/5G.
+
+### 6.6 Dynamic Question Micro-Widget Registry (Triệt Tiêu Switch-Case UI)
+
+Theo nguyên lý Open/Closed (OCP), tuyệt đối không dùng khối `switch(question.type)` hoặc `if-else` khổng lồ để render dạng câu hỏi trong [QuestionCard.tsx](file:///d:/Cuong/DuAn/mybank/AegisQuiz/Frontend/src/components/quiz/QuestionCard.tsx). Toàn bộ 9 dạng câu hỏi phải được cấu hình qua Dynamic Registry:
+
+```typescript
+// widgets/quiz/QuestionWidgetRegistry.ts
+export const QuestionWidgetRegistry: Record<string, React.LazyExoticComponent<React.ComponentType<any>>> = {
+  SINGLE: React.lazy(() => import('./widgets/SingleChoiceWidget')),
+  MULTI_TRUE_FALSE: React.lazy(() => import('./widgets/MultiTrueFalseWidget')),
+  SHORT_ANSWER: React.lazy(() => import('./widgets/ShortAnswerWidget')),
+  MATCHING: React.lazy(() => import('./widgets/MatchingWidget')),
+  ORDERING: React.lazy(() => import('./widgets/OrderingWidget')),
+  FILL_BLANK: React.lazy(() => import('./widgets/FillBlankWidget')),
+  ESSAY: React.lazy(() => import('./widgets/EssayWidget')),
+};
 ```
 
 ---

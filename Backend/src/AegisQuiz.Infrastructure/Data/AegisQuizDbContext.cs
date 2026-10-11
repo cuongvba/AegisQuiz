@@ -39,7 +39,9 @@ namespace AegisQuiz.Infrastructure.Data
 
         // ── AegisNotebook ─────────────────────────────────────────────────────
         public DbSet<Notebook> Notebooks { get; set; } = null!;
+        public DbSet<NotebookSource> NotebookSources { get; set; } = null!;
         public DbSet<NotebookChapter> NotebookChapters { get; set; } = null!;
+        public DbSet<NotebookChatMessage> NotebookChatMessages { get; set; } = null!;
 
         // ── Question Bank ─────────────────────────────────────────────────────
         public DbSet<BankTopic> BankTopics { get; set; } = null!;
@@ -77,6 +79,16 @@ namespace AegisQuiz.Infrastructure.Data
         // ── Cognitive Ingestion Grammar (CIG): quy tắc bóc tách câu hỏi động ──
         public DbSet<QuestionParsingRule> QuestionParsingRules { get; set; } = null!;
 
+        // ── Dynamic AI Model Registry & BYOK Swarm ────────────────────────────
+        public DbSet<AiModelRegistry> AiModelRegistries { get; set; } = null!;
+        public DbSet<UserAiKey> UserAiKeys { get; set; } = null!;
+
+        // ── Universal Epistemic Councils & Symposium ──────────────────────────
+        public DbSet<UniversalAiCouncil> UniversalAiCouncils { get; set; } = null!;
+        public DbSet<UniversalCouncilSeat> UniversalCouncilSeats { get; set; } = null!;
+        public DbSet<SymposiumSession> SymposiumSessions { get; set; } = null!;
+        public DbSet<SymposiumPromptTemplate> SymposiumPromptTemplates { get; set; } = null!;
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             base.OnConfiguring(optionsBuilder);
@@ -84,49 +96,81 @@ namespace AegisQuiz.Infrastructure.Data
             optionsBuilder.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
         }
 
+        private Guid CurrentTenantId => _tenantContext?.CurrentTenantId ?? Guid.Empty;
+        private bool IsTenantFilterBypassed => _tenantContext == null || _tenantContext.IsSystemAdmin || _tenantContext.CurrentTenantId == Guid.Empty;
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // [Phase B — B3] Global Query Filters — Tự động cô lập dữ liệu theo Tenant
-            var tenantId = _tenantContext?.CurrentTenantId ?? Guid.Empty;
-            var isAdmin  = _tenantContext?.IsSystemAdmin  ?? true; // Nếu không có context (seed/migration) → không filter
+            // Bỏ qua các POCO / JSONB payload models không phải bảng DB
+            modelBuilder.Ignore<ProvenanceAppearance>();
+            modelBuilder.Ignore<ExamClusterMatch>();
 
+            // [Phase B — B3] Global Query Filters — Tự động cô lập dữ liệu theo Tenant động per-request
             modelBuilder.Entity<OrganizationUnit>()
                 .HasQueryFilter(o =>
-                    isAdmin ||
+                    IsTenantFilterBypassed ||
                     o.TenantId == Guid.Empty ||
-                    o.TenantId == tenantId);
+                    o.TenantId == CurrentTenantId);
 
             modelBuilder.Entity<TenantDomainConfig>()
                 .HasQueryFilter(c =>
-                    isAdmin ||
+                    IsTenantFilterBypassed ||
                     c.TenantId == Guid.Empty ||
-                    c.TenantId == tenantId);
+                    c.TenantId == CurrentTenantId);
 
             modelBuilder.Entity<TenantCoordinatePreset>()
                 .HasQueryFilter(p =>
-                    isAdmin ||
+                    IsTenantFilterBypassed ||
                     p.TenantId == Guid.Empty ||
-                    p.TenantId == tenantId);
+                    p.TenantId == CurrentTenantId);
 
             modelBuilder.Entity<QuestionBase>()
                 .HasQueryFilter(q =>
-                    isAdmin ||
+                    IsTenantFilterBypassed ||
                     q.TenantId == Guid.Empty ||
-                    q.TenantId == tenantId);
+                    q.TenantId == Tenant.CommunityTenantId ||
+                    q.TenantId == CurrentTenantId);
 
             modelBuilder.Entity<QuestionContext>()
                 .HasQueryFilter(c =>
-                    isAdmin ||
+                    IsTenantFilterBypassed ||
                     c.TenantId == Guid.Empty ||
-                    c.TenantId == tenantId);
+                    c.TenantId == Tenant.CommunityTenantId ||
+                    c.TenantId == CurrentTenantId);
 
             modelBuilder.Entity<BankTopic>()
                 .HasQueryFilter(t =>
-                    isAdmin ||
+                    IsTenantFilterBypassed ||
                     t.TenantId == Guid.Empty ||
-                    t.TenantId == tenantId);
+                    t.TenantId == Tenant.CommunityTenantId ||
+                    t.TenantId == CurrentTenantId);
+
+            modelBuilder.Entity<AiModelRegistry>()
+                .HasQueryFilter(m =>
+                    IsTenantFilterBypassed ||
+                    m.TenantId == Guid.Empty ||
+                    m.TenantId == CurrentTenantId);
+
+            modelBuilder.Entity<UserAiKey>()
+                .HasQueryFilter(k =>
+                    IsTenantFilterBypassed ||
+                    k.TenantId == Guid.Empty ||
+                    k.TenantId == CurrentTenantId);
+
+            modelBuilder.Entity<SymposiumPromptTemplate>()
+                .HasQueryFilter(t =>
+                    IsTenantFilterBypassed ||
+                    t.TenantId == null ||
+                    t.TenantId == Guid.Empty ||
+                    t.TenantId == CurrentTenantId);
+
+            modelBuilder.Entity<UniversalAiCouncil>()
+                .HasMany(c => c.Seats)
+                .WithOne()
+                .HasForeignKey(s => s.CouncilId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             // ── Questions (TPH) + JSONB Payload ──────────────────────────────
             modelBuilder.Entity<QuestionBase>()
@@ -135,6 +179,7 @@ namespace AegisQuiz.Infrastructure.Data
                 .HasValue<EssayQuestion>("ESSAY")
                 .HasValue<MultiChoiceQuestion>("MULTI")
                 .HasValue<TrueFalseQuestion>("TRUE_FALSE")
+                .HasValue<MultiTrueFalseQuestion>("MULTI_TRUE_FALSE")
                 .HasValue<ShortAnswerQuestion>("SHORT_ANSWER")
                 .HasValue<FillBlankQuestion>("FILL_BLANK")
                 .HasValue<OrderingQuestion>("ORDERING")
@@ -477,6 +522,70 @@ namespace AegisQuiz.Infrastructure.Data
                 entity.HasIndex(r => new { r.TenantId, r.RuleCode }).IsUnique();
                 entity.HasIndex(r => r.Priority);
                 entity.HasIndex(r => r.IsActive);
+            });
+
+            // ── AegisNotebook Sovereign ───────────────────────────────────
+            modelBuilder.Entity<Notebook>(entity =>
+            {
+                entity.HasKey(n => n.Id);
+                entity.HasIndex(n => n.TenantId);
+                entity.HasIndex(n => n.DomainCode);
+                entity.HasIndex(n => n.Status);
+                entity.HasIndex(n => n.CreatedAt);
+            });
+
+            modelBuilder.Entity<NotebookChapter>(entity =>
+            {
+                entity.HasKey(c => c.Id);
+                entity.HasIndex(c => c.NotebookId);
+                entity.HasIndex(c => new { c.NotebookId, c.OrderIndex });
+
+                entity.HasOne(c => c.Notebook)
+                    .WithMany(n => n.Chapters)
+                    .HasForeignKey(c => c.NotebookId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<NotebookSource>(entity =>
+            {
+                entity.HasKey(s => s.Id);
+                entity.HasIndex(s => s.NotebookId);
+                entity.HasIndex(s => s.Type);
+                entity.HasIndex(s => s.Authority);
+
+                entity.HasOne(s => s.Notebook)
+                    .WithMany(n => n.Sources)
+                    .HasForeignKey(s => s.NotebookId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<NotebookChatMessage>(entity =>
+            {
+                entity.HasKey(m => m.Id);
+                entity.HasIndex(m => m.NotebookId);
+                entity.HasIndex(m => m.CreatedAt);
+
+                entity.HasOne(m => m.Notebook)
+                    .WithMany(n => n.ChatMessages)
+                    .HasForeignKey(m => m.NotebookId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<AiModelRegistry>(entity =>
+            {
+                entity.HasKey(m => m.Id);
+                entity.HasIndex(m => m.ModelCode).IsUnique();
+                entity.HasIndex(m => m.CognitiveArchetype);
+                entity.HasIndex(m => m.IsEnabled);
+            });
+
+            modelBuilder.Entity<UserAiKey>(entity =>
+            {
+                entity.HasKey(k => k.Id);
+                entity.HasIndex(k => k.UserId);
+                entity.HasIndex(k => k.TenantId);
+                entity.HasIndex(k => k.Scope);
+                entity.HasIndex(k => k.IsActive);
             });
         }
 

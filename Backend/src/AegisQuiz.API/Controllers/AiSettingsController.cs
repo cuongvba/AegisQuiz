@@ -13,11 +13,11 @@ namespace AegisQuiz.API.Controllers
     public class AiSettingsController : ControllerBase
     {
         private readonly IUniversalAiRouter _aiRouter;
-        private readonly MultiAgentCommitteeEngine _committeeEngine;
+        private readonly IMultiAgentCommitteeEngine _committeeEngine;
 
         public AiSettingsController(
             IUniversalAiRouter aiRouter,
-            MultiAgentCommitteeEngine committeeEngine)
+            IMultiAgentCommitteeEngine committeeEngine)
         {
             _aiRouter = aiRouter;
             _committeeEngine = committeeEngine;
@@ -66,6 +66,21 @@ namespace AegisQuiz.API.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = $"Lỗi kiểm thử nhà cung cấp AI: {ex.Message}" });
+            }
+        }
+
+        // POST api/admin/ai/sync-database
+        [HttpPost("sync-database")]
+        public async Task<IActionResult> SyncDatabaseRegistry()
+        {
+            try
+            {
+                await _aiRouter.RefreshRegistryFromDatabaseAsync();
+                return Ok(new { message = "Đã đồng bộ hóa danh mục mô hình & bể khóa từ Database PostgreSQL thành công!", config = _aiRouter.GetSystemConfig() });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = $"Lỗi đồng bộ danh mục AI: {ex.Message}" });
             }
         }
 

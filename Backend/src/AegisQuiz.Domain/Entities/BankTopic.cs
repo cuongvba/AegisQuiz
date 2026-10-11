@@ -14,6 +14,19 @@ namespace AegisQuiz.Domain.Entities
         public const string TenantGroup = "TENANT_GROUP"; // Chia sẻ với danh sách chỉ định
     }
 
+    /// <summary>
+    /// Chế độ xóa chủ đề trong kiến trúc đa liên kết N - M
+    /// </summary>
+    public enum TopicDeleteMode
+    {
+        /// <summary>Chỉ gỡ liên kết khỏi câu hỏi dùng chung, bàn giao câu hỏi độc quyền về cấp trên (Mặc định - An toàn tuyệt đối)</summary>
+        UnlinkOnly = 0,
+        /// <summary>Gỡ liên kết câu hỏi dùng chung, xóa vật lý các câu hỏi chỉ thuộc riêng chủ đề này</summary>
+        SafeCascade = 1,
+        /// <summary>Lưu trữ mềm: Vô hiệu hóa chủ đề mà không xóa bất kỳ dữ liệu nào</summary>
+        ArchiveSoft = 2
+    }
+
     public class BankTopic : ITenantEntity
     {
         public Guid Id { get; set; } = Guid.NewGuid();

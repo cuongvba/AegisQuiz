@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using AegisQuiz.Domain.Entities;
+using AegisQuiz.Application.DTOs;
 
 namespace AegisQuiz.Application.Interfaces
 {
@@ -43,6 +44,12 @@ namespace AegisQuiz.Application.Interfaces
         public int? DetectedBenchmarkYear { get; set; }
         public string? DetectedBenchmarkStandard { get; set; }
         public List<string> DetectedTags { get; set; } = new();
+
+        // [Universal Exam Deduplication & Provenance Summary]
+        public int DuplicateCount { get; set; }
+        public int UniqueCount { get; set; }
+        public double DeduplicationRatePercentage => TotalQuestions > 0 ? System.Math.Round((double)DuplicateCount / TotalQuestions * 100, 1) : 0;
+        public List<ExamClusterMatch> DetectedExamClusters { get; set; } = new();
     }
 
     /// <summary>Thông tin thanh tra và câu hỏi trong một sheet Excel</summary>
@@ -131,11 +138,6 @@ namespace AegisQuiz.Application.Interfaces
         Task<string> ExtractTextFromScannedPdfAsync(Stream pdfStream);
     }
 
-    public interface INotebookService
-    {
-        Task<Notebook> CreateNotebookFromPdfAsync(Guid adminId, string title, Stream pdfStream);
-    }
-
     // DTO chung cho AI Grading
     public class GradingResult
     {
@@ -190,13 +192,30 @@ namespace AegisQuiz.Application.Interfaces
         public string? Scope { get; set; } = "COMMUNITY";
         public string? VisibilityScope { get; set; } = "PUBLIC";
         public string? ContributionStatus { get; set; }
+
+        // [Universal Question Provenance & Multi-Tier Deduplication Engine]
+        public string? SourceFileName { get; set; }
+        public string? SourceExamName { get; set; }
+        public string? SourceSectionName { get; set; }
+        public string? SourceQuestionNo { get; set; }
+        public int? SourceRowIndex { get; set; }
+        public string? FileHashSha256 { get; set; }
+        public string? CanonicalContentHash { get; set; }
+        public string? CanonicalExamUrn { get; set; }
+        public bool IsDuplicate { get; set; } = false;
+        public System.Guid? ExistingQuestionId { get; set; }
+        public string? DuplicateReason { get; set; }
+        public int OccurrenceCount { get; set; } = 1;
+        public List<ProvenanceAppearance> ExistingAppearances { get; set; } = new();
     }
 
     public interface IDocxParserService
     {
         List<DocxImportPreviewDto> ParseDocxFile(Stream fileStream);
+        List<DocxImportPreviewDto> ParseDocxFile(Stream fileStream, DynamicDomainContext? dynamicContext);
         string ExtractTextFromDocx(Stream fileStream);
     }
+
 
     public interface IGeminiSolverService
     {

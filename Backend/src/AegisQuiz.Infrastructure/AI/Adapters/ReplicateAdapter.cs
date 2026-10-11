@@ -9,18 +9,18 @@ using AegisQuiz.Application.Models.AI;
 
 namespace AegisQuiz.Infrastructure.AI.Adapters
 {
-    public class OpenAiAdapter : IAiProviderAdapter
+    public class ReplicateAdapter : IAiProviderAdapter
     {
         private readonly IHttpClientFactory _httpClientFactory;
-        private const string DefaultEndpoint = "https://api.openai.com/v1/chat/completions";
+        private const string DefaultEndpoint = "https://api.replicate.com/v1/predictions";
 
-        public OpenAiAdapter(IHttpClientFactory httpClientFactory)
+        public ReplicateAdapter(IHttpClientFactory httpClientFactory)
         {
             _httpClientFactory = httpClientFactory;
         }
 
-        public AiProviderType ProviderType => AiProviderType.OpenAI;
-        public string DefaultModel => "gpt-4o-mini";
+        public AiProviderType ProviderType => AiProviderType.Replicate;
+        public string DefaultModel => "facebook/musicgen-small";
 
         public async Task<(bool Success, string Content, string? Error, long DurationMs)> CallAsync(
             string apiKey,
@@ -37,24 +37,19 @@ namespace AegisQuiz.Infrastructure.AI.Adapters
                 var endpoint = string.IsNullOrWhiteSpace(customEndpoint) ? DefaultEndpoint : customEndpoint;
                 var modelToUse = string.IsNullOrWhiteSpace(model) ? DefaultModel : model;
 
-                var messages = new System.Collections.Generic.List<object>();
-                if (!string.IsNullOrWhiteSpace(systemPrompt))
-                {
-                    messages.Add(new { role = "system", content = systemPrompt });
-                }
-                messages.Add(new { role = "user", content = prompt });
-
                 var payload = new
                 {
-                    model = modelToUse,
-                    messages = messages,
-                    temperature = temperature,
-                    max_tokens = maxTokens
+                    version = modelToUse,
+                    input = new
+                    {
+                        prompt = prompt,
+                        model_version = "stereo-large"
+                    }
                 };
 
-                var client = _httpClientFactory.CreateClient("OpenAiClient");
+                var client = _httpClientFactory.CreateClient("ReplicateClient");
                 using var request = new HttpRequestMessage(HttpMethod.Post, endpoint);
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Token", apiKey);
                 request.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
 
                 var response = await client.SendAsync(request);
@@ -64,22 +59,15 @@ namespace AegisQuiz.Infrastructure.AI.Adapters
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    return (false, string.Empty, $"[OpenAI HTTP {(int)response.StatusCode}] {responseBody}", sw.ElapsedMilliseconds);
+                    return (false, string.Empty, $"[Replicate HTTP {(int)response.StatusCode}] {responseBody}", sw.ElapsedMilliseconds);
                 }
 
-                using var doc = JsonDocument.Parse(responseBody);
-                var content = doc.RootElement
-                    .GetProperty("choices")[0]
-                    .GetProperty("message")
-                    .GetProperty("content")
-                    .GetString() ?? string.Empty;
-
-                return (true, content, null, sw.ElapsedMilliseconds);
+                return (true, responseBody, null, sw.ElapsedMilliseconds);
             }
             catch (Exception ex)
             {
                 sw.Stop();
-                return (false, string.Empty, $"[OpenAI Exception] {ex.Message}", sw.ElapsedMilliseconds);
+                return (false, string.Empty, $"[Replicate Exception] {ex.Message}", sw.ElapsedMilliseconds);
             }
         }
     }

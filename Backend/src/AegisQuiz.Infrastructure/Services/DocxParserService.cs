@@ -99,8 +99,8 @@ namespace AegisQuiz.Infrastructure.Services
                 using var documentStream = documentEntry.Open();
                 var doc = XDocument.Load(documentStream);
 
-                var answerKeyMap = DocxTableQuestionExtractor.ExtractAnswerTables(doc);
-                var paragraphs = ExtractParagraphTokens(doc, relsMap, mediaDict);
+                var answerKeyMap = DocxTableQuestionExtractor.ExtractAnswerTables(doc, out var answerTableElements);
+                var paragraphs = ExtractParagraphTokens(doc, relsMap, mediaDict, answerTableElements);
                 return DocxStateMachineClassifier.ParseParagraphList(paragraphs, answerKeyMap, dynamicContext);
             }
             catch (Exception ex)
@@ -321,6 +321,9 @@ namespace AegisQuiz.Infrastructure.Services
             text = Regex.Replace(text, "(?<=[A-Z])[’´`′]", "'");
             text = Regex.Replace(text, @"([A-Z]{2})\u20D7", @"$\overrightarrow{$1}$");
             text = Regex.Replace(text, @"([a-zA-Z])\u20D7", @"$\vec{$1}$");
+            text = Regex.Replace(text, @"(?:∠|\\angle\s*)([A-Z]{3})\b", @"$\widehat{$1}$");
+            text = Regex.Replace(text, @"([A-Z]{3})\u0302", @"$\widehat{$1}$");
+            text = Regex.Replace(text, @"(?<=\b[Gg]óc\s+)([A-Z]{3})\b(?!\$)", @"$\widehat{$1}$");
             text = Regex.Replace(text, @"([A-Z])\\prime\b", "$1'");
             text = Regex.Replace(text, @"([A-Z]{3,4})\s*\\cdot\s*([A-Z])", "$1.$2");
             text = Regex.Replace(text, @"(?<!\$)(?<!\\)√\s*(\d+|[a-zA-Z])(?!\$)", @"$\sqrt{$1}$");

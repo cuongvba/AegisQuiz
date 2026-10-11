@@ -13,10 +13,12 @@
  */
 
 import { type ReactNode } from 'react';
-import { I18nProvider }   from './I18nProvider';
-import { QueryProvider }  from './QueryProvider';
-import { AuthProvider }   from './AuthProvider';
-import { TenantProvider } from './TenantProvider';
+import { I18nProvider }        from './I18nProvider';
+import { QueryProvider }       from './QueryProvider';
+import { AuthProvider }        from './AuthProvider';
+import { TenantProvider }      from './TenantProvider';
+import { EntitlementProvider } from '@/shared/context/EntitlementContext';
+import { PaywallModal }        from '@/shared/components/entitlement';
 
 interface AppProvidersProps {
   children: ReactNode;
@@ -28,10 +30,14 @@ export function AppProviders({ children }: AppProvidersProps) {
       <QueryProvider>
         <AuthProvider>
           <TenantProvider>
-            {children}
+            <EntitlementProvider>
+              {children}
+              <PaywallModal />
+            </EntitlementProvider>
           </TenantProvider>
         </AuthProvider>
       </QueryProvider>
     </I18nProvider>
   );
 }
+

@@ -5,6 +5,9 @@ import { learnerQuizService } from '@/services/learner-quiz.service';
 import { attemptService } from '@/services/attempt.service';
 import type { LearnerQuestion, LearnerAnswer } from '@/types/quiz';
 import { MathRenderer } from '@/components/common/MathRenderer';
+import { useEdgeAiVisionProctor } from '@/features/proctoring/hooks/useEdgeAiVisionProctor';
+import type { EdgeVisionViolation } from '@/features/proctoring/services/EdgeAiVisionProctor';
+import { offlineExamService } from '@/services/offline-exam.service';
 
 interface UserAnswerRecord {
   questionId: string;
@@ -27,7 +30,7 @@ const renderQuestionContent = (q: LearnerQuestion) => {
       
       {type === 'image' && !q.content?.includes('data:image/') && (
         <div className="my-3 flex justify-center">
-          <img src={mediaUrl} className="max-h-64 object-contain rounded-2xl border border-gray-800 shadow-lg" alt="Question media" />
+          <img src={mediaUrl} className="max-h-64 object-contain rounded-2xl border border-slate-300 bg-white p-2 shadow-lg" alt="Question media" />
         </div>
       )}
       
@@ -77,6 +80,44 @@ export default function SecureExamRoom() {
   const userRaw = localStorage.getItem('user');
   const userId = userRaw ? (JSON.parse(userRaw) as { id?: string })?.id ?? 'guest' : 'guest';
   const examSessionId = id ?? 'exam-session-local';
+
+  // [Edge AI & Offline Engine State]
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
+  const [isOfflineMode, setIsOfflineMode] = useState(!navigator.onLine);
+
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOfflineMode(false);
+      offlineExamService.syncWithServerAsync(examSessionId);
+    };
+    const handleOffline = () => setIsOfflineMode(true);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [examSessionId]);
+
+  useEffect(() => {
+    if (examStarted) {
+      offlineExamService.initializeLocalSession(examSessionId, userId);
+      navigator.mediaDevices?.getUserMedia({ video: true, audio: true })
+        .then((stream) => {
+          setMediaStream(stream);
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+          }
+        })
+        .catch((err) => console.warn('[SecureExamRoom] Camera/Mic không khả dụng:', err));
+    }
+    return () => {
+      if (mediaStream) {
+        mediaStream.getTracks().forEach((t) => t.stop());
+      }
+    };
+  }, [examStarted, examSessionId, userId]);
 
   // [BONUS: Proctoring Hub] Kết nối SignalR khi bắt đầu thi
   useEffect(() => {
@@ -193,6 +234,20 @@ export default function SecureExamRoom() {
     });
   }, [handleFinishExam, examSessionId]);
 
+  const handleAiViolation = useCallback((v: EdgeVisionViolation) => {
+    handleViolation(v.violationType.toLowerCase());
+    if (hubRef.current) {
+      hubRef.current.invoke('ReportSuspiciousActivity', examSessionId, `${v.violationType}:${v.details}`).catch(() => {});
+    }
+  }, [examSessionId, handleViolation]);
+
+  const { isAiMonitoring } = useEdgeAiVisionProctor({
+    videoRef,
+    stream: mediaStream,
+    isEnabled: examStarted,
+    onViolationDetected: handleAiViolation
+  });
+
   useEffect(() => {
     if (!examStarted) return;
     const onVisibility = () => { if (document.hidden) handleViolation('tab_switch'); };
@@ -300,7 +355,10 @@ export default function SecureExamRoom() {
                 return (
                   <button
                     key={i}
-                    onClick={() => setAnswers({ ...answers, [currentQ.id]: { selectedOption: String(i + 1) } })}
+                    onClick={() => {
+                      setAnswers((prev) => ({ ...prev, [currentQ.id]: { selectedOption: String(i + 1) } }));
+                      offlineExamService.recordAnswerAsync(examSessionId, currentQ.id, String(i + 1));
+                    }}
                     className={`w-full text-left px-6 py-4 border rounded-2xl text-sm transition-all flex items-center gap-3 ${isSelected ? 'bg-red-600/10 border-red-500 text-red-400 font-bold' : 'bg-gray-950 border-gray-800 hover:border-gray-700 text-gray-300'}`}
                   >
                     <span className="font-bold shrink-0">{alpha[i] ?? String(i + 1)}.</span>
@@ -317,7 +375,10 @@ export default function SecureExamRoom() {
               disabled={currentIndex === 0}
               className="px-5 py-2 bg-gray-850 border border-gray-800 rounded-xl hover:bg-gray-800 disabled:opacity-30 font-bold"
             >◀ Câu trước</button>
-            <span className="text-xs text-gray-500">Tự động lưu</span>
+            <div className="flex items-center gap-2 text-xs">
+              <span className={`w-2 h-2 rounded-full ${isOfflineMode ? 'bg-orange-500' : 'bg-green-500'}`} />
+              <span className="text-gray-400">{isOfflineMode ? 'Lưu trữ cục bộ (Offline)' : 'Đồng bộ máy chủ (Online)'}</span>
+            </div>
             <button
               onClick={() => setCurrentIndex((p) => Math.min(questions.length - 1, p + 1))}
               disabled={currentIndex === questions.length - 1}
@@ -326,9 +387,29 @@ export default function SecureExamRoom() {
           </div>
         </main>
 
-        <aside className="w-full md:w-64 bg-gray-900 border border-gray-800 rounded-3xl p-6 h-fit">
-          <h3 className="text-sm font-bold text-gray-400 mb-4 flex justify-between">
-            Danh sách câu
+        <aside className="w-full md:w-64 bg-gray-900 border border-gray-800 rounded-3xl p-6 h-fit flex flex-col gap-4">
+          {/* Edge AI Vision Webcam Preview */}
+          <div className="relative rounded-2xl overflow-hidden border border-gray-800 bg-gray-950 aspect-video flex items-center justify-center">
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className="w-full h-full object-cover transform -scale-x-100"
+            />
+            <div className="absolute top-2 left-2 flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-gray-950/80 border border-gray-800 text-[10px] font-bold">
+              <span className={`w-1.5 h-1.5 rounded-full ${isAiMonitoring ? 'bg-green-400 animate-pulse' : 'bg-yellow-400'}`} />
+              <span className="text-gray-200">EDGE AI PROCTOR</span>
+            </div>
+            {isOfflineMode && (
+              <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded-full bg-orange-950/90 border border-orange-500/50 text-[9px] font-bold text-orange-400">
+                OFFLINE MERKLE
+              </div>
+            )}
+          </div>
+
+          <h3 className="text-sm font-bold text-gray-400 flex justify-between items-center">
+            <span>Danh sách câu</span>
             <span className="bg-gray-800 px-2 py-0.5 rounded text-xs">{Object.keys(answers).length}/{questions.length}</span>
           </h3>
           <div className="grid grid-cols-4 gap-2">

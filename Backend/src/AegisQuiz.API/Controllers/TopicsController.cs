@@ -10,6 +10,7 @@ using AegisQuiz.Application.DTOs;
 using AegisQuiz.Application.Interfaces;
 using AegisQuiz.Domain.Entities;
 using AegisQuiz.Infrastructure.Data;
+using AegisQuiz.Infrastructure.Services;
 
 namespace AegisQuiz.API.Controllers
 {
@@ -26,15 +27,21 @@ namespace AegisQuiz.API.Controllers
     [Authorize(Policy = RoleWeightPolicies.TeamLeader)]
     public class TopicsController : ControllerBase
     {
-        private readonly AegisQuizDbContext     _db;
-        private readonly IContentOwnershipGuard _ownershipGuard;
-        private readonly ITenantContext         _tenant;
+        private readonly AegisQuizDbContext          _db;
+        private readonly IContentOwnershipGuard      _ownershipGuard;
+        private readonly ITenantContext              _tenant;
+        private readonly IExamDeduplicationEngine    _deduplicationEngine;
 
-        public TopicsController(AegisQuizDbContext db, IContentOwnershipGuard ownershipGuard, ITenantContext tenant)
+        public TopicsController(
+            AegisQuizDbContext              db, 
+            IContentOwnershipGuard          ownershipGuard, 
+            ITenantContext                  tenant,
+            IExamDeduplicationEngine?       deduplicationEngine = null)
         {
-            _db             = db;
-            _ownershipGuard = ownershipGuard;
-            _tenant         = tenant;
+            _db                  = db;
+            _ownershipGuard      = ownershipGuard;
+            _tenant              = tenant;
+            _deduplicationEngine = deduplicationEngine ?? new ExamDeduplicationEngine(db, Microsoft.Extensions.Logging.Abstractions.NullLogger<ExamDeduplicationEngine>.Instance);
         }
 
         // ── GET api/quiz/topics ────────────────────────────────────────────────
@@ -398,6 +405,9 @@ namespace AegisQuiz.API.Controllers
         [HttpPut("{id:guid}")]
         public async Task<IActionResult> UpdateTopic(Guid id, [FromBody] BankTopicUpsertDto dto)
         {
+            Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction? transaction = null;
+            if (_db.Database.IsRelational()) transaction = await _db.Database.BeginTransactionAsync();
+
             try
             {
                 var topic = await _db.BankTopics.FindAsync(id);
@@ -407,7 +417,17 @@ namespace AegisQuiz.API.Controllers
                 if (!await _ownershipGuard.CanManageAsync(User, topic.CreatedByUserId?.ToString(), null))
                     return Forbid();
 
-                topic.Code            = dto.Code.Trim().ToUpper();
+                var oldCode = topic.Code;
+                var newCode = dto.Code.Trim().ToUpper();
+                bool codeChanged = !string.Equals(oldCode, newCode, StringComparison.OrdinalIgnoreCase);
+
+                if (codeChanged)
+                {
+                    if (await _db.BankTopics.AnyAsync(t => t.Id != id && t.Code == newCode))
+                        return Conflict(new { message = $"Mã chủ đề '{newCode}' đã được sử dụng bởi một chủ đề khác." });
+                }
+
+                topic.Code            = newCode;
                 topic.Name            = dto.Name;
                 topic.Description     = dto.Description;
                 topic.CategoryCode    = dto.CategoryCode;
@@ -418,19 +438,68 @@ namespace AegisQuiz.API.Controllers
                 if (!string.IsNullOrWhiteSpace(dto.Scope)) topic.Scope = dto.Scope;
                 topic.UpdatedAt       = DateTime.UtcNow;
 
+                if (codeChanged)
+                {
+                    // 1. Cascade update MaterializedPath của các chủ đề con
+                    var oldPathSegment = $"/{oldCode}/";
+                    var newPathSegment = $"/{newCode}/";
+                    var descendants = await _db.BankTopics
+                        .Where(t => t.MaterializedPath != null && t.MaterializedPath.Contains(oldPathSegment))
+                        .ToListAsync();
+                    foreach (var d in descendants)
+                    {
+                        d.MaterializedPath = d.MaterializedPath!.Replace(oldPathSegment, newPathSegment);
+                    }
+
+                    // 2. Cascade update các câu hỏi có CategoryCode == oldCode
+                    var directQuestions = await _db.Questions
+                        .Where(q => q.CategoryCode == oldCode)
+                        .ToListAsync();
+                    foreach (var q in directQuestions)
+                    {
+                        q.CategoryCode = newCode;
+                    }
+
+                    // 3. Cascade update các câu hỏi liên kết qua Tags / linkedTopicCodes
+                    var oldTag = "#" + oldCode;
+                    var taggedQuestions = await _db.Questions
+                        .Where(q => q.Tags.Contains(oldCode) || q.Tags.Contains(oldTag))
+                        .ToListAsync();
+                    foreach (var q in taggedQuestions)
+                    {
+                        _deduplicationEngine.DisassociateTopicFromQuestion(q, oldCode, newCode);
+                        _deduplicationEngine.AssociateTopicToQuestion(q, newCode, dto.Name);
+                    }
+                }
+
                 await _db.SaveChangesAsync();
+                if (transaction != null) await transaction.CommitAsync();
                 return Ok(topic);
             }
             catch (Exception ex)
             {
+                if (transaction != null) await transaction.RollbackAsync();
                 return StatusCode(500, new { message = $"Lỗi cập nhật chủ đề: {ex.Message}" });
+            }
+            finally
+            {
+                if (transaction != null) await transaction.DisposeAsync();
             }
         }
 
         // ── DELETE api/quiz/topics/{id} ────────────────────────────────────────
         [HttpDelete("{id:guid}")]
-        public async Task<IActionResult> DeleteTopic(Guid id, [FromQuery] bool deleteQuestions = false)
+        public async Task<IActionResult> DeleteTopic(
+            Guid id, 
+            [FromQuery] bool deleteQuestions = false,
+            [FromQuery] TopicDeleteMode mode = TopicDeleteMode.UnlinkOnly)
         {
+            // Tương thích ngược: nếu client cũ truyền deleteQuestions = true
+            if (deleteQuestions && mode == TopicDeleteMode.UnlinkOnly)
+            {
+                mode = TopicDeleteMode.SafeCascade;
+            }
+
             Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction? transaction = null;
             if (_db.Database.IsRelational())
             {
@@ -439,7 +508,6 @@ namespace AegisQuiz.API.Controllers
 
             try
             {
-                // Sử dụng IgnoreQueryFilters để quét toàn bộ cây phân cấp, tránh bị sót nhánh con do multi-tenancy filter
                 var topic = await _db.BankTopics
                     .IgnoreQueryFilters()
                     .Include(t => t.Children)
@@ -449,135 +517,197 @@ namespace AegisQuiz.API.Controllers
                 if (topic == null)
                     return NotFound(new { message = "Không tìm thấy chủ đề" });
 
-                // [CRITICAL FIX] IgnoreQueryFilters() ở trên tắt cách ly Tenant hoàn toàn —
-                // nếu không kiểm tra lại thủ công, một ContentManager/TeamLeader ở Tenant A
-                // có thể xóa (kèm cascade toàn bộ câu hỏi trong nhánh) Topic của Tenant B chỉ
-                // bằng cách biết GUID. Khôi phục lại đúng quy tắc cách ly: chỉ Topic dùng
-                // chung (TenantId=Guid.Empty) hoặc thuộc đúng Tenant hiện tại mới được xóa.
                 if (!_tenant.IsSystemAdmin && topic.TenantId != Guid.Empty && topic.TenantId != _tenant.CurrentTenantId)
                     return NotFound(new { message = "Không tìm thấy chủ đề" });
 
                 if (!await _ownershipGuard.CanManageAsync(User, topic.CreatedByUserId?.ToString(), null))
                     return Forbid();
 
-                // [CRITICAL FIX] Cùng lý do trên — giới hạn allTopics (dùng để duyệt cây và
-                // tìm câu hỏi mồ côi) về đúng phạm vi Tenant + dữ liệu dùng chung, tránh việc
-                // xóa nhầm Topic/Question của tenant khác có trùng Code/CategoryCode.
+                // ── KỊCH BẢN 3: LƯU TRỮ MỀM (ARCHIVE SOFT) ──
+                if (mode == TopicDeleteMode.ArchiveSoft)
+                {
+                    topic.Enabled = false;
+                    topic.VisibilityScope = TopicVisibility.Private;
+                    topic.UpdatedAt = DateTime.UtcNow;
+                    await _db.SaveChangesAsync();
+                    if (transaction != null) await transaction.CommitAsync();
+
+                    return Ok(new
+                    {
+                        success = true,
+                        message = $"Đã lưu trữ thành công chủ đề '{topic.Name}' mà không xóa câu hỏi.",
+                        archivedTopicId = topic.Id
+                    });
+                }
+
                 var allTopics = await _db.BankTopics
                     .IgnoreQueryFilters()
                     .Where(t => _tenant.IsSystemAdmin || t.TenantId == Guid.Empty || t.TenantId == _tenant.CurrentTenantId)
                     .ToListAsync();
 
-                if (deleteQuestions)
-                {
-                    // ── KỊCH BẢN 1: XÓA TOÀN BỘ NHÁNH & CÂU HỎI (CASCADE) ──
-                    var descendantTopics = GetDescendantTopics(topic.Id, allTopics);
-                    var allBranchTopics = new List<BankTopic>(descendantTopics) { topic };
+                // Thu thập các chủ đề bị ảnh hưởng (cả topic hiện tại và các con cháu nếu cascade)
+                var affectedTopics = (mode == TopicDeleteMode.SafeCascade)
+                    ? new List<BankTopic>(GetDescendantTopics(topic.Id, allTopics)) { topic }
+                    : new List<BankTopic> { topic };
 
-                    // Thu thập tất cả các mã chủ đề (cả Code và CategoryCode)
-                    var allBranchCodes = allBranchTopics
-                        .SelectMany(t => new[] { t.Code, t.CategoryCode })
-                        .Where(c => !string.IsNullOrWhiteSpace(c))
-                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                var baseCodes = affectedTopics
+                    .SelectMany(t => new[] { t.Code, t.CategoryCode })
+                    .Where(c => !string.IsNullOrWhiteSpace(c))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                var expandedCodes = new HashSet<string>(baseCodes, StringComparer.OrdinalIgnoreCase);
+                foreach (var c in baseCodes)
+                {
+                    expandedCodes.Add(c.Replace("_", "-"));
+                    expandedCodes.Add(c.Replace("-", "_"));
+                }
+                var affectedCodes = expandedCodes.ToList();
+
+                var affectedTags = affectedCodes.Select(c => "#" + c).Concat(affectedCodes).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+
+                // Tìm tất cả câu hỏi liên quan trực tiếp qua CategoryCode (100% provider-agnostic & indexed)
+                var candidateQuestions = await _db.Questions
+                    .IgnoreQueryFilters()
+                    .Where(q => (_tenant.IsSystemAdmin || q.TenantId == Guid.Empty || q.TenantId == _tenant.CurrentTenantId)
+                             && affectedCodes.Contains(q.CategoryCode))
+                    .ToListAsync();
+
+                // Bổ sung các câu hỏi liên kết chéo qua Tags (hỗ trợ N-M, an toàn với mọi provider)
+                try
+                {
+                    foreach (var code in affectedCodes)
+                    {
+                        var tag1 = code;
+                        var tag2 = "#" + code;
+                        var tag3 = "#topic:" + code;
+                        var tagQuestions = await _db.Questions
+                            .IgnoreQueryFilters()
+                            .Where(q => (_tenant.IsSystemAdmin || q.TenantId == Guid.Empty || q.TenantId == _tenant.CurrentTenantId)
+                                     && (q.Tags.Contains(tag1) || q.Tags.Contains(tag2) || q.Tags.Contains(tag3)))
+                            .ToListAsync();
+
+                        foreach (var tq in tagQuestions)
+                        {
+                            if (!candidateQuestions.Any(cq => cq.Id == tq.Id))
+                            {
+                                candidateQuestions.Add(tq);
+                            }
+                        }
+                    }
+                }
+                catch
+                {
+                    // Fallback mềm cho các database provider kiểm thử in-memory không dịch được array contains
+                }
+
+                int unlinkedCount = 0;
+                int deletedQuestionsCount = 0;
+                int reassignedCount = 0;
+
+                string fallbackCode = !string.IsNullOrWhiteSpace(topic.Parent?.Code) ? topic.Parent.Code : "GENERAL";
+                if (fallbackCode == "GENERAL" && !allTopics.Any(t => t.Code.Equals("GENERAL", StringComparison.OrdinalIgnoreCase)))
+                {
+                    var generalTopic = new BankTopic
+                    {
+                        Id = Guid.NewGuid(),
+                        Code = "GENERAL",
+                        Name = "Chủ đề chung",
+                        Description = "Chủ đề mặc định cho các câu hỏi chưa phân nhóm",
+                        CategoryCode = "GENERAL",
+                        Enabled = true,
+                        VisibilityScope = "PUBLIC",
+                        TenantId = topic.TenantId,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    _db.BankTopics.Add(generalTopic);
+                    allTopics.Add(generalTopic);
+                    await _db.SaveChangesAsync();
+                }
+
+                var questionsToDelete = new List<QuestionBase>();
+
+                foreach (var q in candidateQuestions)
+                {
+                    // Kiểm tra xem câu hỏi này có liên kết tới các Topic BÊN NGOÀI nhánh bị xóa hay không
+                    var outsideTopics = q.LinkedTopicCodes
+                        .Where(tc => !affectedCodes.Contains(tc, StringComparer.OrdinalIgnoreCase))
                         .ToList();
 
-                    // 1. Xóa toàn bộ câu hỏi liên quan thuộc tất cả các chủ đề trong nhánh
-                    var questionsToDelete = await _db.Questions
-                        .IgnoreQueryFilters()
-                        .Where(q => allBranchCodes.Contains(q.CategoryCode)
-                                 && (_tenant.IsSystemAdmin || q.TenantId == Guid.Empty || q.TenantId == _tenant.CurrentTenantId))
-                        .ToListAsync();
-                    if (questionsToDelete.Count > 0)
+                    bool isShared = outsideTopics.Count > 0;
+
+                    if (isShared)
                     {
-                        _db.Questions.RemoveRange(questionsToDelete);
+                        // [BẢO VỆ TUYỆT ĐỐI CÂU HỎI DÙNG CHUNG]:
+                        // Chỉ gỡ bỏ các mã topic bị xóa, TUYỆT ĐỐI KHÔNG XÓA THỰC THỂ CÂU HỎI!
+                        foreach (var code in affectedCodes)
+                        {
+                            _deduplicationEngine.DisassociateTopicFromQuestion(q, code, outsideTopics.FirstOrDefault() ?? fallbackCode);
+                        }
+                        unlinkedCount++;
                     }
-
-                    // 2. Gỡ bỏ hoàn toàn ràng buộc tự tham chiếu ParentId và navigation properties
-                    foreach (var t in allBranchTopics)
+                    else
                     {
-                        t.ParentId = null;
-                        t.Parent = null;
-                        t.Children.Clear();
+                        // Câu hỏi ĐỘC QUYỀN (chỉ thuộc riêng nhánh này)
+                        if (mode == TopicDeleteMode.SafeCascade)
+                        {
+                            questionsToDelete.Add(q);
+                            deletedQuestionsCount++;
+                        }
+                        else
+                        {
+                            // UnlinkOnly: Bàn giao câu hỏi về fallbackCode
+                            foreach (var code in affectedCodes)
+                            {
+                                _deduplicationEngine.DisassociateTopicFromQuestion(q, code, fallbackCode);
+                            }
+                            q.CategoryCode = fallbackCode;
+                            reassignedCount++;
+                        }
                     }
-                    await _db.SaveChangesAsync();
-
-                    // 3. Xóa các chủ đề theo thứ tự ngược: nhánh sâu nhất trước rồi mới đến gốc (Leaf-to-Root)
-                    allBranchTopics.Reverse();
-                    _db.BankTopics.RemoveRange(allBranchTopics);
-                    await _db.SaveChangesAsync();
-                    if (transaction != null) await transaction.CommitAsync();
-
-                    return Ok(new
-                    {
-                        success = true,
-                        message = $"Đã xóa thành công chủ đề '{topic.Name}', {descendantTopics.Count} chủ đề con và {questionsToDelete.Count} câu hỏi liên quan.",
-                        deletedTopicCount = allBranchTopics.Count,
-                        deletedQuestionCount = questionsToDelete.Count
-                    });
                 }
-                else
+
+                if (questionsToDelete.Count > 0)
                 {
-                    // ── KỊCH BẢN 2: CHỈ XÓA CHỦ ĐỀ HIỆN TẠI (BẢO TOÀN CON VÀ CÂU HỎI) ──
-                    // 1. Bàn giao các chủ đề con trực tiếp: chuyển ParentId lên cấp cha của topic (hoặc thành root nếu topic là root)
-                    var directChildren = allTopics.Where(t => t.ParentId == topic.Id).ToList();
+                    _db.Questions.RemoveRange(questionsToDelete);
+                }
+
+                // Bàn giao các topic con trực tiếp nếu không cascade
+                var directChildren = allTopics.Where(t => t.ParentId == topic.Id).ToList();
+                if (mode != TopicDeleteMode.SafeCascade)
+                {
                     foreach (var child in directChildren)
                     {
                         child.ParentId = topic.ParentId;
                         child.Parent = topic.Parent;
                     }
-
-                    // 2. Bàn giao các câu hỏi của chủ đề này: chuyển sang chủ đề cha hoặc GENERAL để không bị mồ côi
-                    string fallbackCode = !string.IsNullOrWhiteSpace(topic.Parent?.Code) ? topic.Parent.Code : "GENERAL";
-
-                    // Nếu chuyển về GENERAL, đảm bảo hệ thống luôn có chủ đề GENERAL trong DB
-                    if (fallbackCode == "GENERAL" && !allTopics.Any(t => t.Code.Equals("GENERAL", StringComparison.OrdinalIgnoreCase)))
-                    {
-                        var generalTopic = new BankTopic
-                        {
-                            Id = Guid.NewGuid(),
-                            Code = "GENERAL",
-                            Name = "Chủ đề chung",
-                            Description = "Chủ đề mặc định cho các câu hỏi chưa phân nhóm",
-                            CategoryCode = "GENERAL",
-                            Enabled = true,
-                            VisibilityScope = "PUBLIC",
-                            TenantId = topic.TenantId,
-                            CreatedAt = DateTime.UtcNow
-                        };
-                        _db.BankTopics.Add(generalTopic);
-                        allTopics.Add(generalTopic);
-                        await _db.SaveChangesAsync();
-                    }
-
-                    // Tìm các câu hỏi thuộc chủ đề bị xóa
-                    var orphanQuestions = await _db.Questions
-                        .IgnoreQueryFilters()
-                        .Where(q => (q.CategoryCode == topic.Code || (!string.IsNullOrEmpty(topic.CategoryCode) && q.CategoryCode == topic.CategoryCode && !_db.BankTopics.Any(other => other.Id != topic.Id && other.Code == topic.CategoryCode)))
-                                 && (_tenant.IsSystemAdmin || q.TenantId == Guid.Empty || q.TenantId == _tenant.CurrentTenantId))
-                        .ToListAsync();
-                    foreach (var q in orphanQuestions)
-                    {
-                        q.CategoryCode = fallbackCode;
-                    }
-
-                    // 3. Ngắt liên kết hoàn toàn trên entity bị xóa để EF ChangeTracker không chặn DeleteBehavior.Restrict
-                    topic.Children.Clear();
-                    topic.Parent = null;
-                    topic.ParentId = null;
-                    await _db.SaveChangesAsync();
-
-                    _db.BankTopics.Remove(topic);
-                    await _db.SaveChangesAsync();
-                    if (transaction != null) await transaction.CommitAsync();
-
-                    return Ok(new
-                    {
-                        success = true,
-                        message = $"Đã xóa chủ đề '{topic.Name}'. {directChildren.Count} chủ đề con đã được chuyển lên cấp trên và {orphanQuestions.Count} câu hỏi được chuyển về nhóm '{fallbackCode}'.",
-                        promotedChildrenCount = directChildren.Count,
-                        reassignedQuestionsCount = orphanQuestions.Count
-                    });
                 }
+
+                // Xóa ràng buộc tự tham chiếu
+                foreach (var t in affectedTopics)
+                {
+                    t.ParentId = null;
+                    t.Parent = null;
+                    t.Children.Clear();
+                }
+                await _db.SaveChangesAsync();
+
+                // Xóa topics (leaf-to-root)
+                affectedTopics.Reverse();
+                _db.BankTopics.RemoveRange(affectedTopics);
+                await _db.SaveChangesAsync();
+
+                if (transaction != null) await transaction.CommitAsync();
+
+                return Ok(new
+                {
+                    success = true,
+                    message = $"Đã xử lý xóa chủ đề '{topic.Name}' thành công (Chế độ: {mode}).",
+                    deletedTopicCount = affectedTopics.Count,
+                    unlinkedSharedQuestionCount = unlinkedCount,
+                    deletedExclusiveQuestionCount = deletedQuestionsCount,
+                    reassignedQuestionCount = reassignedCount
+                });
             }
             catch (Exception ex)
             {

@@ -146,5 +146,63 @@ namespace AegisQuiz.UnitTests
 
             Assert.Equal(0.50, score, precision: 2);
         }
+
+        [Fact]
+        public void EvaluateAnswer_With_BinaryVector_Syntax_Should_Parse_And_Calculate_Correctly()
+        {
+            // Đáp án chuẩn lưu dạng vector nhị phân: [1:1; 2:0; 3:1; 4:1] (a: Đúng, b: Sai, c: Đúng, d: Đúng)
+            var q = new MultiTrueFalseQuestion
+            {
+                Options = new List<string> { "a) Mệnh đề 1", "b) Mệnh đề 2", "c) Mệnh đề 3", "d) Mệnh đề 4" },
+                CorrectOption = "[1:1; 2:0; 3:1; 4:1]"
+            };
+
+            // Học sinh nộp dạng vector thô: 1:1; 2:0; 3:1; 4:1 (đúng cả 4 ý)
+            double scoreFull = q.EvaluateAnswer("1:1; 2:0; 3:1; 4:1");
+            Assert.Equal(1.0, scoreFull, precision: 2);
+
+            // Học sinh nộp dạng vector bọc JSON: "\"1:1; 2:1; 3:0; 4:1\""
+            // Ý 1: Đ (đúng), Ý 2: Đ (sai, chuẩn là S), Ý 3: S (sai, chuẩn là Đ), Ý 4: Đ (đúng) -> 2/4 = 0.50
+            double scoreHalf = q.EvaluateAnswer("\"[1:1; 2:1; 3:0; 4:1]\"");
+            Assert.Equal(0.50, scoreHalf, precision: 2);
+        }
+
+        [Fact]
+        public void EvaluateAnswer_AllFalse_BoundaryCase_Should_Evaluate_Properly()
+        {
+            // Trường hợp biên quan trọng: Cả 4 mệnh đề đều SAI [1:0; 2:0; 3:0; 4:0]
+            // Ở MULTI, đáp án đúng sẽ rỗng [] gây lỗi, nhưng ở MULTI_TRUE_FALSE đây là trạng thái hợp lệ 100%
+            var q = new MultiTrueFalseQuestion
+            {
+                Options = new List<string> { "a) Ý 1", "b) Ý 2", "c) Ý 3", "d) Ý 4" },
+                CorrectOption = "[1:0; 2:0; 3:0; 4:0]"
+            };
+
+            // Học sinh chọn đúng cả 4 ý đều Sai
+            string studentAllFalse = "{\"a\": false, \"b\": false, \"c\": false, \"d\": false}";
+            Assert.Equal(1.0, q.EvaluateAnswer(studentAllFalse));
+
+            // Học sinh chọn nhầm a là True, 3 ý còn lại False -> đúng 3/4 = 0.75
+            string studentPartial = "{\"a\": true, \"b\": false, \"c\": false, \"d\": false}";
+            Assert.Equal(0.75, q.EvaluateAnswer(studentPartial));
+        }
+
+        [Fact]
+        public void ToVectorString_And_ToHumanDisplay_Should_Format_Accurately()
+        {
+            var map = new Dictionary<string, bool>
+            {
+                ["a"] = true,
+                ["b"] = false,
+                ["c"] = true,
+                ["d"] = true
+            };
+
+            string vector = MultiTrueFalseQuestion.ToVectorString(map);
+            Assert.Equal("[1:1; 2:0; 3:1; 4:1]", vector);
+
+            string human = MultiTrueFalseQuestion.ToHumanDisplay(map);
+            Assert.Equal("a) Đúng, b) Sai, c) Đúng, d) Đúng", human);
+        }
     }
 }

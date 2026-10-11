@@ -15,7 +15,7 @@ namespace AegisQuiz.Domain.Entities
     public class MultiTrueFalseQuestion : QuestionBase
     {
         private static readonly Regex LabeledTruthPattern =
-            new(@"(?:^|\b|\,)([a-z0-9]+)[\)\:\.\s]+(đúng|sai|true|false|đ|s|t|f)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+            new(@"(?:\[|\(|^|\b|\;|\,)\s*([a-z0-9]+)\s*[\:\=\)\.\-]\s*([01]|đúng|sai|true|false|đ|s|t|f)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         public MultiTrueFalseQuestion()
         {
@@ -64,6 +64,44 @@ namespace AegisQuiz.Domain.Entities
             }
 
             return Math.Round((double)correctCount / totalItems, 4);
+        }
+
+        /// <summary>
+        /// Chuyển map đáp án sang Vector chuỗi nhị phân chuẩn hóa, ví dụ: [1:1; 2:0; 3:1; 4:1]
+        /// </summary>
+        public static string ToVectorString(IDictionary<string, bool> map)
+        {
+            if (map == null || map.Count == 0) return "[]";
+            var parts = new List<string>();
+            int idx = 1;
+            var sortedKeys = new List<string>(map.Keys);
+            sortedKeys.Sort((x, y) => string.Compare(NormalizeKey(x), NormalizeKey(y), StringComparison.OrdinalIgnoreCase));
+
+            foreach (var key in sortedKeys)
+            {
+                int itemIndex = KeyToIndex(key, idx);
+                parts.Add($"{itemIndex}:{(map[key] ? "1" : "0")}");
+                idx++;
+            }
+            return $"[{string.Join("; ", parts)}]";
+        }
+
+        /// <summary>
+        /// Chuyển map đáp án sang chuỗi nhãn hiển thị thân thiện, ví dụ: "a) Đúng, b) Sai, c) Đúng, d) Đúng"
+        /// </summary>
+        public static string ToHumanDisplay(IDictionary<string, bool> map)
+        {
+            if (map == null || map.Count == 0) return string.Empty;
+            var parts = new List<string>();
+            var sortedKeys = new List<string>(map.Keys);
+            sortedKeys.Sort((x, y) => string.Compare(NormalizeKey(x), NormalizeKey(y), StringComparison.OrdinalIgnoreCase));
+
+            foreach (var key in sortedKeys)
+            {
+                string norm = NormalizeKey(key);
+                parts.Add($"{norm}) {(map[key] ? "Đúng" : "Sai")}");
+            }
+            return string.Join(", ", parts);
         }
 
         /// <summary>Trích bản đồ đáp án chuẩn {a: true, b: false, ...} từ Payload hoặc chuỗi CorrectOption.</summary>
@@ -120,23 +158,56 @@ namespace AegisQuiz.Domain.Entities
                 return map;
             }
 
-            // Dạng rút gọn "Đ,S,Đ,Đ" hoặc "true false true true"
-            var tokens = raw.Split(new[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries);
-            for (int i = 0; i < tokens.Length; i++)
+            // Dạng rút gọn "Đ,S,Đ,Đ" hoặc "true false true true" hoặc "1,0,1,1"
+            var tokens = raw.Split(new[] { ',', ';', ' ', '[', ']' }, StringSplitOptions.RemoveEmptyEntries);
+            if (tokens.Length > 0 && !raw.Contains(':'))
             {
-                map[((char)('a' + i)).ToString()] = ParseBoolToken(tokens[i]);
+                for (int i = 0; i < tokens.Length; i++)
+                {
+                    map[((char)('a' + i)).ToString()] = ParseBoolToken(tokens[i]);
+                }
             }
             return map;
         }
 
-        /// <summary>Đọc bài làm thí sinh: JSON {"a":true,...}, {"matching":{...}} hoặc chuỗi "a) Đúng, b) Sai".</summary>
+        /// <summary>Đọc bài làm thí sinh: JSON {"a":true,...}, {"matching":{...}}, chuỗi vector "[1:1; 2:0; 3:1; 4:1]" hoặc "a) Đúng, b) Sai".</summary>
         public static Dictionary<string, bool> ParseStudentAnswers(string studentAnswerJson)
         {
             var map = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+            if (string.IsNullOrWhiteSpace(studentAnswerJson)) return map;
+
+            var trimmed = studentAnswerJson.Trim();
+
+            // Nếu bắt đầu bằng chuỗi vector nhị phân trực tiếp [1:1... hoặc 1:1...
+            if (!trimmed.StartsWith("{") || !trimmed.EndsWith("}"))
+            {
+                var matches = LabeledTruthPattern.Matches(trimmed);
+                if (matches.Count > 0)
+                {
+                    foreach (Match m in matches)
+                    {
+                        map[NormalizeKey(m.Groups[1].Value)] = ParseBoolToken(m.Groups[2].Value);
+                    }
+                    return map;
+                }
+            }
+
             try
             {
-                using var doc = JsonDocument.Parse(studentAnswerJson);
+                using var doc = JsonDocument.Parse(trimmed);
                 var root = doc.RootElement;
+
+                // Thí sinh nộp dạng chuỗi thô được bọc JSON: "\"1:1;2:0;3:1;4:1\""
+                if (root.ValueKind == JsonValueKind.String)
+                {
+                    var innerStr = root.GetString() ?? string.Empty;
+                    var matches = LabeledTruthPattern.Matches(innerStr);
+                    foreach (Match m in matches)
+                    {
+                        map[NormalizeKey(m.Groups[1].Value)] = ParseBoolToken(m.Groups[2].Value);
+                    }
+                    return map;
+                }
 
                 if (root.ValueKind == JsonValueKind.Object && root.TryGetProperty("matching", out var matching) && matching.ValueKind == JsonValueKind.Object)
                 {
@@ -149,6 +220,24 @@ namespace AegisQuiz.Domain.Entities
 
                 if (root.ValueKind == JsonValueKind.Object)
                 {
+                    // Kiểm tra nếu có trường "matrixAnswer" hoặc "vector"
+                    if (root.TryGetProperty("matrixAnswer", out var matrixEl) && matrixEl.ValueKind == JsonValueKind.Object)
+                    {
+                        ReadBooleanObject(matrixEl, map);
+                        if (map.Count > 0) return map;
+                    }
+
+                    if (root.TryGetProperty("vector", out var vectorEl) && vectorEl.ValueKind == JsonValueKind.String)
+                    {
+                        var vecStr = vectorEl.GetString() ?? string.Empty;
+                        var matches = LabeledTruthPattern.Matches(vecStr);
+                        foreach (Match m in matches)
+                        {
+                            map[NormalizeKey(m.Groups[1].Value)] = ParseBoolToken(m.Groups[2].Value);
+                        }
+                        if (map.Count > 0) return map;
+                    }
+
                     foreach (var prop in root.EnumerateObject())
                     {
                         map[NormalizeKey(prop.Name)] = prop.Value.ValueKind is JsonValueKind.True or JsonValueKind.False
@@ -160,7 +249,7 @@ namespace AegisQuiz.Domain.Entities
             }
             catch (JsonException)
             {
-                foreach (Match m in LabeledTruthPattern.Matches(studentAnswerJson))
+                foreach (Match m in LabeledTruthPattern.Matches(trimmed))
                 {
                     map[NormalizeKey(m.Groups[1].Value)] = ParseBoolToken(m.Groups[2].Value);
                 }
@@ -184,7 +273,7 @@ namespace AegisQuiz.Domain.Entities
         }
 
         /// <summary>Chuẩn hóa nhãn ý: "1".."26" → "a".."z"; còn lại hạ chữ thường.</summary>
-        private static string NormalizeKey(string rawKey)
+        public static string NormalizeKey(string rawKey)
         {
             var key = rawKey.Trim().ToLowerInvariant();
             if (int.TryParse(key, out var n) && n >= 1 && n <= 26)
@@ -192,6 +281,16 @@ namespace AegisQuiz.Domain.Entities
                 return ((char)('a' + n - 1)).ToString();
             }
             return key;
+        }
+
+        private static int KeyToIndex(string rawKey, int fallbackIndex)
+        {
+            var norm = NormalizeKey(rawKey);
+            if (norm.Length == 1 && norm[0] >= 'a' && norm[0] <= 'z')
+            {
+                return norm[0] - 'a' + 1;
+            }
+            return fallbackIndex;
         }
 
         private static bool ParseBoolToken(string? token)

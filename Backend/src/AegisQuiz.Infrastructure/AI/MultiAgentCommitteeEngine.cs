@@ -7,20 +7,7 @@ using AegisQuiz.Application.Models.AI;
 
 namespace AegisQuiz.Infrastructure.AI
 {
-    public class MultiAgentAuditResult
-    {
-        public bool IsApproved { get; set; } = true;
-        public string CertifiedQuestion { get; set; } = string.Empty;
-        public List<string> CertifiedOptions { get; set; } = new();
-        public string CertifiedCorrectAnswer { get; set; } = string.Empty;
-        public string AdversarialCritique { get; set; } = string.Empty;
-        public int BloomLevel { get; set; } = 3;
-        public double EstimatedIrtDifficulty { get; set; } = 0.5;
-        public double EstimatedIrtDiscrimination { get; set; } = 1.2;
-        public PedagogicalWalkthroughDto Walkthrough { get; set; } = new();
-    }
-
-    public class MultiAgentCommitteeEngine
+    public class MultiAgentCommitteeEngine : IMultiAgentCommitteeEngine
     {
         private readonly IUniversalAiRouter _aiRouter;
 
@@ -59,9 +46,9 @@ Trả về JSON:
 
             var advocateResponse = await _aiRouter.ExecuteAsync(new AiExecutionRequest
             {
-                TaskType = AiTaskType.DistractorAnalysis,
+                TaskCode = WellKnownAiTasks.DistractorAnalysis,
                 Prompt = advocatePrompt,
-                Persona = AgentPersonaType.BankingLegalCounsel,
+                PersonaCode = WellKnownAgentPersonas.BankingLegalCounsel,
                 Temperature = 0.2
             });
 

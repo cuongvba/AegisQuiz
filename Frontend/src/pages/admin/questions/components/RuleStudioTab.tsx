@@ -292,29 +292,37 @@ function parseSnippetClientSide(snippetText: string, specificRuleCode?: string):
   if (specificRuleCode) {
     const found = DEFAULT_CLIENT_RULES.find(r => r.ruleCode === specificRuleCode);
     if (found) rule = found;
-  } else {
-    // Sắp xếp theo priority tăng dần (số nhỏ = đặc thù nhất)
-    const sorted = [...DEFAULT_CLIENT_RULES].sort((a, b) => a.priority - b.priority);
-    for (const rawLine of lines) {
-      const line = rawLine.trim();
-      if (!line) continue;
-      const matched = sorted.find(r => new RegExp(r.anchorSpec.regexPattern, 'i').test(line));
-      if (matched) {
-        rule = matched;
-        break;
-      }
-    }
   }
-
-  const anchorRegex = new RegExp(rule.anchorSpec.regexPattern, 'i');
-  const optRegex = new RegExp(rule.interactionSpec.optionRegexPattern, 'i');
-  const ansRegex = new RegExp(rule.evaluationSpec.answerRegexPattern, 'i');
-  const explRegex = rule.evaluationSpec.explanationRegexPattern ? new RegExp(rule.evaluationSpec.explanationRegexPattern, 'i') : null;
-  const critRegex = rule.evaluationSpec.criticalQuestionMarkerRegex ? new RegExp(rule.evaluationSpec.criticalQuestionMarkerRegex, 'i') : null;
 
   for (const rawLine of lines) {
     const line = rawLine.trim();
     if (!line) continue;
+
+    // Phân đoạn header
+    if (/^(?:PHẦN|PART|SECTION)\s+(?:II|2)\b/i.test(line) || /ĐÚNG\s*SAI/i.test(line)) {
+      const tfRule = DEFAULT_CLIENT_RULES.find(r => r.ruleCode === 'VN_GDPT_2025_TRUE_FALSE_MATRIX');
+      if (tfRule && !specificRuleCode) rule = tfRule;
+      logs.push(`[Section Match] Phát hiện phân đoạn Đúng/Sai (Phần II)`);
+      continue;
+    }
+    if (/^(?:PHẦN|PART|SECTION)\s+(?:I|1)\b/i.test(line) || /TRẮC\s*NGHIỆM/i.test(line)) {
+      const scRule = DEFAULT_CLIENT_RULES.find(r => r.ruleCode === 'VN_STANDARD_MULTIPLE_CHOICE');
+      if (scRule && !specificRuleCode) rule = scRule;
+      logs.push(`[Section Match] Phát hiện phân đoạn Trắc nghiệm đơn (Phần I)`);
+      continue;
+    }
+
+    // Bỏ qua chỉ dẫn khảo thí
+    if (/^(?:Thí\s*sinh\s*trả\s*lời|Trong\s*mỗi\s*ý|Thời\s*gian\s*làm\s*bài|Mã\s*đề\s*thi)/i.test(line)) {
+      logs.push(`[Instruction Skip] Bỏ qua dòng hướng dẫn khảo thí`);
+      continue;
+    }
+
+    const anchorRegex = new RegExp(rule.anchorSpec.regexPattern, 'i');
+    const optRegex = new RegExp(rule.interactionSpec.optionRegexPattern, 'i');
+    const ansRegex = new RegExp(rule.evaluationSpec.answerRegexPattern, 'i');
+    const explRegex = rule.evaluationSpec.explanationRegexPattern ? new RegExp(rule.evaluationSpec.explanationRegexPattern, 'i') : null;
+    const critRegex = rule.evaluationSpec.criticalQuestionMarkerRegex ? new RegExp(rule.evaluationSpec.criticalQuestionMarkerRegex, 'i') : null;
 
     const mAnchor = line.match(anchorRegex);
     if (mAnchor) {
@@ -347,6 +355,14 @@ function parseSnippetClientSide(snippetText: string, specificRuleCode?: string):
     if (explRegex && explRegex.test(line)) {
       currentQ.aiExplanation = line;
       logs.push(`[Explanation Match] Khớp lời giải chi tiết`);
+      continue;
+    }
+
+    // Khớp tiểu mục Đúng/Sai a, b, c, d
+    const mTfSub = line.match(/^([a-d])[\)\.]\s*(.*)$/i);
+    if (mTfSub && (currentQ.questionType === 'TRUE_FALSE' || currentQ.questionType === 'MULTI_TRUE_FALSE' || currentQ.options.length === 0)) {
+      currentQ.options.push(`${mTfSub[1].toLowerCase()}) ${mTfSub[2]}`);
+      logs.push(`[Multi-TF Sub-Item] Khớp mệnh đề ${mTfSub[1].toLowerCase()})`);
       continue;
     }
 

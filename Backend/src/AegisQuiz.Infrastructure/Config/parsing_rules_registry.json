@@ -12,10 +12,11 @@
         "^TRẮC\\s*NGHIỆM(?:\\s*(?:NHIỀU\\s*LỰA\\s*CHỌN|ĐƠN|4\\s*PHƯƠNG\\s*ÁN))?$"
       ],
       "TRUE_FALSE": [
-        "^(?:PHẦN|PHAN)\\s+II\\b",
-        "^(?:PART|SECTION)\\s+II\\b",
-        "^(?:PHẦN|PHAN)\\s+2\\b",
-        "^TRẮC\\s*NGHIỆM\\s*ĐÚNG\\s*[-–\\s]*SAI$"
+        "^(?:PHẦN|PHAN)\\s+II(?:[\\.\\:\\s\\-]+.*(?:ĐÚNG|TRUE|SAI|FALSE).*)?$",
+        "^(?:PART|SECTION)\\s+II(?:[\\.\\:\\s\\-]+.*(?:TRUE|FALSE|ĐÚNG|SAI).*)?$",
+        "^(?:PHẦN|PHAN)\\s+2(?:[\\.\\:\\s\\-]+.*(?:ĐÚNG|TRUE|SAI|FALSE).*)?$",
+        "^TRẮC\\s*NGHIỆM\\s*ĐÚNG\\s*[-–\\s\\/]*SAI",
+        "^CÂU\\s*HỎI\\s*ĐÚNG\\s*[-–\\s\\/]*SAI"
       ],
       "SHORT_ANSWER": [
         "^(?:PHẦN|PHAN)\\s+III\\b",
@@ -25,14 +26,14 @@
         "^ĐIỀN\\s*(?:ĐÁP\\s*SỐ|KẾT\\s*QUẢ)$"
       ],
       "ESSAY": [
-        "^(?:PHẦN\\s+)?TỰ\\s*LUẬN$",
-        "^BÀI\\s*TẬP\\s*TỰ\\s*LUẬN$",
-        "^(?:PHẦN\\s+)?XỬ\\s*LÝ\\s*TÌNH\\s*HUỐNG$"
+        "^(?:PHẦN\\s+)?TỰ\\s*LUẬN",
+        "^BÀI\\s*TẬP\\s*TỰ\\s*LUẬN",
+        "^(?:PHẦN\\s+)?XỬ\\s*LÝ\\s*TÌNH\\s*HUỐNG"
       ]
     },
     "solutionPhaseMarkers": [
-      "^(?:LỜI\\s*GIẢI|L[\\.\\?\\s]*I\\s*GI[\\.\\?\\s]*I|HƯỚNG\\s*DẪN\\s*GIẢI|HU[\\.\\?\\s]*NG\\s*D[\\.\\?\\s]*N\\s*GI[\\.\\?\\s]*I|HƯỚNG\\s*DẪN\\s*CHẤM|ĐÁP\\s*ÁN\\s*VÀ\\s*BIỂU\\s*ĐIỂM|ĐÁP\\s*ÁN\\s*THAM\\s*KHẢO|ĐÁP\\s*ÁN\\s*CHI\\s*TIẾT|LỜI\\s*GIẢI\\s*THAM\\s*KHẢO|LỜI\\s*GIẢI\\s*CHI\\s*TIẾT)(?:\\s*(?:THAM\\s*KHẢO|CHI\\s*TIẾT))?[\\.\\:\\s\\-]*$",
-      "^(?:(?:BẢNG\\s*)?ĐÁP\\s*ÁN|D[\\.\\?\\s]*P\\s*[\\.\\?\\s]*N)(?:\\s*(?:THAM\\s*KHẢO|CHI\\s*TIẾT|VÀ\\s*LỜI\\s*GIẢI.*))?[\\.\\:\\s\\-]*$"
+      "^(?:HƯỚNG\\s*DẪN\\s*CHẤM|ĐÁP\\s*ÁN\\s*VÀ\\s*BIỂU\\s*ĐIỂM|ĐÁP\\s*ÁN\\s*THAM\\s*KHẢO|ĐÁP\\s*ÁN\\s*CHI\\s*TIẾT|LỜI\\s*GIẢI\\s*THAM\\s*KHẢO|LỜI\\s*GIẢI\\s*CHI\\s*TIẾT|HƯỚNG\\s*DẪN\\s*GIẢI\\s*CHI\\s*TIẾT)[\\.\\:\\s\\-]*$",
+      "^(?:(?:BẢNG\\s*)?ĐÁP\\s*ÁN|D[\\.\\?\\s]*P\\s*[\\.\\?\\s]*N)\\s+(?:THAM\\s*KHẢO|CHI\\s*TIẾT|VÀ\\s*LỜI\\s*GIẢI.*)[\\.\\:\\s\\-]*$"
     ],
     "examBoundaryMarkers": [
       "^(?:ĐỀ\\s*(?:THI)?\\s*(?:SỐ|KIỂM\\s*TRA\\s*SỐ|MT)?|BỘ\\s*ĐỀ\\s*SỐ)\\s*(\\d+)",
@@ -633,7 +634,7 @@
       "isActive": true,
       "description": "Nhận diện đề thi Baccalauréat Pháp — kỳ thi tú tài quốc gia chuẩn. Phương án dùng A., B., C., D. hoặc a), b), c), d). Có mệnh đề Vrai/Faux (Đúng/Sai).",
       "anchorSpec": {
-        "regexPattern": "^(?:(?:Question|Exercice|Partie)\\s*)?(\\d+)[\\.\\.\\s—–-]+",
+        "regexPattern": "^(?:Question|Exercice|Partie)\\s*(\\d+)[\\.\\.\\s—–-]+",
         "questionNumberGroupIndex": 1,
         "sectionMarkers": [
           "EXERCICE",

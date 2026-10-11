@@ -141,6 +141,8 @@ namespace AegisQuiz.Infrastructure.Services
 
         private double ScoreLine(string line, LanguageSignatureDto signature)
         {
+            line = StripEmbeddedMedia(line);
+            if (line.Length == 0) return 0;
             double score = 0;
 
             foreach (var pattern in signature.ScriptPatterns ?? new List<string>())
@@ -225,9 +227,31 @@ namespace AegisQuiz.Infrastructure.Services
             if (IsUniversalLanguage(language)) return true;
             if (!GetLanguageSignatures().TryGetValue(language!, out var signature) || !signature.RequireEvidenceForAnchor) return true;
 
+            line = StripEmbeddedMedia(line);
+
+            // Nếu dòng chứa các ký tự/dấu đặc trưng thuần Việt (đ, ư, ơ, hỏi, ngã, nặng...) thì không thể là ngoại ngữ
+            if (language != "vi" && GetOrAddRegex(@"[đĐưƯơƠạảãặẳẵậẩẫẹẻẽệểễịỉĩọỏõộổỗợởỡụủũựửữỳỷỹỵ]").IsMatch(line))
+            {
+                return false;
+            }
+
             if (signature.ScriptPatterns != null && signature.ScriptPatterns.Any(p => !string.IsNullOrWhiteSpace(p) && GetOrAddRegex(p).IsMatch(line))) return true;
             if (!string.IsNullOrWhiteSpace(signature.DiacriticPattern) && GetOrAddRegex(signature.DiacriticPattern).IsMatch(line)) return true;
             return signature.KeywordHints != null && signature.KeywordHints.Any(k => !string.IsNullOrWhiteSpace(k) && GetOrAddRegex(BuildKeywordPattern(k)).IsMatch(line));
+        }
+
+        private static readonly Regex EmbeddedMediaPattern =
+            new(@"!\[[^\]]*\]\([^)]*\)|data:[a-z0-9.+/-]+;base64,[A-Za-z0-9+/=\r\n]+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+        /// <summary>
+        /// Loại bỏ ảnh nhúng (data URI base64 / markdown image) trước khi chấm điểm ngôn ngữ: chuỗi base64 chứa ngẫu nhiên
+        /// các "từ" như in/to/at/is và làm lệch hồ sơ ngôn ngữ (đề Toán tiếng Việt bị nhận thành tiếng Anh).
+        /// </summary>
+        private static string StripEmbeddedMedia(string line)
+        {
+            if (string.IsNullOrEmpty(line)) return string.Empty;
+            if (!line.Contains("data:", StringComparison.OrdinalIgnoreCase) && !line.Contains("![", StringComparison.Ordinal)) return line;
+            return EmbeddedMediaPattern.Replace(line, " ");
         }
     }
 }

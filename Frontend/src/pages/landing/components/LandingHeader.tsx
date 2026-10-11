@@ -1,21 +1,25 @@
 /**
  * AegisQuiz — LandingHeader
  * ===========================
- * Header công khai cho Landing Page — nhẹ hơn AppHeader (không có NavMenu sản
- * phẩm/UserProfileDropdown/TenantBadge vì khách chưa đăng nhập chưa cần).
+ * Header công khai cho Landing Page — tự động nhận diện phiên người dùng:
+ * - Khi chưa đăng nhập: hiển thị nút Đăng nhập / Bắt đầu ngay
+ * - Khi đã đăng nhập: hiển thị Avatar + Dropdown hồ sơ, nút Vào Học tập và Khu Quản trị (nếu có quyền Admin)
  * FSD Layer: pages/landing/components/
  */
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Bot, Menu, X } from 'lucide-react';
+import { Bot, Menu, X, Shield, LayoutDashboard } from 'lucide-react';
 import { useTenant } from '@/app/providers/TenantProvider';
+import { useAuthContext } from '@/app/providers/AuthProvider';
 import { LanguageSwitcher } from '@/widgets/app-header/LanguageSwitcher';
+import { UserProfileDropdown } from '@/widgets/app-header/UserProfileDropdown';
 
 export function LandingHeader() {
   const { t } = useTranslation('landing');
   const navigate = useNavigate();
   const { tenantName } = useTenant();
+  const { user, isAuthenticated, canAccessAdmin } = useAuthContext();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   const navLinks = [
@@ -69,19 +73,45 @@ export function LandingHeader() {
         {/* Right controls */}
         <div className="hidden md:flex items-center gap-3 flex-shrink-0">
           <LanguageSwitcher />
-          <button
-            onClick={() => navigate('/login')}
-            className="px-4 py-2 text-sm font-bold text-slate-300 hover:text-white transition-colors cursor-pointer"
-          >
-            {t('nav.login')}
-          </button>
-          <button
-            onClick={() => navigate('/register')}
-            className="px-4 py-2 text-sm font-bold bg-[var(--brand-gradient)] text-white rounded-full
-                       shadow-[var(--tenant-shadow-primary)] transition-all active:scale-95 cursor-pointer hover:brightness-110"
-          >
-            {t('nav.cta')}
-          </button>
+
+          {isAuthenticated && user ? (
+            <>
+              {canAccessAdmin && (
+                <button
+                  onClick={() => navigate('/admin')}
+                  className="px-3.5 py-1.5 text-xs font-bold text-purple-300 bg-purple-950/60 border border-purple-500/30 hover:bg-purple-900/60 hover:border-purple-400 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+                >
+                  <Shield size={14} className="text-purple-400" />
+                  <span>{t('nav.adminPortal', 'Khu Quản trị')}</span>
+                </button>
+              )}
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="px-4 py-2 text-xs font-bold bg-[var(--brand-gradient)] text-white rounded-full
+                           shadow-[var(--tenant-shadow-primary)] transition-all active:scale-95 cursor-pointer hover:brightness-110 flex items-center gap-1.5"
+              >
+                <LayoutDashboard size={14} />
+                <span>{t('nav.enterLearning', 'Vào Học tập')}</span>
+              </button>
+              <UserProfileDropdown />
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => navigate('/login')}
+                className="px-4 py-2 text-sm font-bold text-slate-300 hover:text-white transition-colors cursor-pointer"
+              >
+                {t('nav.login')}
+              </button>
+              <button
+                onClick={() => navigate('/register')}
+                className="px-4 py-2 text-sm font-bold bg-[var(--brand-gradient)] text-white rounded-full
+                           shadow-[var(--tenant-shadow-primary)] transition-all active:scale-95 cursor-pointer hover:brightness-110"
+              >
+                {t('nav.cta')}
+              </button>
+            </>
+          )}
         </div>
 
         {/* Mobile toggle */}
@@ -108,22 +138,48 @@ export function LandingHeader() {
               {link.label}
             </a>
           ))}
+
           <div className="flex items-center justify-between pt-2 border-t border-slate-800/80">
             <LanguageSwitcher />
-            <button
-              onClick={() => navigate('/login')}
-              className="px-3 py-2 text-sm font-bold text-slate-300 hover:text-white cursor-pointer"
-            >
-              {t('nav.login')}
-            </button>
+            {isAuthenticated && user && <UserProfileDropdown />}
           </div>
-          <button
-            onClick={() => navigate('/register')}
-            className="w-full px-4 py-2.5 text-sm font-bold bg-[var(--brand-gradient)] text-white rounded-full
-                       shadow-[var(--tenant-shadow-primary)] cursor-pointer"
-          >
-            {t('nav.cta')}
-          </button>
+
+          {isAuthenticated && user ? (
+            <div className="space-y-2 pt-1">
+              {canAccessAdmin && (
+                <button
+                  onClick={() => { setIsMobileOpen(false); navigate('/admin'); }}
+                  className="w-full px-4 py-2.5 text-xs font-bold text-purple-300 bg-purple-950/60 border border-purple-500/30 rounded-xl flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Shield size={14} className="text-purple-400" />
+                  <span>{t('nav.adminPortal', 'Khu Quản trị')}</span>
+                </button>
+              )}
+              <button
+                onClick={() => { setIsMobileOpen(false); navigate('/dashboard'); }}
+                className="w-full px-4 py-2.5 text-xs font-bold bg-[var(--brand-gradient)] text-white rounded-full shadow-[var(--tenant-shadow-primary)] flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <LayoutDashboard size={14} />
+                <span>{t('nav.enterLearning', 'Vào Học tập')}</span>
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <button
+                onClick={() => { setIsMobileOpen(false); navigate('/login'); }}
+                className="w-full px-3 py-2 text-sm font-bold text-slate-300 hover:text-white text-center cursor-pointer"
+              >
+                {t('nav.login')}
+              </button>
+              <button
+                onClick={() => { setIsMobileOpen(false); navigate('/register'); }}
+                className="w-full px-4 py-2.5 text-sm font-bold bg-[var(--brand-gradient)] text-white rounded-full
+                           shadow-[var(--tenant-shadow-primary)] cursor-pointer"
+              >
+                {t('nav.cta')}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </header>

@@ -203,6 +203,16 @@ export const learnerQuizService = {
     return res.data;
   },
 
+  async bulkDeleteQuestions(questionIds: string[]): Promise<any> {
+    const res = await api.post(`${QUIZ_API}/questions/bulk-delete`, { questionIds });
+    return res.data;
+  },
+
+  async cleanupOrphanQuestions(): Promise<any> {
+    const res = await api.post(`${QUIZ_API}/questions/cleanup-orphans`);
+    return res.data;
+  },
+
   // EXCEL IMPORT (DOT-2026 Smart Format — trả về preview)
   async importQuestions(file: File): Promise<any> {
     const formData = new FormData();
@@ -287,6 +297,17 @@ export const learnerQuizService = {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+      timeout: 120000,
+    });
+    return res.data;
+  },
+
+  // UNIVERSAL SMART URI / GOOGLE DOCS / SHEETS / URL INGESTION
+  async importQuestionsFromUrl(url: string, useAi = false): Promise<any> {
+    const res = await api.post(`${QUIZ_API}/questions/import-url`, {
+      url: url.trim(),
+      useAi,
+    }, {
       timeout: 120000,
     });
     return res.data;
@@ -485,6 +506,20 @@ export const learnerQuizService = {
 
   async deleteCoordinatePreset(id: string): Promise<any> {
     const res = await api.delete(`${QUIZ_API}/domains/presets/${id}`);
+    return res.data;
+  },
+
+  async createDomain(data: {
+    code: string;
+    name: string;
+    description?: string;
+    icon?: string;
+    colorBadge?: string;
+    parentDomainCode?: string;
+    displayOrder?: number;
+    isSystemStandard?: boolean;
+  }): Promise<any> {
+    const res = await api.post(`${QUIZ_API}/domains`, data);
     return res.data;
   },
 

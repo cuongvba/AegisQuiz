@@ -7,6 +7,7 @@ namespace AegisQuiz.Infrastructure.AI.Adapters
     public interface IAiProviderAdapter
     {
         AiProviderType ProviderType { get; }
+        string ProviderCode => ProviderType.ToString().ToLowerInvariant();
         string DefaultModel { get; }
 
         Task<(bool Success, string Content, string? Error, long DurationMs)> CallAsync(

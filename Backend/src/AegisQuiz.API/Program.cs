@@ -80,8 +80,21 @@ builder.Services.AddHttpClient("irt-service", client =>
 builder.Services.AddSingleton<IVietnameseTextCorrectionService, VietnameseTextCorrectionService>();
 builder.Services.AddSingleton<ISmartOptionShufflerService, SmartOptionShufflerService>();
 builder.Services.AddScoped<IExcelParserService, ExcelParserService>();
+// [Universal Excel Export Engine — DTaaS]
+builder.Services.AddSingleton<IExcelExportStrategy, AegisQuiz.Infrastructure.Excel.Strategies.NativeIsomorphicExportStrategy>();
+builder.Services.AddSingleton<IExcelExportStrategy, AegisQuiz.Infrastructure.Excel.Strategies.MoetGdpt2025ExportStrategy>();
+builder.Services.AddSingleton<IExcelExportStrategy, AegisQuiz.Infrastructure.Excel.Strategies.AzotaCompatibleExportStrategy>();
+builder.Services.AddSingleton<IExcelExportStrategy, AegisQuiz.Infrastructure.Excel.Strategies.CustomTemplateExportStrategy>();
+builder.Services.AddScoped<IUniversalExcelExportService, AegisQuiz.Infrastructure.Excel.UniversalExcelExportService>();
+// [Universal Exam Transpiler Engine — EdTech International Standards (Moodle, Canvas QTI, GIFT)]
+builder.Services.AddSingleton<ITranspilerExportStrategy, AegisQuiz.Infrastructure.Transpiler.MoodleXmlExportStrategy>();
+builder.Services.AddSingleton<ITranspilerExportStrategy, AegisQuiz.Infrastructure.Transpiler.MoodleGiftExportStrategy>();
+builder.Services.AddSingleton<ITranspilerExportStrategy, AegisQuiz.Infrastructure.Transpiler.Qti30PackageExportStrategy>();
+builder.Services.AddScoped<IUniversalExamTranspilerService, AegisQuiz.Infrastructure.Transpiler.UniversalExamTranspilerService>();
 builder.Services.AddScoped<IDocxParserService, DocxParserService>();
+builder.Services.AddScoped<IDynamicDomainContextService, DynamicDomainContextService>();
 builder.Services.AddScoped<IPdfExtractorService, PdfParserService>();
+builder.Services.AddScoped<IExamDeduplicationEngine, ExamDeduplicationEngine>();
 builder.Services.AddScoped<IIrtClientService, IrtClientService>();
 
 // [FIX P1] IMemoryCache — dùng cho GeminiSolverService (TTL eviction thay static dict)
@@ -114,6 +127,74 @@ builder.Services.AddSingleton<IDynamicQuestionIngestionEngine>(sp =>
         sp.GetRequiredService<IServiceScopeFactory>(),
         sp.GetRequiredService<ILogger<DynamicQuestionIngestionEngine>>()));
 
+// [Universal Dynamic Math Dictionary]
+builder.Services.AddSingleton<IDynamicMathDictionaryService>(_ => DynamicMathDictionaryService.Instance);
+
+// [Hybrid L1+L2 Cache & Universal AI Router (OpenAdapter Engine Architecture)]
+builder.Services.AddScoped<ICacheService, HybridCacheService>();
+builder.Services.AddSingleton<AegisQuiz.Infrastructure.AI.Adapters.IAiProviderAdapter, AegisQuiz.Infrastructure.AI.Adapters.GoogleGeminiAdapter>();
+builder.Services.AddSingleton<AegisQuiz.Infrastructure.AI.Adapters.IAiProviderAdapter, AegisQuiz.Infrastructure.AI.Adapters.AnthropicClaudeAdapter>();
+builder.Services.AddSingleton<AegisQuiz.Infrastructure.AI.Adapters.IAiProviderAdapter, AegisQuiz.Infrastructure.AI.Adapters.LocalOllamaAdapter>();
+builder.Services.AddSingleton<AegisQuiz.Infrastructure.AI.Adapters.IAiProviderAdapter, AegisQuiz.Infrastructure.AI.Adapters.ReplicateAdapter>();
+builder.Services.AddSingleton<AegisQuiz.Infrastructure.AI.Adapters.OpenAiCompatibleAdapter>();
+builder.Services.AddSingleton<IUniversalAiRouter, UniversalAiRouter>();
+builder.Services.AddScoped<IMultiAgentCommitteeEngine, MultiAgentCommitteeEngine>();
+
+// [AegisCoPilot OCP Command Strategy Handlers & Orchestrator]
+builder.Services.AddScoped<AegisQuiz.Infrastructure.Services.CoPilot.ICoPilotCommandHandler, AegisQuiz.Infrastructure.Services.CoPilot.ComposeQuestionCommandHandler>();
+builder.Services.AddScoped<AegisQuiz.Infrastructure.Services.CoPilot.ICoPilotCommandHandler, AegisQuiz.Infrastructure.Services.CoPilot.SwarmAuditCommandHandler>();
+builder.Services.AddScoped<AegisQuiz.Infrastructure.Services.CoPilot.ICoPilotCommandHandler, AegisQuiz.Infrastructure.Services.CoPilot.SymposiumCommandHandler>();
+builder.Services.AddScoped<AegisQuiz.Infrastructure.Services.CoPilot.ICoPilotCommandHandler, AegisQuiz.Infrastructure.Services.CoPilot.BloomMatrixCommandHandler>();
+builder.Services.AddScoped<AegisQuiz.Infrastructure.Services.CoPilot.ICoPilotCommandHandler, AegisQuiz.Infrastructure.Services.CoPilot.SocraticTutorCommandHandler>();
+builder.Services.AddScoped<ICoPilotService, AegisQuiz.Infrastructure.Services.CoPilotService>();
+
+// [AegisAI Dynamic Adaptive Wolf Pack Swarm & Protocols]
+builder.Services.AddSingleton<ICognitiveWorkingMemory, AegisQuiz.Infrastructure.AI.Memory.InMemoryCognitiveWorkingMemory>();
+builder.Services.AddSingleton<ICognitiveHandoffStrategy, AegisQuiz.Infrastructure.AI.Handoff.CoTToFastScannerHandoffStrategy>();
+builder.Services.AddSingleton<ICognitiveHandoffStrategy, AegisQuiz.Infrastructure.AI.Handoff.UniversalCoTPreservationStrategy>();
+builder.Services.AddSingleton<ICognitiveHandoffDispatcher, AegisQuiz.Infrastructure.AI.Handoff.CognitiveHandoffDispatcher>();
+builder.Services.AddSingleton<AegisQuiz.Infrastructure.AI.Protocols.IModelProtocolDriver, AegisQuiz.Infrastructure.AI.Protocols.OpenAiCompatibleProtocolDriver>();
+builder.Services.AddSingleton<AegisQuiz.Infrastructure.AI.Protocols.IModelProtocolDriver, AegisQuiz.Infrastructure.AI.Protocols.GoogleGenerativeAiProtocolDriver>();
+builder.Services.AddSingleton<AegisQuiz.Infrastructure.AI.Protocols.IModelProtocolDriver, AegisQuiz.Infrastructure.AI.Protocols.AnthropicMessagesProtocolDriver>();
+builder.Services.AddScoped<IWolfPackSwarmEngine, WolfPackSwarmEngine>();
+builder.Services.AddScoped<ISeatModelInvoker, AegisQuiz.Infrastructure.AI.Invokers.SeatModelInvoker>();
+builder.Services.AddScoped<IWolfpackRoleInvoker, AegisQuiz.Infrastructure.AI.Swarm.WolfpackRoleInvoker>();
+builder.Services.AddSingleton<ISymposiumLiveBroadcaster, AegisQuiz.API.Services.SignalRSymposiumBroadcaster>();
+builder.Services.AddSingleton<ISymposiumPromptComposer, AegisQuiz.Infrastructure.AI.Prompt.SymposiumPromptComposer>();
+builder.Services.AddSingleton<ICognitiveLayerPlugin, AegisQuiz.Infrastructure.AI.Prompt.Plugins.BayesianBeliefRevisionPlugin>();
+builder.Services.AddSingleton<ICognitiveLayerPlugin, AegisQuiz.Infrastructure.AI.Prompt.Plugins.PeirceanAbductiveGenesisPlugin>();
+builder.Services.AddSingleton<ICognitiveLayerPlugin, AegisQuiz.Infrastructure.AI.Prompt.Plugins.FormalFalsifiabilityPlugin>();
+builder.Services.AddScoped<IEpistemicGenesisEngine, AegisQuiz.Infrastructure.AI.Genesis.EpistemicGenesisEngine>();
+builder.Services.AddScoped<IEpistemicIntentRouter, AegisQuiz.Infrastructure.AI.Selection.FastEpistemicIntentRouter>();
+builder.Services.AddScoped<ICouncilSelectionStrategy, AegisQuiz.Infrastructure.AI.Selection.DiverseEpistemicCouncilSelectionStrategy>();
+builder.Services.AddScoped<ISpatioTemporalRoleAllocator, AegisQuiz.Infrastructure.AI.Selection.SpatioTemporalRoleAllocator>();
+builder.Services.AddScoped<IPreconfiguredCouncilProvider, AegisQuiz.Infrastructure.AI.Selection.PreconfiguredCouncilProvider>();
+builder.Services.AddScoped<ISymposiumTeleologyResolver, AegisQuiz.Infrastructure.AI.Teleology.SymposiumTeleologyResolver>();
+builder.Services.AddScoped<ICouncilContributionGenerator, AegisQuiz.Infrastructure.AI.Contributions.CouncilContributionGenerator>();
+builder.Services.AddScoped<ISymposiumOutcomeBuilder, AegisQuiz.Infrastructure.AI.Outcomes.SymposiumOutcomeBuilder>();
+builder.Services.AddScoped<ISymposiumResolutionComposer, AegisQuiz.Infrastructure.AI.Resolution.SymposiumResolutionComposer>();
+builder.Services.AddScoped<ISymposiumSecretariat, AegisQuiz.Infrastructure.AI.Secretariat.SymposiumSecretariatCouncil>();
+builder.Services.AddScoped<IUniversalSymposiumEngine, AegisQuiz.Infrastructure.AI.UniversalSymposiumEngine>();
+builder.Services.AddScoped<ISymposiumJudge, AegisQuiz.Infrastructure.AI.Judges.IndependentSymposiumJudge>();
+builder.Services.AddScoped<IPromptForgeAssistantService, AegisQuiz.Infrastructure.AI.Prompt.PromptForgeAssistantService>();
+builder.Services.AddScoped<IEvidenceSource, AegisQuiz.Infrastructure.AI.Research.Sources.CuratedOfflineEvidenceSource>();
+builder.Services.AddScoped<IEvidenceSource, AegisQuiz.Infrastructure.AI.Research.Sources.ScholarlyApiEvidenceSource>();
+builder.Services.AddScoped<IEpistemicDeepResearchScout, AegisQuiz.Infrastructure.AI.Research.EpistemicDeepResearchScout>();
+
+// [Epoch 2-5: Enterprise Fortress, CognitiveOS, FSRS & Community Economy]
+builder.Services.AddScoped<IExamAuditService, ExamAuditService>();
+builder.Services.AddScoped<IExamFortressPrewarmService, ExamFortressPrewarmService>();
+builder.Services.AddScoped<IProctorService, ProctorService>();
+builder.Services.AddScoped<IAegisCoinService, AegisCoinService>();
+builder.Services.AddScoped<IPeerChallengeService, PeerChallengeService>();
+builder.Services.AddSingleton<IFsrsEngine, AegisQuiz.Application.Services.FsrsEngine>();
+builder.Services.AddScoped<ICognitiveScaffoldService, CognitiveScaffoldService>();
+builder.Services.AddScoped<IDktEngine, DktEngine>();
+builder.Services.AddScoped<IKnowledgeGraphService, KnowledgeGraphService>();
+builder.Services.AddScoped<IPedagogicalRagService, PedagogicalRagService>();
+builder.Services.AddScoped<IContentModerationService, ContentModerationService>();
+builder.Services.AddScoped<INotebookService, NotebookProcessingService>();
+
 // [Phase B] Multi-Tenancy — Scoped per request
 builder.Services.AddScoped<AegisQuiz.Application.Interfaces.ITenantContext,
                             AegisQuiz.Infrastructure.Services.TenantContext>();
@@ -136,6 +217,10 @@ builder.Services.AddSingleton<IArenaGamePlugin, UniversityChallengePlugin>();
 builder.Services.AddSingleton<IArenaGamePlugin, JeopardyPlugin>();
 builder.Services.AddSingleton<IArenaGamePlugin, LightningQuizPlugin>();
 builder.Services.AddSingleton<ArenaRoomManager>();
+builder.Services.AddSingleton<INtpTimeSyncService, AegisQuiz.Infrastructure.Services.NtpTimeSyncService>();
+builder.Services.AddSingleton<IOfflineSyncService, AegisQuiz.Infrastructure.Services.OfflineSyncService>();
+builder.Services.AddSingleton<ILti13Service, AegisQuiz.Infrastructure.Services.Lti13Service>();
+builder.Services.AddHttpClient("LtiAgsClient");
 
 // [World-Class Upgrade] Server-authoritative exam timer (học từ quiz-service)
 builder.Services.AddHostedService<ExamTimerService>();
@@ -146,6 +231,7 @@ builder.Services.AddControllers()
     {
         options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
         options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
     });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -368,29 +454,116 @@ using (var scope = app.Services.CreateScope())
     {
         if (db.Database.IsNpgsql())
         {
-            // [BƯỚC 1: AUTO-HEALING DDL CHẠY TRƯỚC TIÊN] Đảm bảo 100% các cột mới (DepthLevel, MaterializedPath,...) và bảng mới luôn tồn tại
+            // [BƯỚC 1: TIẾN HÀNH MIGRATIONS TRƯỚC CHO DB MỚI]
+            try
+            {
+                db.Database.Migrate();
+                log.LogInformation("[AegisQuiz] PostgreSQL database migrations applied successfully.");
+            }
+            catch (Exception exMigrate)
+            {
+                log.LogInformation("[AegisQuiz] EF migration notice: {Message}", exMigrate.Message);
+            }
+
+            // [BƯỚC 2: AUTO-HEALING DDL] Đảm bảo 100% các cột mới (DepthLevel, MaterializedPath,...) và bảng mới luôn tồn tại
             try
             {
                 db.Database.ExecuteSqlRaw(@"
                     -- 1. BẢNG BankTopics: Đảm bảo đầy đủ các cột cây phân cấp 2026
-                    ALTER TABLE ""BankTopics"" ADD COLUMN IF NOT EXISTS ""DepthLevel"" integer NOT NULL DEFAULT 0;
-                    ALTER TABLE ""BankTopics"" ADD COLUMN IF NOT EXISTS ""MaterializedPath"" text NULL;
-                    ALTER TABLE ""BankTopics"" ADD COLUMN IF NOT EXISTS ""Scope"" text NOT NULL DEFAULT 'COMMUNITY';
-                    ALTER TABLE ""BankTopics"" ADD COLUMN IF NOT EXISTS ""DomainCode"" text NOT NULL DEFAULT 'GENERAL';
-                    ALTER TABLE ""BankTopics"" ADD COLUMN IF NOT EXISTS ""DisplayOrder"" integer NOT NULL DEFAULT 0;
-                    ALTER TABLE ""BankTopics"" ADD COLUMN IF NOT EXISTS ""QuestionCountCached"" integer NOT NULL DEFAULT 0;
-                    ALTER TABLE ""BankTopics"" ADD COLUMN IF NOT EXISTS ""Urn"" text NULL;
-                    ALTER TABLE ""BankTopics"" ADD COLUMN IF NOT EXISTS ""ParentId"" uuid NULL;
-                    ALTER TABLE ""BankTopics"" ADD COLUMN IF NOT EXISTS ""AllowedTenantIds"" text[] NOT NULL DEFAULT '{}';
-                    ALTER TABLE ""BankTopics"" ADD COLUMN IF NOT EXISTS ""TenantId"" uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000';
+                    ALTER TABLE IF EXISTS ""BankTopics"" ADD COLUMN IF NOT EXISTS ""DepthLevel"" integer NOT NULL DEFAULT 0;
+                    ALTER TABLE IF EXISTS ""BankTopics"" ADD COLUMN IF NOT EXISTS ""MaterializedPath"" text NULL;
+                    ALTER TABLE IF EXISTS ""BankTopics"" ADD COLUMN IF NOT EXISTS ""Scope"" text NOT NULL DEFAULT 'COMMUNITY';
+                    ALTER TABLE IF EXISTS ""BankTopics"" ADD COLUMN IF NOT EXISTS ""DomainCode"" text NOT NULL DEFAULT 'GENERAL';
+                    ALTER TABLE IF EXISTS ""BankTopics"" ADD COLUMN IF NOT EXISTS ""DisplayOrder"" integer NOT NULL DEFAULT 0;
+                    ALTER TABLE IF EXISTS ""BankTopics"" ADD COLUMN IF NOT EXISTS ""QuestionCountCached"" integer NOT NULL DEFAULT 0;
+                    ALTER TABLE IF EXISTS ""BankTopics"" ADD COLUMN IF NOT EXISTS ""Urn"" text NULL;
+                    ALTER TABLE IF EXISTS ""BankTopics"" ADD COLUMN IF NOT EXISTS ""ParentId"" uuid NULL;
+                    ALTER TABLE IF EXISTS ""BankTopics"" ADD COLUMN IF NOT EXISTS ""AllowedTenantIds"" text[] NOT NULL DEFAULT '{{}}';
+                    ALTER TABLE IF EXISTS ""BankTopics"" ADD COLUMN IF NOT EXISTS ""TenantId"" uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000';
                     
                     -- 2. BẢNG Questions: Đảm bảo đầy đủ toạ độ tri thức
-                    ALTER TABLE ""Questions"" ADD COLUMN IF NOT EXISTS ""ContextId"" uuid NULL;
-                    ALTER TABLE ""Questions"" ADD COLUMN IF NOT EXISTS ""DomainCode"" text NOT NULL DEFAULT 'EDUCATION';
-                    ALTER TABLE ""Questions"" ADD COLUMN IF NOT EXISTS ""IsCritical"" boolean NOT NULL DEFAULT false;
-                    ALTER TABLE ""Questions"" ADD COLUMN IF NOT EXISTS ""SubCategory"" text NULL;
-                    ALTER TABLE ""Questions"" ADD COLUMN IF NOT EXISTS ""Tags"" text[] NOT NULL DEFAULT '{}';
-                    ALTER TABLE ""Questions"" ADD COLUMN IF NOT EXISTS ""TenantId"" uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000';
+                    ALTER TABLE IF EXISTS ""Questions"" ADD COLUMN IF NOT EXISTS ""ContextId"" uuid NULL;
+                    ALTER TABLE IF EXISTS ""Questions"" ADD COLUMN IF NOT EXISTS ""DomainCode"" text NOT NULL DEFAULT 'EDUCATION';
+                    ALTER TABLE IF EXISTS ""Questions"" ADD COLUMN IF NOT EXISTS ""IsCritical"" boolean NOT NULL DEFAULT false;
+                    ALTER TABLE IF EXISTS ""Questions"" ADD COLUMN IF NOT EXISTS ""SubCategory"" text NULL;
+                    ALTER TABLE IF EXISTS ""Questions"" ADD COLUMN IF NOT EXISTS ""Tags"" text[] NOT NULL DEFAULT '{{}}';
+                    ALTER TABLE IF EXISTS ""Questions"" ADD COLUMN IF NOT EXISTS ""TenantId"" uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000';
+                    ALTER TABLE IF EXISTS ""Questions"" ADD COLUMN IF NOT EXISTS ""CreatedBy"" text NULL;
+                    ALTER TABLE IF EXISTS ""Questions"" ADD COLUMN IF NOT EXISTS ""IsPublic"" boolean NOT NULL DEFAULT false;
+
+                    -- 2b. BẢNG Notebooks & NotebookChapters (AegisNotebook Sovereign 2026)
+                    CREATE TABLE IF NOT EXISTS ""Notebooks"" (
+                        ""Id"" uuid NOT NULL PRIMARY KEY,
+                        ""Title"" text NOT NULL,
+                        ""SourcePdfUrl"" text NOT NULL DEFAULT '',
+                        ""CreatedByAdminId"" uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
+                        ""Status"" integer NOT NULL DEFAULT 0,
+                        ""CreatedAt"" timestamp with time zone NOT NULL DEFAULT now(),
+                        ""TenantId"" uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000'
+                    );
+
+                    ALTER TABLE IF EXISTS ""Notebooks"" ADD COLUMN IF NOT EXISTS ""TenantId"" uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000';
+                    ALTER TABLE IF EXISTS ""Notebooks"" ADD COLUMN IF NOT EXISTS ""OrgUnitId"" uuid NULL;
+                    ALTER TABLE IF EXISTS ""Notebooks"" ADD COLUMN IF NOT EXISTS ""DomainCode"" text NOT NULL DEFAULT 'GENERAL';
+                    ALTER TABLE IF EXISTS ""Notebooks"" ADD COLUMN IF NOT EXISTS ""BankTopicId"" uuid NULL;
+                    ALTER TABLE IF EXISTS ""Notebooks"" ADD COLUMN IF NOT EXISTS ""StoragePath"" text NOT NULL DEFAULT '';
+                    ALTER TABLE IF EXISTS ""Notebooks"" ADD COLUMN IF NOT EXISTS ""OriginalFileName"" text NOT NULL DEFAULT '';
+                    ALTER TABLE IF EXISTS ""Notebooks"" ADD COLUMN IF NOT EXISTS ""FileSizeBytes"" bigint NOT NULL DEFAULT 0;
+                    ALTER TABLE IF EXISTS ""Notebooks"" ADD COLUMN IF NOT EXISTS ""TotalPages"" integer NOT NULL DEFAULT 0;
+                    ALTER TABLE IF EXISTS ""Notebooks"" ADD COLUMN IF NOT EXISTS ""Description"" text NOT NULL DEFAULT '';
+                    ALTER TABLE IF EXISTS ""Notebooks"" ADD COLUMN IF NOT EXISTS ""ErrorMessage"" text NULL;
+                    ALTER TABLE IF EXISTS ""Notebooks"" ADD COLUMN IF NOT EXISTS ""CognitiveStatsJson"" text NOT NULL DEFAULT '{{}}';
+                    ALTER TABLE IF EXISTS ""Notebooks"" ADD COLUMN IF NOT EXISTS ""ConflictReportJson"" text NOT NULL DEFAULT '[]';
+                    ALTER TABLE IF EXISTS ""Notebooks"" ADD COLUMN IF NOT EXISTS ""PersonaName"" text NOT NULL DEFAULT 'Cố Vấn Tri Thức Trưởng';
+                    ALTER TABLE IF EXISTS ""Notebooks"" ADD COLUMN IF NOT EXISTS ""PersonaRole"" integer NOT NULL DEFAULT 1;
+                    ALTER TABLE IF EXISTS ""Notebooks"" ADD COLUMN IF NOT EXISTS ""CustomPersonaPrompt"" text NOT NULL DEFAULT '';
+                    ALTER TABLE IF EXISTS ""Notebooks"" ADD COLUMN IF NOT EXISTS ""UpdatedAt"" timestamp with time zone NULL;
+
+                    -- BẢNG NotebookSources: Quản lý đa tài liệu nguồn
+                    CREATE TABLE IF NOT EXISTS ""NotebookSources"" (
+                        ""Id"" uuid NOT NULL PRIMARY KEY,
+                        ""NotebookId"" uuid NOT NULL REFERENCES ""Notebooks""(""Id"") ON DELETE CASCADE,
+                        ""Title"" text NOT NULL DEFAULT '',
+                        ""OriginalFileName"" text NOT NULL DEFAULT '',
+                        ""StoragePath"" text NOT NULL DEFAULT '',
+                        ""SourceUrl"" text NOT NULL DEFAULT '',
+                        ""FileSizeBytes"" bigint NOT NULL DEFAULT 0,
+                        ""TotalPages"" integer NOT NULL DEFAULT 0,
+                        ""Type"" integer NOT NULL DEFAULT 0,
+                        ""Authority"" integer NOT NULL DEFAULT 2,
+                        ""Status"" integer NOT NULL DEFAULT 2,
+                        ""ExtractedText"" text NOT NULL DEFAULT '',
+                        ""MetadataJson"" text NOT NULL DEFAULT '{{}}',
+                        ""UploadedAt"" timestamp with time zone NOT NULL DEFAULT now()
+                    );
+
+                    CREATE TABLE IF NOT EXISTS ""NotebookChapters"" (
+                        ""Id"" uuid NOT NULL PRIMARY KEY,
+                        ""NotebookId"" uuid NOT NULL REFERENCES ""Notebooks""(""Id"") ON DELETE CASCADE,
+                        ""OrderIndex"" integer NOT NULL DEFAULT 1,
+                        ""Title"" text NOT NULL,
+                        ""Summary"" text NOT NULL DEFAULT '',
+                        ""RawContent"" text NOT NULL DEFAULT '',
+                        ""KeyPointsJson"" text NOT NULL DEFAULT '[]',
+                        ""GeneratedQuestionIds"" uuid[] NOT NULL DEFAULT '{{}}'
+                    );
+
+                    ALTER TABLE IF EXISTS ""NotebookChapters"" ADD COLUMN IF NOT EXISTS ""StartPage"" integer NOT NULL DEFAULT 1;
+                    ALTER TABLE IF EXISTS ""NotebookChapters"" ADD COLUMN IF NOT EXISTS ""EndPage"" integer NOT NULL DEFAULT 1;
+                    ALTER TABLE IF EXISTS ""NotebookChapters"" ADD COLUMN IF NOT EXISTS ""SourceIds"" uuid[] NOT NULL DEFAULT '{{}}';
+                    ALTER TABLE IF EXISTS ""NotebookChapters"" ADD COLUMN IF NOT EXISTS ""PinpointCoordinatesJson"" text NOT NULL DEFAULT '[]';
+                    ALTER TABLE IF EXISTS ""NotebookChapters"" ADD COLUMN IF NOT EXISTS ""QuestionCount"" integer NOT NULL DEFAULT 0;
+
+                    -- BẢNG NotebookChatMessages: Đối thoại nhận thức nhập vai
+                    CREATE TABLE IF NOT EXISTS ""NotebookChatMessages"" (
+                        ""Id"" uuid NOT NULL PRIMARY KEY,
+                        ""NotebookId"" uuid NOT NULL REFERENCES ""Notebooks""(""Id"") ON DELETE CASCADE,
+                        ""Sender"" text NOT NULL DEFAULT 'User',
+                        ""RoleName"" text NOT NULL DEFAULT '',
+                        ""Message"" text NOT NULL DEFAULT '',
+                        ""CitationsJson"" text NOT NULL DEFAULT '[]',
+                        ""CreatedAt"" timestamp with time zone NOT NULL DEFAULT now()
+                    );
 
                     -- 3. BẢNG DynamicDomains (nếu chưa có)
                     CREATE TABLE IF NOT EXISTS ""DynamicDomains"" (
@@ -442,28 +615,146 @@ using (var scope = app.Services.CreateScope())
                         ""UpdatedAt"" timestamp with time zone NOT NULL DEFAULT now(),
                         CONSTRAINT ""PK_UserAccounts"" PRIMARY KEY (""Id"")
                     );
+                    ALTER TABLE IF EXISTS ""UserAccounts"" ADD COLUMN IF NOT EXISTS ""ActiveTenantId"" uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000001';
+                    ALTER TABLE IF EXISTS ""UserAccounts"" ADD COLUMN IF NOT EXISTS ""RefreshToken"" text;
+                    ALTER TABLE IF EXISTS ""UserAccounts"" ADD COLUMN IF NOT EXISTS ""RefreshTokenExpiresAt"" timestamp with time zone;
+                    ALTER TABLE IF EXISTS ""UserAccounts"" ADD COLUMN IF NOT EXISTS ""PasswordResetToken"" text;
+                    ALTER TABLE IF EXISTS ""UserAccounts"" ADD COLUMN IF NOT EXISTS ""PasswordResetTokenExpiresAt"" timestamp with time zone;
+                    ALTER TABLE IF EXISTS ""UserAccounts"" ADD COLUMN IF NOT EXISTS ""IsTwoFactorEnabled"" boolean NOT NULL DEFAULT false;
+                    ALTER TABLE IF EXISTS ""UserAccounts"" ADD COLUMN IF NOT EXISTS ""TwoFactorSecret"" text;
+                    ALTER TABLE IF EXISTS ""UserAccounts"" ADD COLUMN IF NOT EXISTS ""TwoFactorRecoveryCodes"" text;
                     CREATE UNIQUE INDEX IF NOT EXISTS ""IX_UserAccounts_Email"" ON ""UserAccounts"" (""Email"");
                     CREATE INDEX IF NOT EXISTS ""IX_UserAccounts_TenantId"" ON ""UserAccounts"" (""TenantId"");
                     CREATE INDEX IF NOT EXISTS ""IX_UserAccounts_OrgUnitId"" ON ""UserAccounts"" (""OrgUnitId"");
                     CREATE INDEX IF NOT EXISTS ""IX_UserAccounts_Role"" ON ""UserAccounts"" (""Role"");
                     CREATE INDEX IF NOT EXISTS ""IX_UserAccounts_SubscriptionTier"" ON ""UserAccounts"" (""SubscriptionTier"");
+
+                    -- 5. BẢNG AiModelRegistries (AegisAI Dynamic Registry 2026 - Mở rộng đa mô hình vô hạn)
+                    CREATE TABLE IF NOT EXISTS ""AiModelRegistries"" (
+                        ""Id"" uuid NOT NULL PRIMARY KEY,
+                        ""ModelCode"" text NOT NULL,
+                        ""DisplayName"" text NOT NULL,
+                        ""ProviderCompany"" text NOT NULL DEFAULT 'DeepSeek',
+                        ""ProtocolType"" integer NOT NULL DEFAULT 1,
+                        ""CognitiveArchetype"" integer NOT NULL DEFAULT 1,
+                        ""EndpointUrl"" text NOT NULL DEFAULT '',
+                        ""ModelName"" text NOT NULL DEFAULT '',
+                        ""MaxContextTokens"" integer NOT NULL DEFAULT 128000,
+                        ""CostInputPerMillion"" double precision NOT NULL DEFAULT 0.14,
+                        ""CostOutputPerMillion"" double precision NOT NULL DEFAULT 0.28,
+                        ""BenchmarkElo"" integer NOT NULL DEFAULT 1250,
+                        ""AvgLatencyMs"" integer NOT NULL DEFAULT 400,
+                        ""IsEnabled"" boolean NOT NULL DEFAULT true,
+                        ""IsDefaultInArchetype"" boolean NOT NULL DEFAULT false,
+                        ""TenantId"" uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
+                        ""CreatedAt"" timestamp with time zone NOT NULL DEFAULT now(),
+                        ""UpdatedAt"" timestamp with time zone NULL
+                    );
+                    CREATE UNIQUE INDEX IF NOT EXISTS ""IX_AiModelRegistries_ModelCode"" ON ""AiModelRegistries"" (""ModelCode"");
+                    CREATE INDEX IF NOT EXISTS ""IX_AiModelRegistries_Archetype"" ON ""AiModelRegistries"" (""CognitiveArchetype"");
+
+                    -- 6. BẢNG UserAiKeys (AegisAI BYOK Hub & Community Contributed Pool)
+                    CREATE TABLE IF NOT EXISTS ""UserAiKeys"" (
+                        ""Id"" uuid NOT NULL PRIMARY KEY,
+                        ""UserId"" uuid NOT NULL,
+                        ""TenantId"" uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
+                        ""KeyLabel"" text NOT NULL DEFAULT '',
+                        ""ProviderCompany"" text NOT NULL DEFAULT 'DeepSeek',
+                        ""ProtocolType"" integer NOT NULL DEFAULT 1,
+                        ""EncryptedApiKey"" text NOT NULL DEFAULT '',
+                        ""KeyFingerprint"" text NOT NULL DEFAULT '',
+                        ""CustomEndpoint"" text NULL,
+                        ""CustomModelName"" text NULL,
+                        ""Scope"" integer NOT NULL DEFAULT 1,
+                        ""IsActive"" boolean NOT NULL DEFAULT true,
+                        ""MonthlyTokenQuota"" bigint NOT NULL DEFAULT 0,
+                        ""TokensUsedThisMonth"" bigint NOT NULL DEFAULT 0,
+                        ""TotalCallsCount"" bigint NOT NULL DEFAULT 0,
+                        ""SuccessCallsCount"" bigint NOT NULL DEFAULT 0,
+                        ""FailedCallsCount"" bigint NOT NULL DEFAULT 0,
+                        ""LastUsedAt"" timestamp with time zone NULL,
+                        ""CreatedAt"" timestamp with time zone NOT NULL DEFAULT now(),
+                        ""UpdatedAt"" timestamp with time zone NULL
+                    );
+                    CREATE INDEX IF NOT EXISTS ""IX_UserAiKeys_UserId"" ON ""UserAiKeys"" (""UserId"");
+                    CREATE INDEX IF NOT EXISTS ""IX_UserAiKeys_TenantId"" ON ""UserAiKeys"" (""TenantId"");
+                    CREATE INDEX IF NOT EXISTS ""IX_UserAiKeys_Scope"" ON ""UserAiKeys"" (""Scope"");
+                    CREATE INDEX IF NOT EXISTS ""IX_UserAiKeys_IsActive"" ON ""UserAiKeys"" (""IsActive"");
+
+                    -- Hạt giống mô hình AI ban đầu (Seed data)
+                    INSERT INTO ""AiModelRegistries"" (""Id"", ""ModelCode"", ""DisplayName"", ""ProviderCompany"", ""ProtocolType"", ""CognitiveArchetype"", ""EndpointUrl"", ""ModelName"", ""MaxContextTokens"", ""CostInputPerMillion"", ""CostOutputPerMillion"", ""BenchmarkElo"", ""AvgLatencyMs"", ""IsEnabled"", ""IsDefaultInArchetype"", ""TenantId"", ""CreatedAt"")
+                    VALUES 
+                      ('a0000001-0000-0000-0000-000000000001', 'deepseek-r1', 'DeepSeek R1 Reasoning (CoT)', 'DeepSeek', 1, 1, 'https://api.deepseek.com/v1', 'deepseek-reasoner', 128000, 0.14, 0.28, 1340, 450, true, true, '00000000-0000-0000-0000-000000000000', now()),
+                      ('a0000001-0000-0000-0000-000000000002', 'gemini-2.0-flash', 'Google Gemini 2.0 Flash (1M Tokens)', 'Google', 2, 2, 'https://generativelanguage.googleapis.com/v1beta', 'gemini-2.0-flash', 1048576, 0.10, 0.40, 1310, 220, true, true, '00000000-0000-0000-0000-000000000000', now()),
+                      ('a0000001-0000-0000-0000-000000000003', 'claude-3-5-sonnet', 'Anthropic Claude 3.5 Sonnet (Pedagogy & Arbiter)', 'Anthropic', 3, 3, 'https://api.anthropic.com/v1', 'claude-3-5-sonnet-20241022', 200000, 3.00, 15.00, 1360, 600, true, true, '00000000-0000-0000-0000-000000000000', now()),
+                      ('a0000001-0000-0000-0000-000000000004', 'groq-llama-3-3-70b', 'Groq LPU Llama 3.3 70B Versatile', 'Groq', 1, 4, 'https://api.groq.com/openai/v1', 'llama-3.3-70b-versatile', 128000, 0.59, 0.79, 1280, 180, true, true, '00000000-0000-0000-0000-000000000000', now()),
+                      ('a0000001-0000-0000-0000-000000000005', 'ollama-qwen-local', 'Local Sovereign Qwen 2.5 32B (On-Premise)', 'Ollama', 1, 5, 'http://localhost:11434/v1', 'qwen2.5:32b', 32768, 0.0, 0.0, 1260, 300, true, true, '00000000-0000-0000-0000-000000000000', now()),
+                      ('a0000001-0000-0000-0000-000000000006', 'sambanova-llama-3-1-405b', 'SambaNova SN40L Llama 3.1 405B Frontier', 'SambaNova', 1, 1, 'https://api.sambanova.ai/v1', 'Meta-Llama-3.1-405B-Instruct', 128000, 5.00, 10.00, 1370, 350, true, false, '00000000-0000-0000-0000-000000000000', now()),
+                      ('a0000001-0000-0000-0000-000000000007', 'cerebras-llama-3-3-70b', 'Cerebras Wafer-Scale Llama 3.3 70B (2000+ t/s)', 'Cerebras', 1, 4, 'https://api.cerebras.ai/v1', 'llama-3.3-70b', 128000, 0.60, 0.60, 1290, 80, true, false, '00000000-0000-0000-0000-000000000000', now()),
+                      ('a0000001-0000-0000-0000-000000000008', 'mistral-large-latest', 'Mistral Large 2411 Sovereign Frontier', 'Mistral', 1, 3, 'https://api.mistral.ai/v1', 'mistral-large-latest', 128000, 2.00, 6.00, 1330, 400, true, false, '00000000-0000-0000-0000-000000000000', now()),
+                      ('a0000001-0000-0000-0000-000000000009', 'github-gpt-4o', 'GitHub Models GPT-4o Gateway', 'GitHub', 1, 3, 'https://models.inference.ai.azure.com', 'gpt-4o', 128000, 2.50, 10.00, 1350, 450, true, false, '00000000-0000-0000-0000-000000000000', now()),
+                      ('a0000001-0000-0000-0000-000000000010', 'openai-gpt-4o-mini', 'OpenAI GPT-4o-mini High-Throughput', 'OpenAI', 1, 4, 'https://api.openai.com/v1', 'gpt-4o-mini', 128000, 0.15, 0.60, 1290, 250, true, false, '00000000-0000-0000-0000-000000000000', now()),
+                      ('a0000001-0000-0000-0000-000000000011', 'replicate-musicgen', 'Replicate MusicGen Multimodal Audio', 'Replicate', 1, 2, 'https://api.replicate.com/v1', 'facebook/musicgen-small', 32000, 0.05, 0.10, 1200, 800, true, false, '00000000-0000-0000-0000-000000000000', now())
+                    ON CONFLICT (""ModelCode"") DO NOTHING;
+
+                    -- 7. BẢNG UniversalAiCouncils & UniversalCouncilSeats & SymposiumSessions (AegisAI Đại Hội Thảo Vạn Vật Tri Thức)
+                    CREATE TABLE IF NOT EXISTS ""UniversalAiCouncils"" (
+                        ""Id"" uuid NOT NULL PRIMARY KEY,
+                        ""CouncilCode"" text NOT NULL,
+                        ""DisplayName"" text NOT NULL,
+                        ""DisciplineArea"" text NOT NULL DEFAULT '',
+                        ""MaterializedTaxonomyPath"" text NOT NULL DEFAULT '',
+                        ""EpistemicManifesto"" text NOT NULL DEFAULT '',
+                        ""BenchmarkPrestigeElo"" integer NOT NULL DEFAULT 2800,
+                        ""IsActive"" boolean NOT NULL DEFAULT true,
+                        ""CreatedAt"" timestamp with time zone NOT NULL DEFAULT now()
+                    );
+                    CREATE UNIQUE INDEX IF NOT EXISTS ""IX_UniversalAiCouncils_CouncilCode"" ON ""UniversalAiCouncils"" (""CouncilCode"");
+
+                    CREATE TABLE IF NOT EXISTS ""UniversalCouncilSeats"" (
+                        ""Id"" uuid NOT NULL PRIMARY KEY,
+                        ""CouncilId"" uuid NOT NULL,
+                        ""SeatTitle"" text NOT NULL DEFAULT '',
+                        ""Role"" integer NOT NULL DEFAULT 1,
+                        ""IdealArchetype"" integer NOT NULL DEFAULT 1,
+                        ""PreferredModelCode"" text NOT NULL DEFAULT '',
+                        ""DecisionWeight"" double precision NOT NULL DEFAULT 1.0,
+                        ""PersonaPromptDirective"" text NOT NULL DEFAULT ''
+                    );
+                    CREATE INDEX IF NOT EXISTS ""IX_UniversalCouncilSeats_CouncilId"" ON ""UniversalCouncilSeats"" (""CouncilId"");
+
+                    CREATE TABLE IF NOT EXISTS ""SymposiumSessions"" (
+                        ""Id"" uuid NOT NULL PRIMARY KEY,
+                        ""TopicTitle"" text NOT NULL DEFAULT '',
+                        ""CoreProblemStatement"" text NOT NULL DEFAULT '',
+                        ""ParticipatingCouncilCodesJson"" text NOT NULL DEFAULT '[]',
+                        ""DialogueLogJson"" text NOT NULL DEFAULT '[]',
+                        ""FinalConsensusResolution"" text NOT NULL DEFAULT '',
+                        ""EpistemicConsensusIndex"" double precision NOT NULL DEFAULT 1.0,
+                        ""RubricScoresJson"" text NOT NULL DEFAULT '{{}}',
+                        ""ConvenedAt"" timestamp with time zone NOT NULL DEFAULT now(),
+                        ""ConcludedAt"" timestamp with time zone NULL,
+                        ""InitiatedByUserId"" uuid NULL,
+                        ""TenantId"" uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000'
+                    );
+                    CREATE INDEX IF NOT EXISTS ""IX_SymposiumSessions_ConvenedAt"" ON ""SymposiumSessions"" (""ConvenedAt"");
+
+                    -- Hạt giống 6 Viện Hàn Lâm Nhận Thức Vũ Trụ
+                    INSERT INTO ""UniversalAiCouncils"" (""Id"", ""CouncilCode"", ""DisplayName"", ""DisciplineArea"", ""MaterializedTaxonomyPath"", ""EpistemicManifesto"", ""BenchmarkPrestigeElo"", ""IsActive"", ""CreatedAt"")
+                    VALUES
+                      ('c0000001-0000-0000-0000-000000000001', 'COSMOLOGY', 'Viện Vũ Trụ & Vật Lý Lượng Tử', 'Vật lý lý thuyết & Lượng tử', '/UNIVERSE/PHYSICS/QUANTUM', 'Thực tại vật lý vận hành bởi trường lượng tử và hình học không-thời gian phi tuyến.', 2950, true, now()),
+                      ('c0000001-0000-0000-0000-000000000002', 'MATHEMATICS', 'Viện Toán Học & Logic Hình Thức', 'Toán học thuần túy & Độ phức tạp', '/UNIVERSE/MATHEMATICS/LOGIC', 'Chân lý tuyệt đối chỉ tồn tại qua phép suy diễn hình thức không mâu thuẫn.', 2980, true, now()),
+                      ('c0000001-0000-0000-0000-000000000003', 'PHILOSOPHY', 'Viện Triết Học, Nhân Văn & Ý Thức', 'Bản thể luận, Đạo đức & Ý nghĩa', '/HUMANITY/PHILOSOPHY/EPISTEMOLOGY', 'Mọi tri thức khoa học phải được soi chiếu qua phẩm giá con người và ý nghĩa tồn tại.', 2900, true, now()),
+                      ('c0000001-0000-0000-0000-000000000004', 'AGI_CYBERNETICS', 'Viện Siêu Trí Tuệ & Điều Khiển Học', 'Kiến trúc AGI & Căn chỉnh nhân loại', '/AI/SUPERINTELLIGENCE/ALIGNMENT', 'Sự xuất hiện của Siêu trí tuệ là bước tiến hóa tất yếu của thông tin vũ trụ.', 2990, true, now()),
+                      ('c0000001-0000-0000-0000-000000000005', 'ECONOMICS', 'Viện Kinh Tế Chính Trị & Địa Chiến Lược', 'Kinh tế vĩ mô & Lý thuyết trò chơi', '/SOCIETY/ECONOMICS/GEOPOLITICS', 'Dòng chảy giá trị và phân bổ tài nguyên quyết định sự hưng thịnh của nền văn minh.', 2850, true, now()),
+                      ('c0000001-0000-0000-0000-000000000006', 'LIFE_SCIENCES', 'Viện Khoa Học Sự Sống & Sinh Quyển', 'Sinh học phân tử & Sinh thái học', '/NATURE/BIOLOGY/EVOLUTION', 'Sự sống là cấu trúc tiêu tán vi mô chống lại entropy nhiệt động lực học.', 2880, true, now())
+                    ON CONFLICT (""CouncilCode"") DO NOTHING;
                 ");
                 log.LogInformation("[AegisQuiz] Auto-healing DDL executed successfully. All columns and tables guaranteed.");
             }
             catch (Exception exDdl)
             {
                 log.LogWarning(exDdl, "[AegisQuiz] Auto-healing DDL warning: {Message}", exDdl.Message);
-            }
-
-            // [BƯỚC 2: TIẾN HÀNH MIGRATIONS]
-            try
-            {
-                db.Database.Migrate();
-                log.LogInformation("[AegisQuiz] PostgreSQL database migrations applied successfully.");
-            }
-            catch (Exception exMigrate)
-            {
-                log.LogInformation("[AegisQuiz] EF migration notice: {Message}", exMigrate.Message);
             }
         }
         else
@@ -698,6 +989,8 @@ app.MapGet("/ping", () => Results.Ok("pong")).AllowAnonymous();
 app.MapHub<ExamProctoringHub>("/hubs/proctoring");
 // [Aegis Arena] Real-time Gameshow Arena Hub
 app.MapHub<ArenaHub>("/hubs/arena");
+// [Aegis Universal Epistemic Symposium] Real-time Dialectical Streaming Hub
+app.MapHub<SymposiumHub>("/hubs/symposium");
 // app.MapHub<PaymentHub>("/hubs/payment"); // Sẽ implement ở Sprint 2
 
 Log.Information("[AegisQuiz] Application started successfully.");

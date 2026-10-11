@@ -11,6 +11,7 @@ import { useAuth } from '@/hooks/useAuth';
 import api from '@/services/api';
 import { AppRole, type UserProfile } from '@/types/auth';
 import { TwoFactorProfileSection } from './TwoFactorProfileSection';
+import { AiKeysProfileSection } from './AiKeysProfileSection';
 
 export function ProfilePage() {
   const { t, i18n } = useTranslation('profile');
@@ -18,7 +19,7 @@ export function ProfilePage() {
   const { user } = useAuth();
   const [currentUser, setCurrentUser] = useState<any>(user);
 
-  const [activeTab, setActiveTab] = useState<'info' | 'subscription' | 'security'>('info');
+  const [activeTab, setActiveTab] = useState<'info' | 'subscription' | 'security' | 'ai-keys'>('info');
 
   // Form State - Info
   const [fullName, setFullName] = useState(user?.name || '');
@@ -346,6 +347,21 @@ export function ProfilePage() {
             >
               <Key size={16} />
               {t('tabs.security')}
+            </button>
+
+            <button
+              onClick={() => setActiveTab('ai-keys')}
+              className={`px-5 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 cursor-pointer ${
+                activeTab === 'ai-keys'
+                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/20'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+              }`}
+            >
+              <Zap size={16} className="text-amber-400" />
+              <span>Khóa AI & BYOK Hub</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">
+                0$ Phụ Phí
+              </span>
             </button>
           </div>
         </div>
@@ -751,6 +767,11 @@ export function ProfilePage() {
             </div>
             </div>
           </div>
+        )}
+
+        {/* ── TAB 4: KHÓA AI RIÊNG & BYOK HUB ───────────────────────────── */}
+        {activeTab === 'ai-keys' && (
+          <AiKeysProfileSection />
         )}
 
       </div>

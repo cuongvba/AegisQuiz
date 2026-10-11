@@ -36,17 +36,16 @@ export default defineConfig({
     },
   },
 
-  // ── Build Optimization ─────────────────────────────────────────
+  // ── Build Optimization (World-Class Chunk Splitting) ─────────────
   build: {
     target:    'es2022',
     sourcemap:  false,
-    // Cảnh báo khi chunk > 500KB
-    chunkSizeWarningLimit: 500,
+    chunkSizeWarningLimit: 300,
 
     rollupOptions: {
       output: {
-        // Manual chunk splitting — tách vendor lớn ra khỏi app bundle
         manualChunks(id: string) {
+          // Vendor Isolation
           if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/') || id.includes('node_modules/react-router-dom/')) {
             return 'vendor-react';
           }
@@ -68,9 +67,28 @@ export default defineConfig({
           if (id.includes('node_modules/zod')) {
             return 'vendor-zod';
           }
+          if (id.includes('node_modules/lucide-react')) {
+            return 'vendor-icons';
+          }
+          if (id.includes('node_modules/axios')) {
+            return 'vendor-axios';
+          }
+
+          // Admin Ingestion Studios Isolation (On-Demand Bundles)
+          if (id.includes('/admin/questions/components/docx/')) {
+            return 'admin-docx-studio';
+          }
+          if (id.includes('/admin/questions/components/ExcelIngestionStudioModal')) {
+            return 'admin-excel-studio';
+          }
+          if (id.includes('/admin/questions/components/RuleStudioTab')) {
+            return 'admin-cig-studio';
+          }
+          if (id.includes('/admin/questions/components/BulkTaxonomyModal')) {
+            return 'admin-taxonomy-studio';
+          }
         },
       },
     },
   },
 });
-

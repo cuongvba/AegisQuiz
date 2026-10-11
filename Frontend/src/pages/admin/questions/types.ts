@@ -22,14 +22,15 @@ export interface BankTopic {
 export const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
 
 export const QUESTION_TYPE_LABELS: Record<string, string> = {
-  SINGLE:       'Trắc nghiệm 1 đáp án',
-  MULTI:        'Nhiều đáp án đúng',
-  TRUE_FALSE:   'Đúng / Sai',
-  SHORT_ANSWER: 'Trả lời ngắn',
-  FILL_BLANK:   'Điền vào chỗ trống',
-  ORDERING:     'Sắp xếp thứ tự',
-  MATCHING:     'Nối cặp',
-  ESSAY:        'Tự luận (AI chấm)',
+  SINGLE:           'Trắc nghiệm 1 đáp án',
+  MULTI:            'Nhiều đáp án đúng',
+  TRUE_FALSE:       'Đúng / Sai',
+  MULTI_TRUE_FALSE: 'Đúng / Sai 4 ý (GDPT 2025)',
+  SHORT_ANSWER:     'Trả lời ngắn',
+  FILL_BLANK:       'Điền vào chỗ trống',
+  ORDERING:         'Sắp xếp thứ tự',
+  MATCHING:         'Nối cặp',
+  ESSAY:            'Tự luận (AI chấm)',
 };
 
 export function getQuestionTypeLabel(type: string): string {
@@ -38,9 +39,10 @@ export function getQuestionTypeLabel(type: string): string {
 
 export function getCorrectAnswerPlaceholder(questionType: string): string {
   switch (questionType) {
-    case 'SINGLE':       return 'Ví dụ: A (hoặc 1)';
-    case 'MULTI':        return 'Ví dụ: A,C (các phương án đúng cách nhau bởi dấu phẩy)';
-    case 'TRUE_FALSE':   return 'Điền 1 (Đúng) hoặc 2 (Sai)';
+    case 'SINGLE':           return 'Ví dụ: A (hoặc 1)';
+    case 'MULTI':            return 'Ví dụ: A,C (các phương án đúng cách nhau bởi dấu phẩy)';
+    case 'TRUE_FALSE':       return 'Điền 1 (Đúng) hoặc 2 (Sai)';
+    case 'MULTI_TRUE_FALSE': return 'Ví dụ: a) Đúng, b) Sai, c) Đúng, d) Sai';
     case 'SHORT_ANSWER':
     case 'FILL_BLANK':   return 'Điền từ/cụm từ chính xác';
     case 'ORDERING':     return 'Điền thứ tự đúng (Ví dụ: A,B,C,D hoặc 1,2,3,4)';

@@ -23,6 +23,8 @@ export function useExcelDocxImport(
   const [docxPreviewList, setDocxPreviewList]       = useState<any[]>([]);
   const [showDocxPreviewModal, setShowDocxPreviewModal] = useState(false);
   const [isDocxProcessing, setIsDocxProcessing]     = useState(false);
+  const [processingFileName, setProcessingFileName] = useState<string>('');
+  const [processingDurationMs, setProcessingDurationMs] = useState<number | null>(null);
 
   // Excel DOT-2026 import state
   const [excelPreviewData, setExcelPreviewData]         = useState<any | null>(null);
@@ -33,8 +35,11 @@ export function useExcelDocxImport(
 
   const handleFileImport = async (file: File) => {
     setIsDocxProcessing(true);
+    setProcessingFileName(file.name);
+    const startMs = performance.now();
     try {
       const res = await learnerQuizService.importQuestions(file);
+      setProcessingDurationMs(Math.round(performance.now() - startMs));
       // Kết quả mới trả về: { fileName, totalSheets, totalQuestions, warnings, sheets: [...] }
       if (res && res.sheets && Array.isArray(res.sheets)) {
         const allQuestions: any[] = [];
@@ -88,6 +93,7 @@ export function useExcelDocxImport(
       alert(err.response?.data?.message || err.message || 'Nhập câu hỏi từ file Excel thất bại. Vui lòng thử lại.');
     } finally {
       setIsDocxProcessing(false);
+      setProcessingFileName('');
     }
   };
 
@@ -167,14 +173,17 @@ export function useExcelDocxImport(
   };
 
   const handleFileImportDocxOrPdf = async (file: File) => {
+    const isPdf = file.name.toLowerCase().endsWith('.pdf');
     setIsDocxProcessing(true);
+    setProcessingFileName(file.name);
+    const startMs = performance.now();
     try {
-      const isPdf = file.name.toLowerCase().endsWith('.pdf');
       const data = isPdf
         ? await learnerQuizService.importQuestionsPdf(file)
         : await learnerQuizService.importQuestionsDocx(file);
+      setProcessingDurationMs(Math.round(performance.now() - startMs));
       if (!Array.isArray(data) || data.length === 0) {
-        alert('Không tìm thấy câu hỏi hợp lệ trong tệp. Vui lòng kiểm tra cấu trúc định dạng file Word/PDF.');
+        alert(`Không tìm thấy câu hỏi hợp lệ trong tệp ${isPdf ? 'PDF' : 'Word'}. Vui lòng kiểm tra cấu trúc định dạng file.`);
         return;
       }
       const mappedData = data.map((item: any) => ({
@@ -185,9 +194,11 @@ export function useExcelDocxImport(
       setDocxPreviewList(mappedData);
       setShowDocxPreviewModal(true);
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Nhập câu hỏi từ tệp thất bại. Vui lòng kiểm tra lại định dạng file hoặc liên hệ quản trị viên.');
+      const errMsg = err.response?.data?.message || err.message || 'Nhập câu hỏi từ tệp thất bại. Vui lòng kiểm tra lại định dạng file hoặc liên hệ quản trị viên.';
+      alert(`❌ Lỗi xử lý tệp ${isPdf ? 'PDF' : 'Word'}: ${errMsg}`);
     } finally {
       setIsDocxProcessing(false);
+      setProcessingFileName('');
     }
   };
 
@@ -207,6 +218,8 @@ export function useExcelDocxImport(
     docxPreviewList, setDocxPreviewList,
     showDocxPreviewModal, setShowDocxPreviewModal,
     isDocxProcessing, setIsDocxProcessing,
+    processingFileName, setProcessingFileName,
+    processingDurationMs, setProcessingDurationMs,
     excelPreviewData, setExcelPreviewData,
     showExcelPreviewModal, setShowExcelPreviewModal,
     showExcelStudioModal, setShowExcelStudioModal,

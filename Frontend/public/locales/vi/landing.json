@@ -4,7 +4,9 @@
     "gameshows": "Gameshow",
     "pricing": "Bảng giá",
     "login": "Đăng nhập",
-    "cta": "Dùng thử miễn phí"
+    "cta": "Dùng thử miễn phí",
+    "adminPortal": "Khu Quản trị",
+    "enterLearning": "Vào Học tập"
   },
   "hero": {
     "eyebrow": "Aegis Enterprise AI Engine v4.0",

@@ -187,20 +187,28 @@ namespace AegisQuiz.Infrastructure.Services.Docx
                     string chText = ResolveMtCode(mtcode, typeface);
                     sb.Append(chText);
 
-                    // Xử lý Embellishment đính kèm nếu có
+                    // Xử lý Embellishment list đính kèm nếu có (container kết thúc bằng tag 0)
                     if ((charOpts & 0x01) != 0 && reader.BaseStream.Position < reader.BaseStream.Length)
                     {
-                        byte peek = reader.ReadByte();
-                        if (peek == 6) // EMBELL
+                        while (reader.BaseStream.Position < reader.BaseStream.Length)
                         {
-                            byte embOpts = reader.ReadByte();
-                            if ((embOpts & 0x08) != 0) { reader.ReadInt16(); reader.ReadInt16(); }
-                            byte embType = reader.ReadByte();
-                            ApplyEmbellishment(sb, embType);
-                        }
-                        else
-                        {
-                            reader.BaseStream.Position--; // Rewind
+                            byte embTag = reader.ReadByte();
+                            if (embTag == 0) break; // Kết thúc embellishment list
+                            if (embTag == 6) // EMBELL
+                            {
+                                byte embOpts = reader.ReadByte();
+                                if ((embOpts & 0x08) != 0) { reader.ReadInt16(); reader.ReadInt16(); }
+                                byte embType = reader.ReadByte();
+                                ApplyEmbellishment(sb, embType);
+                                continue;
+                            }
+                            if (embTag == 15) // COLOR
+                            {
+                                if (reader.BaseStream.Position < reader.BaseStream.Length) reader.ReadByte();
+                                continue;
+                            }
+                            reader.BaseStream.Position--; // Tag lạ, rewind và thoát
+                            break;
                         }
                     }
                     continue;
@@ -234,9 +242,6 @@ namespace AegisQuiz.Infrastructure.Services.Docx
 
                     string tmplLatex = ParseTemplate(reader, selector, variation);
                     sb.Append(tmplLatex);
-
-                    // Bỏ qua thẻ END của template nếu còn
-                    SkipTrailingEnd(reader);
                     continue;
                 }
 
@@ -254,7 +259,51 @@ namespace AegisQuiz.Infrastructure.Services.Docx
                     continue;
                 }
 
-                // Record 4: PILE (Chồng nhiều dòng: Hệ phương trình)
+                // Record 19: FONT_DEF (0x13) - null-terminated font/encoding name
+                if (tag == 19)
+                {
+                    while (reader.BaseStream.Position < reader.BaseStream.Length && reader.ReadByte() != 0) { }
+                    continue;
+                }
+
+                // Record 17: FONT_STYLE_DEF (0x11) - 1 byte enc_def_index + null-terminated font name
+                if (tag == 17)
+                {
+                    if (reader.BaseStream.Position < reader.BaseStream.Length) reader.ReadByte();
+                    while (reader.BaseStream.Position < reader.BaseStream.Length && reader.ReadByte() != 0) { }
+                    continue;
+                }
+
+                // Record 8: FONT_STYLE (0x08) - 2 bytes (font_def_index, char_style)
+                if (tag == 8)
+                {
+                    if (reader.BaseStream.Position + 2 <= reader.BaseStream.Length)
+                    {
+                        reader.ReadByte();
+                        reader.ReadByte();
+                    }
+                    continue;
+                }
+
+                // Record 7: FONT_NAME (0x07) - 1 byte font_def_index
+                if (tag == 7)
+                {
+                    if (reader.BaseStream.Position < reader.BaseStream.Length) reader.ReadByte();
+                    continue;
+                }
+
+                // Record 9: SIZE (0x09)
+                if (tag == 9)
+                {
+                    if (reader.BaseStream.Position + 2 <= reader.BaseStream.Length)
+                    {
+                        reader.ReadByte();
+                        reader.ReadByte();
+                    }
+                    continue;
+                }
+
+                // Record 4: PILE (Chồng nhiều dòng: Hệ phương trình, tuyển nghiệm)
                 if (tag == 4)
                 {
                     byte pileOpts = reader.ReadByte();
@@ -265,13 +314,57 @@ namespace AegisQuiz.Infrastructure.Services.Docx
                     var lines = new List<string>();
                     while (reader.BaseStream.Position < reader.BaseStream.Length)
                     {
-                        if (reader.PeekChar() == 0)
+                        byte pTag = reader.ReadByte();
+                        if (pTag == 0) // END of PILE
                         {
-                            reader.ReadByte();
                             break;
                         }
-                        string pileLine = ParseExpression(reader, stopOnEnd: true);
-                        if (!string.IsNullOrEmpty(pileLine)) lines.Add(pileLine);
+                        if (pTag == 1) // LINE con của PILE
+                        {
+                            byte lineOpts = reader.ReadByte();
+                            if ((lineOpts & 0x08) != 0) { reader.ReadInt16(); reader.ReadInt16(); }
+                            if ((lineOpts & 0x04) != 0) reader.ReadByte();
+                            if ((lineOpts & 0x02) != 0)
+                            {
+                                byte nStops = reader.ReadByte();
+                                reader.BaseStream.Position += nStops * 3;
+                            }
+                            if ((lineOpts & 0x01) != 0) // NULL LINE
+                            {
+                                lines.Add(string.Empty);
+                                continue;
+                            }
+                            string lineContent = ParseExpression(reader, stopOnEnd: true);
+                            lines.Add(lineContent);
+                        }
+                        else
+                        {
+                            // Bỏ qua các tag thuộc tính phụ nếu có trước LINE tiếp theo
+                            if (pTag == 16)
+                            {
+                                byte cOpts = reader.ReadByte();
+                                int bytesToSkip = ((cOpts & 0x01) != 0) ? 8 : 6;
+                                reader.BaseStream.Position += bytesToSkip;
+                                if ((cOpts & 0x04) != 0) while (reader.BaseStream.Position < reader.BaseStream.Length && reader.ReadByte() != 0) { }
+                            }
+                            else if (pTag == 19 || pTag == 17)
+                            {
+                                if (pTag == 17 && reader.BaseStream.Position < reader.BaseStream.Length) reader.ReadByte();
+                                while (reader.BaseStream.Position < reader.BaseStream.Length && reader.ReadByte() != 0) { }
+                            }
+                            else if (pTag == 8 || pTag == 9)
+                            {
+                                if (reader.BaseStream.Position + 2 <= reader.BaseStream.Length) reader.BaseStream.Position += 2;
+                            }
+                            else if (pTag == 7)
+                            {
+                                if (reader.BaseStream.Position < reader.BaseStream.Length) reader.ReadByte();
+                            }
+                            else if (IsSizeTag(pTag))
+                            {
+                                continue;
+                            }
+                        }
                     }
                     sb.Append(string.Join(@" \\ ", lines));
                     continue;
@@ -357,7 +450,7 @@ namespace AegisQuiz.Infrastructure.Services.Docx
         {
             if (reader.BaseStream.Position >= reader.BaseStream.Length) return string.Empty;
 
-            // Bỏ qua các tag COLOR hoặc SIZE đứng trước slot
+            // Bỏ qua các tag COLOR, SIZE, FONT... đứng trước slot
             while (reader.BaseStream.Position < reader.BaseStream.Length)
             {
                 byte peek = reader.ReadByte();
@@ -366,13 +459,38 @@ namespace AegisQuiz.Infrastructure.Services.Docx
                     if (reader.BaseStream.Position < reader.BaseStream.Length) reader.ReadByte();
                     continue;
                 }
+                if (peek == 16) // COLOR_DEF
+                {
+                    byte cOpts = reader.ReadByte();
+                    int bytesToSkip = ((cOpts & 0x01) != 0) ? 8 : 6;
+                    reader.BaseStream.Position += bytesToSkip;
+                    if ((cOpts & 0x04) != 0) while (reader.BaseStream.Position < reader.BaseStream.Length && reader.ReadByte() != 0) { }
+                    continue;
+                }
+                if (peek == 19) // FONT_DEF
+                {
+                    while (reader.BaseStream.Position < reader.BaseStream.Length && reader.ReadByte() != 0) { }
+                    continue;
+                }
+                if (peek == 17) // FONT_STYLE_DEF
+                {
+                    if (reader.BaseStream.Position < reader.BaseStream.Length) reader.ReadByte();
+                    while (reader.BaseStream.Position < reader.BaseStream.Length && reader.ReadByte() != 0) { }
+                    continue;
+                }
+                if (peek == 8) // FONT_STYLE
+                {
+                    if (reader.BaseStream.Position + 2 <= reader.BaseStream.Length) reader.BaseStream.Position += 2;
+                    continue;
+                }
+                if (peek == 7) // FONT_NAME
+                {
+                    if (reader.BaseStream.Position < reader.BaseStream.Length) reader.ReadByte();
+                    continue;
+                }
                 if (peek == 9) // SIZE (lsize, dsize)
                 {
-                    if (reader.BaseStream.Position + 2 <= reader.BaseStream.Length)
-                    {
-                        reader.ReadByte();
-                        reader.ReadByte();
-                    }
+                    if (reader.BaseStream.Position + 2 <= reader.BaseStream.Length) reader.BaseStream.Position += 2;
                     continue;
                 }
                 if (IsSizeTag(peek)) continue;
@@ -407,6 +525,110 @@ namespace AegisQuiz.Infrastructure.Services.Docx
         }
 
         /// <summary>
+        /// Bỏ qua các bản ghi nội bộ còn lại (template characters, colors, sizes...) cho đến khi kết thúc container hiện tại
+        /// </summary>
+        private static void SkipToContainerEnd(BinaryReader reader)
+        {
+            int depth = 1;
+            while (reader.BaseStream.Position < reader.BaseStream.Length && depth > 0)
+            {
+                byte tag = reader.ReadByte();
+                if (tag == 0)
+                {
+                    depth--;
+                    continue;
+                }
+                if (tag == 1) // LINE
+                {
+                    byte lineOpts = reader.ReadByte();
+                    if ((lineOpts & 0x08) != 0) { reader.ReadInt16(); reader.ReadInt16(); }
+                    if ((lineOpts & 0x04) != 0) reader.ReadByte();
+                    if ((lineOpts & 0x02) != 0) { byte nStops = reader.ReadByte(); reader.BaseStream.Position += nStops * 3; }
+                    if ((lineOpts & 0x01) == 0) // Has matching END
+                    {
+                        depth++;
+                    }
+                    continue;
+                }
+                if (tag == 2) // CHAR
+                {
+                    byte charOpts = reader.ReadByte();
+                    if ((charOpts & 0x08) != 0) { reader.ReadInt16(); reader.ReadInt16(); }
+                    reader.ReadByte(); // typeface
+                    if ((charOpts & 0x20) == 0) reader.ReadUInt16(); // mtcode
+                    if ((charOpts & 0x04) != 0) reader.ReadByte();
+                    if ((charOpts & 0x10) != 0) reader.ReadUInt16();
+                    if ((charOpts & 0x01) != 0) depth++; // Embellishment list has matching END
+                    continue;
+                }
+                if (tag == 3) // TMPL
+                {
+                    byte tmplOpts = reader.ReadByte();
+                    if ((tmplOpts & 0x08) != 0) { reader.ReadInt16(); reader.ReadInt16(); }
+                    reader.ReadByte(); // selector
+                    byte b1 = reader.ReadByte();
+                    if ((b1 & 0x80) != 0) reader.ReadByte();
+                    reader.ReadByte(); // tmpl options
+                    depth++;
+                    continue;
+                }
+                if (tag == 4 || tag == 5) // PILE, MATRIX
+                {
+                    depth++;
+                    continue;
+                }
+                if (tag == 6) // EMBELL
+                {
+                    byte embOpts = reader.ReadByte();
+                    if ((embOpts & 0x08) != 0) { reader.ReadInt16(); reader.ReadInt16(); }
+                    reader.ReadByte(); // embType
+                    continue;
+                }
+                if (tag == 15) // COLOR
+                {
+                    if (reader.BaseStream.Position < reader.BaseStream.Length) reader.ReadByte();
+                    continue;
+                }
+                if (tag == 16) // COLOR_DEF
+                {
+                    byte cOpts = reader.ReadByte();
+                    int bytesToSkip = ((cOpts & 0x01) != 0) ? 8 : 6;
+                    reader.BaseStream.Position += bytesToSkip;
+                    if ((cOpts & 0x04) != 0) while (reader.BaseStream.Position < reader.BaseStream.Length && reader.ReadByte() != 0) { }
+                    continue;
+                }
+                if (tag == 19) // FONT_DEF
+                {
+                    while (reader.BaseStream.Position < reader.BaseStream.Length && reader.ReadByte() != 0) { }
+                    continue;
+                }
+                if (tag == 17) // FONT_STYLE_DEF
+                {
+                    if (reader.BaseStream.Position < reader.BaseStream.Length) reader.ReadByte();
+                    while (reader.BaseStream.Position < reader.BaseStream.Length && reader.ReadByte() != 0) { }
+                    continue;
+                }
+                if (tag == 8) // FONT_STYLE
+                {
+                    if (reader.BaseStream.Position + 2 <= reader.BaseStream.Length) reader.BaseStream.Position += 2;
+                    continue;
+                }
+                if (tag == 7) // FONT_NAME
+                {
+                    if (reader.BaseStream.Position < reader.BaseStream.Length) reader.ReadByte();
+                    continue;
+                }
+                if (tag == 9) // SIZE
+                {
+                    if (reader.BaseStream.Position + 2 <= reader.BaseStream.Length) reader.BaseStream.Position += 2;
+                    continue;
+                }
+                if (IsSizeTag(tag)) continue;
+                if (tag >= 50) break;
+            }
+        }
+
+        /// <summary>
         /// Phân tích cú pháp các template MTEF
         /// </summary>
         private static string ParseTemplate(BinaryReader reader, byte selector, ushort variation)
@@ -417,6 +639,7 @@ namespace AegisQuiz.Infrastructure.Services.Docx
                 {
                     string num = ParseSlot(reader);
                     string den = ParseSlot(reader);
+                    SkipToContainerEnd(reader);
                     return $@"\frac{{{num}}}{{{den}}}";
                 }
 
@@ -425,37 +648,81 @@ namespace AegisQuiz.Infrastructure.Services.Docx
                     if (variation == 0) // Căn bậc hai (\sqrt{x})
                     {
                         string rad = ParseSlot(reader);
+                        SkipToContainerEnd(reader);
                         return $@"\sqrt{{{rad}}}";
                     }
                     else // Căn bậc n (\sqrt[n]{x})
                     {
                         string nth = ParseSlot(reader);
                         string rad = ParseSlot(reader);
+                        SkipToContainerEnd(reader);
                         return $@"\sqrt[{nth}]{{{rad}}}";
                     }
                 }
 
                 case 1: // tmPAREN (Ngoặc đơn: ( ... ))
                 {
-                    string inner = ParseSlot(reader);
+                    string inner = CleanFenceInner(ParseSlot(reader));
+                    SkipToContainerEnd(reader);
+                    if (inner.Contains(@"\\"))
+                        return $@"\left(\begin{{matrix}} {inner} \end{{matrix}}\right)";
                     return $@"\left({inner}\right)";
                 }
 
                 case 2: // tmBRACE (Ngoặc nhọn: { ... })
                 {
-                    string inner = ParseSlot(reader);
+                    string inner = CleanFenceInner(ParseSlot(reader));
+                    SkipToContainerEnd(reader);
+                    bool leftOnly = (variation & 0x01) != 0 && (variation & 0x02) == 0;
+                    if (leftOnly || variation == 0x01)
+                    {
+                        if (inner.Contains(@"\\"))
+                            return $@"\begin{{cases}} {inner} \end{{cases}}";
+                        return $@"\left\{{{inner}\right.";
+                    }
+                    if (inner.Contains(@"\\"))
+                        return $@"\left\{{\begin{{matrix}} {inner} \end{{matrix}}\right\}}";
                     return $@"\left\{{{inner}\right\}}";
                 }
 
                 case 3: // tmBRACK (Ngoặc vuông: [ ... ])
                 {
-                    string inner = ParseSlot(reader);
+                    string inner = CleanFenceInner(ParseSlot(reader));
+                    SkipToContainerEnd(reader);
+                    bool leftOnly = (variation & 0x01) != 0 && (variation & 0x02) == 0;
+                    if (leftOnly || variation == 0x01)
+                    {
+                        if (inner.Contains(@"\\"))
+                            return $@"\left[\begin{{matrix}} {inner} \end{{matrix}}\right.";
+                        return $@"\left[{inner}\right.";
+                    }
+                    if (inner.Contains(@"\\"))
+                        return $@"\left[\begin{{matrix}} {inner} \end{{matrix}}\right]";
                     return $@"\left[{inner}\right]";
+                }
+
+                case 12: // tmLBRACE (Ngoặc nhọn đơn trái)
+                {
+                    string inner = CleanFenceInner(ParseSlot(reader));
+                    SkipToContainerEnd(reader);
+                    if (inner.Contains(@"\\"))
+                        return $@"\begin{{cases}} {inner} \end{{cases}}";
+                    return $@"\left\{{{inner}\right.";
+                }
+
+                case 14: // tmLBRACK (Ngoặc vuông đơn trái)
+                {
+                    string inner = CleanFenceInner(ParseSlot(reader));
+                    SkipToContainerEnd(reader);
+                    if (inner.Contains(@"\\"))
+                        return $@"\left[\begin{{matrix}} {inner} \end{{matrix}}\right.";
+                    return $@"\left[{inner}\right.";
                 }
 
                 case 4: // tmBAR (Trị tuyệt đối: | ... |)
                 {
                     string inner = ParseSlot(reader);
+                    SkipToContainerEnd(reader);
                     return $@"\left|{inner}\right|";
                 }
 
@@ -463,11 +730,9 @@ namespace AegisQuiz.Infrastructure.Services.Docx
                 case 28: // tmSUP (Chỉ số trên: ^{sup})
                 case 29: // tmSUBSUP (Cả chỉ số dưới và trên: _{sub}^{sup})
                 {
-                    // Trong MTEF, họ ScrBoxClass (tmSUB, tmSUP, tmSUBSUP) luôn bao gồm 2 slots:
-                    // Slot 1: sub (đối với tmSUP, slot này là LINE NULL)
-                    // Slot 2: sup (đối với tmSUB, slot này là LINE NULL)
                     string sub = ParseSlot(reader);
                     string sup = ParseSlot(reader);
+                    SkipToContainerEnd(reader);
 
                     if (!string.IsNullOrEmpty(sub) && !string.IsNullOrEmpty(sup))
                         return $"_{{{sub}}}^{{{sup}}}";
@@ -478,25 +743,60 @@ namespace AegisQuiz.Infrastructure.Services.Docx
                     return string.Empty;
                 }
 
+                case 30: // tmHAT (Mũ góc \widehat)
+                {
+                    string hat = ParseSlot(reader);
+                    SkipToContainerEnd(reader);
+                    return $@"\widehat{{{hat}}}";
+                }
+
                 case 31: // tmVEC (Vector)
                 {
                     string vec = ParseSlot(reader);
-                    return vec.Length <= 1 ? $@"\vec{{{vec}}}" : $@"\overrightarrow{{{vec}}}";
+                    SkipToContainerEnd(reader);
+                    return $@"\overrightarrow{{{vec}}}";
                 }
 
-                case 15: // tmINTEG (Tích phân)
+                case 34: // tmOBAR (Thanh gạch ngang trên đầu \overline)
                 {
-                    string sub = ParseSlot(reader);
-                    string sup = ParseSlot(reader);
-                    return string.IsNullOrEmpty(sub) && string.IsNullOrEmpty(sup)
-                        ? @"\int "
-                        : $@"\int_{{{sub}}}^{{{sup}}} ";
+                    string bar = ParseSlot(reader);
+                    SkipToContainerEnd(reader);
+                    return $@"\overline{{{bar}}}";
+                }
+
+                case 15: // tmINTEG (Tích phân: Slot 1 = F (integrand), Slot 2 = A (cận dưới), Slot 3 = B (cận trên))
+                {
+                    string f = ParseSlot(reader);   // Slot 1: Hàm dưới dấu tích phân F
+                    string sub = ParseSlot(reader); // Slot 2: Cận dưới A
+                    string sup = ParseSlot(reader); // Slot 3: Cận trên B
+                    SkipToContainerEnd(reader);
+
+                    bool hasSub = !string.IsNullOrEmpty(sub);
+                    bool hasSup = !string.IsNullOrEmpty(sup);
+
+                    if (hasSub && hasSup)
+                    {
+                        return string.IsNullOrEmpty(f) ? $@"\int_{{{sub}}}^{{{sup}}} " : $@"\int_{{{sub}}}^{{{sup}}}{{{f}}}";
+                    }
+                    else if (hasSub)
+                    {
+                        return string.IsNullOrEmpty(f) ? $@"\int_{{{sub}}} " : $@"\int_{{{sub}}}{{{f}}}";
+                    }
+                    else if (hasSup)
+                    {
+                        return string.IsNullOrEmpty(f) ? $@"\int_{{}}^{{{sup}}} " : $@"\int_{{}}^{{{sup}}}{{{f}}}";
+                    }
+                    else
+                    {
+                        return string.IsNullOrEmpty(f) ? @"\int_{{}} " : $@"\int_{{}}{{{f}}}";
+                    }
                 }
 
                 case 16: // tmSUM (Tổng sigma)
                 {
                     string sub = ParseSlot(reader);
                     string sup = ParseSlot(reader);
+                    SkipToContainerEnd(reader);
                     return string.IsNullOrEmpty(sub) && string.IsNullOrEmpty(sup)
                         ? @"\sum "
                         : $@"\sum_{{{sub}}}^{{{sup}}} ";
@@ -506,18 +806,21 @@ namespace AegisQuiz.Infrastructure.Services.Docx
                 {
                     string sub = ParseSlot(reader);
                     string sup = ParseSlot(reader);
+                    SkipToContainerEnd(reader);
                     return $@"\prod_{{{sub}}}^{{{sup}}} ";
                 }
 
                 case 23: // tmLIM (Giới hạn)
                 {
                     string sub = ParseSlot(reader);
+                    SkipToContainerEnd(reader);
                     return string.IsNullOrEmpty(sub) ? @"\lim " : $@"\lim_{{{sub}}} ";
                 }
 
                 default:
                 {
                     string inner = ParseSlot(reader);
+                    SkipToContainerEnd(reader);
                     return inner;
                 }
             }
@@ -545,15 +848,15 @@ namespace AegisQuiz.Infrastructure.Services.Docx
                 case 18: // emb3PRIME (''')
                     sb.Append("'''");
                     break;
-                case 9: // embHAT (\hat)
-                    WrapLastChar(sb, @"\hat{", "}");
+                case 9: // embHAT (\widehat - Dấu mũ nón góc chuẩn SGK)
+                    WrapLastChar(sb, @"\widehat{", "}");
                     break;
                 case 17: // embOBAR (\bar)
                     WrapLastChar(sb, @"\bar{", "}");
                     break;
-                case 11: // embRARROW (Vector \vec)
+                case 11: // embRARROW (Vector \overrightarrow)
                 case 14: // embR1ARROW
-                    WrapLastChar(sb, @"\vec{", "}");
+                    WrapLastChar(sb, @"\overrightarrow{", "}");
                     break;
             }
         }
@@ -612,6 +915,14 @@ namespace AegisQuiz.Infrastructure.Services.Docx
                 case 0x00B0: return @"^\circ ";
                 case 0x2200: return @"\forall ";
                 case 0x2203: return @"\exists ";
+
+                // Tập hợp số chuẩn toán học (Blackboard Bold)
+                case 0x2124: return @"\mathbb{Z}"; // ℤ Tập số nguyên
+                case 0x211D: return @"\mathbb{R}"; // ℝ Tập số thực
+                case 0x2115: return @"\mathbb{N}"; // ℕ Tập số tự nhiên
+                case 0x211A: return @"\mathbb{Q}"; // ℚ Tập số hữu tỉ
+                case 0x2102: return @"\mathbb{C}"; // ℂ Tập số phức
+                case 0x20D7: return string.Empty;  // Combining arrow (được xử lý qua template vector)
 
                 // Chữ cái Hy Lạp thường
                 case 0x03B1: return @"\alpha ";
@@ -685,6 +996,18 @@ namespace AegisQuiz.Infrastructure.Services.Docx
 
             string formula = latex.Trim();
 
+            // 0. Chuẩn hóa vector: loại bỏ ký tự combining rác và đảm bảo mũi tên vector hiển thị chuẩn KaTeX
+            formula = formula.Replace("\u20D7", string.Empty).Replace("⃗", string.Empty);
+            formula = Regex.Replace(formula, @"\\vec\{([^{}]+)\}", @"\overrightarrow{$1}");
+            formula = Regex.Replace(formula, @"\\vec\s+([a-zA-Z0-9])", @"\overrightarrow{$1}");
+
+            // 0b. Chuẩn hóa góc: \hat{ABC} hoặc \hat{A} hoặc \angle ABC -> \widehat{...} theo chuẩn SGK Toán Việt Nam
+            formula = Regex.Replace(formula, @"\\hat\{([^{}]+)\}", @"\widehat{$1}");
+            formula = Regex.Replace(formula, @"\\hat\s+([a-zA-Z0-9]+)", @"\widehat{$1}");
+            formula = Regex.Replace(formula, @"\\angle\s*\{?([A-Z]{3})\}?", @"\widehat{$1}");
+            formula = Regex.Replace(formula, @"∠\s*([A-Z]{3})", @"\widehat{$1}");
+            formula = Regex.Replace(formula, @"([A-Z]{3})\u0302", @"\widehat{$1}");
+
             // 1. Chuẩn hóa hàm lượng giác & giải tích: sinx -> \sin x, cosx -> \cos x
             formula = Regex.Replace(formula, @"(?<![a-zA-Z\\])(sin|cos|tan|cot|sec|csc)\s*([xyztabc])(?![a-zA-Z])", @"\$1 $2");
             formula = Regex.Replace(formula, @"(?<![a-zA-Z\\])(sin|cos|tan|cot|lim|ln|log|arcsin|arccos|arctan|sec|csc)\b", @"\$1");
@@ -702,7 +1025,56 @@ namespace AegisQuiz.Infrastructure.Services.Docx
             // 4. Thu gọn khoảng trắng thừa
             formula = Regex.Replace(formula, @"\s{2,}", " ");
 
+            // 5. Auto-Heal: Cứu chữa các mẫu công thức bị gãy ngoặc do MathType/KaTeX
+            formula = Regex.Replace(formula, @"[\uE000-\uF8FF]", string.Empty); // Xóa ký tự rác Private Use Area (MT Extra glyphs rác)
+            formula = Regex.Replace(formula, @"(\\mathbb\{[A-Z]\})\s*\\\\\s*(?:\\left\\)?\{", @"$1 \setminus \{");
+            formula = Regex.Replace(formula, @"\\\\\s*(?:\\left\\)?\{([^{}]+)(?:\\right\.)?\}", @"\setminus \{$1\}");
+
+            formula = Regex.Replace(formula, @"\\left\[\s*(.*?)\s*\\\\\s*\[\s*\\right\]", @"\left[\begin{matrix} $1 \end{matrix}\right.");
+            formula = Regex.Replace(formula, @"\\left\{\s*(.*?)\s*\\\\\s*\{\s*\\right\}", @"\begin{cases} $1 \end{cases}");
+            formula = Regex.Replace(formula, @"\\left\[\s*(.*?)\s*\\\\\s*\[\\right\]", @"\left[\begin{matrix} $1 \end{matrix}\right.");
+            formula = Regex.Replace(formula, @"\\left\{\s*(.*?)\s*\\\\\s*\{\\right\}", @"\begin{cases} $1 \end{cases}");
+
+            // Đảm bảo các biểu thức có dấu ngắt dòng \\ nằm trong ngoặc vuông hoặc nhọn được bọc matrix/cases
+            if (formula.Contains(@"\\") && !formula.Contains(@"\begin{"))
+            {
+                if (formula.StartsWith(@"\left[") && formula.EndsWith(@"\right."))
+                {
+                    string innerContent = CleanFenceInner(formula.Substring(6, formula.Length - 13).Trim());
+                    formula = $@"\left[\begin{{matrix}} {innerContent} \end{{matrix}}\right.";
+                }
+                else if (formula.StartsWith(@"\left\{") && formula.EndsWith(@"\right."))
+                {
+                    string innerContent = CleanFenceInner(formula.Substring(7, formula.Length - 14).Trim());
+                    formula = $@"\begin{{cases}} {innerContent} \end{{cases}}";
+                }
+                else
+                {
+                    // Công thức nhiều dòng đứng độc lập -> bọc aligned để KaTeX hiển thị hoàn mỹ
+                    formula = $@"\begin{{aligned}} {formula} \end{{aligned}}";
+                }
+            }
+
+            // Dọn sạch triệt để ký tự fence dư thừa ('[' hoặc '\{') đứng trước \end{ hoặc trước \\
+            formula = Regex.Replace(formula, @"(?:\s*\[|\s*\\\{|\s*\]|\s*\\\}\s*)+\s*\\end\{(matrix|cases|aligned|pmatrix)\}", @" \end{$1}");
+            formula = Regex.Replace(formula, @"(?:\s*\[|\s*\\\{|\s*\]|\s*\\\}\s*)+\s*\\\\", @" \\");
+
+            // Bổ sung dấu chấm cho \right bị khuyết
+            formula = Regex.Replace(formula, @"\\right\s*$", @"\right.");
+            formula = Regex.Replace(formula, @"\\right\s*(?=[^.\)\]\}\|])", @"\right. ");
+
             return formula;
+        }
+
+        private static string CleanFenceInner(string inner)
+        {
+            if (string.IsNullOrWhiteSpace(inner)) return string.Empty;
+            string res = inner.Trim();
+            // Xóa ký tự fence rác thừa ở cuối chuỗi ([ hoặc \{ hoặc ] hoặc \})
+            res = Regex.Replace(res, @"(?:\s*\[|\s*\\\{|\s*\]|\s*\\\}\s*)+$", "").Trim();
+            // Xóa ký tự fence rác thừa ngay trước dấu ngắt dòng \\
+            res = Regex.Replace(res, @"(?:\s*\[|\s*\\\{|\s*\]|\s*\\\}\s*)+(?=\\\\)", "");
+            return res;
         }
 
         private static int FindBytePattern(byte[] source, byte[] pattern)

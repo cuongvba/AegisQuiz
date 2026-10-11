@@ -1,0 +1,100 @@
+{
+  "common": {
+    "loading": "読み込み中...",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "delete": "削除",
+    "edit": "編集",
+    "create": "作成",
+    "search": "検索",
+    "filter": "フィルター",
+    "export": "エクスポート",
+    "import": "インポート",
+    "submit": "提出",
+    "next": "次へ",
+    "previous": "前へ",
+    "finish": "完了",
+    "back": "戻る",
+    "close": "閉じる",
+    "confirm": "確認",
+    "yes": "はい",
+    "no": "いいえ",
+    "error": "エラーが発生しました",
+    "success": "成功しました",
+    "noData": "データがありません"
+  },
+  "nav": {
+    "dashboard": "ダッシュボード",
+    "mainMenu": "メインメニュー",
+    "bottomMenu": "ナビゲーションメニュー",
+    "quiz": "クイズ",
+    "practice": "演習",
+    "team": "チーム",
+    "arena": "アリーナ",
+    "mockExam": "模擬試験",
+    "leaderboard": "リーダーボード",
+    "achievements": "実績",
+    "learningPaths": "学習ロードマップ",
+    "admin": "管理",
+    "profile": "プロフィール",
+    "logout": "ログアウト"
+  },
+  "quiz": {
+    "startExam": "試験を開始",
+    "submitAnswer": "回答を送信",
+    "timeRemaining": "残り時間: {{time}}",
+    "questionOf": "問題 {{current}} / {{total}}",
+    "correctAnswer": "正解です！",
+    "wrongAnswer": "不正解です。正解は: {{answer}}",
+    "score": "スコア: {{score}}/{{total}}",
+    "accuracy": "正答率: {{percent}}%",
+    "examComplete": "試験終了",
+    "viewResults": "結果を確認",
+    "retake": "再受験",
+    "explanation": "解説",
+    "aiAnalysis": "AI思考分析",
+    "generating": "AIによる解説を生成中..."
+  },
+  "auth": {
+    "login": "ログイン",
+    "register": "会員登録",
+    "logout": "ログアウト",
+    "loginWithKeycloak": "組織SSOでログイン",
+    "loginWithPKI": "USBトークン(PKI)でログイン",
+    "welcome": "お帰りなさい、{{name}} 様",
+    "sessionExpired": "セッションが切れました。再度ログインしてください。"
+  },
+  "userMenu": {
+    "defaultName": "ユーザー",
+    "accountOf": "{{name}} のアカウント",
+    "menuLabel": "アカウントメニュー",
+    "systemAdminPortal": "システム管理ポータル",
+    "teamLeaderArea": "チームリーダー専用エリア",
+    "learningDashboard": "学習ダッシュボード",
+    "profileAndSecurity": "プロフィールとセキュリティ"
+  },
+  "admin": {
+    "questions": "問題管理",
+    "topics": "トピック管理",
+    "users": "ユーザー管理",
+    "analytics": "分析・統計",
+    "settings": "設定",
+    "importExcel": "Excelから取り込み",
+    "importDocx": "Wordから取り込み",
+    "generateAI": "AI自動生成",
+    "totalQuestions": "総問題数",
+    "questionBank": "問題バンク"
+  },
+  "achievements": {
+    "unlocked": "実績を解除しました！",
+    "xpEarned": "+{{xp}} XP",
+    "yourAchievements": "獲得した実績",
+    "noAchievements": "まだ実績がありません。問題を解いてバッジを集めましょう！"
+  },
+  "errors": {
+    "notFound": "リソースが見つかりません",
+    "unauthorized": "このリソースへのアクセス権限がありません",
+    "serverError": "サーバーエラーが発生しました。後でもう一度お試しください。",
+    "networkError": "ネットワークエラーです。接続を確認してください。"
+  }
+}

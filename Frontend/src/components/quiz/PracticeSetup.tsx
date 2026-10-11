@@ -14,8 +14,11 @@ type Props = {
   topics: TopicSummary[];
   domainGroups?: CognitiveDomainGroupDto[];
   onStart: (config: PracticeConfig) => void;
+  forcedDomainCode?: string;
+  isDomainLocked?: boolean;
   t: (key: string) => string;
 };
+
 
 function defaultTopicConfig(topicKey: string): PracticeTopicConfig {
   return {
@@ -26,7 +29,7 @@ function defaultTopicConfig(topicKey: string): PracticeTopicConfig {
   };
 }
 
-export function PracticeSetup({ topics, domainGroups, onStart, t }: Props) {
+export function PracticeSetup({ topics, domainGroups, onStart, forcedDomainCode, isDomainLocked, t }: Props) {
   const [mode, setMode] = useState<PracticeMode>('study');
   const [topicConfigs, setTopicConfigs] = useState<PracticeTopicConfig[]>([]);
   const [shuffleOptions, setShuffleOptions] = useState(true);
@@ -34,6 +37,7 @@ export function PracticeSetup({ topics, domainGroups, onStart, t }: Props) {
   const [timeLimitMin, setTimeLimitMin] = useState(0);
   const [autoNextOnTimeout, setAutoNextOnTimeout] = useState(true);
   const [activePreset, setActivePreset] = useState<ExamCategoryPreset | null>(null);
+
 
   const handleSelectMultipleTopics = (keys: string[], select: boolean) => {
     if (select) {
@@ -173,6 +177,8 @@ export function PracticeSetup({ topics, domainGroups, onStart, t }: Props) {
           onToggleTopic={toggleTopic}
           onUpdateTopicConfig={updateTopicConfig}
           onSelectMultipleTopics={handleSelectMultipleTopics}
+          forcedDomainCode={forcedDomainCode}
+          isDomainLocked={isDomainLocked}
           t={t}
         />
       </section>

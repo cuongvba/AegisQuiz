@@ -2,7 +2,11 @@
 **/.git
 **/bin
 **/obj
+**/publish
+**/TestResults
 **/*.user
 **/*.suo
 .dockerignore
 README.md
+zz_diag_timing.txt
+

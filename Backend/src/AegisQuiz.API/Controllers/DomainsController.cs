@@ -27,6 +27,38 @@ namespace AegisQuiz.API.Controllers
             _tenantContext = tenantContext;
         }
 
+        private async Task<Guid> GetTenantIdAsync()
+        {
+            var tenantId = _tenantContext.CurrentTenantId;
+            if (tenantId != Guid.Empty) return tenantId;
+
+            var claimVal = User.FindFirst("tenant_id")?.Value
+                        ?? User.FindFirst("tenantId")?.Value
+                        ?? User.FindFirst("TenantId")?.Value;
+            if (!string.IsNullOrEmpty(claimVal) && Guid.TryParse(claimVal, out var tid) && tid != Guid.Empty)
+            {
+                return tid;
+            }
+
+            var userIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (!string.IsNullOrEmpty(userIdStr) && Guid.TryParse(userIdStr, out var uId))
+            {
+                var u = await _db.UserAccounts.AsNoTracking().FirstOrDefaultAsync(x => x.Id == uId);
+                if (u != null && u.TenantId != Guid.Empty)
+                {
+                    return u.TenantId;
+                }
+            }
+
+            var defaultTenant = await _db.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.IsActive);
+            if (defaultTenant != null)
+            {
+                return defaultTenant.Id;
+            }
+
+            return Guid.Parse("00000000-0000-0000-0000-000000000001");
+        }
+
         // ── GET api/quiz/domains ───────────────────────────────────────────────
         /// <summary>
         /// Lấy danh sách ngành nghề có hiệu lực cho Tenant hiện tại.
@@ -37,7 +69,7 @@ namespace AegisQuiz.API.Controllers
         {
             try
             {
-                var tenantId = _tenantContext.CurrentTenantId;
+                var tenantId = await GetTenantIdAsync();
                 
                 // 1. Kiểm tra cấu hình riêng của Tenant
                 var tenantConfigs = await _db.TenantDomainConfigs
@@ -114,7 +146,7 @@ namespace AegisQuiz.API.Controllers
         {
             try
             {
-                var tenantId = _tenantContext.CurrentTenantId;
+                var tenantId = await GetTenantIdAsync();
                 var allDomains = await _db.DynamicDomains
                     .AsNoTracking()
                     .Where(d => d.IsSystemStandard || d.TenantId == tenantId)
@@ -154,7 +186,8 @@ namespace AegisQuiz.API.Controllers
 
         // ── POST api/quiz/domains ──────────────────────────────────────────────
         /// <summary>
-        /// Tạo mới một ngành hoặc tiểu ngành riêng cho Tenant
+        /// Tạo mới hoặc kích hoạt thông minh ngành/tiểu ngành cho Tenant (100% OCP & Idempotent).
+        /// Nếu ngành đã có sẵn trong catalog hệ sinh thái: Tự động kích hoạt cho đơn vị thay vì báo lỗi.
         /// </summary>
         [HttpPost]
         public async Task<IActionResult> CreateCustomDomain([FromBody] CreateDomainRequest req)
@@ -164,51 +197,99 @@ namespace AegisQuiz.API.Controllers
                 if (string.IsNullOrWhiteSpace(req.Code) || string.IsNullOrWhiteSpace(req.Name))
                     return BadRequest(new { message = "Mã ngành (Code) và Tên ngành (Name) là bắt buộc." });
 
-                var cleanCode = req.Code.Trim().ToUpperInvariant();
-                var tenantId = _tenantContext.CurrentTenantId;
+                var cleanCode = req.Code.Trim().ToUpperInvariant().Replace(" ", "_");
+                var tenantId = await GetTenantIdAsync();
 
                 var existing = await _db.DynamicDomains
-                    .AsNoTracking()
                     .FirstOrDefaultAsync(d => d.Code == cleanCode);
 
+                DynamicDomain domainObj;
+
                 if (existing != null)
-                    return BadRequest(new { message = $"Mã ngành '{cleanCode}' đã tồn tại trong hệ thống." });
-
-                var newDomain = new DynamicDomain
                 {
-                    Code = cleanCode,
-                    Name = req.Name.Trim(),
-                    Description = req.Description,
-                    Icon = string.IsNullOrWhiteSpace(req.Icon) ? "Layers" : req.Icon.Trim(),
-                    ColorBadge = string.IsNullOrWhiteSpace(req.ColorBadge) ? "#2563eb" : req.ColorBadge.Trim(),
-                    IsSystemStandard = _tenantContext.IsSystemAdmin && req.IsSystemStandard,
-                    TenantId = _tenantContext.IsSystemAdmin && req.IsSystemStandard ? null : tenantId,
-                    ParentDomainCode = !string.IsNullOrWhiteSpace(req.ParentDomainCode) ? req.ParentDomainCode.Trim().ToUpperInvariant() : null,
-                    DisplayOrder = req.DisplayOrder,
-                    IsActive = true,
-                    CreatedAt = DateTime.UtcNow
-                };
+                    domainObj = existing;
+                    domainObj.IsActive = true;
+                    if (!string.IsNullOrWhiteSpace(req.Icon) && (string.IsNullOrWhiteSpace(domainObj.Icon) || domainObj.Icon == "Layers"))
+                    {
+                        domainObj.Icon = req.Icon.Trim();
+                    }
+                    if (!string.IsNullOrWhiteSpace(req.ColorBadge))
+                    {
+                        domainObj.ColorBadge = req.ColorBadge.Trim();
+                    }
+                }
+                else
+                {
+                    domainObj = new DynamicDomain
+                    {
+                        Code = cleanCode,
+                        Name = req.Name.Trim(),
+                        Description = req.Description,
+                        Icon = string.IsNullOrWhiteSpace(req.Icon) ? "Layers" : req.Icon.Trim(),
+                        ColorBadge = string.IsNullOrWhiteSpace(req.ColorBadge) ? "#8b5cf6" : req.ColorBadge.Trim(),
+                        IsSystemStandard = _tenantContext.IsSystemAdmin && req.IsSystemStandard,
+                        TenantId = _tenantContext.IsSystemAdmin && req.IsSystemStandard ? null : tenantId,
+                        ParentDomainCode = !string.IsNullOrWhiteSpace(req.ParentDomainCode) ? req.ParentDomainCode.Trim().ToUpperInvariant() : null,
+                        DisplayOrder = req.DisplayOrder > 0 ? req.DisplayOrder : 1,
+                        IsActive = true,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    _db.DynamicDomains.Add(domainObj);
+                }
 
-                _db.DynamicDomains.Add(newDomain);
-
-                // Tự động bật ngành này cho tenant
+                // Tự động kích hoạt (Upsert) cấu hình ngành cho Tenant này
                 if (tenantId != Guid.Empty)
                 {
-                    _db.TenantDomainConfigs.Add(new TenantDomainConfig
+                    var existingConfig = await _db.TenantDomainConfigs
+                        .FirstOrDefaultAsync(c => c.TenantId == tenantId && c.DomainCode == cleanCode);
+
+                    if (existingConfig != null)
                     {
-                        TenantId = tenantId,
-                        DomainCode = cleanCode,
-                        IsEnabled = true,
-                        DisplayOrder = req.DisplayOrder
-                    });
+                        existingConfig.IsEnabled = true;
+                        if (!string.IsNullOrWhiteSpace(req.Name))
+                        {
+                            existingConfig.CustomDisplayName = req.Name.Trim();
+                        }
+                        existingConfig.UpdatedAt = DateTime.UtcNow;
+                    }
+                    else
+                    {
+                        _db.TenantDomainConfigs.Add(new TenantDomainConfig
+                        {
+                            TenantId = tenantId,
+                            DomainCode = cleanCode,
+                            IsEnabled = true,
+                            CustomDisplayName = req.Name.Trim(),
+                            DisplayOrder = req.DisplayOrder > 0 ? req.DisplayOrder : 1,
+                            UpdatedAt = DateTime.UtcNow
+                        });
+                    }
                 }
 
                 await _db.SaveChangesAsync();
-                return Ok(new { message = "Tạo ngành thành công", domain = newDomain });
+
+                return Ok(new
+                {
+                    message = existing != null
+                        ? $"Đã kích hoạt ngành '{domainObj.Name}' ({cleanCode}) vào hệ thống của đơn vị thành công!"
+                        : $"Đã tạo mới và kích hoạt ngành '{domainObj.Name}' ({cleanCode}) thành công!",
+                    domain = new
+                    {
+                        code = domainObj.Code,
+                        name = !string.IsNullOrWhiteSpace(req.Name) ? req.Name.Trim() : domainObj.Name,
+                        label = !string.IsNullOrWhiteSpace(req.Name) ? req.Name.Trim() : domainObj.Name,
+                        description = domainObj.Description,
+                        icon = domainObj.Icon,
+                        colorBadge = domainObj.ColorBadge,
+                        isSystemStandard = domainObj.IsSystemStandard,
+                        parentDomainCode = domainObj.ParentDomainCode,
+                        displayOrder = domainObj.DisplayOrder
+                    }
+                });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = $"Lỗi tạo ngành mới: {ex.Message}" });
+                return StatusCode(500, new { message = $"Lỗi quản lý ngành: {ex.Message}" });
             }
         }
 
@@ -221,7 +302,7 @@ namespace AegisQuiz.API.Controllers
         {
             try
             {
-                var tenantId = _tenantContext.CurrentTenantId;
+                var tenantId = await GetTenantIdAsync();
                 if (tenantId == Guid.Empty)
                     return BadRequest(new { message = "Không xác định được Tenant ID." });
 
@@ -275,7 +356,7 @@ namespace AegisQuiz.API.Controllers
         {
             try
             {
-                var tenantId = _tenantContext.CurrentTenantId;
+                var tenantId = await GetTenantIdAsync();
                 var query = _db.TenantCoordinatePresets
                     .AsNoTracking()
                     .Where(p => p.TenantId == tenantId);
@@ -308,7 +389,7 @@ namespace AegisQuiz.API.Controllers
         {
             try
             {
-                var tenantId = _tenantContext.CurrentTenantId;
+                var tenantId = await GetTenantIdAsync();
                 if (tenantId == Guid.Empty)
                     return BadRequest(new { message = "Không xác định được Tenant ID." });
 
@@ -345,7 +426,7 @@ namespace AegisQuiz.API.Controllers
         {
             try
             {
-                var tenantId = _tenantContext.CurrentTenantId;
+                var tenantId = await GetTenantIdAsync();
                 var preset = await _db.TenantCoordinatePresets
                     .FirstOrDefaultAsync(p => p.Id == id && p.TenantId == tenantId);
 

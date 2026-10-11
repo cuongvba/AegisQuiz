@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using AegisQuiz.Application.Models.AI;
+using AegisQuiz.Domain.Entities;
 
 namespace AegisQuiz.Application.Interfaces
 {
@@ -46,5 +48,34 @@ namespace AegisQuiz.Application.Interfaces
         /// Thử nghiệm kết nối và đo độ trễ (latency test) của từng Provider
         /// </summary>
         Task<Dictionary<string, (bool Success, long LatencyMs, string Message)>> TestProvidersAsync();
+
+        /// <summary>
+        /// Làm tươi và đồng bộ danh mục Model & Key Vault trực tiếp từ Database PostgreSQL (0ms Hot-Reload)
+        /// </summary>
+        Task RefreshRegistryFromDatabaseAsync();
+
+        /// <summary>
+        /// Lấy danh mục các Model đã được chuẩn hóa từ PostgreSQL/Cache phục vụ tuyển chọn Bầy Sói
+        /// </summary>
+        Task<IReadOnlyList<AiModelRegistryDto>> GetActiveNormalizedModelsAsync(
+            CognitiveArchetype? archetypeFilter = null,
+            CancellationToken ct = default);
+
+        /// <summary>
+        /// Thực thi trực tiếp một Model chỉ định (Model-Targeted Dispatch) với đầy đủ Semantic Cache, Waterfall Key và Circuit Breaker
+        /// </summary>
+        Task<AiExecutionResponse> ExecuteModelDirectAsync(
+            string modelCode,
+            AiExecutionRequest request,
+            Guid? userId = null,
+            Guid? tenantId = null,
+            CancellationToken ct = default);
+
+        /// <summary>
+        /// Lấy danh sách Preset Gateway động từ Database/Config phục vụ đăng ký nhanh mô hình
+        /// </summary>
+        Task<IReadOnlyList<GatewayModelPresetDto>> GetDynamicGatewayPresetsAsync(
+            string? gateway = null,
+            CancellationToken ct = default);
     }
 }

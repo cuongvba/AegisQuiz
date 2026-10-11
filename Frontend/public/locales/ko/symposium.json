@@ -1,0 +1,75 @@
+{
+  "header": {
+    "title": "Universal Epistemic Symposium",
+    "badge": "Live Dialectic",
+    "subtitle": "Inter-council dialectical forum convening {{count}} self-evolving Sovereign Academies (OCP) • Deep Research empirical grounding • Synthesis of universal truth",
+    "zeroHardcode": "Zero Hard-code",
+    "multiModelCot": "Multi-Model CoT",
+    "refresh": "Refresh ({{count}} Councils)",
+    "refreshing": "Refreshing..."
+  },
+  "conveneBar": {
+    "topicTitleLabel": "Symposium Inquiry Topic",
+    "topicTitlePlaceholder": "Enter inquiry topic (e.g., The nature of consciousness and quantum mechanics...)",
+    "coreProblemLabel": "Foundational Dialectical Antinomy",
+    "coreProblemPlaceholder": "Describe the core dilemma, empirical friction, or cognitive contradiction to resolve...",
+    "presetLabel": "Preset Topics:",
+    "teleologyLabel": "Teleology Orientation Mode",
+    "teleologyAuto": "Auto-Detect Semantics",
+    "teleologyEmpirical": "Empirical Grounding & Actionable Roadmap",
+    "teleologyEpistemic": "Epistemic Genesis & Open Conjectures",
+    "teleologyHybrid": "Master Hybrid (Holistic Synthesis)",
+    "adversarialCritique": "Activate Adversarial Seat (Devil's Advocate)",
+    "selectCouncils": "Select Participating Councils",
+    "autoSelectNotice": "The engine will automatically select optimal domain councils and contrarian anchors via OCP algorithm",
+    "conveneButton": "Convene Grand Symposium",
+    "conveningButton": "Orchestrating Dialectics..."
+  },
+  "drawer": {
+    "title": "Sovereign AI Councils Registry",
+    "subtitle": "Administer discipline academies & allocate Wolfpack Swarms",
+    "selectAll": "Select All",
+    "autoMode": "Auto Select",
+    "prestigeElo": "Prestige ELO:",
+    "taxonomy": "Taxonomy:",
+    "seats": "Scholar Seats",
+    "statusReady": "Ready",
+    "statusDegraded": "Degraded",
+    "statusOffline": "Offline"
+  },
+  "phases": {
+    "phase0": "Pre-Symposium Empirical Deep Research Investigation",
+    "phase1": "Foundational Problem Formulation",
+    "phase2": "Socratic Inter-Disciplinary Cross-Examination",
+    "phase3": "Adversarial Falsifiability Critique",
+    "phase4": "Higher-Order Metatheory Synthesis",
+    "phase5": "Independent 5-Axis Rubric Blind Arbitration",
+    "phase6": "Knowledge Genesis & Consensus Declaration"
+  },
+  "rubric": {
+    "title": "Independent 5-Axis Rubric Arbitration",
+    "groundingRate": "Empirical Citation Rate [E#]:",
+    "r1": "Logical & Mathematical Rigor",
+    "r2": "Popperian Falsifiability",
+    "r3": "Ontological & Humanistic Depth",
+    "r4": "Pragmatic Actionability",
+    "r5": "Fallacy & Trap Resistance",
+    "compositeScore": "Composite Score",
+    "evolutionIndex": "Epistemic Evolution Index (EEI):",
+    "evaluatedBy": "Independently arbitrated by:"
+  },
+  "multiRound": {
+    "round": "Round {{round}}",
+    "nextRoundButton": "Convene Next Dialectical Round",
+    "socraticDirective": "Socratic Directives & Guidance",
+    "addDocuments": "Feed Additional Documents / Empirical Dossier",
+    "finalRound": "Conclude this as the definitive round",
+    "consensusReached": "The Sovereign Council has reached ultimate consensus!"
+  },
+  "export": {
+    "button": "Export to Notebook Hub",
+    "exporting": "Crystallizing Chronicle...",
+    "success": "Proceedings successfully crystallized to AegisNotebook Hub!",
+    "openNotebook": "Open Notebook"
+  }
+}

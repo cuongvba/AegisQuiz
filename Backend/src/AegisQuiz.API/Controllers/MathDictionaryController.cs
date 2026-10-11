@@ -216,6 +216,7 @@ namespace AegisQuiz.API.Controllers
         /// Lấy toàn bộ cấu hình typography và tham số động của Math Engine
         /// </summary>
         [HttpGet("settings")]
+        [Microsoft.AspNetCore.Authorization.AllowAnonymous]
         public IActionResult GetSettings()
         {
             var settings = _mathDictionary.GetEngineSettings();
@@ -250,6 +251,7 @@ namespace AegisQuiz.API.Controllers
         /// Lấy cấu hình profile toán học theo môn học chuyên biệt (Toán, Lý, Hóa, Sinh)
         /// </summary>
         [HttpGet("settings/subject/{subjectCode}")]
+        [Microsoft.AspNetCore.Authorization.AllowAnonymous]
         public IActionResult GetSubjectProfile(string subjectCode)
         {
             var profile = _mathDictionary.GetSubjectProfile(subjectCode);

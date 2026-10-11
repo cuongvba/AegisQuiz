@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Clock3, Flag, Lightbulb, ChevronDown, ChevronUp, RefreshCw, Home, ArrowLeft, CheckCircle, AlertTriangle } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { ChevronLeft, ChevronRight, Clock3, Flag, Lightbulb, ChevronDown, ChevronUp, RefreshCw, Home, ArrowLeft, CheckCircle, AlertTriangle, Sparkles } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { PracticeSetup } from '@/components/quiz/PracticeSetup';
 import { QuestionCard } from '@/components/quiz/QuestionCard';
@@ -11,6 +11,8 @@ import { calculateQuizResult, isQuestionAnswered, scoreQuestion, processBackendQ
 import { useLearnerI18n } from '@/lib/i18n';
 import { learnerQuizService } from '@/services/learner-quiz.service';
 import type { LearnerAnswer, LearnerQuestion, PracticeConfig } from '@/types/quiz';
+import { VERTICAL_PRESETS } from './verticals/types';
+
 
 const AUTH_HUB_URL = (import.meta as any).env?.VITE_AUTH_HUB_URL
   || (typeof window !== 'undefined' && window.location.hostname.endsWith('dehoc.vn') ? 'https://daotao.dehoc.vn' : (typeof window !== 'undefined' ? window.location.origin : ''));
@@ -232,20 +234,29 @@ export function PracticePage() {
     window.location.assign(authLoginUrl);
   };
 
+  const [searchParams] = useSearchParams();
+  const domainParam = (searchParams.get('domain') || searchParams.get('vertical') || '').toUpperCase();
+  const creatorParam = searchParams.get('creator') || '';
+  const activeVertical = VERTICAL_PRESETS[domainParam] || (creatorParam ? null : VERTICAL_PRESETS.GENERAL);
+
   const { data: topicsList = [] } = useQuery({
-    queryKey: ['learner-quiz-topics-list'],
+    queryKey: ['learner-quiz-topics-list', domainParam, creatorParam],
     queryFn: () => learnerQuizService.getTopics()
   });
 
   const { data: topicCounts = [] } = useQuery({
-    queryKey: ['learner-quiz-topic-counts'],
+    queryKey: ['learner-quiz-topic-counts', domainParam, creatorParam],
     queryFn: () => learnerQuizService.getTopicCounts()
   });
 
   const { data: domainGroups = [] } = useQuery({
-    queryKey: ['learner-quiz-topic-tree'],
-    queryFn: () => learnerQuizService.getTopicTree()
+    queryKey: ['learner-quiz-topic-tree', domainParam, creatorParam],
+    queryFn: () => learnerQuizService.getTopicTree({
+      domainCode: domainParam || undefined,
+      search: creatorParam ? `creator:${creatorParam}` : undefined
+    })
   });
+
 
   const getTopicFullPath = (topic: any, allTopics: any[]): string => {
     const path: string[] = [topic.name];
@@ -540,9 +551,26 @@ export function PracticePage() {
               >
                 <Home className="h-4 w-4" />
               </button>
-              <h1 className="font-black tracking-tight text-slate-900 truncate text-base leading-tight md:text-xl">
-                {!isWorkingSession && <span className="hidden sm:inline-block mr-2 uppercase tracking-[0.1em] text-cyan-600 text-xs font-bold">{t('learnerChallenge')}</span>}
-                {t('adaptiveAssessment')}
+              <h1 className="font-black tracking-tight text-slate-900 truncate text-base leading-tight md:text-xl flex items-center gap-2">
+                {creatorParam ? (
+                  <>
+                    <span>👨‍🏫</span>
+                    <span>Không Gian Thầy/Cô {creatorParam}</span>
+                  </>
+                ) : activeVertical && activeVertical.key !== 'GENERAL' ? (
+                  <>
+                    <span>{activeVertical.heroIcon}</span>
+                    <span>{activeVertical.shortTitle}</span>
+                    <span className="hidden sm:inline-block text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-cyan-100 text-cyan-800 border border-cyan-200">
+                      {activeVertical.heroBadge}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    {!isWorkingSession && <span className="hidden sm:inline-block mr-2 uppercase tracking-[0.1em] text-cyan-600 text-xs font-bold">{t('learnerChallenge')}</span>}
+                    {t('adaptiveAssessment')}
+                  </>
+                )}
               </h1>
             </div>
 
@@ -667,7 +695,14 @@ export function PracticePage() {
               Đang chuẩn bị câu hỏi từ ngân hàng...
             </div>
           ) : (
-            <PracticeSetup topics={topics} domainGroups={domainGroups} onStart={handleStartSession} t={t} />
+            <PracticeSetup
+              topics={topics}
+              domainGroups={domainGroups}
+              onStart={handleStartSession}
+              forcedDomainCode={domainParam || undefined}
+              isDomainLocked={Boolean(domainParam)}
+              t={t}
+            />
           )
         ) : submitted ? (
           <ResultScreen

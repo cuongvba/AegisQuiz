@@ -1,0 +1,83 @@
+{
+  "greeting": {
+    "morning": "좋은 아침입니다",
+    "afternoon": "좋은 오후입니다",
+    "evening": "좋은 저녁입니다",
+    "defaultName": "평가 전문가"
+  },
+  "hero": {
+    "eyebrow": "Aegis Enterprise AI Engine v4.0",
+    "badgeTeamLeader": "평가 팀 리더",
+    "badgeAdmin": "시스템 관리자",
+    "badgeLearner": "우수 학습자",
+    "subheadline": "오늘은 인지적 한계를 뛰어넘을 최적의 시간입니다. IRT 엔진이 최신 맞춤형 문항 매트릭스를 준비했습니다!"
+  },
+  "radarPanel": {
+    "title": "360° 인지 역량 맵",
+    "badge": "IRT CAT 표준",
+    "subtitle": "문항 난이도($\\theta$)와 실제 인지 변별도의 상관관계",
+    "thisWeek": "이번 주",
+    "thisMonth": "이번 달"
+  },
+  "actions": {
+    "practice": { "title": "AI 연습", "desc": "3,500개 이상의 문항" },
+    "arena": { "title": "아레나", "desc": "골든벨 & PvP 대전" },
+    "team": { "title": "팀", "desc": "진도율 및 팀 시험" },
+    "adaptive": { "title": "역량 평가 시험", "desc": "IRT 역량 표준" }
+  },
+  "metrics": {
+    "weeklyGoal": {
+      "label": "주간 목표",
+      "badge": "71% 달성",
+      "value": "5/7",
+      "unit": "학습 일수",
+      "footer": "목표 달성까지 2일 남음"
+    },
+    "accuracy": {
+      "label": "평균 정답률",
+      "badge": "이번 주 +4.2%",
+      "footer": "기관 전체 상위 5% 학습자"
+    },
+    "questionsSolved": {
+      "label": "해결한 문항",
+      "badge": "48개 토픽",
+      "unit": "문항 완료",
+      "footer": "현재 연속 정답 기록: 18문항"
+    },
+    "eloRank": {
+      "label": "순위표 랭킹",
+      "badge": "3위",
+      "value": "1,850",
+      "tier": "다이아몬드 III",
+      "footer": "마스터 티어까지 150 LP"
+    }
+  },
+  "radar": {
+    "loading": "IRT 역량 데이터를 취합하는 중...",
+    "seriesName": "숙련도 점수",
+    "strengthLabel": "강점:",
+    "strengthValue": "IT 기술 (92%)",
+    "weaknessLabel": "보완 필요:",
+    "weaknessValue": "수학 및 논리 (68%)",
+    "openPractice": "상세 연습실 입장",
+    "topics": {
+      "math": "수학 및 논리",
+      "tech": "IT 기술",
+      "language": "외국어 (영어)",
+      "process": "업무 프로세스 및 규정",
+      "management": "관리 역량"
+    }
+  },
+  "focusAreas": {
+    "title": "집중 개선 필요 영역",
+    "priority": "높은 우선순위",
+    "cta": "지금 취약점 복습하기!"
+  },
+  "aiMentor": {
+    "title": "AI 멘토 • Gemini 코치",
+    "subtitle": "맞춤형 학습 경로 안내",
+    "loading": "최적의 학습 계획을 수립하는 중...",
+    "fallbackPlan": "💡 오늘의 팁: IT 기술의 92%와 관리 역량의 88%를 마스터하셨습니다. 수학/논리 20문항을 15분간 복습하여 360° 역량 밸런스를 맞추어보세요.",
+    "cta": "전체 학습 경로 보기 →"
+  }
+}

@@ -3,8 +3,7 @@ import type { LearnerLanguage } from '@/types/quiz';
 
 type Dictionary = Record<string, string>;
 
-const DICT: Record<LearnerLanguage, Dictionary> = {
-  en: {
+const enDict: Dictionary = {
     langVi: 'VI',
     langEn: 'EN',
     learnerChallenge: 'Dehoc Learning Platform',
@@ -147,8 +146,9 @@ const DICT: Record<LearnerLanguage, Dictionary> = {
     needsReview: 'Needs Review',
     expand: 'Expand',
     collapse: 'Collapse',
-  },
-  vi: {
+};
+
+const viDict: Dictionary = {
     langVi: 'VI',
     langEn: 'EN',
     learnerChallenge: 'Nền tảng Đào tạo Dehoc',
@@ -290,19 +290,74 @@ const DICT: Record<LearnerLanguage, Dictionary> = {
     needsReview: 'Cần ôn lại',
     expand: 'Mở rộng',
     collapse: 'Thu gọn',
+};
+
+const DICT: Record<LearnerLanguage, Dictionary> = {
+  en: enDict,
+  vi: viDict,
+  ja: {
+    ...enDict,
+    Dashboard: 'ダッシュボード',
+    welcomeBack: 'おかえりなさい、',
+    learner: '学習者',
+    revise: '復習',
+    previous: '前へ',
+    next: '次へ',
+    finish: '完了',
+    score: 'スコア',
+    progress: '進捗',
+    hint: 'ヒント',
+    retry: '再試行',
+    submitAttempt: '提出',
+  },
+  ko: {
+    ...enDict,
+    Dashboard: '대시보드',
+    welcomeBack: '환영합니다,',
+    learner: '학습자',
+    revise: '복습',
+    previous: '이전',
+    next: '다음',
+    finish: '완료',
+    score: '점수',
+    progress: '진도율',
+    hint: '힌트',
+    retry: '다시 풀기',
+    submitAttempt: '제출',
+  },
+  ar: {
+    ...enDict,
+    Dashboard: 'لوحة القيادة',
+    welcomeBack: 'مرحباً بعودتك،',
+    learner: 'المتعلم',
+    revise: 'مراجعة',
+    previous: 'السابق',
+    next: 'التالي',
+    finish: 'إنهاء',
+    score: 'النتيجة',
+    progress: 'التقدم',
+    hint: 'تلميح',
+    retry: 'إعادة المحاولة',
+    submitAttempt: 'إرسال',
   },
 };
 
 const STORAGE_KEY = 'i18nextLng';
 
+const VALID_LANGS: LearnerLanguage[] = ['vi', 'en', 'ja', 'ko', 'ar'];
+
+function isValidLang(val: string | null): val is LearnerLanguage {
+  return val !== null && VALID_LANGS.includes(val as LearnerLanguage);
+}
+
 export function useLearnerI18n() {
   const [lang, setLang] = useState<LearnerLanguage>(() => {
     const queryLang = new URLSearchParams(window.location.search).get('lang');
-    if (queryLang === 'vi' || queryLang === 'en') return queryLang;
+    if (isValidLang(queryLang)) return queryLang;
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved === 'vi' || saved === 'en') return saved;
+    if (isValidLang(saved)) return saved;
     const legacy = localStorage.getItem('learner-app-lang');
-    return legacy === 'vi' || legacy === 'en' ? legacy : 'en';
+    return isValidLang(legacy) ? legacy : 'vi';
   });
 
   useEffect(() => {
@@ -310,7 +365,7 @@ export function useLearnerI18n() {
     localStorage.setItem('learner-app-lang', lang);
   }, [lang]);
 
-  const t = (key: string): string => DICT[lang][key] ?? DICT.en[key] ?? key;
+  const t = (key: string): string => DICT[lang]?.[key] ?? DICT.en[key] ?? key;
 
   return { lang, setLang, t };
 }

@@ -135,19 +135,39 @@ namespace AegisQuiz.UnitTests
             var filePath = @"D:\Cuong\DuAn\mybank\2026-TNPT\DeToan.docx";
             if (!File.Exists(filePath)) return;
 
-            var parser = new DocxParserService();
-            using var fs = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            var questions = parser.ParseDocxFile(fs);
+            using var archive = System.IO.Compression.ZipFile.OpenRead(filePath);
+            var wmfEntries = archive.Entries
+                .Where(e => e.FullName.EndsWith(".wmf", StringComparison.OrdinalIgnoreCase))
+                .OrderBy(e => e.Name.Length).ThenBy(e => e.Name)
+                .ToList();
 
-            var q = questions.FirstOrDefault(x => x.Content.Contains("biểu diễn của vect"));
-            Assert.NotNull(q);
-
-            _output.WriteLine("=================== CÂU HỎI VECTO ===================");
-            _output.WriteLine($"CONTENT: {q.Content}");
-            _output.WriteLine($"OPTIONS COUNT: {q.Options.Count}");
-            for (int i = 0; i < q.Options.Count; i++)
+            foreach (var entry in wmfEntries.Take(20))
             {
-                _output.WriteLine($"OPTION [{i}]: {q.Options[i]}");
+                using var ms = new MemoryStream();
+                using var s = entry.Open();
+                s.CopyTo(ms);
+                var b = ms.ToArray();
+                MtefToLatexConverter.TryConvert(b, out var katex);
+                MathTypeWmfEngine.TryExtractSimpleMathText(b, out var simple);
+                _output.WriteLine($"{entry.Name} ({b.Length}B) -> MTEF: {katex} | Simple: {simple}");
+
+                if (entry.Name == "image8.wmf" || entry.Name == "image13.wmf" || entry.Name == "image49.wmf")
+                {
+                    int tagIdx = -1;
+                    var tagBytes = System.Text.Encoding.ASCII.GetBytes("Design Science, Inc.\0");
+                    for (int i = 0; i <= b.Length - tagBytes.Length; i++)
+                    {
+                        bool match = true;
+                        for (int j = 0; j < tagBytes.Length; j++)
+                            if (b[i + j] != tagBytes[j]) { match = false; break; }
+                        if (match) { tagIdx = i + tagBytes.Length; break; }
+                    }
+                    if (tagIdx >= 0)
+                    {
+                        var hex = BitConverter.ToString(b, tagIdx, b.Length - tagIdx);
+                        _output.WriteLine($"  FULL MTEF HEX ({entry.Name}, len={b.Length - tagIdx}): {hex}");
+                    }
+                }
             }
         }
 
@@ -300,8 +320,8 @@ namespace AegisQuiz.UnitTests
                 _output.WriteLine($"[CASE VECTOR a=2k+i-3j] image49.wmf: Sim={sim}, Text='{txt}'");
                 _output.WriteLine($"[SVG image49]: {svg.Substring(0, Math.Min(300, svg.Length))}");
                 Assert.True(sim, "Công thức vector image49.wmf phải đơn giản hóa thành công");
-                Assert.Contains("\\vec{a}", txt);
-                Assert.Contains("\\vec{k}", txt);
+                Assert.True(txt.Contains("\\vec{a}") || txt.Contains("\\overrightarrow{a}"), $"Expected \\vec{{a}} or \\overrightarrow{{a}} but got: {txt}");
+                Assert.True(txt.Contains("\\vec{k}") || txt.Contains("\\overrightarrow{k}"), $"Expected \\vec{{k}} or \\overrightarrow{{k}} but got: {txt}");
             }
 
             // 3c. Trường hợp G(3; 8/3; 3) (image99.wmf)

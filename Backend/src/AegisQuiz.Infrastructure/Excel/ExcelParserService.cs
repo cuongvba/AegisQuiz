@@ -483,15 +483,9 @@ namespace AegisQuiz.Infrastructure.Excel
                     var targetLevelRaw = colMap.TargetLevel >= 0 ? GetCellValue(row, colMap.TargetLevel).Trim() : string.Empty;
                     var domainRaw = colMap.DomainCode >= 0 ? GetCellValue(row, colMap.DomainCode).Trim() : string.Empty;
 
-                    // Cập nhật ngữ cảnh dùng chung nếu có trên dòng này
-                    if (!string.IsNullOrWhiteSpace(contextRaw))
-                    {
-                        currentContextContent = contextRaw;
-                    }
-                    if (!string.IsNullOrWhiteSpace(contextTitleRaw))
-                    {
-                        currentContextTitle = contextTitleRaw;
-                    }
+                    // Cập nhật ngữ cảnh dùng chung (hỗ trợ đọc trực tiếp hoặc kế thừa từ ô Merged Region)
+                    currentContextContent = contextRaw;
+                    currentContextTitle = contextTitleRaw;
 
                     // Tính thời gian làm bài chuẩn (DurationSeconds)
                     int durationSeconds = 60;
@@ -561,7 +555,13 @@ namespace AegisQuiz.Infrastructure.Excel
                         ContentType = !string.IsNullOrWhiteSpace(mediaRaw) ? "image" : "text",
                         OptionType = options.Any(o => o.Contains("data:image/") || DetectMediaType(o) != "text") ? "image" : "text",
                         ContextTitle = string.IsNullOrWhiteSpace(currentContextContent) ? null : currentContextTitle,
-                        ContextContent = string.IsNullOrWhiteSpace(currentContextContent) ? null : currentContextContent
+                        ContextContent = string.IsNullOrWhiteSpace(currentContextContent) ? null : currentContextContent,
+                        SourceFileName = fileName ?? "Import.xlsx",
+                        SourceExamName = sheetName,
+                        SourceSectionName = string.IsNullOrWhiteSpace(currentSectionTitle) ? null : currentSectionTitle,
+                        SourceQuestionNo = !string.IsNullOrWhiteSpace(sttVal) ? sttVal : (sheetPreview.Questions.Count + 1).ToString(),
+                        SourceRowIndex = r + 1,
+                        CanonicalContentHash = ExamDeduplicationEngine.GenerateCanonicalFingerprint(CleanText(contentVal), options)
                     };
 
                     sheetPreview.Questions.Add(dto);
@@ -1425,6 +1425,36 @@ namespace AegisQuiz.Infrastructure.Excel
                     };
                     break;
                 }
+                case "MULTI_TRUE_FALSE":
+                {
+                    var optList = BuildOptionList(options);
+                    var expectedMap = MultiTrueFalseQuestion.ExtractExpectedMap(null, answerRaw, options);
+                    var subItemsPayload = options.Select((o, idx) => {
+                        string id = ((char)('a' + idx)).ToString();
+                        bool isCorrect = expectedMap.TryGetValue(id, out var val) && val;
+                        return new { id, text = o, expected = isCorrect };
+                    }).ToArray();
+                    payloadObj = new
+                    {
+                        options = optList,
+                        subItems = subItemsPayload,
+                        correctMap = expectedMap,
+                        correctAnswer = answerRaw,
+                        scoringScheme = "TNPT_2025",
+                        explanation = reference,
+                        domainCode = dto?.DomainCode ?? "GENERAL",
+                        tags = dto?.Tags ?? new List<string>(),
+                        targetLevel = dto?.TargetLevel,
+                        assessmentPurpose = dto?.AssessmentPurpose,
+                        issuingOrg = dto?.IssuingOrg,
+                        benchmarkYear = dto?.BenchmarkYear,
+                        benchmarkStandard = dto?.BenchmarkStandard,
+                        contextId = dto?.ContextId,
+                        contextTitle = dto?.ContextTitle,
+                        contextContent = dto?.ContextContent
+                    };
+                    break;
+                }
                 case "SHORT_ANSWER":
                 case "FILL_BLANK":
                     payloadObj = new
@@ -1600,7 +1630,34 @@ namespace AegisQuiz.Infrastructure.Excel
         private static string GetCellValue(IRow? row, int col)
         {
             if (row == null || col < 0) return string.Empty;
-            return GetCellValue(row.GetCell(col));
+            var cell = row.GetCell(col);
+            var val = GetCellValue(cell);
+            if (!string.IsNullOrWhiteSpace(val)) return val;
+
+            // Nếu ô trống, kiểm tra xem tọa độ (row.RowNum, col) có thuộc vùng Merged nào không
+            try
+            {
+                var sheet = row.Sheet;
+                if (sheet != null && sheet.NumMergedRegions > 0)
+                {
+                    for (int i = 0; i < sheet.NumMergedRegions; i++)
+                    {
+                        var region = sheet.GetMergedRegion(i);
+                        if (region.IsInRange(row.RowNum, col))
+                        {
+                            var masterRow = sheet.GetRow(region.FirstRow);
+                            var masterCell = masterRow?.GetCell(region.FirstColumn);
+                            return GetCellValue(masterCell);
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // Fallback an toàn nếu truy cập merged region gặp ngoại lệ
+            }
+
+            return string.Empty;
         }
 
         private static string NormalizeHeader(string? input)

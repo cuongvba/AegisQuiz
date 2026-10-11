@@ -4,7 +4,9 @@
     "gameshows": "Gameshows",
     "pricing": "Pricing",
     "login": "Log in",
-    "cta": "Start for free"
+    "cta": "Start for free",
+    "adminPortal": "Admin Portal",
+    "enterLearning": "Enter Learning"
   },
   "hero": {
     "eyebrow": "Aegis Enterprise AI Engine v4.0",

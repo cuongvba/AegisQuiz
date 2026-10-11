@@ -1,0 +1,83 @@
+{
+  "greeting": {
+    "morning": "おはようございます",
+    "afternoon": "こんにちは",
+    "evening": "こんばんは",
+    "defaultName": "評価エキスパート"
+  },
+  "hero": {
+    "eyebrow": "Aegis Enterprise AI Engine v4.0",
+    "badgeTeamLeader": "アセスメントチームリーダー",
+    "badgeAdmin": "システム管理者",
+    "badgeLearner": "トップ学習者",
+    "subheadline": "本日は認知的限界を超える絶好の機会です。IRTエンジンが最新のパーソナライズ問題マトリックスを用意しました！"
+  },
+  "radarPanel": {
+    "title": "360°認知能力マップ",
+    "badge": "IRT CAT基準",
+    "subtitle": "問題難易度($\\theta$)と実際の認知識別力との相関関係",
+    "thisWeek": "今週",
+    "thisMonth": "今月"
+  },
+  "actions": {
+    "practice": { "title": "AI演習", "desc": "3,500問以上の問題" },
+    "arena": { "title": "アリーナ", "desc": "ゴールデンベル＆PvP" },
+    "team": { "title": "チーム", "desc": "進捗とチーム試験" },
+    "adaptive": { "title": "能力評価試験", "desc": "IRT能力標準" }
+  },
+  "metrics": {
+    "weeklyGoal": {
+      "label": "週間目標",
+      "badge": "71% 達成",
+      "value": "5/7",
+      "unit": "学習日数",
+      "footer": "目標達成まであと2日"
+    },
+    "accuracy": {
+      "label": "平均正答率",
+      "badge": "今週 +4.2%",
+      "footer": "機関全体のトップ5%学習者"
+    },
+    "questionsSolved": {
+      "label": "解答済み問題数",
+      "badge": "48トピック",
+      "unit": "問完了",
+      "footer": "現在の連続正解記録: 18問"
+    },
+    "eloRank": {
+      "label": "ランキング順位",
+      "badge": "ランク #3",
+      "value": "1,850",
+      "tier": "ダイヤモンド III",
+      "footer": "マスター到達まであと150 LP"
+    }
+  },
+  "radar": {
+    "loading": "IRT能力データを集計中...",
+    "seriesName": "習熟度スコア",
+    "strengthLabel": "強み:",
+    "strengthValue": "IT技術・テクノロジー (92%)",
+    "weaknessLabel": "改善が必要な分野:",
+    "weaknessValue": "数学・論理 (68%)",
+    "openPractice": "詳細な演習ルームを開く",
+    "topics": {
+      "math": "数学・論理",
+      "tech": "IT技術・テクノロジー",
+      "language": "外国語 (英語)",
+      "process": "業務プロセス・規定",
+      "management": "マネジメントスキル"
+    }
+  },
+  "focusAreas": {
+    "title": "改善が必要な領域",
+    "priority": "高優先度",
+    "cta": "今すぐ苦手分野を復習！"
+  },
+  "aiMentor": {
+    "title": "AIメンター • Geminiコーチ",
+    "subtitle": "パーソナライズされた学習ルートガイド",
+    "loading": "最適な学習プランを作成中...",
+    "fallbackPlan": "💡 本日のアドバイス: IT技術の92%とマネジメントスキルの88%を習得済みです。数学・論理の問題を20問（約15分）復習して360°バランスを整えましょう。",
+    "cta": "学習パス全体を見る →"
+  }
+}

@@ -12,7 +12,7 @@ export function MediaRenderer({ url, mediaType, className }: Props) {
   const type = normalizeMediaType(mediaType);
 
   if (type.startsWith('image')) {
-    return <img src={url} alt="question media" className={`h-auto w-full rounded-2xl border border-white/40 object-cover ${className ?? ''}`} />;
+    return <img src={url} alt="question media" className={`h-auto w-full rounded-2xl border border-slate-300 bg-white p-2 object-contain ${className ?? ''}`} />;
   }
 
   if (type.startsWith('audio')) {

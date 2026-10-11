@@ -29,6 +29,11 @@ d:/Cuong/DuAn/mybank/AegisQuiz/docs/
 ├── ARENA_GAMESHOW_USER_MANUAL.md                     <-- Cẩm nang người dùng & luật chơi 6 Gameshow
 │
 ├── 🏛️ architecture/ (Kiến Trúc Phân Tầng)
+│   ├── AEGIS_WORLD_CLASS_FRONTEND_ELEVATION_MASTER_PLAN.md <-- [SUPREME 2026] Kế Hoạch Hành Động Chiến Lược Nâng Tầm Frontend Đạt Đẳng Cấp Top 1 Thế Giới (Zero-Monolith, OCP Registry, 60fps)
+│   ├── AEGIS_UNIVERSAL_INGESTION_ENGINE_AND_GLOBAL_EXPANSION_STRATEGY.md <-- [SUPREME 2026] Bản Thiết Kế Kiến Trúc Phân Hệ Nhập Đề Thông Minh & Kế Hoạch Vươn Tầm Quốc Tế (CIG, MTEF Reverse, Multiline Accumulator)
+│   ├── AEGIS_UNIVERSAL_EPISTEMIC_SYMPOSIUM_MASTER_PLAN.md <-- [SUPREME 2026] Kế Hoạch Bậc Thầy Đại Hội Thảo Bách Khoa Vạn Vật Tri Thức & 9 Viện Hàn Lâm
+│   ├── AEGIS_SYMPOSIUM_PROMPT_COMPOSER_SPECIFICATION.md   <-- [SUPERLATIVE 2026] Đặc Tả Kiến Trúc Bộ Ghép System Prompt Phân Tầng 6 Lớp & Tự Khởi Tạo
+│   ├── AEGISQUIZ_GLOBAL_SUPREME_AUDIT_REPORT_2026.md <-- [GLOBAL SUPREME 2026] Báo Cáo Kiểm Toán & Đánh Giá Toàn Diện Hệ Thống Chuẩn Cao Nhất Thế Giới (ISO 25010, OWASP, IRT, CLEAR)
 │   ├── BACKEND_WORLD_CLASS_SUPREME_AUDIT_REPORT.md   <-- [SUPREME 2026] Báo Cáo Kiểm Toán Toàn Diện Backend Đạt Cảnh Giới Tốt Nhất
 │   ├── SYSTEM_ARCHITECTURE.md                        <-- Kiến trúc phân tầng, luồng dữ liệu, Clean Architecture, CQRS
 │   ├── DATA_MODELS.md                                <-- Sơ đồ ERD, Database Schema PostgreSQL, In-Memory State

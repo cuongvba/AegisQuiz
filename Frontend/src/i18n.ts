@@ -1,15 +1,12 @@
 /**
- * AegisQuiz i18n Configuration
- * ================================
- * [Phase B — Multi-Language Support]
- * Supports: Vietnamese (vi), English (en)
- * Planned: Japanese (ja), Korean (ko), Arabic (ar - RTL)
- *
- * Usage:
- *   import { useTranslation } from 'react-i18next';
- *   const { t, i18n } = useTranslation();
- *   t('quiz.startExam') // → "Start Exam" or "Bắt đầu thi"
- *   i18n.changeLanguage('en')
+ * AegisQuiz i18n Configuration — World-Class Multilingual & RTL Sovereign Architecture
+ * ====================================================================================
+ * Fully supports:
+ * - Vietnamese (vi) 🇻🇳
+ * - English (en) 🇬🇧
+ * - Japanese (ja) 🇯🇵
+ * - Korean (ko) 🇰🇷
+ * - Arabic (ar) 🇸🇦 with Bi-directional RTL layout
  */
 
 import i18n from 'i18next';
@@ -18,23 +15,23 @@ import Backend from 'i18next-http-backend';
 import LanguageDetector from 'i18next-browser-languagedetector';
 
 i18n
-  // Load locale files từ /public/locales/{lang}/translation.json
+  // Load locale files from /public/locales/{lang}/{ns}.json
   .use(Backend)
 
-  // Tự động detect ngôn ngữ từ: URL, localStorage, browser settings
+  // Auto detect language from querystring, localStorage, navigator
   .use(LanguageDetector)
 
-  // Tích hợp với React
+  // Integrate with React
   .use(initReactI18next)
 
   .init({
-    // Supported languages
-    supportedLngs : ['vi', 'en', 'ja', 'ko'],
-    fallbackLng   : 'vi',               // Fallback về tiếng Việt
+    // Supported languages worldwide
+    supportedLngs : ['vi', 'en', 'ja', 'ko', 'ar'],
+    fallbackLng   : 'vi',
 
-    // Load path (public/locales/{lng}/{ns}.json)
+    // Load path with cache-busting
     backend: {
-      loadPath: '/locales/{{lng}}/{{ns}}.json',
+      loadPath: '/locales/{{lng}}/{{ns}}.json?v=' + (import.meta.env.VITE_APP_VERSION || '20261010_r1'),
     },
 
     // Language detection order
@@ -45,41 +42,37 @@ i18n
       caches           : ['localStorage'],
     },
 
-    // Default namespace
-    ns           : ['translation'],
+    // Namespaces
+    ns           : ['translation', 'ai_settings', 'symposium', 'landing', 'dashboard', 'profile'],
     defaultNS    : 'translation',
 
     interpolation: {
-      escapeValue: false,   // React handles XSS
+      escapeValue: false, // React handles XSS
     },
 
-    // Performance: Preload ngôn ngữ chính
     preload: ['vi', 'en'],
 
-    // Dev: log missing keys
-    saveMissing: import.meta.env.DEV,
-    missingKeyHandler: (lngs: readonly string[], ns: string, key: string) => {
-      if (import.meta.env.DEV) {
-        console.warn(`[i18n] Missing key: "${ns}:${key}" for languages: ${lngs.join(', ')}`);
-      }
-    },
+    saveMissing: false,
   });
 
 export default i18n;
 
 // ── Language Switcher Helper ───────────────────────────────────────────────
 export const SUPPORTED_LANGUAGES = [
-  { code: 'vi', name: 'Tiếng Việt', flag: '🇻🇳' },
-  { code: 'en', name: 'English',    flag: '🇬🇧' },
-  { code: 'ja', name: '日本語',     flag: '🇯🇵' },  // Coming Phase 3
-  { code: 'ko', name: '한국어',     flag: '🇰🇷' },  // Coming Phase 3
+  { code: 'vi', name: 'Tiếng Việt', flag: '🇻🇳', dir: 'ltr' },
+  { code: 'en', name: 'English',    flag: '🇬🇧', dir: 'ltr' },
+  { code: 'ja', name: '日本語',     flag: '🇯🇵', dir: 'ltr' },
+  { code: 'ko', name: '한국어',     flag: '🇰🇷', dir: 'ltr' },
+  { code: 'ar', name: 'العربية',    flag: '🇸🇦', dir: 'rtl' },
 ] as const;
 
 export type SupportedLanguage = typeof SUPPORTED_LANGUAGES[number]['code'];
 
-// RTL languages (Phase 3 — Arabic, Hebrew)
-export const RTL_LANGUAGES: string[] = ['ar', 'he'];
+// RTL languages (Arabic, Hebrew, Persian, Urdu)
+export const RTL_LANGUAGES: string[] = ['ar', 'he', 'fa', 'ur'];
 
 export function isRTL(lang: string): boolean {
-  return RTL_LANGUAGES.includes(lang);
+  if (!lang) return false;
+  const base = lang.toLowerCase().split('-')[0];
+  return RTL_LANGUAGES.includes(base);
 }

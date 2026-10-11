@@ -1,0 +1,100 @@
+{
+  "common": {
+    "loading": "جارٍ التحميل...",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "create": "إنشاء",
+    "search": "بحث",
+    "filter": "تصفية",
+    "export": "تصدير",
+    "import": "استيراد",
+    "submit": "إرسال",
+    "next": "التالي",
+    "previous": "السابق",
+    "finish": "إنهاء",
+    "back": "رجوع",
+    "close": "إغلاق",
+    "confirm": "تأكيد",
+    "yes": "نعم",
+    "no": "لا",
+    "error": "حدث خطأ",
+    "success": "تم بنجاح",
+    "noData": "لا توجد بيانات متاحة"
+  },
+  "nav": {
+    "dashboard": "لوحة القيادة",
+    "mainMenu": "القائمة الرئيسية",
+    "bottomMenu": "قائمة التنقل السفلية",
+    "quiz": "الاختبارات",
+    "practice": "التدريب",
+    "team": "الفريق",
+    "arena": "الساحة التنافسية",
+    "mockExam": "اختبار تجريبي",
+    "leaderboard": "لوحة الصدارة",
+    "achievements": "الإنجازات",
+    "learningPaths": "مسارات التعلم",
+    "admin": "الإدارة",
+    "profile": "الملف الشخصي",
+    "logout": "تسجيل الخروج"
+  },
+  "quiz": {
+    "startExam": "بدء الاختبار",
+    "submitAnswer": "إرسال الإجابة",
+    "timeRemaining": "الوقت المتبقي: {{time}}",
+    "questionOf": "السؤال {{current}} من {{total}}",
+    "correctAnswer": "إجابة صحيحة!",
+    "wrongAnswer": "إجابة خاطئة. الإجابة الصحيحة هي: {{answer}}",
+    "score": "النتيجة: {{score}}/{{total}}",
+    "accuracy": "الدقة: {{percent}}%",
+    "examComplete": "اكتمل الاختبار",
+    "viewResults": "عرض النتائج",
+    "retake": "إعادة الاختبار",
+    "explanation": "الشرح والتوضيح",
+    "aiAnalysis": "تحليل الذكاء الاصطناعي",
+    "generating": "جارٍ توليد تحليل الذكاء الاصطناعي..."
+  },
+  "auth": {
+    "login": "تسجيل الدخول",
+    "register": "إنشاء حساب",
+    "logout": "تسجيل الخروج",
+    "loginWithKeycloak": "تسجيل الدخول الموحد (SSO)",
+    "loginWithPKI": "تسجيل الدخول برمز USB (PKI)",
+    "welcome": "مرحباً بعودتك، {{name}}",
+    "sessionExpired": "انتهت الجلسة. يرجى تسجيل الدخول مجدداً."
+  },
+  "userMenu": {
+    "defaultName": "مستخدم",
+    "accountOf": "حساب {{name}}",
+    "menuLabel": "قائمة الحساب",
+    "systemAdminPortal": "بوابة إدارة النظام",
+    "teamLeaderArea": "منطقة قائد الفريق",
+    "learningDashboard": "لوحة متابعة التعلم",
+    "profileAndSecurity": "الملف الشخصي والأمان"
+  },
+  "admin": {
+    "questions": "إدارة الأسئلة",
+    "topics": "إدارة الموضوعات",
+    "users": "إدارة المستخدمين",
+    "analytics": "التحليلات والتقارير",
+    "settings": "الإعدادات",
+    "importExcel": "استيراد من Excel",
+    "importDocx": "استيراد من Word",
+    "generateAI": "توليد بواسطة الذكاء الاصطناعي",
+    "totalQuestions": "إجمالي الأسئلة",
+    "questionBank": "بنك الأسئلة"
+  },
+  "achievements": {
+    "unlocked": "تم فتح إنجاز جديد!",
+    "xpEarned": "+{{xp}} نقطة خبرة",
+    "yourAchievements": "إنجازاتك",
+    "noAchievements": "لا توجد إنجازات بعد. ابدأ التعلم لكسب الشارات!"
+  },
+  "errors": {
+    "notFound": "المورد غير موجود",
+    "unauthorized": "ليس لديك الصلاحية للوصول إلى هذا المورد",
+    "serverError": "خطأ في الخادم. يرجى المحاولة لاحقاً.",
+    "networkError": "خطأ في الشبكة. يرجى التحقق من اتصالك."
+  }
+}

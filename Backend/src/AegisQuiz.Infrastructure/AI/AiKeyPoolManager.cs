@@ -18,8 +18,8 @@ namespace AegisQuiz.Infrastructure.AI
 
     public class AiKeyPoolManager
     {
-        private readonly ConcurrentDictionary<AiProviderType, List<ManagedKeyInfo>> _keyPools = new();
-        private readonly ConcurrentDictionary<AiProviderType, int> _roundRobinIndices = new();
+        private readonly ConcurrentDictionary<string, List<ManagedKeyInfo>> _keyPools = new(StringComparer.OrdinalIgnoreCase);
+        private readonly ConcurrentDictionary<string, int> _roundRobinIndices = new(StringComparer.OrdinalIgnoreCase);
         private readonly int _quarantineDurationSeconds;
 
         public AiKeyPoolManager(int quarantineDurationSeconds = 60)
@@ -27,8 +27,11 @@ namespace AegisQuiz.Infrastructure.AI
             _quarantineDurationSeconds = quarantineDurationSeconds;
         }
 
-        public void RegisterKeys(AiProviderType provider, IEnumerable<string> keys)
+        public void RegisterKeys(string providerCode, IEnumerable<string> keys)
         {
+            if (string.IsNullOrWhiteSpace(providerCode)) return;
+            var normalizedCode = providerCode.Trim().ToLowerInvariant();
+
             var validKeys = keys
                 .Where(k => !string.IsNullOrWhiteSpace(k) && !k.StartsWith("YOUR_", StringComparison.OrdinalIgnoreCase))
                 .Distinct()
@@ -37,14 +40,20 @@ namespace AegisQuiz.Infrastructure.AI
 
             if (validKeys.Count > 0)
             {
-                _keyPools[provider] = validKeys;
-                _roundRobinIndices[provider] = 0;
+                _keyPools[normalizedCode] = validKeys;
+                _roundRobinIndices[normalizedCode] = 0;
             }
         }
 
-        public string? GetAvailableKey(AiProviderType provider)
+        public void RegisterKeys(AiProviderType provider, IEnumerable<string> keys)
+            => RegisterKeys(provider.ToString().ToLowerInvariant(), keys);
+
+        public string? GetAvailableKey(string providerCode)
         {
-            if (!_keyPools.TryGetValue(provider, out var pool) || pool.Count == 0)
+            if (string.IsNullOrWhiteSpace(providerCode)) return null;
+            var normalizedCode = providerCode.Trim().ToLowerInvariant();
+
+            if (!_keyPools.TryGetValue(normalizedCode, out var pool) || pool.Count == 0)
             {
                 return null;
             }
@@ -64,9 +73,9 @@ namespace AegisQuiz.Infrastructure.AI
                     return null;
                 }
 
-                int currentIndex = _roundRobinIndices.GetOrAdd(provider, 0);
+                int currentIndex = _roundRobinIndices.GetOrAdd(normalizedCode, 0);
                 int selectedIndex = Math.Abs(currentIndex) % availableKeys.Count;
-                _roundRobinIndices[provider] = currentIndex + 1;
+                _roundRobinIndices[normalizedCode] = currentIndex + 1;
 
                 var selectedKeyInfo = availableKeys[selectedIndex];
                 Interlocked.Increment(ref selectedKeyInfo.TotalCalls);
@@ -74,9 +83,15 @@ namespace AegisQuiz.Infrastructure.AI
             }
         }
 
-        public void ReportRateLimitOrFailure(AiProviderType provider, string key, bool isRateLimit = true)
+        public string? GetAvailableKey(AiProviderType provider)
+            => GetAvailableKey(provider.ToString().ToLowerInvariant());
+
+        public void ReportRateLimitOrFailure(string providerCode, string key, bool isRateLimit = true)
         {
-            if (_keyPools.TryGetValue(provider, out var pool))
+            if (string.IsNullOrWhiteSpace(providerCode)) return;
+            var normalizedCode = providerCode.Trim().ToLowerInvariant();
+
+            if (_keyPools.TryGetValue(normalizedCode, out var pool))
             {
                 var keyInfo = pool.FirstOrDefault(k => k.Key == key);
                 if (keyInfo != null)
@@ -84,12 +99,15 @@ namespace AegisQuiz.Infrastructure.AI
                     Interlocked.Increment(ref keyInfo.FailedCalls);
                     // Cách ly key trong khoảng thời gian quy định
                     keyInfo.QuarantinedUntilUtc = DateTime.UtcNow.AddSeconds(_quarantineDurationSeconds);
-                    Console.WriteLine($"[AiKeyPoolManager] Key cho nhà cung cấp {provider} đã bị cách ly trong {_quarantineDurationSeconds}s do lỗi {(isRateLimit ? "429 Rate Limit" : "kết nối")}.");
+                    Console.WriteLine($"[AiKeyPoolManager] Key cho nhà cung cấp {normalizedCode} đã bị cách ly trong {_quarantineDurationSeconds}s do lỗi {(isRateLimit ? "429 Rate Limit" : "kết nối")}.");
                 }
             }
         }
 
-        public Dictionary<AiProviderType, List<ManagedKeyInfo>> GetAllPoolStatus()
+        public void ReportRateLimitOrFailure(AiProviderType provider, string key, bool isRateLimit = true)
+            => ReportRateLimitOrFailure(provider.ToString().ToLowerInvariant(), key, isRateLimit);
+
+        public Dictionary<string, List<ManagedKeyInfo>> GetAllPoolStatus()
         {
             return _keyPools.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToList());
         }
