@@ -5,6 +5,7 @@ import { FullScreenSpinner } from '@/components/ui/FullScreenSpinner';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { AppProviders } from '@/app/providers';
 import { ErrorBoundary } from '@/shared/ui/ErrorBoundary';
+import { PwaInstallBanner } from '@/components/common/PwaInstallBanner';
 
 const Dashboard = lazy(() => import('@/pages/dashboard/Dashboard').then(m => ({ default: m.Dashboard })));
 const LandingPage = lazy(() => import('@/pages/landing/LandingPage').then(m => ({ default: m.LandingPage })));
@@ -117,6 +118,7 @@ export default function App() {
               <Route path="/quiz/secure-attempt/:id" element={<SecureExamRoom />} />
               <Route path="/quiz/:quizId/review/:attemptId" element={<AttemptReview />} />
             </Routes>
+            <PwaInstallBanner />
           </Suspense>
         </BrowserRouter>
       </AppProviders>

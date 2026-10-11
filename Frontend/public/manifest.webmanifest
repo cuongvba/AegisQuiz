@@ -1,0 +1,44 @@
+{
+  "name": "AegisQuiz — Đấu Trường Khảo Thí & Giáo Dục AI",
+  "short_name": "AegisQuiz",
+  "description": "Nền tảng Khảo thí & Luyện thi Thích ứng Toàn năng với Động cơ IRT 3-PL và Trí tuệ Nhân tạo Đa Agent",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#020617",
+  "theme_color": "#0f172a",
+  "lang": "vi",
+  "dir": "ltr",
+  "categories": ["education", "productivity", "games"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Luyện Thi Thích Ứng",
+      "short_name": "Luyện Thi",
+      "description": "Vào ngay phòng luyện thi cá nhân hóa IRT 3-PL",
+      "url": "/practice",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Đấu Trường Arena",
+      "short_name": "Đấu Trường",
+      "description": "Tham gia đấu trường thi đấu đối kháng thời gian thực",
+      "url": "/arena",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    }
+  ]
+}
