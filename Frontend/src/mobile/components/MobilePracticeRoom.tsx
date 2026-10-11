@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Clock, CheckCircle2, ChevronLeft, ChevronRight, Sparkles, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { useMobileApp } from '../context/MobileAppContext';
+import { learnerQuizService } from '@/services/learner-quiz.service';
 import { offlineExamService } from '@/services/offline-exam.service';
 import { KidsPracticeView } from './KidsPracticeView';
+import { PracticeQuestionBody } from './PracticeQuestionBody';
 import { InteractiveSliceViewer } from './InteractiveSliceViewer';
 import { transpileExplanationToSlices } from '../utils/explanation-slice-transpiler';
 
-interface MobilePracticeRoomProps {
-  topicName: string;
-  onExit: () => void;
-}
+import { PracticeQuestionItem, MobilePracticeRoomProps } from '../types/mobile-practice.types';
 
 export const MobilePracticeRoom: React.FC<MobilePracticeRoomProps> = ({
+  topicId,
   topicName,
   onExit,
 }) => {
@@ -27,98 +27,107 @@ export const MobilePracticeRoom: React.FC<MobilePracticeRoomProps> = ({
   const [showExplanation, setShowExplanation] = useState<boolean>(false);
   const [showStoryModal, setShowStoryModal] = useState<boolean>(false);
   const [timeLeft, setTimeLeft] = useState<number>(1200); // 20 phút
+  const [dataSource, setDataSource] = useState<'db' | 'offline' | 'fallback'>('db');
+  const [loading, setLoading] = useState<boolean>(true);
 
-  // Dữ liệu mẫu mô phỏng bộ câu hỏi chuẩn theo biến thể
-  const sampleQuestions = React.useMemo(() => {
-    if (variant.id === 'driving') {
-      return [
-        {
-          id: 'q1',
-          content: 'Người điều khiển xe mô tô hai bánh, xe gắn máy KHÔNG ĐƯỢC thực hiện những hành vi nào dưới đây?',
-          isFatal: true, // Câu điểm liệt
-          options: [
-            { key: 'A', text: 'Đi vào phần đường dành cho người đi bộ và phương tiện khác.' },
-            { key: 'B', text: 'Sử dụng ô, điện thoại di động, thiết bị âm thanh (trừ thiết bị trợ thính).' },
-            { key: 'C', text: 'Buông cả hai tay hoặc đi xe bằng một bánh.' },
-            { key: 'D', text: 'Tất cả các hành vi nêu trên.' },
-          ],
-          correctKey: 'D',
-          explanation: 'Theo Luật Giao thông Đường bộ, nghiêm cấm người đi xe máy buông hai tay, dùng điện thoại hoặc đi vào hè phố. Đây là câu hỏi điểm liệt cốt tử!',
-        },
-        {
-          id: 'q2',
-          content: 'Biển nào báo hiệu "Giao nhau với đường ưu tiên"?',
-          isFatal: false,
-          options: [
-            { key: 'A', text: 'Biển 1 (Tam giác đều đỉnh hướng lên trên).' },
-            { key: 'B', text: 'Biển 2 (Tam giác đều đỉnh lộn ngược xuống dưới).' },
-            { key: 'C', text: 'Biển 3 (Hình vuông đặt chéo màu vàng).' },
-            { key: 'D', text: 'Biển 1 và Biển 3.' },
-          ],
-          correctKey: 'B',
-          explanation: 'Biển số 208 "Giao nhau với đường ưu tiên" có hình tam giác đều ngược đỉnh xuống dưới, nền vàng viền đỏ.',
-        },
-      ];
-    }
-
-    if (variant.id === 'banking') {
-      return [
-        {
-          id: 'qb1',
-          content: 'Theo Luật Phòng chống rửa tiền hiện hành, mức giao dịch có giá trị lớn phải báo cáo Ngân hàng Nhà nước là từ bao nhiêu?',
-          isFatal: false,
-          options: [
-            { key: 'A', text: 'Từ 200.000.000 VNĐ trở lên' },
-            { key: 'B', text: 'Từ 300.000.000 VNĐ trở lên' },
-            { key: 'C', text: 'Từ 400.000.000 VNĐ trở lên' },
-            { key: 'D', text: 'Từ 500.000.000 VNĐ trở lên' },
-          ],
-          correctKey: 'C',
-          explanation: 'Theo Quyết định số 11/2023/QĐ-TTg, mức giao dịch có giá trị lớn phải báo cáo là từ 400.000.000 (bốn trăm triệu) đồng trở lên.',
-        },
-      ];
-    }
-
-    return [
-      {
-        id: 'q_gen',
-        content: `Câu hỏi mẫu chuyên ngành ${variant.shortName}: Khái niệm cốt lõi nào sau đây là chuẩn mực hàng đầu?`,
-        isFatal: false,
-        options: [
-          { key: 'A', text: 'Phương án phân tích A theo quy chuẩn quốc tế' },
-          { key: 'B', text: 'Phương án phân tích B tối ưu nhận thức' },
-          { key: 'C', text: 'Phương án phân tích C đáp ứng tiêu chuẩn ngành' },
-          { key: 'D', text: 'Cả 3 phương án trên đều chuẩn xác' },
-        ],
-        correctKey: 'D',
-        explanation: 'Hệ thống tự động đồng bộ câu hỏi theo ma trận chuyên ngành tương ứng.',
-      },
-    ];
-  }, [variant.id, variant.shortName]);
-
-  const currentQ = sampleQuestions[currentIdx] || sampleQuestions[0];
-  const totalQuestions = sampleQuestions.length;
+  const [questions, setQuestions] = useState<PracticeQuestionItem[]>([
+    {
+      id: 'q_fb_1',
+      content: `[Bộ Đề Chuẩn ${variant.shortName}] Khái niệm cốt lõi nào sau đây là chuẩn mực hàng đầu trong lĩnh vực?`,
+      options: ['A', 'B', 'C', 'D'].map((k) => ({ key: k, text: `Phương án chuẩn ngành ${k}` })),
+      correctKey: 'A',
+      explanation: 'Chuẩn kiến thức tích hợp hệ thống bảo đảm an toàn nghiệp vụ.',
+    },
+  ]);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((t) => (t > 0 ? t - 1 : 0));
-    }, 1000);
+    let isMounted = true;
+    const loadRealQuestions = async () => {
+      setLoading(true);
+      const targetKey = topicId || variant.domainCode || 'ALL';
+
+      // 1. Kiểm tra IndexedDB trước
+      try {
+        const cachedPkg = await offlineExamService.getOfflineExamPackage(targetKey);
+        if (cachedPkg && Array.isArray(cachedPkg.questions) && cachedPkg.questions.length > 0) {
+          if (isMounted) {
+            setQuestions(cachedPkg.questions);
+            setDataSource('offline');
+            setLoading(false);
+          }
+          return;
+        }
+      } catch {}
+
+      // 2. Nạp từ DB thật qua learnerQuizService
+      try {
+        const rawList = await learnerQuizService.generatePracticeQuestions({
+          topicConfigs: [{ topicKey: targetKey, numberOfQuestions: 30, isRandom: false, startIndex: 1 }],
+        });
+
+        if (Array.isArray(rawList) && rawList.length > 0) {
+          const mapped: PracticeQuestionItem[] = rawList.map((q: any) => ({
+            id: String(q.id),
+            content: q.content || q.text || 'Nội dung câu hỏi',
+            isFatal: !!(q.isCritical || q.isFatal || (q.content && q.content.includes('*'))),
+            options: Array.isArray(q.options)
+              ? q.options.map((o: any, oIdx: number) => ({
+                  key: ['A', 'B', 'C', 'D', 'E', 'F'][oIdx] || String.fromCharCode(65 + oIdx),
+                  text: typeof o === 'string' ? o : (o.content || o.text || String(o)),
+                }))
+              : [
+                  { key: 'A', text: 'Phương án A' },
+                  { key: 'B', text: 'Phương án B' },
+                  { key: 'C', text: 'Phương án C' },
+                  { key: 'D', text: 'Phương án D' },
+                ],
+            correctKey: q.correctAnswer || (q.options?.find((o: any) => o.isCorrect)?.key) || 'A',
+            explanation: q.explanation || 'Xem hướng dẫn chi tiết theo quy chuẩn hệ thống.',
+          }));
+
+          if (isMounted) {
+            setQuestions(mapped);
+            setDataSource('db');
+            // Cache tự động vào IndexedDB
+            offlineExamService.saveExamPackageOffline({
+              examId: targetKey,
+              title: topicName,
+              domainCode: variant.domainCode,
+              questionCount: mapped.length,
+              downloadedAt: Date.now(),
+              questions: mapped,
+            });
+          }
+        }
+      } catch (err) {
+        if (isMounted) {
+          setDataSource('fallback');
+        }
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    loadRealQuestions();
+    return () => { isMounted = false; };
+  }, [topicId, variant.domainCode, topicName]);
+
+  const currentQ = questions[currentIdx] || questions[0];
+  const totalQuestions = questions.length;
+
+  useEffect(() => {
+    const timer = setInterval(() => setTimeLeft((t) => (t > 0 ? t - 1 : 0)), 1000);
     return () => clearInterval(timer);
   }, []);
 
   const handleSelectOption = async (optKey: string) => {
     triggerHaptic(15);
     setSelectedAnswers((prev) => ({ ...prev, [currentIdx]: optKey }));
-
-    // Lưu vết bảo mật vào Merkle Chain Offline DB
     await offlineExamService.recordAnswerAsync('practice-session-active', currentQ.id, optKey);
   };
 
-  const formatTime = (secs: number) => {
-    const m = Math.floor(secs / 60);
-    const s = secs % 60;
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-  };
+  const formatTime = (s: number) =>
+    `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col font-sans select-none">
@@ -139,9 +148,18 @@ export const MobilePracticeRoom: React.FC<MobilePracticeRoomProps> = ({
         </button>
 
         <div className="text-center">
-          <span className="text-xs font-black text-white block">
-            Câu {currentIdx + 1} / {totalQuestions}
-          </span>
+          <div className="flex items-center justify-center gap-1.5">
+            <span className="text-xs font-black text-white">
+              Câu {currentIdx + 1} / {totalQuestions}
+            </span>
+            <span className={`text-[9px] font-black uppercase px-1.5 py-0.2 rounded ${
+              dataSource === 'db' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' :
+              dataSource === 'offline' ? 'bg-cyan-950 text-cyan-400 border border-cyan-800' :
+              'bg-slate-800 text-slate-400'
+            }`}>
+              {dataSource === 'db' ? 'DB Thật' : dataSource === 'offline' ? 'Offline' : 'Dự Phòng'}
+            </span>
+          </div>
           <span className="text-[10px] text-slate-400 block truncate max-w-[180px]">{topicName}</span>
         </div>
 
@@ -162,72 +180,16 @@ export const MobilePracticeRoom: React.FC<MobilePracticeRoomProps> = ({
         />
       </div>
 
-      {/* ── Question Body ──────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {currentQ.isFatal && (
-          <div className="p-2.5 rounded-xl bg-red-950/60 border border-red-500/50 flex items-center gap-2 text-xs text-red-200">
-            <AlertTriangle size={15} className="text-red-400 shrink-0 animate-bounce" />
-            <span className="font-bold">CÂU ĐIỂM LIỆT: Trả lời sai sẽ bị tính điểm liệt trượt sát hạch!</span>
-          </div>
-        )}
-
-        <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800">
-          <p className="text-sm font-bold text-white leading-relaxed">{currentQ.content}</p>
-        </div>
-
-        {/* Danh sách phương án A, B, C, D */}
-        <div className="space-y-2.5">
-          {currentQ.options.map((opt) => {
-            const isChosen = selectedAnswers[currentIdx] === opt.key;
-            return (
-              <button
-                key={opt.key}
-                type="button"
-                onClick={() => handleSelectOption(opt.key)}
-                className={`w-full text-left p-3.5 rounded-2xl border text-xs font-bold transition-all cursor-pointer flex items-start gap-3 active:scale-98 ${
-                  isChosen
-                    ? 'bg-slate-900 border-slate-700 ring-2'
-                    : 'bg-slate-950 border-slate-800 hover:bg-slate-900/50'
-                }`}
-                style={{
-                  borderColor: isChosen ? variant.colorScheme.primary : undefined,
-                }}
-              >
-                <div
-                  className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs font-black shrink-0 transition-colors ${
-                    isChosen ? 'text-slate-950 shadow-md' : 'bg-slate-900 text-slate-400 border border-slate-800'
-                  }`}
-                  style={{
-                    backgroundColor: isChosen ? variant.colorScheme.primary : undefined,
-                  }}
-                >
-                  {opt.key}
-                </div>
-                <div className="flex-1 pt-1 text-slate-200 leading-normal">{opt.text}</div>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Giải thích thông minh & Micro-Lesson Story */}
-        {showExplanation && (
-          <div className="p-3.5 rounded-2xl bg-purple-950/40 border border-purple-500/40 space-y-2 animate-in fade-in duration-200">
-            <div className="flex items-center justify-between text-xs font-bold text-purple-300">
-              <span className="flex items-center gap-1.5">
-                <Sparkles size={14} /> Giải thích chuẩn:
-              </span>
-              <button
-                type="button"
-                onClick={() => setShowStoryModal(true)}
-                className="px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-400 to-pink-500 text-slate-950 text-[10px] font-black flex items-center gap-1 active:scale-95 transition-transform cursor-pointer shadow-sm"
-              >
-                <Sparkles size={11} /> Bài Giảng Slice 🎬
-              </button>
-            </div>
-            <p className="text-xs text-slate-300 leading-relaxed">{currentQ.explanation}</p>
-          </div>
-        )}
-      </div>
+      {/* ── Question Body Sub-component ── */}
+      <PracticeQuestionBody
+        currentQ={currentQ}
+        currentIdx={currentIdx}
+        selectedKey={selectedAnswers[currentIdx]}
+        showExplanation={showExplanation}
+        primaryColor={variant.colorScheme.primary}
+        onSelectOption={handleSelectOption}
+        onOpenStory={() => setShowStoryModal(true)}
+      />
 
       {/* ── Bottom Controls ────────────────────────────────────────────── */}
       <div
@@ -262,11 +224,8 @@ export const MobilePracticeRoom: React.FC<MobilePracticeRoomProps> = ({
           type="button"
           onClick={() => {
             triggerHaptic(15);
-            if (currentIdx < totalQuestions - 1) {
-              setCurrentIdx((i) => i + 1);
-            } else {
-              onExit();
-            }
+            if (currentIdx < totalQuestions - 1) setCurrentIdx((i) => i + 1);
+            else onExit();
           }}
           className="px-4 py-2.5 rounded-xl font-black text-xs text-slate-950 flex items-center gap-1 cursor-pointer active:scale-95 shadow-lg"
           style={{ backgroundColor: variant.colorScheme.primary }}

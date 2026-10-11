@@ -244,9 +244,9 @@ export const learnerQuizService = {
   },
 
   // TOPIC MANAGEMENT CRUD
-  async getTopics(): Promise<any[]> {
+  async getTopics(enabledOnly = true): Promise<any[]> {
     try {
-      const res = await api.get(`${QUIZ_API}/topics`);
+      const res = await api.get(`${QUIZ_API}/topics`, { params: { enabledOnly } });
       return Array.isArray(res.data) ? res.data : [];
     } catch {
       return [];

@@ -10,12 +10,13 @@ import { OfflineExamPackage } from '@/services/offline-exam.service';
 
 const MobileAppContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'home' | 'exam' | 'offline' | 'profile'>('home');
-  const [activePracticeTopic, setActivePracticeTopic] = useState<string | null>(null);
+  const [activePracticeTopic, setActivePracticeTopic] = useState<{ id: string; name: string } | null>(null);
 
   if (activePracticeTopic) {
     return (
       <MobilePracticeRoom
-        topicName={activePracticeTopic}
+        topicId={activePracticeTopic.id}
+        topicName={activePracticeTopic.name}
         onExit={() => setActivePracticeTopic(null)}
       />
     );
@@ -25,21 +26,21 @@ const MobileAppContent: React.FC = () => {
     <MobileShell activeTab={activeTab} onTabChange={setActiveTab}>
       {activeTab === 'home' && (
         <MobileHomePage
-          onStartTopic={(_, name) => setActivePracticeTopic(name)}
-          onStartFullMockExam={() => setActivePracticeTopic('Thi Thử Sát Hạch Toàn Diện')}
+          onStartTopic={(id, name) => setActivePracticeTopic({ id, name })}
+          onStartFullMockExam={() => setActivePracticeTopic({ id: 'ALL', name: 'Thi Thử Sát Hạch Toàn Diện' })}
         />
       )}
 
       {activeTab === 'exam' && (
         <MobileHomePage
-          onStartTopic={(_, name) => setActivePracticeTopic(name)}
-          onStartFullMockExam={() => setActivePracticeTopic('Thi Thử Sát Hạch Toàn Diện')}
+          onStartTopic={(id, name) => setActivePracticeTopic({ id, name })}
+          onStartFullMockExam={() => setActivePracticeTopic({ id: 'ALL', name: 'Thi Thử Sát Hạch Toàn Diện' })}
         />
       )}
 
       {activeTab === 'offline' && (
         <MobileOfflineManager
-          onStartOfflineExam={(pkg: OfflineExamPackage) => setActivePracticeTopic(pkg.title)}
+          onStartOfflineExam={(pkg: OfflineExamPackage) => setActivePracticeTopic({ id: pkg.examId, name: pkg.title })}
         />
       )}
 

@@ -46,6 +46,7 @@ namespace AegisQuiz.API.Controllers
 
         // ── GET api/quiz/topics ────────────────────────────────────────────────
         [HttpGet]
+        [AllowAnonymous]
         public async Task<IActionResult> GetTopics([FromQuery] bool enabledOnly = false)
         {
             try
@@ -192,6 +193,7 @@ namespace AegisQuiz.API.Controllers
         /// [Omni-Century] Trả về cây tri thức đa phân cấp gom nhóm theo Domain ➔ Parent Folder ➔ Child Topics.
         /// </summary>
         [HttpGet("tree")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetCognitiveTopicTree(
             [FromQuery] string? domainCode = null,
             [FromQuery] string? scope = null,
@@ -304,6 +306,7 @@ namespace AegisQuiz.API.Controllers
 
         // ── GET api/quiz/topics/counts ─────────────────────────────────────────
         [HttpGet("counts")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetTopicCounts()
         {
             try

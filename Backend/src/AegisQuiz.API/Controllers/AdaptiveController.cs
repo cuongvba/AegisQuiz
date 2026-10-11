@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using AegisQuiz.Application.DTOs;
@@ -32,6 +33,7 @@ namespace AegisQuiz.API.Controllers
         // ── POST api/quiz/cat/start ────────────────────────────────────────────
         /// <summary>Khởi tạo phiên thi thích ứng CAT/IRT 3-PL</summary>
         [HttpPost("cat/start")]
+        [AllowAnonymous]
         public async Task<IActionResult> StartCat([FromBody] StartCatSessionRequest request)
         {
             try
@@ -124,6 +126,7 @@ namespace AegisQuiz.API.Controllers
         // ── POST api/quiz/cat/{sessionId}/respond ──────────────────────────────
         /// <summary>Nộp câu trả lời cho câu hiện tại và nhận câu hỏi thích ứng tiếp theo</summary>
         [HttpPost("cat/{sessionId}/respond")]
+        [AllowAnonymous]
         public async Task<IActionResult> RespondCat([FromRoute] string sessionId, [FromBody] SubmitCatAnswerRequest request)
         {
             try
@@ -194,6 +197,7 @@ namespace AegisQuiz.API.Controllers
         // ── GET api/quiz/cat/{sessionId}/result ────────────────────────────────
         /// <summary>Lấy báo cáo kết quả đánh giá năng lực thích ứng CAT</summary>
         [HttpGet("cat/{sessionId}/result")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetCatResult([FromRoute] string sessionId)
         {
             try
@@ -232,6 +236,7 @@ namespace AegisQuiz.API.Controllers
         /// Phase C sẽ thay bằng IRT/CAT engine.
         /// </summary>
         [HttpPost("adaptive")]
+        [AllowAnonymous]
         public async Task<IActionResult> GenerateAdaptiveQuiz([FromBody] AdaptiveQuizRequest request)
         {
             try
@@ -314,6 +319,7 @@ namespace AegisQuiz.API.Controllers
         // ── POST api/quiz/practice ─────────────────────────────────────────────
         /// <summary>Sinh đề luyện tập theo cấu hình (chủ đề + số lượng + chế độ).</summary>
         [HttpPost("practice")]
+        [AllowAnonymous]
         public async Task<IActionResult> GeneratePractice([FromBody] GeneratePracticeRequest request)
         {
             try
@@ -337,8 +343,22 @@ namespace AegisQuiz.API.Controllers
                     {
                         var descendants = await GetDescendantCodesAsync(topicConf.TopicKey);
                         all = await _db.Questions
-                            .Where(q => descendants.Contains(q.CategoryCode))
+                            .Where(q => descendants.Contains(q.CategoryCode) || q.CategoryCode == topicConf.TopicKey || (q.DomainCode != null && q.DomainCode == topicConf.TopicKey))
                             .ToListAsync();
+
+                        if (all.Count == 0)
+                        {
+                            all = await _db.Questions
+                                .Where(q => EF.Functions.ILike(q.CategoryCode, $"%{topicConf.TopicKey}%") || 
+                                            (q.DomainCode != null && EF.Functions.ILike(q.DomainCode, $"%{topicConf.TopicKey}%")))
+                                .ToListAsync();
+                        }
+
+                        // Nếu vẫn không có câu hỏi nào và database có câu hỏi, fallback lấy pool câu hỏi để học viên không bị màn hình trắng
+                        if (all.Count == 0)
+                        {
+                            all = await _db.Questions.Take(50).ToListAsync();
+                        }
                     }
 
                     var active = all.Where(IsQuestionEnabled);
