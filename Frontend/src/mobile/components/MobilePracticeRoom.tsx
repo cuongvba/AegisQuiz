@@ -3,6 +3,8 @@ import { ArrowLeft, Clock, CheckCircle2, ChevronLeft, ChevronRight, Sparkles, Al
 import { useMobileApp } from '../context/MobileAppContext';
 import { offlineExamService } from '@/services/offline-exam.service';
 import { KidsPracticeView } from './KidsPracticeView';
+import { InteractiveSliceViewer } from './InteractiveSliceViewer';
+import { transpileExplanationToSlices } from '../utils/explanation-slice-transpiler';
 
 interface MobilePracticeRoomProps {
   topicName: string;
@@ -23,6 +25,7 @@ export const MobilePracticeRoom: React.FC<MobilePracticeRoomProps> = ({
   const [currentIdx, setCurrentIdx] = useState<number>(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
   const [showExplanation, setShowExplanation] = useState<boolean>(false);
+  const [showStoryModal, setShowStoryModal] = useState<boolean>(false);
   const [timeLeft, setTimeLeft] = useState<number>(1200); // 20 phút
 
   // Dữ liệu mẫu mô phỏng bộ câu hỏi chuẩn theo biến thể
@@ -206,12 +209,20 @@ export const MobilePracticeRoom: React.FC<MobilePracticeRoomProps> = ({
           })}
         </div>
 
-        {/* Giải thích thông minh */}
+        {/* Giải thích thông minh & Micro-Lesson Story */}
         {showExplanation && (
-          <div className="p-3.5 rounded-2xl bg-purple-950/40 border border-purple-500/40 space-y-1.5 animate-in fade-in duration-200">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-purple-300">
-              <Sparkles size={14} />
-              <span>Giải thích đáp án chuẩn:</span>
+          <div className="p-3.5 rounded-2xl bg-purple-950/40 border border-purple-500/40 space-y-2 animate-in fade-in duration-200">
+            <div className="flex items-center justify-between text-xs font-bold text-purple-300">
+              <span className="flex items-center gap-1.5">
+                <Sparkles size={14} /> Giải thích chuẩn:
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowStoryModal(true)}
+                className="px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-400 to-pink-500 text-slate-950 text-[10px] font-black flex items-center gap-1 active:scale-95 transition-transform cursor-pointer shadow-sm"
+              >
+                <Sparkles size={11} /> Bài Giảng Slice 🎬
+              </button>
             </div>
             <p className="text-xs text-slate-300 leading-relaxed">{currentQ.explanation}</p>
           </div>
@@ -264,6 +275,15 @@ export const MobilePracticeRoom: React.FC<MobilePracticeRoomProps> = ({
           <ChevronRight size={16} />
         </button>
       </div>
+
+      {/* Micro-Lesson Interactive Slice Storyboard */}
+      {showStoryModal && (
+        <InteractiveSliceViewer
+          slices={transpileExplanationToSlices(currentQ.explanation, currentQ.content, variant.code)}
+          topicName={`${topicName} — Câu ${currentIdx + 1}`}
+          onClose={() => setShowStoryModal(false)}
+        />
+      )}
     </div>
   );
 };

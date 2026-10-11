@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Star, Flame, Volume2, VolumeX, CheckCircle, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Star, Flame, Volume2, VolumeX, CheckCircle, RotateCcw, Sparkles } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { KidsMascot } from './KidsMascot';
+import { InteractiveSliceViewer } from './InteractiveSliceViewer';
+import { transpileExplanationToSlices } from '../utils/explanation-slice-transpiler';
 import { playKidAudio, speakEnglish } from '../utils/kids-sound';
 
 export interface KidsQuestion {
@@ -67,6 +69,7 @@ export const KidsPracticeView: React.FC<KidsPracticeViewProps> = ({ topicName, o
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [showStory, setShowStory] = useState(false);
   const [mascotMood, setMascotMood] = useState<'idle' | 'happy' | 'thinking' | 'cheering'>('happy');
 
   const currentQ = DEFAULT_KIDS_QUESTIONS[currentIdx] || DEFAULT_KIDS_QUESTIONS[0];
@@ -158,13 +161,22 @@ export const KidsPracticeView: React.FC<KidsPracticeViewProps> = ({ topicName, o
         ))}
       </div>
 
-      {/* Mascot Speech Area */}
-      <div className="mb-6">
+      {/* Mascot Speech Area & Micro-Lesson Story Trigger */}
+      <div className="mb-5">
         <KidsMascot
           mood={mascotMood}
           speechText={currentQ.prompt}
           wordToPronounce={currentQ.wordEn}
         />
+        <div className="flex justify-end mt-2">
+          <button
+            onClick={() => setShowStory(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-500/20 to-pink-500/20 hover:from-amber-500/30 hover:to-pink-500/30 border border-amber-400/40 text-amber-300 text-[11px] font-bold active:scale-95 transition-transform cursor-pointer shadow-sm"
+          >
+            <Sparkles size={12} className="text-amber-400 animate-pulse" />
+            Xem Bài Giảng Slice 🎬
+          </button>
+        </div>
       </div>
 
       {/* Chunky 3D Option Grid */}
@@ -224,6 +236,23 @@ export const KidsPracticeView: React.FC<KidsPracticeViewProps> = ({ topicName, o
             </div>
           </div>
         </div>
+      )}
+
+      {/* Micro-Lesson Interactive Slice Storyboard */}
+      {showStory && (
+        <InteractiveSliceViewer
+          slices={transpileExplanationToSlices(
+            `Từ vựng tiếng Anh "${currentQ.wordEn}" mang ý nghĩa là "${currentQ.vietnameseMeaning}". Khi bé nhìn thấy hình ảnh ${currentQ.options.find(o => o.key === currentQ.correctKey)?.icon}, hãy phát âm to rõ "${currentQ.wordEn}" để ghi nhớ sâu sắc nhé!`,
+            currentQ.prompt,
+            'KIDS_ENGLISH'
+          )}
+          topicName={`${topicName} — ${currentQ.wordEn}`}
+          onClose={() => setShowStory(false)}
+          onComplete={() => {
+            setStars((s) => s + 10);
+            setShowStory(false);
+          }}
+        />
       )}
     </div>
   );
