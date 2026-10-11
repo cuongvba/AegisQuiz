@@ -42,6 +42,7 @@ const ResetPasswordPage = lazy(() => import('@/pages/auth/ResetPasswordPage').th
 const CallbackPage = lazy(() => import('@/pages/auth/CallbackPage').then(m => ({ default: m.CallbackPage })));
 const QrConfirmPage = lazy(() => import('@/pages/auth/QrConfirmPage').then(m => ({ default: m.QrConfirmPage })));
 const ProfilePage = lazy(() => import('@/pages/profile/ProfilePage').then(m => ({ default: m.ProfilePage })));
+const MobileAppRootPage = lazy(() => import('@/mobile/pages/MobileAppRootPage'));
 
 export default function App() {
   return (
@@ -117,6 +118,10 @@ export default function App() {
               <Route path="/quiz/attempt/:id" element={<AttemptRoom />} />
               <Route path="/quiz/secure-attempt/:id" element={<SecureExamRoom />} />
               <Route path="/quiz/:quizId/review/:attemptId" element={<AttemptReview />} />
+
+              {/* [Metamorphic Mobile Engine] Phân hệ Mobile App độc lập đa ngành */}
+              <Route path="/m" element={<MobileAppRootPage />} />
+              <Route path="/m/:appVariant" element={<MobileAppRootPage />} />
             </Routes>
             <PwaInstallBanner />
           </Suspense>

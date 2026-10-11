@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Clock3, Flag, Lightbulb, ChevronDown, ChevronUp, RefreshCw, Home, ArrowLeft, CheckCircle, AlertTriangle, Sparkles } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock3, Flag, Lightbulb, ChevronDown, ChevronUp, RefreshCw, Home, ArrowLeft, CheckCircle, AlertTriangle, Sparkles, Smartphone } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { PracticeSetup } from '@/components/quiz/PracticeSetup';
 import { QuestionCard } from '@/components/quiz/QuestionCard';
@@ -603,6 +603,16 @@ export function PracticePage() {
                   <span className="hidden sm:inline">Nộp bài</span>
                 </button>
               )}
+
+              <a
+                href="/m"
+                className="flex items-center gap-1.5 rounded-xl border border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-700 px-2.5 h-8 text-[11px] font-bold transition-all shadow-sm active:scale-95"
+                title="Mở Ứng Dụng Di Động Chuyên Biệt (PWA / Mobile Native)"
+              >
+                <Smartphone size={13} className="text-purple-600" />
+                <span className="hidden sm:inline">Bản Di Động</span>
+                <span className="sm:hidden">App</span>
+              </a>
 
               <select
                 value={lang}
