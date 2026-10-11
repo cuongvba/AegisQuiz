@@ -17,7 +17,8 @@ import {
   Atom,
   Zap,
   GraduationCap,
-  Network
+  Network,
+  Building2
 } from 'lucide-react';
 import { useAuthContext } from '@/app/providers/AuthProvider';
 import { useEntitlement } from '@/shared/hooks/useEntitlement';
@@ -39,6 +40,7 @@ const allMenuItems: MenuItem[] = [
   { href: '/admin', label: 'Tổng quan', icon: <LayoutDashboard size={18} /> },
   { href: '/admin/questions', label: 'Ngân hàng Câu hỏi', icon: <FileQuestion size={18} /> },
   { href: '/admin/exams', label: 'Đề thi', icon: <FileText size={18} /> },
+  { href: '/admin/tenants', label: 'Khách thuê & Nhãn trắng', icon: <Building2 size={18} />, adminOnly: true },
   { href: '/admin/org-units', label: 'Cây Tổ chức O(1)', icon: <Network size={18} />, adminOnly: true, feature: FeatureKey.HierarchyTree },
   { href: '/admin/notebooks', label: 'Giáo trình (PDF)', icon: <BookOpen size={18} />, adminOnly: true },
   { href: '/admin/symposium', label: 'Đại Hội Thảo AI', icon: <Atom size={18} />, feature: FeatureKey.AiSymposium },

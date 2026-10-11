@@ -32,6 +32,8 @@ const AdminNotebooksPage = lazy(() => import('@/pages/admin/AdminNotebooksPage')
 const AdminUsersPage = lazy(() => import('@/pages/admin/AdminUsersPage').then(m => ({ default: m.AdminUsersPage })));
 const AdminPaymentsPage = lazy(() => import('@/pages/admin/AdminPaymentsPage').then(m => ({ default: m.AdminPaymentsPage })));
 const AdminExamsPage = lazy(() => import('@/pages/admin/AdminExamsPage').then(m => ({ default: m.AdminExamsPage })));
+const TenantsPage = lazy(() => import('@/pages/admin/tenants/TenantsPage').then(m => ({ default: m.TenantsPage })));
+const OrganizationUnitsPage = lazy(() => import('@/pages/admin/org-units/OrganizationUnitsPage').then(m => ({ default: m.OrganizationUnitsPage })));
 const AiSettingsPage = lazy(() => import('@/pages/admin/ai/AiSettingsPage').then(m => ({ default: m.AiSettingsPage })));
 const PromptForgeAdminPage = lazy(() => import('@/pages/admin/PromptForgeAdminPage').then(m => ({ default: m.PromptForgeAdminPage })));
 
@@ -87,6 +89,8 @@ export default function App() {
                 <Route path="users" element={<AdminUsersPage />} />
                 <Route path="payments" element={<AdminPaymentsPage />} />
                 <Route path="exams" element={<AdminExamsPage />} />
+                <Route path="tenants" element={<TenantsPage />} />
+                <Route path="org-units" element={<OrganizationUnitsPage />} />
                 <Route path="ai-settings" element={<AiSettingsPage />} />
                 <Route path="ai" element={<AiSettingsPage />} />
                 <Route path="prompt-forge" element={<PromptForgeAdminPage />} />
