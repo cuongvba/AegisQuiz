@@ -1,6 +1,7 @@
 import React from 'react';
 import { AlertTriangle, Sparkles } from 'lucide-react';
 import { PracticeQuestionItem } from '../types/mobile-practice.types';
+import { MathRenderer } from '@/components/common/MathRenderer';
 
 interface PracticeQuestionBodyProps {
   currentQ: PracticeQuestionItem;
@@ -21,35 +22,6 @@ export const PracticeQuestionBody: React.FC<PracticeQuestionBodyProps> = ({
   onSelectOption,
   onOpenStory,
 }) => {
-  const renderQuestionContent = (text: string) => {
-    const imgRegex = /!\[(.*?)\]\((data:image\/[^;]+;base64,[^)]+|https?:\/\/[^)]+)\)/g;
-    const parts: React.ReactNode[] = [];
-    let lastIndex = 0;
-    let match;
-
-    while ((match = imgRegex.exec(text)) !== null) {
-      if (match.index > lastIndex) {
-        parts.push(<span key={lastIndex}>{text.substring(lastIndex, match.index)}</span>);
-      }
-      parts.push(
-        <div key={match.index} className="my-3 flex justify-center">
-          <img
-            src={match[2]}
-            alt={match[1] || 'Hình ảnh minh họa câu hỏi'}
-            className="max-h-52 rounded-xl border border-slate-700 object-contain shadow-lg bg-slate-900/80 p-1"
-          />
-        </div>
-      );
-      lastIndex = match.index + match[0].length;
-    }
-
-    if (lastIndex < text.length) {
-      parts.push(<span key={lastIndex}>{text.substring(lastIndex)}</span>);
-    }
-
-    return parts.length > 0 ? parts : text;
-  };
-
   return (
     <div className="flex-1 overflow-y-auto p-4 space-y-4">
       {currentQ.isFatal && (
@@ -59,13 +31,14 @@ export const PracticeQuestionBody: React.FC<PracticeQuestionBodyProps> = ({
         </div>
       )}
 
+      {/* Nội dung câu hỏi (Tự động biên dịch KaTeX LaTeX + Ảnh Base64) */}
       <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800">
         <div className="text-sm font-bold text-white leading-relaxed">
-          {renderQuestionContent(currentQ.content)}
+          <MathRenderer content={currentQ.content} />
         </div>
       </div>
 
-      {/* Danh sách phương án A, B, C, D */}
+      {/* Danh sách phương án A, B, C, D (Biên dịch KaTeX Inline) */}
       <div className="space-y-2.5">
         {currentQ.options.map((opt, optIdx) => {
           const displayLabel = ['A', 'B', 'C', 'D', 'E'][optIdx] || opt.key;
@@ -91,7 +64,9 @@ export const PracticeQuestionBody: React.FC<PracticeQuestionBodyProps> = ({
               >
                 {displayLabel}
               </div>
-              <div className="flex-1 pt-1 text-slate-200 leading-normal">{textContent}</div>
+              <div className="flex-1 pt-0.5 text-slate-200 leading-normal">
+                <MathRenderer content={textContent} inline />
+              </div>
             </button>
           );
         })}
@@ -112,7 +87,9 @@ export const PracticeQuestionBody: React.FC<PracticeQuestionBodyProps> = ({
               <Sparkles size={11} /> Bài Giảng Slice 🎬
             </button>
           </div>
-          <p className="text-xs text-slate-300 leading-relaxed">{currentQ.explanation}</p>
+          <div className="text-xs text-slate-300 leading-relaxed">
+            <MathRenderer content={currentQ.explanation} />
+          </div>
         </div>
       )}
     </div>
