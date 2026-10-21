@@ -184,6 +184,45 @@ namespace AegisQuiz.Infrastructure.Services
             }
         }
 
+        public bool RemoveRule(string ruleCode, bool persistToFile = true)
+        {
+            if (string.IsNullOrWhiteSpace(ruleCode)) return false;
+            lock (_syncLock)
+            {
+                int removed = _rules.RemoveAll(r => string.Equals(r.RuleCode, ruleCode, StringComparison.OrdinalIgnoreCase));
+                if (removed > 0)
+                {
+                    _regexCache.Clear();
+                    foreach (var rule in _rules) PrecompileRule(rule);
+                    if (persistToFile) PersistRegistryToFile();
+                    _logger?.LogInformation("[DynamicIngestionEngine] RemoveRule | RuleCode={RuleCode} -> Removed successfully", ruleCode);
+                    return true;
+                }
+                return false;
+            }
+        }
+
+        public DocumentStructureDictionaryDto GetStructureDictionary()
+        {
+            lock (_syncLock)
+            {
+                return _structureDictionary;
+            }
+        }
+
+        public void UpdateStructureDictionary(DocumentStructureDictionaryDto dictionary, bool persistToFile = true)
+        {
+            if (dictionary == null) return;
+            lock (_syncLock)
+            {
+                _structureDictionary = dictionary;
+                _regexCache.Clear();
+                foreach (var rule in _rules) PrecompileRule(rule);
+                if (persistToFile) PersistRegistryToFile();
+                _logger?.LogInformation("[DynamicIngestionEngine] UpdateStructureDictionary -> Updated and hot-reloaded successfully");
+            }
+        }
+
         /// <summary>Ghi toàn bộ trạng thái hiện tại (quy tắc + từ điển cấu trúc) xuống file registry — bảo toàn từ điển khi lưu.</summary>
         private void PersistRegistryToFile()
         {
@@ -291,6 +330,36 @@ namespace AegisQuiz.Infrastructure.Services
             catch (Exception ex)
             {
                 _logger?.LogWarning(ex, "[DynamicIngestionEngine] SyncRulesFromDatabase | Warning={Message} -> Keeping in-memory rules", ex.Message);
+                return 0;
+            }
+        }
+
+        /// <summary>
+        /// [Admin / Maintenance] Xóa sạch các quy tắc cũ trong CSDL PostgreSQL và nạp lại 100% bộ quy tắc chuẩn mới từ file registry.
+        /// </summary>
+        public async Task<int> ResetAndReseedRulesAsync(CancellationToken ct = default)
+        {
+            if (_scopeFactory == null) return 0;
+
+            try
+            {
+                using var scope = _scopeFactory.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AegisQuizDbContext>();
+
+                if (db.Database.IsRelational())
+                {
+                    await db.Database.ExecuteSqlRawAsync("DELETE FROM \"QuestionParsingRules\";", ct);
+                }
+
+                LoadDefaultRules();
+
+                await SeedDefaultRulesToDatabaseAsync(db, ct);
+                _logger?.LogInformation("[DynamicIngestionEngine] ResetAndReseedRulesAsync | Reseeded {Count} rules into PostgreSQL", _rules.Count);
+                return _rules.Count;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "[DynamicIngestionEngine] ResetAndReseedRulesAsync | Error={Message}", ex.Message);
                 return 0;
             }
         }
@@ -433,21 +502,48 @@ namespace AegisQuiz.Infrastructure.Services
             matchedRule = null;
             if (string.IsNullOrWhiteSpace(line)) return false;
 
+            // [False Positive Guard] Loại trừ thông tin đề thi, thời gian làm bài, thí sinh, giám thị
+            if (Regex.IsMatch(line, @"(?i)(?:thời\s*gian\s*làm\s*bài|không\s*kể\s*thời\s*gian|số\s*báo\s*danh|họ\s*(?:và)?\s*tên\s*thí\s*sinh)"))
+            {
+                return false;
+            }
+            if (Regex.IsMatch(line, @"(?i)^(?:Câu|Question|Item|Task|Exercise|Q|Bài|Bai)\s*\d+\s*(?:phút|phut|giây|giay|tiếng|tieng|giờ|gio|minutes|minute|mins|min|hours|hour)\b"))
+            {
+                return false;
+            }
+            if (Regex.IsMatch(line, @"(?i)^(?:Mã\s*đề|Exam\s*Code|Test\s*Code)[\:\s\-]*\d+"))
+            {
+                return false;
+            }
+
             var candidates = activeRules != null ? activeRules.ToList() : SnapshotRules();
             foreach (var rule in candidates)
             {
+                if (rule.TargetExamType == "TABLE_MATRIX") continue;
                 if (!HasLanguageEvidenceForAnchor(rule.Language, line)) continue;
 
                 var match = GetOrAddRegex(rule.AnchorSpec.RegexPattern).Match(line);
-                if (!match.Success) continue;
-
-                matchedRule = rule;
-                if (rule.AnchorSpec.QuestionNumberGroupIndex <= match.Groups.Count - 1)
+                if (match.Success)
                 {
-                    int.TryParse(match.Groups[rule.AnchorSpec.QuestionNumberGroupIndex].Value, out questionNumber);
+                    matchedRule = rule;
+                    if (rule.AnchorSpec.QuestionNumberGroupIndex <= match.Groups.Count - 1)
+                    {
+                        int.TryParse(match.Groups[rule.AnchorSpec.QuestionNumberGroupIndex].Value, out questionNumber);
+                    }
+                    return true;
                 }
+            }
+
+            // Fallback Resilience: Dòng câu hỏi độc lập (ví dụ: "Câu 1", "Câu 1.", "Câu 1 (2,0 điểm).", "Bài 3")
+            if (Regex.IsMatch(line, @"^(?:Câu|Question|Item|Task|Exercise|Q|Bài|Bai|Problem|Aufgabe)\s*(\d+)(?:\s*\([^)]*\))?[\.\:\s\-]*$", RegexOptions.IgnoreCase))
+            {
+                var mFallback = Regex.Match(line, @"^(?:Câu|Question|Item|Task|Exercise|Q|Bài|Bai|Problem|Aufgabe)\s*(\d+)", RegexOptions.IgnoreCase);
+                int.TryParse(mFallback.Groups[1].Value, out questionNumber);
+                matchedRule = candidates.FirstOrDefault(r => r.TargetExamType != "TABLE_MATRIX" && HasLanguageEvidenceForAnchor(r.Language, line))
+                              ?? candidates.FirstOrDefault(r => r.TargetExamType != "TABLE_MATRIX");
                 return true;
             }
+
             return false;
         }
 
@@ -535,6 +631,43 @@ namespace AegisQuiz.Infrastructure.Services
         private const string BuiltInCriticalMarkerPattern =
             @"(?:\bDIEM[_\s]*LIET\b|\bĐIỂM[_\s]*LIỆT\b|mất\s*an\s*toàn\s*giao\s*thông\s*nghiêm\s*trọng|bị\s*nghiêm\s*cấm|\bnghiêm\s*cấm\b|nồng\s*độ\s*cồn|sử\s*dụng\s*ma\s*túy|đua\s*xe\s*trái\s*phép|\bFATAL\b|\bCRITICAL\b)";
 
+        private const string BuiltInEssayScorePattern = @"(?:[\(\[]\s*[\d\.\,]+\s*(?:điểm|đ|marks?|points?)\s*[\)\]])";
+        private const string BuiltInEssayKeywordPattern = @"\b(?:Chứng\s*minh|Giải\s*phương\s*trình|Giải\s*hệ|Rút\s*gọn|Lập\s*công\s*thức|Biện\s*luận|Tính\s+(?:giá\s+trị|diện\s+tích|thể\s+tích|tốc\s+độ|chiều\s+cao)|Vẽ\s+đồ\s+thị|Hỏi\s+cần\s+phối\s+trộn)\b";
+
+        /// <summary>
+        /// [CIG Interaction Engine] Nhận diện câu hỏi Tự luận (ESSAY) dựa trên InteractionSpec của quy tắc CIG:
+        /// - Thang điểm tự luận (EssayScoreMarkerPatterns)
+        /// - Từ khóa chỉ thị tự luận (EssayKeywordPatterns)
+        /// - Cờ bật/tắt EssaySafeguardEnabled
+        /// </summary>
+        public bool IsEssayQuestion(string text, QuestionParsingRuleDto? rule = null, string? topicCode = null)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return false;
+
+            // 1. Thử với quy tắc được chỉ định
+            if (rule?.InteractionSpec != null && rule.InteractionSpec.EssaySafeguardEnabled)
+            {
+                if (MatchesAny(text, rule.InteractionSpec.EssayScoreMarkerPatterns)) return true;
+                if (MatchesAny(text, rule.InteractionSpec.EssayKeywordPatterns)) return true;
+            }
+
+            // 2. Thử với toàn bộ quy tắc đang hoạt động trong CIG
+            foreach (var r in SnapshotRules())
+            {
+                if (r.InteractionSpec != null && r.InteractionSpec.EssaySafeguardEnabled)
+                {
+                    if (MatchesAny(text, r.InteractionSpec.EssayScoreMarkerPatterns)) return true;
+                    if (MatchesAny(text, r.InteractionSpec.EssayKeywordPatterns)) return true;
+                }
+            }
+
+            // 3. Dự phòng theo mẫu lõi chuẩn mực
+            if (GetOrAddRegex(BuiltInEssayScorePattern).IsMatch(text)) return true;
+            if (GetOrAddRegex(BuiltInEssayKeywordPattern).IsMatch(text)) return true;
+
+            return false;
+        }
+
         // ─────────────────────────────────────────────────────────────────────
         // 4. Hạ tầng dùng chung: snapshot, regex cache, tiện ích khớp
         // ─────────────────────────────────────────────────────────────────────
@@ -615,6 +748,7 @@ namespace AegisQuiz.Infrastructure.Services
         {
             _rules.Clear();
             _rules.AddRange(GetDefaultFallbackRules());
+            _structureDictionary = new DocumentStructureDictionaryDto();
             _regexCache.Clear();
             foreach (var rule in _rules)
             {

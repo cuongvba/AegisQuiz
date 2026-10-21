@@ -1,0 +1,73 @@
+{
+  "title": "Creator Zen Studio",
+  "subtitle": "Minimalist digital workspace built specifically for Educators and Training Experts",
+  "trialBanner": {
+    "title": "Educator Partnership — 90-Day All-Inclusive Free Trial",
+    "daysLeft": "{{days}} days left of premium benefits",
+    "referralLabel": "Peer Referral Code:",
+    "copyReferral": "Copy Code",
+    "copied": "Copied!",
+    "revShare": "80/20 Revenue share policy & Accumulated Karma"
+  },
+  "dropZone": {
+    "title": "Drag & Drop Your Word Exam (.docx) Here",
+    "hint": "Supports natural Word exams, MathType/LaTeX formulas, and diagrams",
+    "processing": "Parsing exam document & analyzing cognitive taxonomy matrix...",
+    "browseButton": "Or click to browse from device",
+    "dropActive": "Drop file to launch realtime exam room!"
+  },
+  "preview": {
+    "title": "Preview & Cognitive CAS Deduplication",
+    "totalQuestions": "Total Questions: {{count}}",
+    "casDeduplication": "CAS Deduplication: {{rate}}% storage saved",
+    "duplicateBadge": "CAS Reused (Deduplicated)",
+    "uniqueBadge": "Unique New Question",
+    "questionNum": "Question {{num}}",
+    "correctAnswer": "Answer:",
+    "explanation": "Explanation / Rationale:",
+    "changeSubject": "Change Subject / Matrix"
+  },
+  "taxonomy": {
+    "detected": "AI Detected Taxonomy:",
+    "standard": "Standard:",
+    "bloomLevel": "Cognitive Level:",
+    "confidence": "Confidence:"
+  },
+  "launcher": {
+    "launchButton": "Launch 1-Click Realtime Exam Room",
+    "modalTitle": "Realtime Exam Room is Live!",
+    "modalSubtitle": "Students scan QR code or enter 6-digit PIN on their phones to join instantly",
+    "pinLabel": "JOIN PIN CODE",
+    "copyPin": "Copy PIN",
+    "copyLink": "Copy Join Link",
+    "openArena": "Open Classroom Live Monitor",
+    "close": "Close"
+  },
+  "actions": {
+    "reset": "Upload Another Exam",
+    "errorUpload": "Upload failed. Please ensure the file is a valid Word (.docx) document"
+  },
+  "editor": {
+    "edit": "Edit",
+    "save": "Save changes",
+    "cancel": "Cancel",
+    "editedBadge": "Edited",
+    "content": "Question content (supports $formulas)",
+    "options": "Options (click a letter to mark the correct answer)",
+    "markCorrect": "Mark as correct",
+    "addOption": "Add option",
+    "removeOption": "Remove option",
+    "answer": "Answer / Value",
+    "explanation": "Detailed explanation",
+    "addExplanation": "Add explanation"
+  },
+  "pagination": {
+    "label": "Question navigation",
+    "prev": "Previous page",
+    "next": "Next page",
+    "range": "Questions {{from}}–{{to}} of {{total}}",
+    "jumpTo": "Go to #…",
+    "perPage": "Per page",
+    "edited": "{{count}} edited"
+  }
+}

@@ -27,7 +27,9 @@ namespace AegisQuiz.Infrastructure.Services
                     sb.Append(ConvertElement(child));
                 }
                 var latex = sb.ToString().Trim();
-                return string.IsNullOrEmpty(latex) ? "" : $"${latex}$";
+                if (string.IsNullOrEmpty(latex)) return "";
+                latex = Docx.MathLocaleNormalizer.Default.Normalize(latex);
+                return $"${latex}$";
             }
             catch
             {

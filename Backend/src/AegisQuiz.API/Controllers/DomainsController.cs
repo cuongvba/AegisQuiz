@@ -442,6 +442,38 @@ namespace AegisQuiz.API.Controllers
                 return StatusCode(500, new { message = $"Lỗi xóa preset: {ex.Message}" });
             }
         }
+
+        // ── POST api/quiz/domains/sniff-coordinates ────────────────────────────
+        /// <summary>
+        /// [Universal Cognitive Taxonomy Endpoint]
+        /// Nhận diện tự động Hệ 5 Trục Tọa Độ Tri Thức & Smart Tags từ Tên File và Mẫu nội dung câu hỏi,
+        /// hoàn toàn dựa trên dữ liệu ngữ cảnh động (Dynamic Domain Context) của Tenant.
+        /// </summary>
+        [HttpPost("sniff-coordinates")]
+        public async Task<IActionResult> SniffCoordinates(
+            [FromBody] SniffCoordinatesRequest req,
+            [FromServices] IDynamicDomainContextService domainContextService)
+        {
+            try
+            {
+                var tenantId = await GetTenantIdAsync();
+                var dynamicContext = await domainContextService.BuildContextAsync(tenantId);
+
+                var result = AegisQuiz.Infrastructure.Services.UniversalCoordinateTaxonomyEngine.SniffCoordinates(
+                    fileName: req.FileName,
+                    sheetName: req.SheetName,
+                    headerBannerLines: req.HeaderSamples,
+                    sampleContents: req.SampleContents,
+                    sampleReferences: req.SampleReferences,
+                    dynamicContext: dynamicContext);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = $"Lỗi nhận diện tọa độ: {ex.Message}" });
+            }
+        }
     }
 
     public class CreateDomainRequest
@@ -473,5 +505,14 @@ namespace AegisQuiz.API.Controllers
         public string? SynonymsJson { get; set; }
         public bool IsDefault { get; set; } = false;
         public int DisplayOrder { get; set; } = 0;
+    }
+
+    public class SniffCoordinatesRequest
+    {
+        public string? FileName { get; set; }
+        public string? SheetName { get; set; }
+        public List<string>? HeaderSamples { get; set; }
+        public List<string>? SampleContents { get; set; }
+        public List<string>? SampleReferences { get; set; }
     }
 }

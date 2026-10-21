@@ -8,6 +8,7 @@ import type {
   TopicSummary,
 } from '@/types/quiz';
 import { DrivingPresetWidget } from '@/components/quiz/DrivingPresetWidget';
+import { useLearnerI18n } from '@/lib/i18n';
 import { DomainTabBar } from './topic-explorer/DomainTabBar';
 import { TopicTreeNode } from './topic-explorer/TopicTreeNode';
 
@@ -23,7 +24,7 @@ interface Props {
   onSelectMultipleTopics?: (topicKeys: string[], select: boolean) => void;
   isDomainLocked?: boolean;
   forcedDomainCode?: string;
-  t: (key: string) => string;
+  t?: (key: string, params?: any) => string;
 }
 
 export const CognitiveTopicExplorer: React.FC<Props> = ({
@@ -37,7 +38,10 @@ export const CognitiveTopicExplorer: React.FC<Props> = ({
   onSelectMultipleTopics,
   isDomainLocked = false,
   forcedDomainCode,
+  t: propT,
 }) => {
+  const { t: hookT } = useLearnerI18n();
+  const t = propT || hookT;
   const [selectedDomain, setSelectedDomain] = useState<string>(() => forcedDomainCode || 'ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({
@@ -125,21 +129,21 @@ export const CognitiveTopicExplorer: React.FC<Props> = ({
     <div className="space-y-4">
       {/* ─── THANH ĐIỀU HƯỚNG DOMAIN VÀ THỐNG KÊ ─── */}
       <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-4 shadow-xl backdrop-blur">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-3">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <div className="flex items-center gap-2.5">
             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-600 text-white font-bold">
               <Layers className="h-4 w-4" />
             </span>
             <div>
-              <h3 className="text-sm font-black text-white">Đồ Thị Nhận Thức Chuyên Đề Phân Tầng</h3>
-              <p className="text-xs text-slate-400">Chọn 1-chạm hoặc phân bổ số lượng câu hỏi linh hoạt</p>
+              <h3 className="text-sm font-black text-white">{t('cognitiveTopicGraph') || 'Đồ Thị Nhận Thức Chuyên Đề Phân Tầng'}</h3>
+              <p className="text-xs text-slate-400">{t('cognitiveTopicGraphDesc') || 'Chọn 1-chạm hoặc phân bổ số lượng câu hỏi linh hoạt'}</p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 text-xs">
             <span className="px-3 py-1.5 rounded-xl bg-slate-800 text-cyan-300 font-bold border border-cyan-500/20 flex items-center gap-1.5">
               <Sparkles className="h-3.5 w-3.5 text-cyan-400" />
-              <span>Đang chọn {selectedMap.size} chủ đề</span>
+              <span>{t('selectingTopicsCount', { count: selectedMap.size }) || `Đang chọn ${selectedMap.size} chủ đề`}</span>
             </span>
           </div>
         </div>
@@ -150,6 +154,7 @@ export const CognitiveTopicExplorer: React.FC<Props> = ({
           selectedDomain={forcedDomainCode || selectedDomain}
           onSelectDomain={setSelectedDomain}
           isDomainLocked={isDomainLocked}
+          t={t}
         />
 
         {/* Thanh tìm kiếm */}
@@ -159,7 +164,7 @@ export const CognitiveTopicExplorer: React.FC<Props> = ({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Tìm kiếm chuyên đề, mã môn hoặc nội dung bài học..."
+            placeholder={t('searchTopicPlaceholder') || 'Tìm kiếm chuyên đề, mã môn hoặc nội dung bài học...'}
             className="w-full h-9 pl-9 pr-4 rounded-xl border border-slate-700 bg-slate-950 text-xs text-white placeholder-slate-500 focus:outline-hidden focus:border-cyan-500"
           />
         </div>
@@ -184,6 +189,7 @@ export const CognitiveTopicExplorer: React.FC<Props> = ({
                 selectedConfig={selectedMap.get(rootNode.code)}
                 onSelectTree={handleSelectTree}
                 onUpdateConfig={onUpdateTopicConfig}
+                t={t}
                 childrenNodes={
                   rootNode.children && rootNode.children.length > 0 ? (
                     <div className="space-y-2">
@@ -197,6 +203,7 @@ export const CognitiveTopicExplorer: React.FC<Props> = ({
                           selectedConfig={selectedMap.get(child.code)}
                           onSelectTree={handleSelectTree}
                           onUpdateConfig={onUpdateTopicConfig}
+                          t={t}
                         />
                       ))}
                     </div>

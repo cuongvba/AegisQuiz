@@ -1,0 +1,29 @@
+{
+  "title": "엔터프라이즈 화이트라벨링 & 브랜드 테마 설정",
+  "subtitle": "브랜드 아이덴티티, 엄선된 컬러 팔레트, 100% 데이터베이스 기반 동적 CSS 토큰 구성",
+  "brandIdentity": "브랜드 아이덴티티",
+  "organizationName": "기관/기업명",
+  "logoUrl": "기업 로고 URL",
+  "logoPlaceholder": "https://company.com/logo.svg",
+  "customDomain": "전용 도메인 (Custom Domain)",
+  "domainPlaceholder": "exam.yourcompany.com",
+  "colorSystem": "컬러 시스템 및 디자인 토큰",
+  "primaryColor": "기본 색상 (Primary)",
+  "secondaryColor": "보조 색상 (Secondary)",
+  "accentColor": "강조 색상 (Accent)",
+  "borderRadius": "모서리 둥글기 (Border Radius)",
+  "fontFamily": "시스템 글꼴 (Font Family)",
+  "previewHeader": "실시간 시각적 미리보기 (0ms 반응)",
+  "sampleQuizCardTitle": "실시간 반응형 문항 카드 미리보기",
+  "sampleQuizCardDesc": "코드 재배포 없이 수험자 및 학생 화면에 귀사 브랜드 고유의 컬러와 글꼴이 즉시 적용됩니다.",
+  "sampleButton": "샘플 답안 제출",
+  "saveChanges": "브랜드 테마 저장",
+  "resetDefault": "기본값 복원",
+  "savedSuccess": "브랜드 토큰이 시스템 전체에 성공적으로 적용 및 저장되었습니다!",
+  "paywall": {
+    "title": "화이트라벨링 기능은 Enterprise 및 Global 플랜 전용입니다",
+    "description": "전용 도메인 설정, AegisQuiz 로고 제거 및 맞춤형 테마 토큰 적용을 위해 Enterprise 플랜으로 업그레이드하세요.",
+    "upgradeNow": "Enterprise로 업그레이드",
+    "contactSales": "엔터프라이즈 문의"
+  }
+}

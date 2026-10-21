@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: AegisQuiz/Backend
+        working-directory: Backend
 
     steps:
       - uses: actions/checkout@v4
@@ -75,7 +75,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: AegisQuiz/Frontend
+        working-directory: Frontend
 
     steps:
       - uses: actions/checkout@v4
@@ -85,7 +85,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-          cache-dependency-path: AegisQuiz/Frontend/package-lock.json
+          cache-dependency-path: Frontend/package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -96,8 +96,8 @@ jobs:
       - name: Type check
         run: npx tsc --noEmit
 
-      - name: Run Tests
-        run: npm test --if-present -- --coverage --watchAll=false
+      - name: Run Tests (Vitest + golden scoring vectors)
+        run: npm test
 
   # ─────────────────────────────────────────────────────────────
   # JOB 3: IRT Service Tests (Python)
@@ -107,7 +107,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: AegisQuiz/irt-service
+        working-directory: irt-service
 
     steps:
       - uses: actions/checkout@v4
@@ -134,6 +134,14 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # quét toàn bộ lịch sử, không chỉ commit cuối
+
+      # Secrets detection — fail cứng nếu có bất kỳ bí mật nào trong lịch sử
+      - name: Detect secrets (gitleaks, full history)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -143,7 +151,7 @@ jobs:
       # Backend — .NET vulnerable packages
       - name: Scan .NET vulnerable dependencies
         run: |
-          cd AegisQuiz/Backend
+          cd Backend
           dotnet restore
           dotnet list package --vulnerable --include-transitive 2>&1 | tee vuln-report.txt
           if grep -q "has the following vulnerable packages" vuln-report.txt; then
@@ -160,7 +168,7 @@ jobs:
 
       - name: Scan npm vulnerabilities (critical only)
         run: |
-          cd AegisQuiz/Frontend
+          cd Frontend
           npm ci --ignore-scripts
           npm audit --audit-level=critical || true  # Warn but don't fail on high
 
@@ -205,7 +213,7 @@ jobs:
             --tag ${{ env.GCR_BACKEND }}:latest \
             --cache-from ${{ env.GCR_BACKEND }}:latest \
             --build-arg BUILDKIT_INLINE_CACHE=1 \
-            AegisQuiz/Backend
+            Backend
 
       - name: Push Backend to GCR
         run: |
@@ -219,7 +227,7 @@ jobs:
             --tag ${{ env.GCR_FRONTEND }}:${{ github.sha }} \
             --tag ${{ env.GCR_FRONTEND }}:latest \
             --cache-from ${{ env.GCR_FRONTEND }}:latest \
-            AegisQuiz/Frontend
+            Frontend
 
       - name: Push Frontend to GCR
         run: |
@@ -232,7 +240,7 @@ jobs:
           docker build \
             --tag ${{ env.GCR_IRT }}:${{ github.sha }} \
             --tag ${{ env.GCR_IRT }}:latest \
-            AegisQuiz/irt-service
+            irt-service
 
       - name: Push IRT to GCR
         run: |

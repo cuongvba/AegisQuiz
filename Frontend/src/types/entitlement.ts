@@ -22,10 +22,15 @@ export const FeatureKey = {
   ArenaGameshow:    'arena:gameshow',
 
   // Quản trị tổ chức & Doanh nghiệp
-  HierarchyTree:    'org:hierarchy_tree',
-  WhiteLabel:       'branding:white_label',
-  AuditLog:         'security:audit_log',
-  DynamicDomains:   'tenant:dynamic_domains',
+  HierarchyTree:      'org:hierarchy_tree',
+  WhiteLabel:         'branding:white_label',
+  WhiteLabelTheming:  'branding:white_label_theming',
+  AuditLog:           'security:audit_log',
+  DynamicDomains:     'tenant:dynamic_domains',
+
+  // Enterprise Studio & Trích Xuất Chuyên Sâu
+  SplitScreenStudio:  'studio:split_screen',
+  AiAutoRubricSolve:  'ai:auto_rubric_solve',
 } as const;
 
 export type FeatureKeyType = typeof FeatureKey[keyof typeof FeatureKey];
@@ -150,6 +155,27 @@ export const FEATURE_METADATA_CATALOG: Record<FeatureKeyType, FeatureMetadata> =
     description: 'Tên miền riêng (Custom Domain), logo riêng, bảng màu thương hiệu doanh nghiệp.',
     requiredPlan: 'Enterprise',
     badge: 'ENTERPRISE',
+  },
+  [FeatureKey.WhiteLabelTheming]: {
+    key: FeatureKey.WhiteLabelTheming,
+    name: 'Bộ Động Hóa Giao Diện & CSS Tokens Enterprise',
+    description: 'Tùy biến bảng màu, font chữ, border radius và theme CSS tokens trực tiếp từ DB không cần redeploy.',
+    requiredPlan: 'Enterprise',
+    badge: 'ENTERPRISE',
+  },
+  [FeatureKey.SplitScreenStudio]: {
+    key: FeatureKey.SplitScreenStudio,
+    name: 'Cognitive Split-Screen Ingestion Studio',
+    description: 'Khung làm việc bóc tách đề thi phân đôi màn hình, đồng bộ toạ độ gốc 60fps và tương tác song song.',
+    requiredPlan: 'Professional',
+    badge: 'PRO',
+  },
+  [FeatureKey.AiAutoRubricSolve]: {
+    key: FeatureKey.AiAutoRubricSolve,
+    name: 'AI Giải Đề Tự Động & Lập Rubric Điểm',
+    description: 'Trợ lý AI tự động phân tích đề bài, sinh lời giải chi tiết và phân rã ma trận rubric barem điểm.',
+    requiredPlan: 'Professional',
+    badge: 'PRO',
   },
   [FeatureKey.AuditLog]: {
     key: FeatureKey.AuditLog,

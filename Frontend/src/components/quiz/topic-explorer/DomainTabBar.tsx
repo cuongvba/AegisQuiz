@@ -6,6 +6,7 @@ interface DomainTabBarProps {
   selectedDomain: string;
   onSelectDomain: (domainCode: string) => void;
   isDomainLocked?: boolean;
+  t?: (key: string) => string;
 }
 
 const DOMAIN_ICONS: Record<string, string> = {
@@ -23,6 +24,7 @@ export const DomainTabBar: React.FC<DomainTabBarProps> = ({
   selectedDomain,
   onSelectDomain,
   isDomainLocked = false,
+  t,
 }) => {
   if (isDomainLocked) {
     return null; // Khi đã bị khóa vào một vertical app cụ thể, ẩn thanh tab để chống phân tán nhận thức
@@ -40,7 +42,7 @@ export const DomainTabBar: React.FC<DomainTabBarProps> = ({
         }`}
       >
         <span>🌐</span>
-        <span>Tất Cả Lĩnh Vực</span>
+        <span>{t ? t('allDomains') : 'Tất Cả Lĩnh Vực'}</span>
       </button>
 
       {domainGroups.map((group) => {

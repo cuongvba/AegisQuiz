@@ -123,6 +123,20 @@ namespace AegisQuiz.Application.DTOs
             @"(?:第|题)\s*(\d+)\s*(?:-|到|至)\s*(\d+)\s*题"
         };
 
+        /// <summary>
+        /// Tự động đóng gói phạm vi bài đọc hiểu khi chuyển sang SectionMarker mới (Dynamic Context Boundary).
+        /// </summary>
+        public bool AutoTerminateOnNextSection { get; set; } = true;
+
+        /// <summary>
+        /// Danh sách các mẫu chỉ thị chuyển dạng bài (Instruction Directives) để tự động ngắt bài đọc hiểu cũ.
+        /// Ví dụ: "Mark the letter...", "Choose the word...", "Read the following passage..."
+        /// </summary>
+        public List<string> InstructionDirectivePatterns { get; set; } = new()
+        {
+            @"^(?:Mark\s+the\s+letter|Choose\s+the\s+letter|Choose\s+the\s+word|Read\s+the\s+following\s+(?:passage|text|announcement|advertisement|leaflet)|Đọc\s+(?:đoạn\s+văn|bài\s+đọc))\b"
+        };
+
         // Aliases
         public string? MathBlockMarkerRegex { get; set; }
         public string? CodeBlockMarkerRegex { get; set; }
@@ -141,11 +155,26 @@ namespace AegisQuiz.Application.DTOs
         public string ShortAnswerInputFormat { get; set; } = "NUMERIC_OR_FRACTION"; // NUMERIC_OR_FRACTION, ALPHANUMERIC
         public double Tolerance { get; set; } = 0.01;
 
+        /// <summary>Cờ bật/tắt Essay Safeguard ngăn bốc nhầm a, b, 1, 2 thành phương án trắc nghiệm.</summary>
+        public bool EssaySafeguardEnabled { get; set; } = true;
+
+        /// <summary>Các mẫu Regex nhận diện thang điểm bài tự luận, ví dụ: "(2,0 điểm)", "[1.5đ]".</summary>
+        public List<string> EssayScoreMarkerPatterns { get; set; } = new()
+        {
+            @"(?:[\(\[]\s*[\d\.\,]+\s*(?:điểm|đ)\s*[\)\]])"
+        };
+
+        /// <summary>Các từ khóa bài toán tự luận.</summary>
+        public List<string> EssayKeywordPatterns { get; set; } = new()
+        {
+            @"\b(?:Chứng\s*minh|Giải\s*phương\s*trình|Giải\s*hệ|Rút\s*gọn|Lập\s*công\s*thức|Biện\s*luận|Tính\s+(?:giá\s+trị|diện\s+tích|thể\s+tích|tốc\s+độ|chiều\s+cao)|Vẽ\s+đồ\s+thị|Hỏi\s+cần\s+phối\s+trộn)\b"
+        };
+
         /// <summary>
         /// Mẫu tách các phương án nằm cùng một dòng (A. ... B. ... C. ... D. ...).
         /// Group 1/3 = dấu * đánh dấu đáp án đúng, Group 2 = nhãn phương án.
         /// </summary>
-        public string InlineOptionDelimiterPattern { get; set; } = @"(?:^|[\s\t\–\—]+)(?:<u>|\*|\*\*|\<b\>)?(\*?)((?-i:[A-H])|[1-4])(\*?)(?:</u>|\*|\*\*|\</b\>)?[\.\:\)](?:</u>|\</b\>)?[\s\t]+";
+        public string InlineOptionDelimiterPattern { get; set; } = @"(?:^|[\s\t\–\—]+|(?<=[\.\:\)\;\!\?]))(?:<u>|\*|\*\*|\<b\>)?(\*?)((?-i:[A-H])|[1-4])(\*?)(?:</u>|\*|\*\*|\</b\>)?[\.\:\)](?:</u>|\</b\>)?[\s\t]+";
 
         /// <summary>Phân nhóm chuyên đề con (SubCategory) theo từ khóa nội dung, ví dụ GPLX: SA_HINH, BIEN_BAO.</summary>
         public Dictionary<string, List<string>> SubCategoryPatterns { get; set; } = new(StringComparer.OrdinalIgnoreCase)
@@ -175,6 +204,11 @@ namespace AegisQuiz.Application.DTOs
         public string AnswerRegexPattern { get; set; } = @"^(?:ĐÁP\s*ÁN|ANSWER|KEY|CHỌN)[\.\:\s\-]+([A-D0-9a-d\,\s]+)";
         public int AnswerGroupIndex { get; set; } = 1;
         public string ExplanationRegexPattern { get; set; } = @"^(?:Lời\s*giải|Hướng\s*dẫn|HD|Giải\s*thích|Explanation|Căn\s*cứ)\b";
+        public string? ExplanationStartRegex
+        {
+            get => ExplanationRegexPattern;
+            set { if (value != null) ExplanationRegexPattern = value; }
+        }
 
         /// <summary>Các mẫu tiền tố dòng lời giải cục bộ ngay dưới câu hỏi (đa ngôn ngữ).</summary>
         public List<string> ExplanationLinePrefixPatterns { get; set; } = new()
@@ -210,24 +244,46 @@ namespace AegisQuiz.Application.DTOs
     {
         public List<string> SingleChoiceExtractionPatterns { get; set; } = new()
         {
-            @"(?:Chọn|Ch[oọ\?]n|Choose|Option|Select)\s*(?:câu\s*|đáp\s*án\s*)?([A-G])\b",
-            @"(?:suy\s*ra\s*)?(?:đáp\s*án|dap\s*an|answer|key)(?:\s*(?:đúng\s*)?là)?[\:\s]*([A-G])\b",
-            @"\b([A-G])\s*(?:là\s*đáp\s*án|đúng|is\s+correct|is\s+the\s+answer)\b",
-            @"(?:故选|答案为|正确答案是)[\:\s]*([A-G])\b"
+            @"(?:^|[\.\;\,\!\s]+)(?:Do\s*đó|Suy\s*ra|Vậy|Hence|Therefore|Par\s*conséquent|Folglich)?\s*(?:ta\s*)?(?:Chọn|Ch[oọ\?]n|Choose|Option|Select|Choisir)\s*(?:câu\s*|đáp\s*án\s*|phương\s*án\s*)?([A-G])\b",
+            @"(?:^|[\.\;\,\!\s]+)(?:Do\s*đó|Suy\s*ra|Vậy|Hence|Therefore)?\s*(?:ta\s*có\s*)?(?:đáp\s*án|dap\s*an|phương\s*án|answer|key|réponse)(?:\s*(?:đúng\s*)?là|\s*is|\s*=)?[\:\s]+([A-G])\b",
+            @"\blà\s+đáp\s*án\s+([A-G])\b",
+            @"\b([A-G])\s*(?:là\s*đáp\s*án|đúng|is\s+the\s+(?:correct\s+)?answer|is\s+correct|est\s+la\s+bonne\s+réponse)\b",
+            @"(?:故选|答案为|正确答案是|正确选项是)[\:\s]*([A-G])\b"
         };
 
         public List<string> NumericValueExtractionPatterns { get; set; } = new()
         {
-            @"^(?:Đáp\s*số|Đáp\s*án|Dap\s*so|Dap\s*an|Kết\s*quả|Result|Answer|Value)(?:\s*bằng|\s*is|\s*=)?[\.\:\s]+([0-9\,\.\-\+\/]+)",
-            @"(?:计算结果为|答案为|最终结果)[\.\:\s]+([0-9\,\.\-\+\/]+)"
+            @"(?:^|[\.\;\,\!\s]+)(?:Do\s*đó|Suy\s*ra|Vậy|Hence|Therefore)?\s*(?:Đáp\s*số|Đáp\s*án|Dap\s*so|Dap\s*an|Kết\s*quả|Giá\s*trị\s*cần\s*tìm|Result|Answer|Value|Valeur)(?:\s*(?:đúng\s*)?(?:là|bằng|\s*is|\s*=))?[\.\:\s\=]+\$?([0-9\,\.\-\+\/]+)\$?",
+            @"(?:计算结果为|答案为|最终结果|结果是)[\.\:\s\=]+([0-9\,\.\-\+\/]+)"
         };
 
         /// <summary>Group 1 = nhãn mệnh đề (a-d), Group 2 = giá trị chân lý.</summary>
         public List<string> TrueFalseExtractionPatterns { get; set; } = new()
         {
-            @"(?:^|\b)([a-d])[\)\.]?.*?\b(?:mệnh\s*đề\s+|khẳng\s*định\s+)?(đúng|sai|d|s)\b",
-            @"(?:^|\b)([a-d])[\)\.]?.*?\b(true|false|t|f)\b",
-            @"(?:^|\b)([a-d])[\)\.]?.*?\b(正确|错误|对|错)\b"
+            @"(?:^|[\(\s\[])([a-d1-4])[\)\.\:\]]\s*.*?\b(?:chọn\s+)?(đúng|sai|d|s|true|false|t|f|vrai|faux|richtig|falsch)\b",
+            @"\b(?:ý|mệnh\s*đề|khẳng\s*định|statement|proposition|assertion)\s+([a-d1-4])\b.*?\b(?:chọn\s+)?(đúng|sai|d|s|true|false|t|f|vrai|faux|richtig|falsch)\b",
+            @"(?:^|[\(\s\[])([a-d1-4])[\)\.\:\]]\s*.*?\b(正确|错误|对|错)\b"
+        };
+
+        /// <summary>Mẫu nhận diện ý con / SubItem (Group 1 = nhãn a-d/1-4, Group 2 = nội dung còn lại).</summary>
+        public List<string> SubItemMarkerPatterns { get; set; } = new()
+        {
+            @"^(?:(?:ý|mệnh\s*đề|khẳng\s*định|bước|phần|statement|proposition|item|option|step|part)\s*)?[\(\[]?([a-d1-4])[\)\]\.\:]\s*(?:[\-\:\.]\s*)?(.*)",
+            @"^(?:第)?\s*([1-4a-dA-D])\s*[小题项点\.\:\)\-]\s*(.*)"
+        };
+
+        /// <summary>Mẫu nhận diện dòng bắt đầu Lời giải / Hướng dẫn giải (Group 1 = nội dung sau nhãn lời giải).</summary>
+        public List<string> ExplanationStartPatterns { get; set; } = new()
+        {
+            @"^(?:(?:Lời\s*giải|L[.\?\s]*i\s*gi[.\?\s]*i|Hướng\s*dẫn\s*(?:giải|chấm|ý\s*giải)|Hu?ng\s*d?n\s*(?:gi?i|ch?m)|HƯỚNG\s*DẪN|LỜI\s*GIẢI|HD|Giải\s*thích|Gợi\s*ý(?:\s*làm\s*bài|\s*giải)?|Ý\s*tưởng\s*giải|Sơ\s*đồ\s*giải|Biểu\s*điểm|Thang\s*điểm|Explanation|Rationale|Rubric|Marking\s*Scheme|Solution|Model\s*Answer|Detailed\s*Solution|Explication|Lösung)[\.\:\s\-]+|Chọn\s+[A-D0-9,\.\-]+\s*[\.\:\s\-]+)(.*)",
+            @"^(?:参考答案|试题解析|详细解析|解答|解析)[\.\:\s\-]+(.*)"
+        };
+
+        /// <summary>Mẫu trích xuất số câu hỏi (Group 1 = số câu hỏi).</summary>
+        public List<string> QuestionNumberPatterns { get; set; } = new()
+        {
+            @"^(?:Câu|Bài|Question|Item|Aufgabe|Exercice|CÂU|BÀI|Problem|Task|Frage|Domanda|Pregunta|第)?\s*(\d+)",
+            @"^(\d+)\s*[\.\:\)\-]"
         };
     }
 
@@ -258,6 +314,21 @@ namespace AegisQuiz.Application.DTOs
         {
             @"^(?:ĐÁP\s*ÁN|D[\.\?\s]*P\s*[\.\?\s]*N|ANSWER\s*KEY|KEY|ANSWERS?)\s*(?:THAM\s*KHẢO|CHI\s*TIẾT)?[.\:\s\-]*$",
             @"^(?:答案|参考答案)[.\:\s\-]*$"
+        };
+
+        /// <summary>Mẫu nhận diện ranh giới kết thúc đề thi (HẾT, THE END, END OF TEST, END OF PAPER...).</summary>
+        public List<string> EndOfExamPatterns { get; set; } = new()
+        {
+            @"^(?:[\-\–\—_*\=.\s]*\b(?:HẾT|HET|THE\s*END|END\s*OF\s*(?:TEST|EXAM|PAPER)|HẾT\s+ĐỀ\s+THI)\b[\-\–\—_*\=.\s]*)$",
+            @"^(?:[\-\–\—_\s]*HẾT[\-\–\—_\s]*)$"
+        };
+
+        /// <summary>Mẫu nhận diện chỉ thị coi thi / ghi chú phụ ngoài nội dung câu hỏi.</summary>
+        public List<string> ProctorInstructionPatterns { get; set; } = new()
+        {
+            @"(?i)(?:Cán\s*bộ\s*coi\s*thi|Giám\s*thị|Giám\s*khảo)\s+không\s+giải\s+thích(?:\s+gì)?\s+thêm",
+            @"(?i)Thí\s*sinh\s+không\s+được\s+sử\s+dụng\s+tài\s+liệu",
+            @"(?i)Họ\s*(?:và)?\s*tên\s+thí\s*sinh[\.\:\s_]+Số\s*báo\s*danh"
         };
 
         /// <summary>Ánh xạ tiêu đề phân đoạn sang loại câu hỏi (SINGLE, TRUE_FALSE, SHORT_ANSWER, ESSAY).</summary>
@@ -295,6 +366,15 @@ namespace AegisQuiz.Application.DTOs
         public List<string> HeaderPatterns { get; set; } = new();
         public string Orientation { get; set; } = "AUTO_DETECT";
         public string CellPattern { get; set; } = @"^(?:(\d+)[\.\-\s\:]+([A-D]|Đ|S|[\\-\\+]?\\d+[\\,\\.]?\\d*))$";
+
+        /// <summary>Hỗ trợ xử lý các ô gộp (Merged Cells w:gridSpan / w:vMerge) trong bảng đáp án ma trận.</summary>
+        public bool SupportMergedCells { get; set; } = true;
+
+        /// <summary>Hỗ trợ bảng đáp án chia nhánh đa cột dọc (tiết kiệm trang in).</summary>
+        public bool MultiColumnBranching { get; set; } = true;
+
+        /// <summary>Mẫu bóc tách tổ hợp nhiều đáp án trong cùng 1 ô hoặc chuỗi viết liền.</summary>
+        public string? CompositeCellPattern { get; set; } = @"\b(\d+)[\.\:\-\s]+([A-D]|Đ|S)\b";
     }
 
     /// <summary>Yêu cầu kiểm thử nhanh một đoạn snippet đề thi từ Admin UI Sandbox</summary>
@@ -331,5 +411,74 @@ namespace AegisQuiz.Application.DTOs
         public int TotalQuestionsFound => ParsedCount > 0 ? ParsedCount : Questions.Count;
         public List<DocxImportPreviewDto> Questions { get; set; } = new();
         public List<string> ParsingLogs { get; set; } = new();
+    }
+
+    /// <summary>Yêu cầu kiểm thử ngầm (Shadow Testing) cho quy tắc đề xuất trước khi kích hoạt</summary>
+    public class ShadowTestRequestDto
+    {
+        public QuestionParsingRuleDto ProposedRule { get; set; } = new();
+        public List<string>? CustomTestSamples { get; set; }
+        public bool AutoPromote { get; set; } = false;
+        public int MaxTimeoutMs { get; set; } = 3000;
+    }
+
+    /// <summary>Kết quả kiểm thử ngầm (Shadow Testing Pipeline)</summary>
+    public class ShadowTestResultDto
+    {
+        public bool Passed { get; set; } = true;
+        public double SafetyScore { get; set; } = 100.0; // 0.0 - 100.0%
+        public int TotalSamplesTested { get; set; } = 0;
+        public int RegressionsCount { get; set; } = 0;
+        public int TargetMatchesCount { get; set; } = 0;
+        public double AverageExecutionMs { get; set; } = 0.0;
+        public List<ShadowTestDetailDto> Details { get; set; } = new();
+        public string Recommendation { get; set; } = string.Empty;
+        public string? Note { get; set; }
+        public bool AutoPromoted { get; set; } = false;
+    }
+
+    /// <summary>Chi tiết kết quả từng mẫu thử nghiệm trong Shadow Run</summary>
+    public class ShadowTestDetailDto
+    {
+        public string SampleName { get; set; } = string.Empty;
+        public string SampleSnippet { get; set; } = string.Empty;
+        public string ExpectedRuleCode { get; set; } = string.Empty;
+        public string? ActualMatchedRuleCode { get; set; }
+        public bool IsRegression { get; set; } = false;
+        public bool IsTargetMatch { get; set; } = false;
+        public double ExecutionMs { get; set; } = 0.0;
+        public string Status { get; set; } = "PASS";
+        public string? Note { get; set; }
+    }
+
+    /// <summary>
+    /// [SGI - Scope-Guided Directive Window]
+    /// Đại diện cho một Cửa sổ Chỉ thị Phạm vi: Từ câu StartQ đến EndQ có hành vi tương tác QuestionType.
+    /// Triệt tiêu hoàn toàn sự phụ thuộc cứng nhắc vào các tiêu đề phân đoạn (PHẦN I, II, III).
+    /// </summary>
+    public class DirectiveScopeWindow
+    {
+        public int StartQuestion { get; set; }
+        public int EndQuestion { get; set; }
+        public string QuestionType { get; set; } = "SINGLE";
+        public string? RawDirective { get; set; }
+        public double Confidence { get; set; } = 1.0;
+
+        public bool Contains(int qNum) => qNum >= StartQuestion && qNum <= EndQuestion;
+    }
+
+    /// <summary>
+    /// [Context Stimulus Window]
+    /// Quản lý ngữ cảnh bài đọc hiểu hoặc tình huống áp dụng cho dải câu hỏi [StartQ, EndQ].
+    /// </summary>
+    public class ContextStimulusWindow
+    {
+        public int StartQuestion { get; set; }
+        public int EndQuestion { get; set; }
+        public string ContextId { get; set; } = string.Empty;
+        public string ContextTitle { get; set; } = string.Empty;
+        public string ContextContent { get; set; } = string.Empty;
+
+        public bool Contains(int qNum) => qNum >= StartQuestion && qNum <= EndQuestion;
     }
 }

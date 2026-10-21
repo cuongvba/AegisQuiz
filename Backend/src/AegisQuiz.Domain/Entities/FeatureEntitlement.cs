@@ -25,10 +25,15 @@ namespace AegisQuiz.Domain.Entities
         public const string ArenaGameshow    = "arena:gameshow";
 
         // ── Nhóm Quản Trị Tổ Chức & Doanh Nghiệp (Enterprise Governance) ─────
-        public const string HierarchyTree    = "org:hierarchy_tree";
-        public const string WhiteLabel       = "branding:white_label";
-        public const string AuditLog         = "security:audit_log";
-        public const string DynamicDomains   = "tenant:dynamic_domains";
+        public const string HierarchyTree      = "org:hierarchy_tree";
+        public const string WhiteLabel         = "branding:white_label";
+        public const string WhiteLabelTheming  = "branding:white_label_theming";
+        public const string AuditLog           = "security:audit_log";
+        public const string DynamicDomains     = "tenant:dynamic_domains";
+
+        // ── Nhóm Enterprise Studio & Trích Xuất Chuyên Sâu ───────────────────
+        public const string SplitScreenStudio  = "studio:split_screen";
+        public const string AiAutoRubricSolve  = "ai:auto_rubric_solve";
     }
 
     /// <summary>
@@ -50,7 +55,9 @@ namespace AegisQuiz.Domain.Entities
             FeatureKeys.AdvancedMathWmf,
             FeatureKeys.ArenaGameshow,
             FeatureKeys.HierarchyTree,
-            FeatureKeys.DynamicDomains
+            FeatureKeys.DynamicDomains,
+            FeatureKeys.SplitScreenStudio,
+            FeatureKeys.AiAutoRubricSolve
         };
 
         private static readonly HashSet<string> EnterpriseFeatures = new()
@@ -63,9 +70,12 @@ namespace AegisQuiz.Domain.Entities
             FeatureKeys.ArenaGameshow,
             FeatureKeys.HierarchyTree,
             FeatureKeys.DynamicDomains,
+            FeatureKeys.SplitScreenStudio,
+            FeatureKeys.AiAutoRubricSolve,
             FeatureKeys.AiSymposium,
             FeatureKeys.IrtCat3Pl,
             FeatureKeys.WhiteLabel,
+            FeatureKeys.WhiteLabelTheming,
             FeatureKeys.AuditLog
         };
 

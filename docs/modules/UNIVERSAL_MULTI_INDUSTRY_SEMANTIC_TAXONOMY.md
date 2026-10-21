@@ -260,3 +260,45 @@ graph TD
 3. **API On-Demand**: Cung cấp endpoint `POST api/quiz/questions/auto-sniff-coordinates` cho phép quét và chuẩn hóa toàn bộ câu hỏi đã có sẵn trong cơ sở dữ liệu.
 
 > **Kết luận:** Động cơ nhận thức siêu vi đã loại bỏ 100% thao tác nhập liệu thủ công tẻ nhạt, giúp các tổ chức và cá nhân đưa hàng ngàn câu hỏi lên nền tảng trong vài giây với đầy đủ tọa độ tri thức và nhãn dán nghiệp vụ chuẩn mực quốc tế.
+
+---
+
+## 9. ĐỘT PHÁ KIẾN TRÚC v6.2: ĐỒNG BỘ ĐỘNG HAI CHIỀU & PHÂN RÃ MODULAR GIAO DIỆN (TWO-WAY DYNAMIC ONTOLOGY & ZERO-MONOLITH UI)
+
+### 9.1. Triệt Tiêu Khoảng Trống Hardcode Giữa Client và Server
+Trước phiên bản v6.2, modal `BulkTaxonomyModal.tsx` duy trì logic nhận diện regex cục bộ tại Client (671 dòng), dẫn đến hiện tượng: khi Quản trị viên thêm miền ngành mới hoặc cấu hình tọa độ đặc thù của Tenant, Client không tự động nhận thức được nếu không sửa code.
+
+**Kiến trúc Chuẩn mực v6.2 thiết lập 3 trụ cột đổi mới:**
+1. **Single Source of Truth qua Unified Endpoint**:
+   - Khởi tạo endpoint Backend `POST /api/quiz/domains/sniff-coordinates`.
+   - Cả Backend Ingestion Engine và Frontend UI đều tham chiếu về cùng một lõi nhận thức `UniversalCoordinateTaxonomyEngine` kết hợp `DynamicDomainContext`.
+2. **Dynamic Ontology Feedback Loop (Tự học & Thích ứng tức thời)**:
+   - Khi người dùng gán tọa độ và tick *"Lưu vào Database để tự động nhận diện lần sau"*, hệ thống lưu vào `TenantCoordinatePresets`.
+   - Ngay lập tức, các lần bóc tách file hoặc bấm nút *"⚡ Nhận diện lại bằng AI"* kế tiếp sẽ ưu tiên nhận diện từ các Presets vừa lưu (OCP Thích ứng Vô hạn).
+3. **Phân rã Modular Zero-Monolith UI ($\le 250$ dòng code / component)**:
+   - Thay thế file monolithic 671 dòng bằng cụm Sub-components chuyên biệt:
+     - [BulkTaxonomyModal.tsx](file:///d:/Cuong/DuAn/mybank/AegisQuiz/Frontend/src/pages/admin/questions/components/BulkTaxonomyModal.tsx) (~210 dòng): Điều phối tổng thể và Action buttons.
+     - `useBulkTaxonomyState.ts` (~160 dòng): Quản lý vòng đời state, API Dynamic Sniff và đồng bộ Presets.
+     - `TaxonomyDomainSelector.tsx` (~60 dòng): Render Grid lựa chọn ngành động và modal OCP.
+     - `TaxonomyCoordinateForm.tsx` (~80 dòng): Render 4 trường tọa độ tri thức chuẩn hóa.
+     - `TaxonomyTagManager.tsx` (~90 dòng): Quản lý Smart Tags và gợi ý thẻ động theo Tenant Domain Presets.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Quản trị viên / Giáo viên
+    participant UI as BulkTaxonomyModal (Modular < 250 LOC)
+    participant Hook as useBulkTaxonomyState
+    participant API as DomainsController (/api/quiz/domains)
+    participant Engine as UniversalCoordinateTaxonomyEngine
+    participant DB as PostgreSQL (TenantCoordinatePresets)
+
+    User->>UI: Mở modal hoặc bấm "⚡ Nhận diện lại bằng AI"
+    UI->>Hook: executeAutoSniff()
+    Hook->>API: POST /sniff-coordinates (fileName, headerSamples, sampleContents)
+    API->>Engine: SniffCoordinates(..., dynamicContext)
+    Engine->>DB: Truy vấn TenantCoordinatePresets + DynamicDomains
+    Engine-->>API: Trả về CognitiveCoordinateTaxonomyResult
+    API-->>Hook: Trả về kết quả 5 Trục Tọa độ + Smart Tags
+    Hook-->>UI: Cập nhật form mượt mà (CLS = 0, 60fps)
+```

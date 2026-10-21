@@ -1,0 +1,139 @@
+{
+  "title": "問題バンク管理",
+  "subtitle": "試験リポジトリの統合管理、ドキュメント自動解析、およびトピック階層。",
+  "stats": {
+    "questionsCount": "{{count}} 問",
+    "topicsCount": "{{count}} トピック",
+    "missingAnswers": "{{count}} 未設定の正解",
+    "filterMissing": "(今すぐ絞り込む)",
+    "unfilterMissing": "(解除)"
+  },
+  "roles": {
+    "admin": "管理者",
+    "viewer": "閲覧者"
+  },
+  "actions": {
+    "hierarchyAndDomain": "組織階層と業界",
+    "addTopic": "+ トピック追加",
+    "importExam": "問題のインポート",
+    "uploadFiles": "Word / PDF / Excelアップロード",
+    "uploadFilesDesc": "自動構造化と配点解析",
+    "cognitiveStudio": "Cognitive Studio",
+    "cognitiveStudioDesc": "複数シート検証とAIコパイロット",
+    "splitScreenStudio": "分割画面スタジオ (座標同期)",
+    "splitScreenStudioDesc": "60fpsリアルタイム同期抽出",
+    "addQuestion": "問題を追加",
+    "manualCompose": "手動作成",
+    "manualComposeDesc": "標準フォーマットでの作成",
+    "aiGenerate": "AIで自動生成",
+    "aiGenerateDesc": "Geminiによるドキュメント解析",
+    "refresh": "更新 ↻"
+  },
+  "dropzone": {
+    "dragDropPrefix": "ここにファイルを",
+    "dragDropSuffix": "ドラッグ＆ドロップして問題を解析",
+    "description": "試験構造、LaTeX数式、MathType WMF、表組みを自動認識",
+    "chooseFile": "ファイルを選択...",
+    "studioButton": "Studio v3.0"
+  },
+  "tabs": {
+    "questions": "問題バンク",
+    "topics": "トピック管理",
+    "rules": "CIGルール＆検証",
+    "questionsCardTitle": "検定問題リポジトリ",
+    "topicsCardTitle": "システムトピック階層"
+  },
+  "filters": {
+    "searchQuestion": "検索 (#タグまたはキーワード)",
+    "searchQuestionPlaceholder": "#タグまたはキーワードを入力...",
+    "searchTopic": "トピック検索",
+    "searchTopicPlaceholder": "トピック名、説明、コードで検索...",
+    "industryDomain": "🌐 業界 / 分野",
+    "allDomains": "すべての業界",
+    "topicFilter": "トピックで絞り込み",
+    "allTopics": "すべてのトピック",
+    "questionType": "問題形式",
+    "allTypes": "すべての形式",
+    "answerStatus": "解答設定状況",
+    "allQuestions": "すべての問題",
+    "missingAnswersOnly": "正解未設定のみ",
+    "questionRange": "問題番号範囲 (連番)",
+    "rangeFrom": "開始",
+    "rangeTo": "終了",
+    "rangeSelect": "選択",
+    "filteringByTag": "タグで絞り込み中:",
+    "removeTagFilter": "タグ絞り込みを解除"
+  },
+  "domains": {
+    "EDUCATION": "🎓 学校教育・一般教養",
+    "BANKING": "🏦 金融・銀行業務",
+    "HEALTHCARE": "🏥 医療・ヘルスケア",
+    "HSE": "🛡️ 労働安全衛生 (HSE)",
+    "GOV_DRIVING": "🚗 運転免許試験",
+    "IT_SECURITY": "💻 IT・情報セキュリティ",
+    "GENERAL": "🏢 一般企業研修"
+  },
+  "types": {
+    "SINGLE": "単一選択",
+    "MULTI": "複数選択",
+    "TRUE_FALSE": "正誤判定 (True/False)",
+    "MULTI_TRUE_FALSE": "4択正誤判定",
+    "SHORT_ANSWER": "記述式・短答",
+    "FILL_BLANK": "空欄補充",
+    "ORDERING": "並べ替え",
+    "MATCHING": "組み合わせ・マッチング",
+    "ESSAY": "論述・小論文 (AI採点)"
+  },
+  "table": {
+    "stt": "番号",
+    "content": "問題本文",
+    "type": "形式",
+    "topic": "トピック",
+    "difficulty": "難易度",
+    "actions": "操作",
+    "topicCode": "トピックコード",
+    "topicName": "トピック名",
+    "path": "パス",
+    "description": "説明",
+    "visibilityScope": "公開範囲",
+    "correctAnswerPrefix": "正解:",
+    "missingAnswerWarning": "⚠️ 正解が設定されていません！",
+    "readContext": "読解文を表示",
+    "sharedContext": "共通読解文",
+    "unassignedTopic": "未分類",
+    "noQuestionsFound": "条件に一致する問題が見つかりません。",
+    "noTopicsFound": "条件に一致するトピックが見つかりません。",
+    "paginationDisplay": "{{from}} 〜 {{to}} 件目を表示中 (全 {{total}} 件)"
+  },
+  "scopes": {
+    "team": "チーム",
+    "teamPrefix": "チーム: {{name}}",
+    "personal": "個人",
+    "community": "組織全体",
+    "pendingTenant": "⚡ 全社承認待ち",
+    "approvedTenant": "✅ 全社承認済み"
+  },
+  "batch": {
+    "selectedCount": "{{count}} 問を選択中",
+    "assignContext": "🔗 共通読解文を紐付け",
+    "assignTags": "🏷️ タグ・業界を付与",
+    "removeContext": "読解文を解除",
+    "deleteSelected": "🗑️ 選択項目を削除",
+    "deleting": "削除中...",
+    "deselectAll": "選択解除"
+  },
+  "tooltips": {
+    "viewDetails": "詳細を表示",
+    "editQuestion": "問題を編集",
+    "aiSolve": "AI自動解答",
+    "activate": "有効化",
+    "deactivate": "無効化",
+    "deleteQuestion": "問題を削除",
+    "deleteTopic": "トピックを削除",
+    "contributeTenant": "⚡ この問題を全社バンクへ提案"
+  },
+  "pagination": {
+    "prev": "前へ",
+    "next": "次へ"
+  }
+}

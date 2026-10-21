@@ -25,6 +25,7 @@ export function useExcelDocxImport(
   const [isDocxProcessing, setIsDocxProcessing]     = useState(false);
   const [processingFileName, setProcessingFileName] = useState<string>('');
   const [processingDurationMs, setProcessingDurationMs] = useState<number | null>(null);
+  const [ingestionEngineSource, setIngestionEngineSource] = useState<'client_edge' | 'cloud_server' | 'cloud_fallback'>('client_edge');
 
   // Excel DOT-2026 import state
   const [excelPreviewData, setExcelPreviewData]         = useState<any | null>(null);
@@ -178,22 +179,40 @@ export function useExcelDocxImport(
     setProcessingFileName(file.name);
     const startMs = performance.now();
     try {
-      const data = isPdf
-        ? await learnerQuizService.importQuestionsPdf(file)
-        : await learnerQuizService.importQuestionsDocx(file);
+      let data: any[] = [];
+      if (isPdf) {
+        setIngestionEngineSource('cloud_server');
+        data = await learnerQuizService.importQuestionsPdf(file);
+      } else {
+        // [Supreme Precision] Sử dụng Backend Sovereign Ingestion Engine (.NET 10)
+        // để bảo toàn 100% công thức MathType LaTeX, bảng đáp án ma trận, Sentinel Boundaries và CIG Grammar
+        setIngestionEngineSource('cloud_server');
+        data = await learnerQuizService.importQuestionsDocx(file);
+      }
+
       setProcessingDurationMs(Math.round(performance.now() - startMs));
       if (!Array.isArray(data) || data.length === 0) {
         alert(`Không tìm thấy câu hỏi hợp lệ trong tệp ${isPdf ? 'PDF' : 'Word'}. Vui lòng kiểm tra cấu trúc định dạng file.`);
         return;
       }
-      const mappedData = data.map((item: any) => ({
-        ...item,
-        topicCode: item.topicCode || (topics.length > 0 ? topics[0].code : 'PARTY_BUILDING'),
-        difficulty: item.difficulty || 3,
-      }));
+      const mappedData = data.map((item: any) => {
+        // [Zero-Hardcode] Tôn trọng tuyệt đối TopicCode và DomainCode mà Backend Cognitive Ingestion Engine đã nhận diện
+        const resolvedTopic = item.topicCode?.trim() || 'GENERAL';
+        return {
+          ...item,
+          topicCode: resolvedTopic,
+          domainCode: item.domainCode || 'GENERAL',
+          difficulty: item.difficulty || 3,
+        };
+      });
       setDocxPreviewList(mappedData);
       setShowDocxPreviewModal(true);
     } catch (err: any) {
+      if (err.response?.status === 401) {
+        alert('⚠️ Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại để tiếp tục tải lên đề thi.');
+        window.location.href = '/login';
+        return;
+      }
       const errMsg = err.response?.data?.message || err.message || 'Nhập câu hỏi từ tệp thất bại. Vui lòng kiểm tra lại định dạng file hoặc liên hệ quản trị viên.';
       alert(`❌ Lỗi xử lý tệp ${isPdf ? 'PDF' : 'Word'}: ${errMsg}`);
     } finally {
@@ -220,6 +239,7 @@ export function useExcelDocxImport(
     isDocxProcessing, setIsDocxProcessing,
     processingFileName, setProcessingFileName,
     processingDurationMs, setProcessingDurationMs,
+    ingestionEngineSource,
     excelPreviewData, setExcelPreviewData,
     showExcelPreviewModal, setShowExcelPreviewModal,
     showExcelStudioModal, setShowExcelStudioModal,

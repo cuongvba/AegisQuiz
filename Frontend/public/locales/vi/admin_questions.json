@@ -1,0 +1,139 @@
+{
+  "title": "Ngân hàng Câu hỏi",
+  "subtitle": "Quản trị ngân hàng đề thi, bóc tách tài liệu tự động và phân cấp chủ đề.",
+  "stats": {
+    "questionsCount": "{{count}} câu hỏi",
+    "topicsCount": "{{count}} chủ đề",
+    "missingAnswers": "{{count}} chưa có đáp án",
+    "filterMissing": "(Lọc ngay)",
+    "unfilterMissing": "(Bỏ lọc)"
+  },
+  "roles": {
+    "admin": "Admin",
+    "viewer": "Viewer"
+  },
+  "actions": {
+    "hierarchyAndDomain": "Phân tầng & Ngành",
+    "addTopic": "+ Chủ đề",
+    "importExam": "Nhập đề thi",
+    "uploadFiles": "Tải tệp Word / PDF / Excel",
+    "uploadFilesDesc": "Bóc tách & lập barem tự động",
+    "cognitiveStudio": "Cognitive Studio",
+    "cognitiveStudioDesc": "Soi chiếu đa Sheet & AI Copilot",
+    "splitScreenStudio": "Split-Screen Studio (Gióng toạ độ)",
+    "splitScreenStudioDesc": "Bóc tách phân đôi màn hình đồng bộ 60fps",
+    "addQuestion": "Thêm câu hỏi",
+    "manualCompose": "Soạn thảo thủ công",
+    "manualComposeDesc": "Tạo câu hỏi với barem chuẩn",
+    "aiGenerate": "Tạo tự động bằng AI",
+    "aiGenerateDesc": "Trích xuất từ tài liệu qua Gemini",
+    "refresh": "Làm mới ↻"
+  },
+  "dropzone": {
+    "dragDropPrefix": "Kéo thả tệp",
+    "dragDropSuffix": "vào đây hoặc nhấp để bóc tách câu hỏi",
+    "description": "Nhận diện cấu trúc đề, công thức LaTeX, MathType WMF và bảng biểu tự động",
+    "chooseFile": "Chọn tệp...",
+    "studioButton": "Studio v3.0"
+  },
+  "tabs": {
+    "questions": "Ngân hàng Câu hỏi",
+    "topics": "Quản lý Chủ đề",
+    "rules": "Quy Tắc CIG & Sandbox",
+    "questionsCardTitle": "Ngân hàng Câu hỏi Sát hạch",
+    "topicsCardTitle": "Danh mục Chủ đề hệ thống"
+  },
+  "filters": {
+    "searchQuestion": "Tìm kiếm (gõ #tag hoặc từ)",
+    "searchQuestionPlaceholder": "Gõ #tag hoặc từ khóa...",
+    "searchTopic": "Tìm kiếm chủ đề",
+    "searchTopicPlaceholder": "Tìm theo tên chủ đề, mô tả hoặc mã...",
+    "industryDomain": "🌐 Ngành / Lĩnh Vực",
+    "allDomains": "Tất cả ngành nghề",
+    "topicFilter": "Lọc theo chủ đề",
+    "allTopics": "Tất cả chủ đề",
+    "questionType": "Loại câu hỏi",
+    "allTypes": "Tất cả các loại",
+    "answerStatus": "Trạng thái đáp án",
+    "allQuestions": "Tất cả câu hỏi",
+    "missingAnswersOnly": "Chưa cấu hình đáp án",
+    "questionRange": "Dải câu hỏi (STT)",
+    "rangeFrom": "Từ",
+    "rangeTo": "Đến",
+    "rangeSelect": "Chọn",
+    "filteringByTag": "Đang lọc theo thẻ:",
+    "removeTagFilter": "Bỏ lọc thẻ này"
+  },
+  "domains": {
+    "EDUCATION": "🎓 Giáo dục Phổ thông",
+    "BANKING": "🏦 Tài chính Ngân hàng",
+    "HEALTHCARE": "🏥 Y tế Bệnh viện",
+    "HSE": "🛡️ An toàn Lao động (HSE)",
+    "GOV_DRIVING": "🚗 Sát hạch Lái xe",
+    "IT_SECURITY": "💻 An toàn CNTT",
+    "GENERAL": "🏢 Doanh nghiệp Chung"
+  },
+  "types": {
+    "SINGLE": "Trắc nghiệm 1 đáp án",
+    "MULTI": "Nhiều đáp án đúng",
+    "TRUE_FALSE": "Đúng / Sai",
+    "MULTI_TRUE_FALSE": "Đúng / Sai 4 ý (GDPT 2025)",
+    "SHORT_ANSWER": "Trả lời ngắn",
+    "FILL_BLANK": "Điền vào chỗ trống",
+    "ORDERING": "Sắp xếp thứ tự",
+    "MATCHING": "Nối cặp",
+    "ESSAY": "Tự luận (AI chấm)"
+  },
+  "table": {
+    "stt": "STT",
+    "content": "Nội dung câu hỏi",
+    "type": "Loại",
+    "topic": "Chủ đề",
+    "difficulty": "Độ khó",
+    "actions": "Thao tác",
+    "topicCode": "Mã chủ đề",
+    "topicName": "Tên chủ đề",
+    "path": "Đường dẫn (Path)",
+    "description": "Mô tả",
+    "visibilityScope": "Phạm vi hiển thị",
+    "correctAnswerPrefix": "Đáp án đúng:",
+    "missingAnswerWarning": "⚠️ Chưa cấu hình đáp án đúng!",
+    "readContext": "Xem bài đọc",
+    "sharedContext": "Bài đọc hiểu dùng chung",
+    "unassignedTopic": "Chưa phân nhóm",
+    "noQuestionsFound": "Không tìm thấy câu hỏi nào phù hợp với bộ lọc.",
+    "noTopicsFound": "Không tìm thấy chủ đề nào phù hợp với bộ lọc.",
+    "paginationDisplay": "Hiển thị từ {{from}} đến {{to}} trong tổng số {{total}}"
+  },
+  "scopes": {
+    "team": "Cấp Nhóm",
+    "teamPrefix": "Nhóm: {{name}}",
+    "personal": "Cá nhân",
+    "community": "Toàn cơ quan",
+    "pendingTenant": "⚡ Đang chờ duyệt Toàn Cơ Quan",
+    "approvedTenant": "✅ Toàn Cơ Quan Đã Duyệt"
+  },
+  "batch": {
+    "selectedCount": "Đã chọn {{count}} câu",
+    "assignContext": "🔗 Gán Bài Đọc",
+    "assignTags": "🏷️ Gán Thẻ & Ngành",
+    "removeContext": "Gỡ bài đọc",
+    "deleteSelected": "🗑️ Xóa đã chọn",
+    "deleting": "Đang xóa...",
+    "deselectAll": "Bỏ chọn"
+  },
+  "tooltips": {
+    "viewDetails": "Xem chi tiết",
+    "editQuestion": "Chỉnh sửa câu hỏi",
+    "aiSolve": "Tự động giải bằng AI",
+    "activate": "Kích hoạt",
+    "deactivate": "Vô hiệu hóa",
+    "deleteQuestion": "Xóa câu hỏi",
+    "deleteTopic": "Xóa chủ đề",
+    "contributeTenant": "⚡ Đóng góp câu hỏi này lên Ngân hàng Toàn Cơ Quan"
+  },
+  "pagination": {
+    "prev": "Trước",
+    "next": "Sau"
+  }
+}

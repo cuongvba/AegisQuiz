@@ -107,6 +107,7 @@ Mỗi tài liệu phải kết thúc bằng một bảng lịch sử nâng cấp
 |---|---|:---:|
 | **Flagship Tiên Phong** | [UNIVERSAL_COGNITIVE_EXCEL_INGESTION_STUDIO.md](file:///d:/Cuong/DuAn/mybank/AegisQuiz/docs/modules/UNIVERSAL_COGNITIVE_EXCEL_INGESTION_STUDIO.md) | **ĐÃ HOÀN TẤT ĐỈNH CAO (FLAGSHIP)** |
 | **Khảo Thí Cốt Lõi** | [IRT_ADAPTIVE_TESTING.md](file:///d:/Cuong/DuAn/mybank/AegisQuiz/docs/modules/IRT_ADAPTIVE_TESTING.md) | Kế hoạch đợt 2 |
+| **Khảo Thí Cốt Lõi** | [DOCX_INGESTION_DEEP_ANALYSIS.md](file:///d:/Cuong/DuAn/mybank/AegisQuiz/docs/modules/DOCX_INGESTION_DEEP_ANALYSIS.md) | **ĐÃ HOÀN TẤT ĐỈNH CAO (CORE MODULE)** |
 | **Khảo Thí Cốt Lõi** | [DOCX_PARSER_AND_MATH_ENGINE.md](file:///d:/Cuong/DuAn/mybank/AegisQuiz/docs/modules/DOCX_PARSER_AND_MATH_ENGINE.md) | Kế hoạch đợt 2 |
 | **Nghiệp Vụ Chuyên Ngành** | [NATIONAL_DRIVING_LICENSE_MODULE.md](file:///d:/Cuong/DuAn/mybank/AegisQuiz/docs/modules/NATIONAL_DRIVING_LICENSE_MODULE.md) | Kế hoạch đợt 2 |
 | **Hạ Tầng & Bảo Mật** | [SYSTEM_ARCHITECTURE.md](file:///d:/Cuong/DuAn/mybank/AegisQuiz/docs/architecture/SYSTEM_ARCHITECTURE.md) | Kế hoạch đợt 3 |

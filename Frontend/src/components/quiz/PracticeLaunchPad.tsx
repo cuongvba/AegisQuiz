@@ -25,54 +25,14 @@ interface Props {
   onShuffleOptionsChange: (val: boolean) => void;
   shuffleQuestions: boolean;
   onShuffleQuestionsChange: (val: boolean) => void;
+  enableQuestionTimer: boolean;
+  onEnableQuestionTimerChange: (val: boolean) => void;
   autoNextOnTimeout: boolean;
   onAutoNextChange: (val: boolean) => void;
   onStart: () => void;
   onResetTopics?: () => void;
-  t: (key: string) => string;
+  t: (key: string, params?: Record<string, string | number>) => string;
 }
-
-const MODES: Array<{
-  key: PracticeMode;
-  label: string;
-  shortLabel: string;
-  icon: React.FC<{ className?: string }>;
-  color: string;
-  description: string;
-}> = [
-  {
-    key: 'study',
-    label: 'Chế độ Ôn tập',
-    shortLabel: 'Ôn tập',
-    icon: BookOpen,
-    color: 'text-cyan-600',
-    description: 'Hỗ trợ gợi ý, lời giải chi tiết & không áp lực thời gian',
-  },
-  {
-    key: 'exam',
-    label: 'Chế độ Thi thử',
-    shortLabel: 'Thi thử',
-    icon: Timer,
-    color: 'text-rose-600',
-    description: 'Bấm giờ chuẩn hóa phòng thi, tự động tính điểm & xếp hạng',
-  },
-  {
-    key: 'paper',
-    label: 'Làm bài giấy',
-    shortLabel: 'Bài giấy',
-    icon: FileText,
-    color: 'text-slate-600',
-    description: 'Hiển thị toàn bộ câu hỏi trên một trang, tối ưu in ấn PDF',
-  },
-  {
-    key: 'kids',
-    label: 'Chế độ Trẻ em',
-    shortLabel: 'Trẻ em',
-    icon: Bot,
-    color: 'text-amber-500',
-    description: 'Âm thanh sống động, chuỗi combo sao thưởng & linh vật AI',
-  },
-];
 
 export const PracticeLaunchPad: React.FC<Props> = ({
   mode,
@@ -85,6 +45,8 @@ export const PracticeLaunchPad: React.FC<Props> = ({
   onShuffleOptionsChange,
   shuffleQuestions,
   onShuffleQuestionsChange,
+  enableQuestionTimer,
+  onEnableQuestionTimerChange,
   autoNextOnTimeout,
   onAutoNextChange,
   onStart,
@@ -109,29 +71,65 @@ export const PracticeLaunchPad: React.FC<Props> = ({
     };
   }, [isSettingsOpen]);
 
-  const currentModeInfo = MODES.find((m) => m.key === mode) || MODES[0];
+  const modesList = [
+    {
+      key: 'study' as const,
+      label: t('studyMode') || 'Chế độ Ôn tập',
+      shortLabel: t('studyMode') || 'Ôn tập',
+      icon: BookOpen,
+      color: 'text-cyan-600',
+      description: t('studyModeDesc') || 'Hỗ trợ gợi ý, lời giải chi tiết & không áp lực thời gian',
+    },
+    {
+      key: 'exam' as const,
+      label: t('examMode') || 'Chế độ Thi thử',
+      shortLabel: t('examMode') || 'Thi thử',
+      icon: Timer,
+      color: 'text-rose-600',
+      description: t('examModeDesc') || 'Bấm giờ chuẩn hóa phòng thi, tự động tính điểm & xếp hạng',
+    },
+    {
+      key: 'paper' as const,
+      label: t('paperMode') || 'Làm bài giấy',
+      shortLabel: t('paperMode') || 'Bài giấy',
+      icon: FileText,
+      color: 'text-slate-600',
+      description: t('paperModeDesc') || 'Hiển thị toàn bộ câu hỏi trên một trang, tối ưu in ấn PDF',
+    },
+    {
+      key: 'kids' as const,
+      label: t('kidMode') || 'Chế độ Trẻ em',
+      shortLabel: t('kidMode') || 'Trẻ em',
+      icon: Bot,
+      color: 'text-amber-500',
+      description: t('kidModeDesc') || 'Âm thanh sống động, chuỗi combo sao thưởng & linh vật AI',
+    },
+  ];
+
+  const currentModeInfo = modesList.find((m) => m.key === mode) || modesList[0];
   const estMinutes = Math.max(1, Math.round(totalSelected * 0.8));
 
   // Quick settings summary badge
   const settingsBadge = [
-    shuffleOptions ? 'Xáo đáp án' : null,
-    shuffleQuestions ? 'Xáo câu' : null,
+    shuffleOptions ? (t('shuffleOptionsBadge') || 'Xáo đáp án') : null,
+    shuffleQuestions ? (t('shuffleQuestionsBadge') || 'Xáo câu') : null,
+    enableQuestionTimer ? (t('questionTimerBadge') || 'Hẹn giờ câu') : null,
     mode === 'exam' && timeLimitMin > 0 ? `${timeLimitMin}p` : null,
   ]
     .filter(Boolean)
     .join(' • ');
 
   const getStartButtonLabel = () => {
-    if (totalSelected === 0) return 'Chọn câu hỏi để bắt đầu';
+    if (totalSelected === 0) return t('selectQuestionsToStart') || 'Chọn câu hỏi để bắt đầu';
     switch (mode) {
       case 'kids':
         return t('startKid') || 'Chơi & Học Ngay 🎈';
       case 'exam':
         return timeLimitMin > 0
-          ? `Bắt Đầu Thi (${timeLimitMin}p) →`
+          ? (t('startExamWithTime', { mins: timeLimitMin }) || `Bắt Đầu Thi (${timeLimitMin}p) →`)
           : (t('startExam') || 'Bắt Đầu Thi Thử →');
       case 'paper':
-        return 'Làm Đề Dạng Giấy →';
+        return t('startPaperButton') || 'Làm Đề Dạng Giấy →';
       case 'study':
       default:
         return t('startPractice') || 'Bắt Đầu Ôn Luyện →';
@@ -165,10 +163,13 @@ export const PracticeLaunchPad: React.FC<Props> = ({
                   <span className="text-sm font-black text-slate-900 tracking-tight">
                     {totalSelected > 0 ? (
                       <>
-                        <span className="text-cyan-600 font-black text-base">{totalSelected}</span> câu hỏi đã chọn
+                        <span className="text-cyan-600 font-black text-base">{totalSelected}</span>{' '}
+                        {t('selectedQuestions') || 'câu hỏi đã chọn'}
                       </>
                     ) : (
-                      <span className="text-slate-500 font-semibold">Chưa chọn câu hỏi nào</span>
+                      <span className="text-slate-500 font-semibold">
+                        {t('noTopicsSelected') || 'Chưa chọn câu hỏi nào'}
+                      </span>
                     )}
                   </span>
 
@@ -176,8 +177,8 @@ export const PracticeLaunchPad: React.FC<Props> = ({
                     <button
                       type="button"
                       onClick={onResetTopics}
-                      className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
-                      title="Bỏ chọn tất cả"
+                      className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition cursor-pointer"
+                      title={t('restartAttempt') || 'Bỏ chọn tất cả'}
                     >
                       <RotateCcw className="h-3 w-3" />
                     </button>
@@ -187,14 +188,14 @@ export const PracticeLaunchPad: React.FC<Props> = ({
                 <p className="text-[11px] text-slate-500 flex items-center gap-1.5 mt-0.5">
                   {totalSelected > 0 ? (
                     <>
-                      <span>{topicCount} chuyên đề</span>
+                      <span>{topicCount} {t('topic') || 'chuyên đề'}</span>
                       <span>•</span>
                       <span className="inline-flex items-center gap-0.5 text-cyan-700 font-medium">
-                        <Clock className="h-3 w-3 inline" /> ~{estMinutes} phút
+                        <Clock className="h-3 w-3 inline" /> ~{estMinutes} {t('timeLimitMinutes') ? 'm' : 'phút'}
                       </span>
                     </>
                   ) : (
-                    'Tích chọn chuyên đề ở danh mục bên trên'
+                    t('selectTopicsHint') || 'Tích chọn chuyên đề ở danh mục bên trên'
                   )}
                 </p>
               </div>
@@ -212,7 +213,7 @@ export const PracticeLaunchPad: React.FC<Props> = ({
           <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3 lg:justify-center">
             {/* Segmented Mode Switcher */}
             <div className="inline-flex items-center rounded-2xl border border-slate-200/80 bg-slate-100/90 p-1 shadow-inner">
-              {MODES.map((m) => {
+              {modesList.map((m) => {
                 const isActive = mode === m.key;
                 const Icon = m.icon;
                 return (
@@ -220,7 +221,7 @@ export const PracticeLaunchPad: React.FC<Props> = ({
                     key={m.key}
                     type="button"
                     onClick={() => onModeChange(m.key)}
-                    className={`relative flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-black transition-all duration-200 ${
+                    className={`relative flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-black transition-all duration-200 cursor-pointer ${
                       isActive
                         ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-900/5'
                         : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
@@ -244,7 +245,7 @@ export const PracticeLaunchPad: React.FC<Props> = ({
             {mode === 'exam' && (
               <div className="flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50/80 px-2 py-1 text-xs font-bold text-rose-700 animate-in fade-in zoom-in duration-150">
                 <Timer className="h-3.5 w-3.5 text-rose-500" />
-                <span>Giới hạn:</span>
+                <span>{t('totalTime') || 'Giới hạn'}:</span>
                 <input
                   type="number"
                   min={0}
@@ -253,7 +254,7 @@ export const PracticeLaunchPad: React.FC<Props> = ({
                   onChange={(e) => onTimeLimitChange(Math.max(0, Number(e.target.value) || 0))}
                   className="h-6 w-12 rounded border border-rose-300 bg-white px-1 text-center font-bold text-rose-900 outline-none focus:ring-1 focus:ring-rose-500"
                 />
-                <span>phút</span>
+                <span>{t('timeLimitMinutes') ? 'm' : 'phút'}</span>
               </div>
             )}
 
@@ -262,7 +263,7 @@ export const PracticeLaunchPad: React.FC<Props> = ({
               <button
                 type="button"
                 onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-                className={`inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-xs font-bold transition ${
+                className={`inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-xs font-bold transition cursor-pointer ${
                   isSettingsOpen
                     ? 'border-cyan-500 bg-cyan-50 text-cyan-800 ring-2 ring-cyan-500/20'
                     : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
@@ -270,7 +271,7 @@ export const PracticeLaunchPad: React.FC<Props> = ({
                 title="Tùy chỉnh xáo đề & thời gian"
               >
                 <SlidersHorizontal className="h-3.5 w-3.5 text-slate-500" />
-                <span className="hidden sm:inline">Tùy chọn</span>
+                <span className="hidden sm:inline">{t('quickOptions') || 'Tùy chọn'}</span>
                 {settingsBadge && (
                   <span className="hidden md:inline rounded-md bg-slate-100 px-1.5 py-0.2 text-[10px] text-slate-600 font-normal">
                     {settingsBadge}
@@ -283,7 +284,7 @@ export const PracticeLaunchPad: React.FC<Props> = ({
                 <div className="absolute right-0 bottom-full mb-2 w-72 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-2xl ring-1 ring-slate-900/5 animate-in fade-in slide-in-from-bottom-2 duration-150 z-50">
                   <div className="flex items-center justify-between border-b border-slate-100 pb-2 mb-2.5">
                     <span className="text-xs font-black text-slate-900 flex items-center gap-1.5">
-                      <SlidersHorizontal className="h-3.5 w-3.5 text-cyan-600" /> Cấu hình phiên học
+                      <SlidersHorizontal className="h-3.5 w-3.5 text-cyan-600" /> {t('sessionConfig') || 'Cấu hình phiên học'}
                     </span>
                     <span className="rounded bg-cyan-100 text-cyan-800 text-[10px] font-bold px-1.5 py-0.5">
                       {currentModeInfo.shortLabel}
@@ -302,7 +303,7 @@ export const PracticeLaunchPad: React.FC<Props> = ({
                         checked={mode === 'kids' ? true : shuffleOptions}
                         disabled={mode === 'kids'}
                         onChange={(e) => onShuffleOptionsChange(e.target.checked)}
-                        className="h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500"
+                        className="h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500 cursor-pointer"
                       />
                     </label>
 
@@ -313,7 +314,24 @@ export const PracticeLaunchPad: React.FC<Props> = ({
                         checked={mode === 'kids' ? true : shuffleQuestions}
                         disabled={mode === 'kids'}
                         onChange={(e) => onShuffleQuestionsChange(e.target.checked)}
-                        className="h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500"
+                        className="h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500 cursor-pointer"
+                      />
+                    </label>
+
+                    {/* On/Off Thời gian của câu */}
+                    <label className="flex items-start justify-between text-xs font-medium text-slate-700 cursor-pointer select-none py-1">
+                      <span className="flex items-start gap-2 pr-2">
+                        <Clock className="h-4 w-4 text-cyan-600 shrink-0 mt-0.5" />
+                        <div>
+                          <div className="font-bold text-slate-900">{t('enableQuestionTimer') || 'Khống chế thời gian từng câu (Bắt Expired)'}</div>
+                          <div className="text-[10px] text-slate-400 font-normal leading-tight mt-0.5">{t('enableQuestionTimerDesc') || 'Khóa câu và đếm ngược nghiêm ngặt khi hết giờ. Mặc định: TẮT.'}</div>
+                        </div>
+                      </span>
+                      <input
+                        type="checkbox"
+                        checked={enableQuestionTimer}
+                        onChange={(e) => onEnableQuestionTimerChange(e.target.checked)}
+                        className="h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500 cursor-pointer mt-0.5"
                       />
                     </label>
 
@@ -324,7 +342,7 @@ export const PracticeLaunchPad: React.FC<Props> = ({
                         checked={mode === 'kids' ? true : autoNextOnTimeout}
                         disabled={mode === 'kids'}
                         onChange={(e) => onAutoNextChange(e.target.checked)}
-                        className="h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500"
+                        className="h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500 cursor-pointer"
                       />
                     </label>
 

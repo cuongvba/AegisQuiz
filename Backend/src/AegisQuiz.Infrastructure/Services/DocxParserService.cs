@@ -79,7 +79,7 @@ namespace AegisQuiz.Infrastructure.Services
             DynamicDomainContext? dynamicContext = null)
             => DocxStateMachineClassifier.ParseParagraphList(paragraphs, answerKeyMap, dynamicContext);
 
-        /// <summary>Bóc tách đầy đủ một luồng .docx (văn bản + công thức + media + bảng đáp án) thành danh sách câu hỏi preview.</summary>
+        /// <summary>Bóc tách đầy đủ một luồng .docx theo Pipeline v4.0 Early Reconnaissance (Trinh sát phần đầu & Nhận thức sớm).</summary>
         public static List<DocxImportPreviewDto> ParseRichDocxStream(Stream fileStream, ILogger? logger = null, DynamicDomainContext? dynamicContext = null)
         {
             var result = new List<DocxImportPreviewDto>();
@@ -99,15 +99,87 @@ namespace AegisQuiz.Infrastructure.Services
                 using var documentStream = documentEntry.Open();
                 var doc = XDocument.Load(documentStream);
 
+                // [Pipeline v4.0 - Giai đoạn 2: Early Reconnaissance & Language Profile]
+                // Quét nhanh khối Header và nhận thức ngôn ngữ/thể chế TRƯỚC KHI bóc tách bảng đáp án ma trận
+                var headerTexts = FastScanDocumentHeader(doc, 35);
+                var cig = DynamicQuestionIngestionEngine.Instance;
+                var langProfile = cig.DetectDocumentLanguageProfile(headerTexts, dynamicContext?.Language ?? "vi");
+
+                var effectiveContext = dynamicContext ?? DynamicDomainContext.CreateDefault();
+                var sniffedHeader = UniversalCoordinateTaxonomyEngine.SniffCoordinates(
+                    fileName: null,
+                    sheetName: null,
+                    headerBannerLines: headerTexts,
+                    dynamicContext: effectiveContext);
+
+                // Làm giàu DynamicDomainContext từ kết quả trinh sát phần đầu
+                if (!string.IsNullOrWhiteSpace(sniffedHeader.TargetLevel) 
+                    && !effectiveContext.CoordinatePresets.Any(p => p.CoordinateType == "TARGET_LEVEL" && p.PresetLabel == sniffedHeader.TargetLevel))
+                {
+                    effectiveContext.CoordinatePresets.Add(new TenantCoordinatePresetDto 
+                    { 
+                        CoordinateType = "TARGET_LEVEL", 
+                        PresetCode = sniffedHeader.TargetLevel, 
+                        PresetLabel = sniffedHeader.TargetLevel 
+                    });
+                }
+
+                // [Pipeline v4.0 - Giai đoạn 3: Bóc tách Bảng Đáp án Ma trận có định hướng ngôn ngữ]
                 var answerKeyMap = DocxTableQuestionExtractor.ExtractAnswerTables(doc, out var answerTableElements);
+
+                // [Pipeline v4.0 - Giai đoạn 4: Duyệt Cây DOM & Chuẩn hóa Toán học Lai]
                 var paragraphs = ExtractParagraphTokens(doc, relsMap, mediaDict, answerTableElements);
-                return DocxStateMachineClassifier.ParseParagraphList(paragraphs, answerKeyMap, dynamicContext);
+
+                // [Pipeline v4.0 - Giai đoạn 5 & 6: Cỗ máy trạng thái tất định kế thừa 27 siêu trường]
+                return DocxStateMachineClassifier.ParseParagraphList(paragraphs, answerKeyMap, effectiveContext);
             }
             catch (Exception ex)
             {
                 logger?.LogError(ex, "[DocxParserService] ParseRichDocxStream | Error -> {Message}", ex.Message);
             }
             return result;
+        }
+
+        /// <summary>
+        /// [Pipeline v4.0 - Early Reconnaissance]
+        /// Quét nhanh văn bản thuần từ 35 nodes đầu tiên (gồm đoạn văn và bảng header 2 cột) để trinh sát siêu dữ liệu.
+        /// </summary>
+        public static List<string> FastScanDocumentHeader(XDocument doc, int maxParagraphs = 35)
+        {
+            var headers = new List<string>();
+            var body = doc.Descendants(W + "body").FirstOrDefault();
+            if (body == null) return headers;
+
+            int count = 0;
+            foreach (var el in body.Elements())
+            {
+                if (count >= maxParagraphs) break;
+
+                if (el.Name == W + "p")
+                {
+                    var text = CellText(el);
+                    if (!string.IsNullOrWhiteSpace(text))
+                    {
+                        headers.Add(text);
+                        count++;
+                    }
+                }
+                else if (el.Name == W + "tbl")
+                {
+                    // Quét các ô trong bảng header (thường là bảng 2 cột: Cột 1 Sở/Trường, Cột 2 Kỳ thi/Năm học/Mã đề)
+                    foreach (var p in el.Descendants(W + "p"))
+                    {
+                        var text = CellText(p);
+                        if (!string.IsNullOrWhiteSpace(text))
+                        {
+                            headers.Add(text);
+                            count++;
+                            if (count >= maxParagraphs) break;
+                        }
+                    }
+                }
+            }
+            return headers;
         }
 
         public static List<string> ExtractRawParagraphsFromDocx(Stream docxStream)

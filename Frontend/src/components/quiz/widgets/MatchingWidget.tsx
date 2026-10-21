@@ -22,7 +22,7 @@ export default function MatchingWidget({
   t
 }: QuestionWidgetProps) {
   const displayOptions = getDisplayOptions(question);
-  const pairs = parseMatchingPairs(displayOptions);
+  const pairs = parseMatchingPairs(displayOptions, question);
   const [activeLeftForMatch, setActiveLeftForMatch] = useState<string | null>(null);
 
   if (pairs.length === 0) {

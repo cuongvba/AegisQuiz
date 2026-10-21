@@ -1,4 +1,3 @@
-import { MOCK_QUESTIONS } from '@/data/mock-quiz';
 import api from '@/services/api';
 import type { LearnerQuestion, QuestionType } from '@/types/quiz';
 
@@ -43,8 +42,9 @@ export const learnerQuizService = {
       return rawList
         .map((item: any, index: number) => normalizeQuestion(item, index))
         .filter((item: any) => item.enabled);
-    } catch {
-      return MOCK_QUESTIONS;
+    } catch (err) {
+      console.error('[LearnerQuizService] Failed to generate practice questions:', err);
+      return [];
     }
   },
 
@@ -506,6 +506,25 @@ export const learnerQuizService = {
 
   async deleteCoordinatePreset(id: string): Promise<any> {
     const res = await api.delete(`${QUIZ_API}/domains/presets/${id}`);
+    return res.data;
+  },
+
+  async sniffCoordinates(payload: {
+    fileName?: string;
+    sheetName?: string;
+    headerSamples?: string[];
+    sampleContents?: string[];
+    sampleReferences?: string[];
+  }): Promise<{
+    domainCode: string;
+    targetLevel?: string;
+    assessmentPurpose?: string;
+    issuingOrg?: string;
+    benchmarkYear?: number;
+    benchmarkStandard?: string;
+    tags: string[];
+  }> {
+    const res = await api.post(`${QUIZ_API}/domains/sniff-coordinates`, payload);
     return res.data;
   },
 

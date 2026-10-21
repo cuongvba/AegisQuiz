@@ -62,6 +62,9 @@ namespace AegisQuiz.Infrastructure.Data
         // ── Poly-Tenant Membership (Workspace Switcher) ─────────────────────────
         public DbSet<TenantMembership> TenantMemberships { get; set; } = null!;
 
+        // ── Creator Economy & Educator Strategic Partners (90-Day Trial, Rev-Share) ──
+        public DbSet<EducatorPartnership> EducatorPartnerships { get; set; } = null!;
+
         // ── Cognitive Intelligence (FSRS Spaced Repetition) ────────────────────
         public DbSet<QuestionNeuralState> QuestionNeuralStates { get; set; } = null!;
 

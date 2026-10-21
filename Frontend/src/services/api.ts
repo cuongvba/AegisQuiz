@@ -32,4 +32,18 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Auto-Heal Resilience: Khi token hết hạn gây 401, tự động gỡ token hỏng
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.dispatchEvent(new CustomEvent('aegis:auth:expired'));
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api;

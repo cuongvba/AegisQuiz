@@ -1,0 +1,29 @@
+{
+  "title": "エンタープライズ・ホワイトレーベル＆ブランドテーマ設定",
+  "subtitle": "ブランド・アイデンティティ、厳選カラーパレット、100%データベース駆動の動的CSSトークンを設定",
+  "brandIdentity": "ブランド・アイデンティティ",
+  "organizationName": "組織名 / ブランド名",
+  "logoUrl": "企業ロゴURL",
+  "logoPlaceholder": "https://company.com/logo.svg",
+  "customDomain": "独自ドメイン (Custom Domain)",
+  "domainPlaceholder": "exam.yourcompany.com",
+  "colorSystem": "カラーシステム＆デザイントークン",
+  "primaryColor": "プライマリカラー",
+  "secondaryColor": "セカンダリカラー",
+  "accentColor": "アクセントカラー",
+  "borderRadius": "角の丸み (Border Radius)",
+  "fontFamily": "システムフォント",
+  "previewHeader": "ライブリアルタイムプレビュー (0msレイテンシ)",
+  "sampleQuizCardTitle": "プレビュー用問題カード",
+  "sampleQuizCardDesc": "再デプロイを行うことなく、受験者画面に貴社のブランドカラーとフォントが瞬時に反映されます。",
+  "sampleButton": "サンプル試験を提出",
+  "saveChanges": "ブランド設定を保存",
+  "resetDefault": "初期設定に戻す",
+  "savedSuccess": "ブランドトークンが全システムに正常に保存・適用されました！",
+  "paywall": {
+    "title": "ホワイトレーベル機能はEnterpriseおよびGlobalプラン限定です",
+    "description": "独自ドメインの設定、AegisQuizロゴの削除、カスタムテーマの適用を行うには、Enterpriseへのアップグレードをご検討ください。",
+    "upgradeNow": "Enterpriseへアップグレード",
+    "contactSales": "営業担当にお問い合わせ"
+  }
+}

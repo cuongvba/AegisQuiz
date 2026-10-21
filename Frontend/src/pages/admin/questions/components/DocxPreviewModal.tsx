@@ -8,6 +8,7 @@ import { DOMAIN_OPTIONS, DOMAIN_SUGGESTED_TAGS, generateTopicCode } from './docx
 import { DocxProcessingOverlay } from './docx/DocxProcessingOverlay';
 import { DocxModalHeader } from './docx/DocxModalHeader';
 import { DocxTaxonomyBar } from './docx/DocxTaxonomyBar';
+import { DocxTopicDecisionBanner } from './docx/DocxTopicDecisionBanner';
 import { DocxMathTypographyStudio } from './docx/DocxMathTypographyStudio';
 import { DocxCigRulesPanel } from './docx/DocxCigRulesPanel';
 import { DocxQuestionCardRow } from './docx/DocxQuestionCardRow';
@@ -24,6 +25,7 @@ interface DocxPreviewModalProps {
   isConvertingLatex?: boolean;
   processingFileName?: string;
   processingDurationMs?: number | null;
+  ingestionSource?: 'client_edge' | 'cloud_server' | 'cloud_fallback';
   docxPreviewList: any[];
   topics: BankTopic[];
   loading: boolean;
@@ -46,6 +48,7 @@ export function DocxPreviewModal({
   isConvertingLatex,
   processingFileName,
   processingDurationMs,
+  ingestionSource,
   docxPreviewList,
   topics,
   loading,
@@ -61,6 +64,7 @@ export function DocxPreviewModal({
     topics,
     setDocxPreviewList,
     processingFileName,
+    onTopicCreated,
   });
 
   if (!isOpen && !isProcessing && !isAiSolving && !isConvertingLatex) return null;
@@ -98,6 +102,7 @@ export function DocxPreviewModal({
           processingDurationMs={processingDurationMs}
           singleMultiCount={singleMultiCount}
           essayCount={essayCount}
+          ingestionSource={ingestionSource}
         />
 
         {/* 2. Taxonomy & Master Control Capsule */}
@@ -138,6 +143,20 @@ export function DocxPreviewModal({
           setSelectedExamFilter={state.setSelectedExamFilter}
           docxPreviewList={docxPreviewList}
         />
+
+        {/* 2.5. Quyết định áp dụng chủ đề mới hay đồng bộ chủ đề chọn */}
+        {state.showTopicDecisionBanner && (
+          <DocxTopicDecisionBanner
+            detectedTopicInfo={state.detectedTopicInfo}
+            bulkTopic={state.bulkTopic}
+            localTopics={state.localTopics}
+            totalQuestions={docxPreviewList.length}
+            isCreatingTopic={state.isCreatingVirtualTopic}
+            onApplyDetectedTopic={state.handleApplyDetectedTopic}
+            onSyncWithSelectedTopic={state.handleSyncWithSelectedTopic}
+            onDismiss={state.handleDismissTopicDecision}
+          />
+        )}
 
         {/* 3. Math Studio Drawer (nếu bật) */}
         <DocxMathTypographyStudio

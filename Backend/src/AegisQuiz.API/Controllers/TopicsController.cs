@@ -159,7 +159,7 @@ namespace AegisQuiz.API.Controllers
                     if (string.IsNullOrWhiteSpace(dt.Description) || dt.Description == "Tự động khởi tạo từ dữ liệu nhập file")
                     {
                         var qCount = await _db.Questions.CountAsync(q => q.CategoryCode == dt.Code);
-                        dt.Description = $"{dt.Name} | Đường dẫn: 2026-DOT2 | Số lượng: {qCount} câu hỏi";
+                        dt.Description = $"{dt.Name} | Đường dẫn: 2026-DOT2";
                         dt.QuestionCountCached = qCount;
                         changed = true;
                     }

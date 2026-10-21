@@ -156,37 +156,26 @@
   overflow: hidden !important;
   position: relative !important;
   width: 100% !important;
+  min-width: 0.9em !important; /* Đảm bảo đủ chiều rộng tối thiểu cho các chữ cái hẹp không bị cụt mũi tên */
 }
 
 .katex .hide-tail svg {
   height: inherit !important;
+  width: 100% !important;
   min-height: 0 !important;
   position: absolute !important;
   top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
   fill: currentColor !important;
   stroke: currentColor !important;
   display: block !important;
 }
 
-/* \overrightarrow (mũi tên sang phải): đầu mũi tên nằm ở tận cùng bên phải (xMax), neo sát mép phải để giấu phần đuôi thừa bên trái */
-.katex .hide-tail svg[preserveAspectRatio*="xMax"],
-.katex .svg-align .hide-tail svg {
-  width: 400em !important;
-  right: 0 !important;
-  left: auto !important;
-}
-
-/* \overleftarrow (mũi tên sang trái): đầu mũi tên nằm ở bên trái (xMin), neo sát mép trái để giấu phần đuôi thừa bên phải */
-.katex .hide-tail svg[preserveAspectRatio*="xMin"] {
-  width: 400em !important;
-  left: 0 !important;
-  right: auto !important;
-}
-
 .katex .hide-tail svg path {
   fill: currentColor !important;
   stroke: currentColor !important;
-  stroke-width: 0.5px !important;
+  stroke-width: 0.8px !important; /* Gia cố đường nét cánh mũi tên rõ ràng, sắc nét trên mọi mật độ điểm ảnh (DPI) */
 }
 
 .katex .svg-align {
@@ -213,11 +202,13 @@
   vertical-align: -0.2em;
   margin: 0 0.15em;
   font-size: 1em;
+  overflow: visible !important;
 }
 
 .inline-math .katex {
   font-size: 1.1em !important;
-  line-height: 1;
+  line-height: 1.25 !important;
+  overflow: visible !important;
 }
 
 /* ══════════════════════════════════════════════════════════════════
@@ -230,6 +221,31 @@
 img[src^="data:image/"] {
   background-color: #ffffff !important;
   color: #0f172a !important;
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm 15mm;
+  }
+  body {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    font-size: 11pt !important;
+  }
+  nav, header, button, .print\:hidden, input, .fixed, .sticky {
+    display: none !important;
+  }
+  .p-4.rounded-2xl.border, .break-inside-avoid {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    border-color: #cbd5e1 !important;
+    background-color: #f8fafc !important;
+    margin-bottom: 12px !important;
+  }
+  .text-white, .text-slate-100, .text-slate-200, .text-slate-300 {
+    color: #0f172a !important;
+  }
 }
 
 

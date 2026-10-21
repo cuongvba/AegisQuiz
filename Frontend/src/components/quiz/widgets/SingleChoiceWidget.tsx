@@ -1,4 +1,4 @@
-import { parseIndexList, getDisplayOptions } from '@/lib/quiz-helpers';
+import { getDisplayOptions, isOptionCorrect } from '@/lib/quiz-helpers';
 import type { QuestionWidgetProps } from './types';
 import { OptionChoiceItem } from './OptionChoiceItem';
 import { playSynthGameSound } from './sound-effects';
@@ -12,7 +12,6 @@ export default function SingleChoiceWidget({
   soundEnabled
 }: QuestionWidgetProps) {
   const displayOptions = getDisplayOptions(question);
-  const correct = parseIndexList(question.answerRaw);
 
   const handleSelect = (optionId: string) => {
     if (disabled) return;
@@ -24,7 +23,7 @@ export default function SingleChoiceWidget({
     <div className="space-y-3">
       {displayOptions.map((option, idx) => {
         const isSelected = answer?.selectedOption === option.id;
-        const isCorrectOpt = correct.includes(option.id);
+        const isCorrectOpt = isOptionCorrect(question, option);
 
         return (
           <OptionChoiceItem

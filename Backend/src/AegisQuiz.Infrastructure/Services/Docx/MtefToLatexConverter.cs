@@ -817,6 +817,65 @@ namespace AegisQuiz.Infrastructure.Services.Docx
                     return string.IsNullOrEmpty(sub) ? @"\lim " : $@"\lim_{{{sub}}} ";
                 }
 
+                case 18: // tmBOX (Khung bao kết quả / đáp án \boxed{...})
+                {
+                    string inner = ParseSlot(reader);
+                    SkipToContainerEnd(reader);
+                    return $@"\boxed{{{inner}}}";
+                }
+
+                case 20: // tmDIRAC (Ký hiệu Bra-Ket lượng tử \langle ... | ... \rangle)
+                {
+                    string left = ParseSlot(reader);
+                    string right = ParseSlot(reader);
+                    SkipToContainerEnd(reader);
+                    if (!string.IsNullOrEmpty(left) && !string.IsNullOrEmpty(right))
+                        return $@"\left\langle {left} \middle| {right} \right\rangle";
+                    if (!string.IsNullOrEmpty(left))
+                        return $@"\left\langle {left} \right|";
+                    if (!string.IsNullOrEmpty(right))
+                        return $@"\left| {right} \right\rangle";
+                    return @"\langle \rangle";
+                }
+
+                case 21: // tmVEC_ARROW / tmVEC_BAR (Mũi tên hai chiều hoặc thanh gạch dưới)
+                {
+                    string inner = ParseSlot(reader);
+                    SkipToContainerEnd(reader);
+                    if ((variation & 0x01) != 0)
+                        return $@"\overleftrightarrow{{{inner}}}";
+                    return $@"\underline{{{inner}}}";
+                }
+
+                case 24: // tmINTERVAL (Khoảng, đoạn toán học)
+                {
+                    string left = ParseSlot(reader);
+                    string right = ParseSlot(reader);
+                    SkipToContainerEnd(reader);
+                    return $"{left}; {right}";
+                }
+
+                case 25: // tmARCS (Cung tròn SGK \wideparen)
+                {
+                    string inner = ParseSlot(reader);
+                    SkipToContainerEnd(reader);
+                    return $@"\wideparen{{{inner}}}";
+                }
+
+                case 26: // tmSTRIKE (Gạch chéo triệt tiêu \cancel)
+                {
+                    string inner = ParseSlot(reader);
+                    SkipToContainerEnd(reader);
+                    return $@"\cancel{{{inner}}}";
+                }
+
+                case 33: // tmUBAR (Gạch chân \underline)
+                {
+                    string inner = ParseSlot(reader);
+                    SkipToContainerEnd(reader);
+                    return $@"\underline{{{inner}}}";
+                }
+
                 default:
                 {
                     string inner = ParseSlot(reader);
@@ -915,6 +974,24 @@ namespace AegisQuiz.Infrastructure.Services.Docx
                 case 0x00B0: return @"^\circ ";
                 case 0x2200: return @"\forall ";
                 case 0x2203: return @"\exists ";
+                case 0x222E: return @"\oint ";
+                case 0x222C: return @"\iint ";
+                case 0x222D: return @"\iiint ";
+                case 0x2227: return @"\land ";
+                case 0x2228: return @"\lor ";
+                case 0x00AC: return @"\neg ";
+                case 0x226A: return @"\ll ";
+                case 0x226B: return @"\gg ";
+                case 0x2272: return @"\lesssim ";
+                case 0x2273: return @"\gtrsim ";
+                case 0x2248: return @"\approx ";
+                case 0x2245: return @"\cong ";
+                case 0x2261: return @"\equiv ";
+                case 0x2262: return @"\not\equiv ";
+                case 0x2111: return @"\Im ";
+                case 0x211C: return @"\Re ";
+                case 0x210F: return @"\hbar ";
+                case 0x2113: return @"\ell ";
 
                 // Tập hợp số chuẩn toán học (Blackboard Bold)
                 case 0x2124: return @"\mathbb{Z}"; // ℤ Tập số nguyên
@@ -1062,6 +1139,9 @@ namespace AegisQuiz.Infrastructure.Services.Docx
             // Bổ sung dấu chấm cho \right bị khuyết
             formula = Regex.Replace(formula, @"\\right\s*$", @"\right.");
             formula = Regex.Replace(formula, @"\\right\s*(?=[^.\)\]\}\|])", @"\right. ");
+
+            // Áp dụng chuẩn hóa đa ngôn ngữ và đơn vị khoa học (UPMP v2.0)
+            formula = MathLocaleNormalizer.Default.Normalize(formula);
 
             return formula;
         }

@@ -84,71 +84,13 @@ export const arenaService = {
   },
 
   async createRoom(gameCode: ArenaGameCode, roomName: string, hostName?: string): Promise<ArenaRoomState> {
-    try {
-      const res = await api.post('/api/arena/rooms', {
-        gameCode,
-        roomName,
-        hostUserId: `player-${Math.floor(Math.random() * 10000)}`,
-        hostName: hostName || 'Kiện Tướng Tri Thức',
-      });
-      return res.data;
-    } catch {
-      // Fallback local mock state if backend is offline
-      return {
-        roomId: Math.random().toString(36).substring(2, 8).toUpperCase(),
-        gameCode,
-        roomName: roomName || `${gameCode} Đấu Trường`,
-        hostUserId: 'local-host',
-        currentStage: gameCode === 'OLYMPIA' ? 'KHOI_DONG' : 'ROUND_1',
-        currentQuestionIndex: 0,
-        questions: [
-          {
-            id: 'q1',
-            content: 'Ngọn núi cao nhất thế giới Everest nằm trên dãy núi nào?',
-            questionType: 'SINGLE',
-            options: ['Himalaya', 'Andes', 'Alps', 'Rocky'],
-            answerRaw: 'Himalaya',
-            explanation: 'Đỉnh Everest thuộc dãy Himalaya nằm ở biên giới giữa Nepal và Tây Tạng.',
-            points: 10,
-            timeLimitSeconds: 15,
-            category: 'ĐỊA LÝ',
-          },
-          {
-            id: 'q2',
-            content: 'Ai là vị vua sáng lập ra triều đại nhà Lý năm 1009?',
-            questionType: 'SINGLE',
-            options: ['Lý Công Uẩn', 'Lý Thường Kiệt', 'Lý Thánh Tông', 'Lý Phật Mã'],
-            answerRaw: 'Lý Công Uẩn',
-            explanation: 'Vua Lý Thái Tổ (Lý Công Uẩn) sáng lập triều Lý và dời đô về Thăng Long năm 1010.',
-            points: 20,
-            timeLimitSeconds: 20,
-            category: 'LỊCH SỬ',
-          },
-        ],
-        players: {
-          'local-host': {
-            id: 'local-host',
-            name: hostName || 'Kiện Tướng Tri Thức',
-            avatar: '👑',
-            score: 0,
-            isConnected: true,
-            seatNumber: 1,
-            status: 'ACTIVE',
-            streak: 0,
-            stepPosition: 0,
-            starOfHopeUsed: false,
-          },
-        },
-        buzzerTimestampMs: 0,
-        stageStartTimeUtc: new Date().toISOString(),
-        stageDurationSeconds: 30,
-        customData: {
-          cnvKeyword: 'TRÍ TUỆ NHÂN TẠO',
-          revealedLetters: [' '],
-          targetWord: 'TRI THỨC LÀ SỨC MẠNH',
-        },
-      };
-    }
+    const res = await api.post('/api/arena/rooms', {
+      gameCode,
+      roomName,
+      hostUserId: `player-${Math.floor(Math.random() * 10000)}`,
+      hostName: hostName || 'Kiện Tướng Tri Thức',
+    });
+    return res.data;
   },
 
   async getRoom(id: string): Promise<ArenaRoomState | null> {

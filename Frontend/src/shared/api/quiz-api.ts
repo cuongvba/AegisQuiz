@@ -14,7 +14,6 @@
 
 import { apiClient } from './client';
 import { normalizeQuestion } from '@/shared/lib/quiz/normalizers';
-import { MOCK_QUESTIONS } from '@/data/mock-quiz';
 import type { LearnerQuestion } from '@/types/quiz';
 
 const QUIZ_API      = '/api/quiz';
@@ -48,8 +47,9 @@ export const quizApi = {
       return list
         .map((item, i) => normalizeQuestion(item, i))
         .filter((q) => q.enabled);
-    } catch {
-      return MOCK_QUESTIONS;
+    } catch (err) {
+      console.error('[QuizAPI] Failed to generate practice questions:', err);
+      return [];
     }
   },
 

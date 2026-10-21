@@ -13,7 +13,10 @@ import {
   Bot,
   Zap,
   BrainCircuit,
-  Check
+  Check,
+  Edit3,
+  Trash2,
+  Layers
 } from 'lucide-react';
 import { 
   parsingRulesService, 
@@ -21,6 +24,8 @@ import {
   type ParseSnippetResponse,
   type AiRuleAutopilotResponse 
 } from '@/services/parsing-rules.service';
+import { CigRuleEditorModal } from './CigRuleEditorModal';
+import { DocumentStructureDictionaryTab } from './DocumentStructureDictionaryTab';
 
 const PRESET_SNIPPETS = {
   VN_STANDARD: `Câu 1. Thủ đô của nước Cộng hòa Xã hội Chủ nghĩa Việt Nam là thành phố nào?
@@ -401,6 +406,9 @@ export const RuleStudioTab: React.FC = () => {
   const [selectedRuleCode, setSelectedRuleCode] = useState<string>('');
   const [isParsing, setIsParsing] = useState(false);
   const [parseResult, setParseResult] = useState<ParseSnippetResponse | null>(null);
+  // [Universal Studio Navigation] 3 Phân hệ quản trị
+  const [activeMainTab, setActiveMainTab] = useState<'sandbox' | 'rules' | 'taxonomy'>('sandbox');
+  const [editingRule, setEditingRule] = useState<QuestionParsingRule | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   // [Phase 4] AI Rule Autopilot States
@@ -408,6 +416,25 @@ export const RuleStudioTab: React.FC = () => {
   const [aiAutopilotResult, setAiAutopilotResult] = useState<AiRuleAutopilotResponse | null>(null);
   const [isSavingRule, setIsSavingRule] = useState(false);
   const [examHint, setExamHint] = useState('');
+
+  const handleDeleteRule = async (ruleCode: string) => {
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa quy tắc [${ruleCode}]?`)) return;
+    try {
+      await parsingRulesService.deleteRule(ruleCode);
+      setStatusMessage(`✨ Đã xóa quy tắc [${ruleCode}] thành công!`);
+      await fetchRules();
+      setTimeout(() => setStatusMessage(null), 4000);
+    } catch {
+      setStatusMessage('❌ Không thể xóa quy tắc.');
+    }
+  };
+
+  const handleSaveModalRule = async (updatedRule: QuestionParsingRule) => {
+    await parsingRulesService.saveCustomRule(updatedRule);
+    setStatusMessage(`✨ Đã cập nhật và kích hoạt quy tắc [${updatedRule.ruleCode}] (0ms Hot-Reload)!`);
+    await fetchRules();
+    setTimeout(() => setStatusMessage(null), 4000);
+  };
 
   const fetchRules = async () => {
     setLoadingRules(true);
@@ -564,11 +591,45 @@ export const RuleStudioTab: React.FC = () => {
         </div>
       </div>
 
-      {/* Live Document Sandbox Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Input and Configuration */}
-        <div className="lg:col-span-6 space-y-4">
-          <div className="bg-slate-900/70 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl space-y-4">
+      {/* 3 Studio Sub-Tabs Navigation */}
+      <div className="flex border-b border-slate-800 gap-6">
+        <button
+          onClick={() => setActiveMainTab('sandbox')}
+          className={`pb-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
+            activeMainTab === 'sandbox' ? 'border-purple-500 text-purple-400' : 'border-transparent text-slate-500 hover:text-slate-300'
+          }`}
+        >
+          <Sliders size={15} /> 1. Live Sandbox & AI Autopilot
+        </button>
+        <button
+          onClick={() => setActiveMainTab('rules')}
+          className={`pb-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
+            activeMainTab === 'rules' ? 'border-blue-500 text-blue-400' : 'border-transparent text-slate-500 hover:text-slate-300'
+          }`}
+        >
+          <BookOpen size={15} /> 2. Quản Lý Quy Tắc CIG 4 Chiều ({rules.length})
+        </button>
+        <button
+          onClick={() => setActiveMainTab('taxonomy')}
+          className={`pb-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
+            activeMainTab === 'taxonomy' ? 'border-teal-500 text-teal-400' : 'border-transparent text-slate-500 hover:text-slate-300'
+          }`}
+        >
+          <Layers size={15} /> 3. Từ Điển Cấu Trúc Toàn Diện (Taxonomy)
+        </button>
+      </div>
+
+      {/* Tab 3: Document Structure Dictionary */}
+      {activeMainTab === 'taxonomy' && (
+        <DocumentStructureDictionaryTab />
+      )}
+
+      {/* Tab 1: Live Sandbox */}
+      {activeMainTab === 'sandbox' && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Left Column: Input and Configuration */}
+          <div className="lg:col-span-6 space-y-4">
+            <div className="bg-slate-900/70 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-black text-slate-200 uppercase tracking-wider flex items-center gap-2">
                 <Sliders size={16} className="text-blue-400" />
@@ -887,57 +948,86 @@ export const RuleStudioTab: React.FC = () => {
           </div>
         </div>
       </div>
+      )}
 
-      {/* Rules Registry Cards Section */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <BookOpen size={18} className="text-blue-400" />
-              Danh Mục Quy Tắc Nhận Diện Hoạt Động ({rules.length})
-            </h3>
-            <p className="text-xs text-slate-400">Các mẫu ngữ pháp nhận thức đã được nạp và JIT compile vào bộ nhớ RAM.</p>
+      {/* Tab 2: Rules Registry Cards Section (Hiển thị khi activeMainTab === 'rules' hoặc trong overview) */}
+      {(activeMainTab === 'rules' || activeMainTab === 'sandbox') && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <BookOpen size={18} className="text-blue-400" />
+                Danh Mục Quy Tắc CIG 4 Chiều ({rules.length})
+              </h3>
+              <p className="text-xs text-slate-400">Các mẫu ngữ pháp nhận thức đã được nạp và JIT compile vào bộ nhớ RAM.</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {rules.map((rule) => (
+              <div
+                key={rule.ruleCode}
+                className="bg-slate-900/60 border border-slate-800 hover:border-slate-700 rounded-2xl p-5 backdrop-blur-xl transition-all space-y-3"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <h4 className="text-sm font-bold text-white leading-snug">{rule.ruleName}</h4>
+                    <span className="text-[10px] font-mono text-slate-500">{rule.ruleCode}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                      P: {rule.priority}
+                    </span>
+                    <button
+                      onClick={() => setEditingRule(rule)}
+                      className="p-1 text-slate-400 hover:text-purple-300 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                      title="Chỉnh sửa quy tắc 4-Specs"
+                    >
+                      <Edit3 size={13} />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteRule(rule.ruleCode)}
+                      className="p-1 text-slate-400 hover:text-red-400 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                      title="Xóa quy tắc"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                </div>
+
+                <p className="text-xs text-slate-400 leading-relaxed line-clamp-2">
+                  {rule.description}
+                </p>
+
+                <div className="pt-2 border-t border-slate-800/80 space-y-1.5 text-[11px] font-mono">
+                  <div className="text-slate-400 flex items-center justify-between">
+                    <span className="text-slate-500 text-[10px]">Anchor:</span>
+                    <span className="text-amber-400/90 truncate max-w-[180px]">{rule.anchorSpec?.regexPattern}</span>
+                  </div>
+                  <div className="text-slate-400 flex items-center justify-between">
+                    <span className="text-slate-500 text-[10px]">Options:</span>
+                    <span className="text-emerald-400/90 truncate max-w-[180px]">{rule.interactionSpec?.optionRegexPattern}</span>
+                  </div>
+                  <div className="text-slate-400 flex items-center justify-between">
+                    <span className="text-slate-500 text-[10px]">Answer:</span>
+                    <span className="text-teal-400/90 truncate max-w-[180px]">{rule.evaluationSpec?.answerRegexPattern}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
+      )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {rules.map((rule) => (
-            <div
-              key={rule.ruleCode}
-              className="bg-slate-900/60 border border-slate-800 hover:border-slate-700 rounded-2xl p-5 backdrop-blur-xl transition-all space-y-3"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <h4 className="text-sm font-bold text-white leading-snug">{rule.ruleName}</h4>
-                  <span className="text-[10px] font-mono text-slate-500">{rule.ruleCode}</span>
-                </div>
-                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                  Priority: {rule.priority}
-                </span>
-              </div>
-
-              <p className="text-xs text-slate-400 leading-relaxed line-clamp-2">
-                {rule.description}
-              </p>
-
-              <div className="pt-2 border-t border-slate-800/80 space-y-1.5 text-[11px] font-mono">
-                <div className="text-slate-400 flex items-center justify-between">
-                  <span className="text-slate-500 text-[10px]">Anchor:</span>
-                  <span className="text-amber-400/90 truncate max-w-[180px]">{rule.anchorSpec?.regexPattern}</span>
-                </div>
-                <div className="text-slate-400 flex items-center justify-between">
-                  <span className="text-slate-500 text-[10px]">Options:</span>
-                  <span className="text-emerald-400/90 truncate max-w-[180px]">{rule.interactionSpec?.optionRegexPattern}</span>
-                </div>
-                <div className="text-slate-400 flex items-center justify-between">
-                  <span className="text-slate-500 text-[10px]">Answer:</span>
-                  <span className="text-teal-400/90 truncate max-w-[180px]">{rule.evaluationSpec?.answerRegexPattern}</span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* Visual Rule Editor Modal */}
+      {editingRule && (
+        <CigRuleEditorModal
+          rule={editingRule}
+          isOpen={!!editingRule}
+          onClose={() => setEditingRule(null)}
+          onSave={handleSaveModalRule}
+        />
+      )}
     </div>
   );
 };

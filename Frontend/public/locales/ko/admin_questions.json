@@ -1,0 +1,139 @@
+{
+  "title": "문제 은행 관리",
+  "subtitle": "시험 문제 저장소의 통합 관리, 문서 자동 분석 및 주제 계층 구조.",
+  "stats": {
+    "questionsCount": "{{count}}개 문제",
+    "topicsCount": "{{count}}개 주제",
+    "missingAnswers": "{{count}}개 정답 미설정",
+    "filterMissing": "(지금 필터링)",
+    "unfilterMissing": "(필터 해제)"
+  },
+  "roles": {
+    "admin": "관리자",
+    "viewer": "조회자"
+  },
+  "actions": {
+    "hierarchyAndDomain": "조직 계층 및 산업군",
+    "addTopic": "+ 주제 추가",
+    "importExam": "시험 문제 가져오기",
+    "uploadFiles": "Word / PDF / Excel 업로드",
+    "uploadFilesDesc": "자동 구조화 및 정답표 추출",
+    "cognitiveStudio": "Cognitive Studio",
+    "cognitiveStudioDesc": "멀티 시트 검증 및 AI 코파일럿",
+    "splitScreenStudio": "분할 화면 스튜디오 (동기화)",
+    "splitScreenStudioDesc": "60fps 실시간 좌표 동기화 추출",
+    "addQuestion": "문제 추가",
+    "manualCompose": "직접 입력",
+    "manualComposeDesc": "표준 서식으로 문제 작성",
+    "aiGenerate": "AI 자동 생성",
+    "aiGenerateDesc": "Gemini를 통한 문서 기반 추출",
+    "refresh": "새로고침 ↻"
+  },
+  "dropzone": {
+    "dragDropPrefix": "여기에 파일을",
+    "dragDropSuffix": "끌어다 놓거나 클릭하여 문제 추출",
+    "description": "시험 구조, LaTeX 수식, MathType WMF 및 표 자동 인식",
+    "chooseFile": "파일 선택...",
+    "studioButton": "Studio v3.0"
+  },
+  "tabs": {
+    "questions": "문제 은행",
+    "topics": "주제 관리",
+    "rules": "CIG 규칙 및 샌드박스",
+    "questionsCardTitle": "평가 시험 문제 저장소",
+    "topicsCardTitle": "시스템 주제 분류 체계"
+  },
+  "filters": {
+    "searchQuestion": "검색 (#태그 또는 키워드)",
+    "searchQuestionPlaceholder": "#태그 또는 키워드 입력...",
+    "searchTopic": "주제 검색",
+    "searchTopicPlaceholder": "주제명, 설명 또는 코드로 검색...",
+    "industryDomain": "🌐 산업 / 분야",
+    "allDomains": "전체 산업군",
+    "topicFilter": "주제별 필터",
+    "allTopics": "전체 주제",
+    "questionType": "문제 유형",
+    "allTypes": "전체 유형",
+    "answerStatus": "정답 설정 상태",
+    "allQuestions": "전체 문제",
+    "missingAnswersOnly": "정답 미설정 문제만",
+    "questionRange": "문제 번호 범위 (연번)",
+    "rangeFrom": "시작",
+    "rangeTo": "끝",
+    "rangeSelect": "선택",
+    "filteringByTag": "태그 필터링 중:",
+    "removeTagFilter": "태그 필터 해제"
+  },
+  "domains": {
+    "EDUCATION": "🎓 초중고 및 일반 교육",
+    "BANKING": "🏦 금융 및 은행업",
+    "HEALTHCARE": "🏥 의료 및 헬스케어",
+    "HSE": "🛡️ 산업 안전 보건 (HSE)",
+    "GOV_DRIVING": "🚗 운전면허 시험",
+    "IT_SECURITY": "💻 IT 및 정보보안",
+    "GENERAL": "🏢 일반 기업 교육"
+  },
+  "types": {
+    "SINGLE": "단일 선택형 (객관식)",
+    "MULTI": "다중 선택형",
+    "TRUE_FALSE": "진위형 (O/X)",
+    "MULTI_TRUE_FALSE": "4지 진위형",
+    "SHORT_ANSWER": "단답형",
+    "FILL_BLANK": "빈칸 채우기",
+    "ORDERING": "순서 맞추기",
+    "MATCHING": "짝 맞추기",
+    "ESSAY": "논술형 (AI 채점)"
+  },
+  "table": {
+    "stt": "번호",
+    "content": "문제 내용",
+    "type": "유형",
+    "topic": "주제",
+    "difficulty": "난이도",
+    "actions": "작업",
+    "topicCode": "주제 코드",
+    "topicName": "주제명",
+    "path": "경로",
+    "description": "설명",
+    "visibilityScope": "공개 범위",
+    "correctAnswerPrefix": "정답:",
+    "missingAnswerWarning": "⚠️ 정답이 설정되지 않았습니다!",
+    "readContext": "지문 읽기",
+    "sharedContext": "공통 독해 지문",
+    "unassignedTopic": "미분류",
+    "noQuestionsFound": "필터와 일치하는 문제가 없습니다.",
+    "noTopicsFound": "필터와 일치하는 주제가 없습니다.",
+    "paginationDisplay": "{{from}} - {{to}} 표시 중 (전체 {{total}}개)"
+  },
+  "scopes": {
+    "team": "팀 단위",
+    "teamPrefix": "팀: {{name}}",
+    "personal": "개인",
+    "community": "기관 전체",
+    "pendingTenant": "⚡ 기관 전체 승인 대기 중",
+    "approvedTenant": "✅ 기관 승인 완료"
+  },
+  "batch": {
+    "selectedCount": "{{count}}개 문제 선택됨",
+    "assignContext": "🔗 공통 지문 연결",
+    "assignTags": "🏷️ 태그 및 분야 지정",
+    "removeContext": "지문 연결 해제",
+    "deleteSelected": "🗑️ 선택 항목 삭제",
+    "deleting": "삭제 중...",
+    "deselectAll": "선택 해제"
+  },
+  "tooltips": {
+    "viewDetails": "상세 보기",
+    "editQuestion": "문제 수정",
+    "aiSolve": "AI 자동 풀이",
+    "activate": "활성화",
+    "deactivate": "비활성화",
+    "deleteQuestion": "문제 삭제",
+    "deleteTopic": "주제 삭제",
+    "contributeTenant": "⚡ 이 문제를 기관 전체 은행에 제안"
+  },
+  "pagination": {
+    "prev": "이전",
+    "next": "다음"
+  }
+}

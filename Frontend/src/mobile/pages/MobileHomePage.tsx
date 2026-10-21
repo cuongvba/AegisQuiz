@@ -45,10 +45,14 @@ export const MobileHomePage: React.FC<MobileHomePageProps> = ({
 
         const downloadedSet = new Set(offlineExams.map((e) => e.examId));
 
-        // Lọc topic theo domain của variant
+        // 1. Tìm chủ đề đặc biệt GUEST_SHOW trong DB
+        const guestShowDb = Array.isArray(dbTopics) ? dbTopics.find((t: any) => t.code === 'GUEST_SHOW') : null;
+
+        // 2. Lọc topic theo domain của variant
         const domain = variant.domainCode?.toUpperCase() || 'GENERAL';
         const matched = Array.isArray(dbTopics)
           ? dbTopics.filter((t: any) => {
+              if (t.code === 'GUEST_SHOW') return false;
               const tDomain = (t.domainCode || t.categoryCode || '').toUpperCase();
               if (domain === 'DRIVING') return tDomain.includes('DRIVING') || tDomain.includes('GT') || t.code?.startsWith('GPLX');
               if (domain === 'THPT') return tDomain.includes('TNPT') || tDomain.includes('TOAN') || t.code?.startsWith('TNPT');
@@ -58,22 +62,29 @@ export const MobileHomePage: React.FC<MobileHomePageProps> = ({
             })
           : [];
 
+        // Luôn ghim GUEST_SHOW lên vị trí VIP đầu tiên
+        const combined = guestShowDb ? [guestShowDb, ...matched] : matched;
+
         if (isMounted) {
-          if (matched.length > 0) {
+          if (combined.length > 0) {
             setTopics(
-              matched.map((t: any) => ({
+              combined.map((t: any) => ({
                 id: t.code,
                 code: t.code,
                 name: t.name || t.code,
-                questionCount: countMap.get(t.code) || t.questionCountCached || 50,
+                questionCount: countMap.get(t.code) || t.questionCountCached || (t.code === 'GUEST_SHOW' ? 9 : 50),
                 isRealDb: true,
                 isDownloaded: downloadedSet.has(t.code),
               }))
             );
           } else {
             // Fallback sang sampleTopics nếu DB chưa có category tương ứng
+            const sampleList = [
+              { id: 'GUEST_SHOW', name: '🌟 GuestShow — Trải Nghiệm Đỉnh Cao', questionCount: 9, icon: 'Sparkles' },
+              ...variant.sampleTopics.filter((st) => st.id !== 'GUEST_SHOW')
+            ];
             setTopics(
-              variant.sampleTopics.map((st) => ({
+              sampleList.map((st) => ({
                 id: st.id,
                 code: st.id,
                 name: st.name,

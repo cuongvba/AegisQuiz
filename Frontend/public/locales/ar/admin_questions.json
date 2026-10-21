@@ -1,0 +1,139 @@
+{
+  "title": "بنك الأسئلة",
+  "subtitle": "إدارة شاملة لمستودع الامتحانات، والاستخراج التلقائي للمستندات، والتسلسل الهرمي للمواضيع.",
+  "stats": {
+    "questionsCount": "{{count}} سؤال",
+    "topicsCount": "{{count}} موضوع",
+    "missingAnswers": "{{count}} بدون إجابة محددة",
+    "filterMissing": "(تصفية الآن)",
+    "unfilterMissing": "(إلغاء التصفية)"
+  },
+  "roles": {
+    "admin": "مسؤول",
+    "viewer": "مشاهد"
+  },
+  "actions": {
+    "hierarchyAndDomain": "الهيكل الإداري والمجالات",
+    "addTopic": "+ موضوع",
+    "importExam": "استيراد اختبار",
+    "uploadFiles": "تحميل ملف Word / PDF / Excel",
+    "uploadFilesDesc": "استخراج تلقائي ونموذج الإجابة",
+    "cognitiveStudio": "استوديو الإدراك",
+    "cognitiveStudioDesc": "فحص متعدد الأوراق ومساعد ذكاء اصطناعي",
+    "splitScreenStudio": "استوديو الشاشة المقسمة (مزامنة)",
+    "splitScreenStudioDesc": "استخراج متزامن ثنائي الشاشة بمعدل 60 إطار/ث",
+    "addQuestion": "إضافة سؤال",
+    "manualCompose": "تحرير يدوي",
+    "manualComposeDesc": "إنشاء سؤال وفق المعايير القياسية",
+    "aiGenerate": "توليد آلي بالذكاء الاصطناعي",
+    "aiGenerateDesc": "استخراج مباشر من المستندات عبر Gemini",
+    "refresh": "تحديث ↻"
+  },
+  "dropzone": {
+    "dragDropPrefix": "اسحب وأفلت الملفات",
+    "dragDropSuffix": "هنا أو انقر لاستخراج الأسئلة",
+    "description": "التعرف التلقائي على هيكل الاختبار، صيغ LaTeX، MathType WMF والجداول",
+    "chooseFile": "اختر ملفاً...",
+    "studioButton": "استوديو v3.0"
+  },
+  "tabs": {
+    "questions": "بنك الأسئلة",
+    "topics": "إدارة المواضيع",
+    "rules": "قواعد CIG وبيئة الاختبار",
+    "questionsCardTitle": "مستودع أسئلة التقييم",
+    "topicsCardTitle": "تصنيفات المواضيع في النظام"
+  },
+  "filters": {
+    "searchQuestion": "بحث (اكتب #وسم أو كلمة)",
+    "searchQuestionPlaceholder": "اكتب #وسم أو كلمة رئيسية...",
+    "searchTopic": "بحث في المواضيع",
+    "searchTopicPlaceholder": "البحث بالاسم أو الوصف أو الرمز...",
+    "industryDomain": "🌐 المجال / القطاع",
+    "allDomains": "جميع القطاعات",
+    "topicFilter": "تصفية حسب الموضوع",
+    "allTopics": "جميع المواضيع",
+    "questionType": "نوع السؤال",
+    "allTypes": "جميع الأنواع",
+    "answerStatus": "حالة الإجابة",
+    "allQuestions": "جميع الأسئلة",
+    "missingAnswersOnly": "الأسئلة بدون إجابة محددة",
+    "questionRange": "نطاق الأسئلة (الترتيب)",
+    "rangeFrom": "من",
+    "rangeTo": "إلى",
+    "rangeSelect": "تحديد",
+    "filteringByTag": "التصفية حسب الوسم:",
+    "removeTagFilter": "إلغاء تصفية هذا الوسم"
+  },
+  "domains": {
+    "EDUCATION": "🎓 التعليم العام",
+    "BANKING": "🏦 الخدمات المصرفية والمالية",
+    "HEALTHCARE": "🏥 الرعاية الصحية والطبية",
+    "HSE": "🛡️ الصحة والسلامة المهنية (HSE)",
+    "GOV_DRIVING": "🚗 اختبارات رخص القيادة",
+    "IT_SECURITY": "💻 تكنولوجيا المعلومات والأمن السيبراني",
+    "GENERAL": "🏢 قطاع الأعمال العام"
+  },
+  "types": {
+    "SINGLE": "اختيار من متعدد (إجابة واحدة)",
+    "MULTI": "إجابات متعددة صحيحة",
+    "TRUE_FALSE": "صح / خطأ",
+    "MULTI_TRUE_FALSE": "صح / خطأ متعدد (4 عبارات)",
+    "SHORT_ANSWER": "إجابة قصيرة",
+    "FILL_BLANK": "ملء الفراغات",
+    "ORDERING": "ترتيب تسلسلي",
+    "MATCHING": "مطابقة الأزواج",
+    "ESSAY": "سؤال مقالي (تقييم بالذكاء الاصطناعي)"
+  },
+  "table": {
+    "stt": "م",
+    "content": "نص السؤال",
+    "type": "النوع",
+    "topic": "الموضوع",
+    "difficulty": "مستوى الصعوبة",
+    "actions": "الإجراءات",
+    "topicCode": "رمز الموضوع",
+    "topicName": "اسم الموضوع",
+    "path": "المسار الهرمي",
+    "description": "الوصف",
+    "visibilityScope": "نطاق الظهور",
+    "correctAnswerPrefix": "الإجابة الصحيحة:",
+    "missingAnswerWarning": "⚠️ لم يتم تحديد الإجابة الصحيحة بعد!",
+    "readContext": "قراءة النص المشترك",
+    "sharedContext": "نص القراءة المشترك",
+    "unassignedTopic": "غير مصنف",
+    "noQuestionsFound": "لم يتم العثور على أي أسئلة مطابقة للتصفية.",
+    "noTopicsFound": "لم يتم العثور على أي مواضيع مطابقة للتصفية.",
+    "paginationDisplay": "عرض من {{from}} إلى {{to}} من إجمالي {{total}}"
+  },
+  "scopes": {
+    "team": "مستوى الفريق",
+    "teamPrefix": "فريق: {{name}}",
+    "personal": "شخصي",
+    "community": "على مستوى المنشأة",
+    "pendingTenant": "⚡ بانتظار اعتماد المنشأة",
+    "approvedTenant": "✅ معتمد من المنشأة"
+  },
+  "batch": {
+    "selectedCount": "تم تحديد {{count}} سؤال",
+    "assignContext": "🔗 ربط نص قراءة",
+    "assignTags": "🏷️ تعيين وسوم وقطاع",
+    "removeContext": "فصل نص القراءة",
+    "deleteSelected": "🗑️ حذف المحدد",
+    "deleting": "جاري الحذف...",
+    "deselectAll": "إلغاء التحديد"
+  },
+  "tooltips": {
+    "viewDetails": "عرض التفاصيل",
+    "editQuestion": "تعديل السؤال",
+    "aiSolve": "حل تلقائي بالذكاء الاصطناعي",
+    "activate": "تفعيل",
+    "deactivate": "تعطيل",
+    "deleteQuestion": "حذف السؤال",
+    "deleteTopic": "حذف الموضوع",
+    "contributeTenant": "⚡ اقتراح هذا السؤال لبنك المنشأة العام"
+  },
+  "pagination": {
+    "prev": "السابق",
+    "next": "التالي"
+  }
+}

@@ -33,7 +33,11 @@ export const QUESTION_TYPE_LABELS: Record<string, string> = {
   ESSAY:            'Tự luận (AI chấm)',
 };
 
-export function getQuestionTypeLabel(type: string): string {
+export function getQuestionTypeLabel(type: string, t?: (k: string) => string): string {
+  if (t) {
+    const translated = t(`types.${type}`);
+    if (translated && !translated.startsWith('types.')) return translated;
+  }
   return QUESTION_TYPE_LABELS[type] ?? type;
 }
 
@@ -138,4 +142,46 @@ export function isOptionSelectedAsCorrect(
   }
 
   return false;
+}
+
+export function getCorrectAnswerDisplay(q: {
+  answerRaw?: string;
+  questionType?: string;
+  options?: string[];
+}): { label: string; text: string } | null {
+  if (!q.answerRaw || !q.answerRaw.trim()) return null;
+
+  if (q.questionType === 'SINGLE' || q.questionType === 'TRUE_FALSE') {
+    let idx = parseInt(q.answerRaw) - 1;
+    if (isNaN(idx) || idx < 0 || !q.options || !q.options[idx]) {
+      if (q.options && q.options.length > 0) {
+        const found = q.options.findIndex((opt, i) => isOptionSelectedAsCorrect(opt, i, q.answerRaw!, q.questionType!, q.options));
+        if (found !== -1) idx = found;
+      }
+    }
+    if (q.options && q.options[idx] !== undefined) {
+      const label = q.questionType === 'TRUE_FALSE'
+        ? (idx === 0 ? 'Đúng (1)' : 'Sai (2)')
+        : `${LETTERS[idx] || String(idx + 1)} (${idx + 1})`;
+      return { label, text: q.options[idx] };
+    }
+    return { label: q.answerRaw, text: '' };
+  }
+  if (q.questionType === 'MULTI') {
+    const labels: string[] = [];
+    const texts: string[] = [];
+    if (q.options && q.options.length > 0) {
+      q.options.forEach((opt, idx) => {
+        if (isOptionSelectedAsCorrect(opt, idx, q.answerRaw!, 'MULTI', q.options)) {
+          labels.push(`${LETTERS[idx] || String(idx + 1)} (${idx + 1})`);
+          texts.push(`${LETTERS[idx] || String(idx + 1)}. ${opt}`);
+        }
+      });
+    }
+    if (labels.length > 0) {
+      return { label: labels.join(', '), text: texts.join(' | ') };
+    }
+    return { label: q.answerRaw, text: '' };
+  }
+  return { label: q.answerRaw, text: '' };
 }

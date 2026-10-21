@@ -1,3 +1,4 @@
+import { parseMultiTfAnswer } from '@/shared/lib/quiz/normalizers';
 import type {
   DisplayOption,
   LearnerAnswer,
@@ -9,7 +10,7 @@ import type {
   TopicSummary,
 } from '@/types/quiz';
 
-const LETTERS = ['A', 'B', 'C', 'D', 'E'];
+export const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
 
 export function normalizeMediaType(input?: string): string {
   const raw = (input ?? '').trim().toLowerCase();
@@ -38,7 +39,57 @@ export function parseIndexList(raw: string): string[] {
     .filter((x) => x.length > 0);
 }
 
-export function parseMatchingPairs(options: DisplayOption[]): MatchingPair[] {
+export function parseMatchingPairs(options: DisplayOption[], question?: LearnerQuestion): MatchingPair[] {
+  // 1. Kiểm tra payload của question (đặc biệt là GuestShow / Seed DB)
+  const payload = question?.payload;
+  if (payload) {
+    if (Array.isArray(payload.correctPairs) && payload.correctPairs.length > 0) {
+      const fromPairs = payload.correctPairs.map((p: any) => ({
+        left: String(p.left ?? '').trim(),
+        right: String(p.right ?? '').trim(),
+      })).filter((p: MatchingPair) => p.left && p.right);
+      if (fromPairs.length > 0) return fromPairs;
+    }
+    if (Array.isArray(payload.leftItems) && Array.isArray(payload.rightItems) && payload.leftItems.length > 0) {
+      const fromItems = payload.leftItems.map((left: any, idx: number) => ({
+        left: String(left ?? '').trim(),
+        right: String(payload.rightItems[idx] ?? '').trim(),
+      })).filter((p: MatchingPair) => p.left && p.right);
+      if (fromItems.length > 0) return fromItems;
+    }
+  }
+
+  // 2. Parse từ display options
+  const pairs: MatchingPair[] = [];
+  for (const option of options) {
+    const value = option.value;
+    if (value.includes('=>')) {
+      const [l, r] = value.split('=>');
+      pairs.push({ left: l.trim(), right: r.trim() });
+      continue;
+    }
+    if (value.includes('|')) {
+      const [l, r] = value.split('|');
+      pairs.push({ left: l.trim(), right: r.trim() });
+      continue;
+    }
+    // Dấu gạch ngang / em-dash / en-dash: ' - ', ' – ', ' — '
+    const dashMatch = value.split(/\s+[-–—]\s+/);
+    if (dashMatch.length === 2) {
+      pairs.push({ left: dashMatch[0].trim(), right: dashMatch[1].trim() });
+      continue;
+    }
+    // Dấu hai chấm: 'left : right'
+    const colonMatch = value.split(/\s*:\s*/);
+    if (colonMatch.length === 2 && colonMatch[0].length > 1 && colonMatch[1].length > 1) {
+      pairs.push({ left: colonMatch[0].trim(), right: colonMatch[1].trim() });
+      continue;
+    }
+  }
+
+  if (pairs.length > 0) return pairs;
+
+  // 3. Hai cột riêng biệt
   const splitList = (input: string): string[] => {
     return input
       .split(/[|;\n\r]+/)
@@ -46,23 +97,7 @@ export function parseMatchingPairs(options: DisplayOption[]): MatchingPair[] {
       .filter((x) => x.length > 0);
   };
 
-  const pairs: MatchingPair[] = [];
-  for (const option of options) {
-    const value = option.value;
-    const splitByArrow = value.split('=>');
-    if (splitByArrow.length === 2) {
-      pairs.push({ left: splitByArrow[0].trim(), right: splitByArrow[1].trim() });
-      continue;
-    }
-
-    const splitByPipe = value.split('|');
-    if (splitByPipe.length === 2) {
-      pairs.push({ left: splitByPipe[0].trim(), right: splitByPipe[1].trim() });
-      continue;
-    }
-  }
-
-  if (pairs.length === 0 && options.length >= 2) {
+  if (options.length >= 2) {
     const leftList = splitList(options[0].value);
     const rightList = splitList(options[1].value);
 
@@ -74,6 +109,54 @@ export function parseMatchingPairs(options: DisplayOption[]): MatchingPair[] {
   }
 
   return pairs;
+}
+
+/**
+ * Kiểm tra xem một OptionChoice có phải là đáp án đúng của câu hỏi hay không.
+ * Khớp chuẩn hóa 100% qua:
+ * - option.id (chuỗi số 1-based "1", "2")
+ * - option.label (chữ cái "A", "B")
+ * - option.value (nội dung text)
+ * - question.answerRaw hoặc question.payload.correctAnswer
+ */
+export function isOptionCorrect(question: LearnerQuestion, option: DisplayOption): boolean {
+  const rawAnswer = question.answerRaw || String(question.payload?.correctAnswer ?? question.payload?.correctOption ?? '');
+  if (!rawAnswer.trim()) return false;
+
+  const rawList = parseIndexList(rawAnswer);
+  if (rawList.length === 0) return false;
+
+  const optId = option.id.trim();
+  const optLabel = option.label.trim().toUpperCase();
+  const optVal = option.value.trim().toLowerCase();
+
+  for (const item of rawList) {
+    const cleanItem = item.trim();
+    if (!cleanItem) continue;
+
+    // Khớp ID trực tiếp: "1" === "1"
+    if (cleanItem === optId) return true;
+
+    // Khớp Nhãn chữ cái trực tiếp: "A" === "A"
+    if (cleanItem.toUpperCase() === optLabel) return true;
+
+    // Chuyển đổi chữ cái sang số: "A" -> 1 === optId
+    if (/^[a-j]$/i.test(cleanItem)) {
+      const numFromLetter = String(cleanItem.toUpperCase().charCodeAt(0) - 64);
+      if (numFromLetter === optId) return true;
+    }
+
+    // Chuyển đổi số sang chữ cái: "1" -> "A" === optLabel
+    if (/^\d+$/.test(cleanItem)) {
+      const letterFromNum = LETTERS[Number(cleanItem) - 1];
+      if (letterFromNum && letterFromNum === optLabel) return true;
+    }
+
+    // Khớp nội dung text nếu câu hỏi lưu đáp án nguyên văn
+    if (cleanItem.toLowerCase() === optVal) return true;
+  }
+
+  return false;
 }
 
 function shuffleArray<T>(input: T[]): T[] {
@@ -141,9 +224,16 @@ function remapAnswerByOptionOrder(
 
   if (questionType === 'SINGLE' || questionType === 'TRUE_FALSE' || questionType === 'MULTI' || questionType === 'ORDERING') {
     const mapped = parseIndexList(answerRaw)
-      .map((idx) => positionMap[idx])
+      .map((idx) => {
+        if (positionMap[idx]) return positionMap[idx];
+        if (/^[a-j]$/i.test(idx)) {
+          const numIdx = String(idx.toUpperCase().charCodeAt(0) - 64);
+          if (positionMap[numIdx]) return positionMap[numIdx];
+        }
+        return idx;
+      })
       .filter((idx): idx is string => Boolean(idx));
-    return mapped.join(',');
+    return mapped.length > 0 ? mapped.join(',') : answerRaw;
   }
 
   return answerRaw;
@@ -214,7 +304,16 @@ function shuffleQuestionOptions(question: LearnerQuestion, shouldShuffle: boolea
   const shuffled = shouldShuffle ? shuffleArray(options) : options;
   const positionMap: Record<string, string> = {};
   shuffled.forEach((item, newIndex) => {
-    positionMap[item.oldIndex] = String(newIndex + 1);
+    const newPos = String(newIndex + 1);
+    positionMap[item.oldIndex] = newPos;
+    const oldNum = Number(item.oldIndex);
+    if (oldNum >= 1 && oldNum <= 26) {
+      const letter = LETTERS[oldNum - 1];
+      if (letter) {
+        positionMap[letter] = newPos;
+        positionMap[letter.toLowerCase()] = newPos;
+      }
+    }
   });
 
   const values = shuffled.map((item) => remapOptionTextByPosition(item.value, positionMap));
@@ -229,7 +328,7 @@ function shuffleQuestionOptions(question: LearnerQuestion, shouldShuffle: boolea
 function prepareMatchingDisplay(question: LearnerQuestion, shouldShuffle: boolean): LearnerQuestion {
   if (question.questionType !== 'MATCHING') return question;
 
-  const pairs = parseMatchingPairs(getDisplayOptions(question));
+  const pairs = parseMatchingPairs(getDisplayOptions(question), question);
   if (pairs.length === 0) return question;
 
   const leftPool = pairs.map((pair) => pair.left);
@@ -311,8 +410,10 @@ function resolveOneBasedOrZeroBasedIndex(raw: string, size: number): number | nu
   const token = raw.trim();
   if (!/^\d+$/.test(token)) return null;
   const n = Number(token);
-  if (n >= 0 && n < size) return n;
+  // Ưu tiên 1-based index chuẩn khảo thí: 1..size -> 0..size-1
   if (n >= 1 && n <= size) return n - 1;
+  // Fallback 0-based index nếu dùng từ 0
+  if (n >= 0 && n < size) return n;
   return null;
 }
 
@@ -321,7 +422,14 @@ function canonicalMatchingPair(left: string, right: string): string {
 }
 
 function normalizeMatchingExpected(question: LearnerQuestion): string[] {
-  const pairs = parseMatchingPairs(getDisplayOptions(question));
+  // Ưu tiên correctPairs từ payload
+  if (Array.isArray(question.payload?.correctPairs) && question.payload.correctPairs.length > 0) {
+    return question.payload.correctPairs
+      .map((p: any) => canonicalMatchingPair(String(p.left || ''), String(p.right || '')))
+      .filter(Boolean);
+  }
+
+  const pairs = parseMatchingPairs(getDisplayOptions(question), question);
   const leftPool = pairs.map((x) => x.left);
   const rightPool = pairs.map((x) => x.right);
 
@@ -347,7 +455,8 @@ function normalizeMatchingExpected(question: LearnerQuestion): string[] {
 }
 
 export function isQuestionAnswered(question: LearnerQuestion, answer?: LearnerAnswer): boolean {
-  if (!answer) return false;
+  // ORDERING: trật tự đang hiển thị luôn là một câu trả lời hợp lệ, kể cả khi thí sinh không chạm vào.
+  if (!answer) return question.questionType === 'ORDERING' && getDisplayOptions(question).length > 0;
 
   switch (question.questionType) {
     case 'SINGLE':
@@ -355,11 +464,17 @@ export function isQuestionAnswered(question: LearnerQuestion, answer?: LearnerAn
       return Boolean(answer.selectedOption);
     case 'MULTI':
       return Boolean(answer.selectedOptions && answer.selectedOptions.length > 0);
+    case 'MULTI_TRUE_FALSE': {
+      if (answer.matrixAnswer && Object.keys(answer.matrixAnswer).length > 0) return true;
+      if (answer.shortText && answer.shortText.trim().length > 0) return true;
+      return false;
+    }
     case 'SHORT_ANSWER':
     case 'FILL_BLANK':
       return normalizeText(answer.shortText).length > 0;
     case 'ORDERING':
-      return Boolean(answer.ordering && answer.ordering.length > 0);
+      // Nếu người thi đã kéo thả HOẶC câu hỏi đã hiển thị trật tự mặc định sẵn
+      return Boolean((answer.ordering && answer.ordering.length > 0) || getDisplayOptions(question).length > 0);
     case 'MATCHING':
       return Boolean(answer.matching && Object.keys(answer.matching).length > 0);
     case 'ESSAY':
@@ -369,19 +484,61 @@ export function isQuestionAnswered(question: LearnerQuestion, answer?: LearnerAn
   }
 }
 
-export function scoreQuestion(question: LearnerQuestion, answer?: LearnerAnswer): number {
-  if (!answer) return 0;
+/** Chuẩn hóa token chỉ số phương án: "B" -> "2", "2" -> "2". */
+function normalizeIndexToken(token: string): string {
+  const t = token.trim();
+  return /^[a-j]$/i.test(t) ? String(t.toUpperCase().charCodeAt(0) - 64) : t;
+}
 
-  const correct = parseIndexList(question.answerRaw);
+export function scoreQuestion(question: LearnerQuestion, rawAnswer?: LearnerAnswer): number {
+  // ORDERING được chấm cả khi chưa có answer (thứ tự mặc định); các dạng khác cần answer.
+  if (!rawAnswer && question.questionType !== 'ORDERING') return 0;
+  const answer: LearnerAnswer = rawAnswer ?? {};
+
+  const displayOptions = getDisplayOptions(question);
 
   switch (question.questionType) {
     case 'SINGLE':
     case 'TRUE_FALSE': {
-      return answer.selectedOption && correct[0] === answer.selectedOption ? question.points : 0;
+      if (!answer.selectedOption) return 0;
+      const opt = displayOptions.find((o) => o.id === answer.selectedOption);
+      return opt && isOptionCorrect(question, opt) ? question.points : 0;
     }
     case 'MULTI': {
       const selected = answer.selectedOptions ?? [];
-      return compareSets(selected, correct) ? question.points : 0;
+      if (selected.length === 0) return 0;
+      const correctIds = displayOptions.filter((o) => isOptionCorrect(question, o)).map((o) => o.id);
+      return correctIds.length > 0 && compareSets(selected, correctIds) ? question.points : 0;
+    }
+    case 'MULTI_TRUE_FALSE': {
+      const expectedMap = parseMultiTfAnswer(question.answerRaw);
+      const userMap = (answer.matrixAnswer && Object.keys(answer.matrixAnswer).length > 0)
+        ? answer.matrixAnswer
+        : parseMultiTfAnswer(answer.shortText);
+
+      const keys = Object.keys(expectedMap);
+      if (keys.length === 0) return 0;
+
+      let matched = 0;
+      for (const k of keys) {
+        if (userMap[k] !== undefined && userMap[k] === expectedMap[k]) {
+          matched++;
+        }
+      }
+
+      const total = keys.length;
+      const pts = question.points || 1;
+      // Quy chuẩn Bộ GD&ĐT 2025 cho Đúng/Sai 4 ý:
+      // 1 ý đúng: 0.1đ | 2 ý đúng: 0.25đ | 3 ý đúng: 0.5đ | 4 ý đúng: 1.0đ
+      if (total === 4) {
+        if (matched === 4) return pts;
+        if (matched === 3) return Number((pts * 0.5).toFixed(2));
+        if (matched === 2) return Number((pts * 0.25).toFixed(2));
+        if (matched === 1) return Number((pts * 0.1).toFixed(2));
+        return 0;
+      }
+
+      return Number(((matched / total) * pts).toFixed(2));
     }
     case 'SHORT_ANSWER':
     case 'FILL_BLANK': {
@@ -389,8 +546,13 @@ export function scoreQuestion(question: LearnerQuestion, answer?: LearnerAnswer)
       return expected.length > 0 && expected === normalizeText(answer.shortText) ? question.points : 0;
     }
     case 'ORDERING': {
-      const selected = answer.ordering ?? [];
-      return selected.length > 0 && compareOrdered(selected, correct) ? question.points : 0;
+      // Nếu người thi không tác động vào giao diện nhưng thứ tự mặc định đã đúng, vẫn tính điểm
+      const defaultOrder = displayOptions.map((o) => o.id);
+      const selected = (answer.ordering && answer.ordering.length > 0)
+        ? answer.ordering
+        : defaultOrder;
+      const expected = parseIndexList(question.answerRaw).map(normalizeIndexToken);
+      return selected.length > 0 && compareOrdered(selected, expected) ? question.points : 0;
     }
     case 'MATCHING': {
       const mapping = answer.matching ?? {};
@@ -404,6 +566,29 @@ export function scoreQuestion(question: LearnerQuestion, answer?: LearnerAnswer)
     default:
       return 0;
   }
+}
+
+export type ScoringStatus = 'scored' | 'manual';
+
+export interface QuestionEvaluation {
+  score: number;
+  maxScore: number;
+  status: ScoringStatus;
+  answered: boolean;
+}
+
+/**
+ * API chấm điểm hợp nhất — cùng hợp đồng với server `IQuestionEvaluatorStrategy` (ScoringResult).
+ * Được khóa bởi golden vectors tại tests/scoring-vectors.
+ */
+export function evaluateQuestion(question: LearnerQuestion, answer?: LearnerAnswer): QuestionEvaluation {
+  const isManual = question.questionType === 'ESSAY';
+  return {
+    score: isManual ? 0 : scoreQuestion(question, answer),
+    maxScore: question.points || 0,
+    status: isManual ? 'manual' : 'scored',
+    answered: isQuestionAnswered(question, answer),
+  };
 }
 
 export function calculateQuizResult(questions: LearnerQuestion[], answers: Record<string, LearnerAnswer>): QuizResult {

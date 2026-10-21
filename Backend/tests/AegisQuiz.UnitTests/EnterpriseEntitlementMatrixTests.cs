@@ -33,10 +33,13 @@ namespace AegisQuiz.UnitTests
             Assert.Contains(FeatureKeys.TranspilerQti, features);
             Assert.Contains(FeatureKeys.ArenaGameshow, features);
             Assert.Contains(FeatureKeys.HierarchyTree, features);
+            Assert.Contains(FeatureKeys.SplitScreenStudio, features);
+            Assert.Contains(FeatureKeys.AiAutoRubricSolve, features);
 
             // Vẫn chưa có AI Symposium và IRT CAT 3-PL
             Assert.DoesNotContain(FeatureKeys.AiSymposium, features);
             Assert.DoesNotContain(FeatureKeys.IrtCat3Pl, features);
+            Assert.DoesNotContain(FeatureKeys.WhiteLabelTheming, features);
 
             Assert.Equal(50, quotas.MaxConcurrentArenaSeats);
             Assert.Equal(100, quotas.MaxUsers);
@@ -51,9 +54,12 @@ namespace AegisQuiz.UnitTests
             Assert.Contains(FeatureKeys.TranspilerMoodle, features);
             Assert.Contains(FeatureKeys.TranspilerQti, features);
             Assert.Contains(FeatureKeys.TranspilerCanvas, features);
+            Assert.Contains(FeatureKeys.SplitScreenStudio, features);
+            Assert.Contains(FeatureKeys.AiAutoRubricSolve, features);
             Assert.Contains(FeatureKeys.AiSymposium, features);
             Assert.Contains(FeatureKeys.IrtCat3Pl, features);
             Assert.Contains(FeatureKeys.WhiteLabel, features);
+            Assert.Contains(FeatureKeys.WhiteLabelTheming, features);
             Assert.Contains(FeatureKeys.AuditLog, features);
 
             Assert.Equal(1000, quotas.MaxConcurrentArenaSeats);

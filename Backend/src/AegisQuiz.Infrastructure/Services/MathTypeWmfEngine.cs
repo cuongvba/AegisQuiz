@@ -1650,12 +1650,12 @@ namespace AegisQuiz.Infrastructure.Services
                 }
 
                 // Nếu có hình vẽ đa giác phức tạp hoặc quá nhiều đường nét -> Giữ nguyên Vector SVG
-                if (complexShapes > 0 || lines.Count > 8)
+                if (complexShapes > 0 || lines.Count > 18)
                 {
                     return false;
                 }
 
-                int maxSimpleChars = settings.SimplifierMaxSimpleCharCount > 0 ? settings.SimplifierMaxSimpleCharCount : 70;
+                int maxSimpleChars = settings.SimplifierMaxSimpleCharCount > 0 ? settings.SimplifierMaxSimpleCharCount : 150;
                 if (textItems.Count == 0 || textItems.Count > maxSimpleChars)
                 {
                     return false;
@@ -1772,15 +1772,72 @@ namespace AegisQuiz.Infrastructure.Services
 
                 if (textItems.Count == 0) return false;
 
-                // 2. Nhận diện Phân Số Số Học Đơn Giản (lineCount == 1)
-                if (lines.Count == 1)
-                {
-                    var line = lines[0];
-                    double lineY = (line.y1 + line.y2) / 2.0;
-                    int lineMinX = Math.Min(line.x1, line.x2);
-                    int lineMaxX = Math.Max(line.x1, line.x2);
+                bool hasStructuralMath = false;
 
-                    int padX = Math.Max(40, (int)((curFontSize > 0 ? curFontSize : 14) * 0.12f));
+                // 2. [Giai Đoạn 3] Nhận diện và gom Căn Thức (Radical Expressions: \sqrt{...})
+                var roofCandidates = lines
+                    .Where(l => Math.Abs(l.y1 - l.y2) <= 8 && Math.Abs(l.x2 - l.x1) >= 15)
+                    .OrderByDescending(l => Math.Abs(l.x2 - l.x1))
+                    .ToList();
+
+                foreach (var roofCandidate in roofCandidates)
+                {
+                    int roofMinX = Math.Min(roofCandidate.x1, roofCandidate.x2);
+                    int roofMaxX = Math.Max(roofCandidate.x1, roofCandidate.x2);
+                    double roofY = (roofCandidate.y1 + roofCandidate.y2) / 2.0;
+
+                    // Kiểm tra xem có nét vấu căn bên trái hoặc ký hiệu căn đứng trước
+                    var otherLines = lines.Where(l => !(l.x1 == roofCandidate.x1 && l.y1 == roofCandidate.y1 && l.x2 == roofCandidate.x2 && l.y2 == roofCandidate.y2)).ToList();
+                    bool hasVTick = otherLines.Any(l => Math.Min(l.x1, l.x2) <= roofMinX + 35 && Math.Abs(l.y1 - l.y2) >= 8);
+                    var radSignItem = textItems.FirstOrDefault(t => (t.Text.Contains("\\sqrt") || t.Text == "√" || t.Text == "\u00D6") && Math.Abs(t.X + t.Width - roofMinX) <= 40);
+
+                    if (hasVTick || radSignItem != null)
+                    {
+                        var radItems = textItems.Where(t => t != radSignItem && t.Y > roofY - 12 && t.X >= roofMinX - 35 && (t.X + Math.Min(t.Width, (int)(t.FontSize * 0.75f)) / 2) <= roofMaxX + 45).OrderBy(t => t.X).ToList();
+                        if (radItems.Count > 0)
+                        {
+                            string radLatex = FormatMathSubExpression(radItems, textItems[0].FontSize);
+                            string sqrtLatex = $"\\sqrt{{{radLatex}}}";
+
+                            var radSet = new HashSet<WmfSimpleTextItem>(radItems);
+                            if (radSignItem != null) radSet.Add(radSignItem);
+                            var remainingText = textItems.Where(t => !radSet.Contains(t)).ToList();
+
+                            int baseBaselineY = remainingText.Count > 0 ? remainingText[0].Y : (radItems.Count > 0 ? radItems[0].Y : (int)roofY);
+                            remainingText.Add(new WmfSimpleTextItem
+                            {
+                                Text = sqrtLatex,
+                                X = radSignItem != null ? radSignItem.X : roofMinX - 10,
+                                Y = baseBaselineY,
+                                Width = Math.Max(20, roofMaxX - (radSignItem != null ? radSignItem.X : roofMinX)),
+                                FontSize = textItems[0].FontSize,
+                                IsSymbol = false,
+                                IsMtExtra = false
+                            });
+                            textItems = remainingText.OrderBy(t => t.X).ToList();
+
+                            // Loại bỏ đường nóc căn và các đường vấu căn bên trái
+                            lines.Remove(roofCandidate);
+                            lines.RemoveAll(l => Math.Min(l.x1, l.x2) <= roofMinX + 35 && Math.Abs(l.y1 - l.y2) >= 8);
+                            hasStructuralMath = true;
+                            break;
+                        }
+                    }
+                }
+
+                // 3. [Giai Đoạn 3] Nhận diện và gom Đa Phân Số (Multi-Fraction & Recursive Fractions)
+                var horizontalFractionLines = lines
+                    .Where(l => Math.Abs(l.y1 - l.y2) <= 8 && Math.Abs(l.x2 - l.x1) >= 15)
+                    .OrderBy(l => Math.Abs(l.x2 - l.x1)) // Xử lý từ đường phân số ngắn đến dài (lồng nhau nếu có)
+                    .ToList();
+
+                foreach (var hLine in horizontalFractionLines)
+                {
+                    double lineY = (hLine.y1 + hLine.y2) / 2.0;
+                    int lineMinX = Math.Min(hLine.x1, hLine.x2);
+                    int lineMaxX = Math.Max(hLine.x1, hLine.x2);
+
+                    int padX = Math.Max(35, (int)((curFontSize > 0 ? curFontSize : 14) * 0.15f));
                     bool IsInFractionSpan(WmfSimpleTextItem t)
                     {
                         int charVisualW = Math.Min(t.Width, (int)(t.FontSize * 0.75f));
@@ -1791,123 +1848,38 @@ namespace AegisQuiz.Infrastructure.Services
                     var numItems = textItems.Where(t => t.Y < lineY && IsInFractionSpan(t)).OrderBy(t => t.X).ToList();
                     var denItems = textItems.Where(t => t.Y > lineY && IsInFractionSpan(t)).OrderBy(t => t.X).ToList();
 
-                    var fracIds = new HashSet<WmfSimpleTextItem>(numItems.Concat(denItems));
-                    var outerItems = textItems.Where(t => !fracIds.Contains(t)).ToList();
-
-                    // Rút gọn phân số khi tử và mẫu là các số hoặc biểu thức đa thức đơn giản
-                    bool isSimpleNum = numItems.Count > 0 && numItems.Count <= 10 && numItems.All(t => Regex.IsMatch(t.Text, @"^[0-9a-zA-Z\+\-\.\s]+$"));
-                    bool isSimpleDen = denItems.Count > 0 && denItems.Count <= 10 && denItems.All(t => Regex.IsMatch(t.Text, @"^[0-9a-zA-Z\+\-\.\s]+$"));
-
-                    if (isSimpleNum && isSimpleDen)
+                    if (numItems.Count > 0 && denItems.Count > 0)
                     {
-                        string numText = string.Join("", numItems.Select(t => t.Text)).Trim();
-                        string denText = string.Join("", denItems.Select(t => t.Text)).Trim();
+                        string numText = FormatMathSubExpression(numItems, textItems[0].FontSize);
+                        string denText = FormatMathSubExpression(denItems, textItems[0].FontSize);
                         string fracLatex = $"\\frac{{{numText}}}{{{denText}}}";
+
+                        var fracIds = new HashSet<WmfSimpleTextItem>(numItems.Concat(denItems));
+                        var outerItems = textItems.Where(t => !fracIds.Contains(t)).ToList();
 
                         int baseFractionY = outerItems.Count > 0 ? outerItems[0].Y : (int)lineY;
                         int baseFractionFs = outerItems.Count > 0 ? outerItems[0].FontSize : textItems[0].FontSize;
 
-                        var newItems = new List<WmfSimpleTextItem>(outerItems)
+                        outerItems.Add(new WmfSimpleTextItem
                         {
-                            new WmfSimpleTextItem
-                            {
-                                Text = fracLatex,
-                                X = lineMinX,
-                                Y = baseFractionY,
-                                Width = Math.Max(10, lineMaxX - lineMinX),
-                                FontSize = baseFractionFs,
-                                IsSymbol = false,
-                                IsMtExtra = false
-                            }
-                        };
-                        textItems = newItems.OrderBy(t => t.X).ToList();
-                    }
-                    else if (numItems.Count == 0 && denItems.Count > 0 && denItems.Count <= 10 && denItems.All(t => Regex.IsMatch(t.Text, @"^[0-9a-zA-Z\+\-\.\s]+$")))
-                    {
-                        // Nhận diện Căn Thức Đơn Giản (\sqrt{radicand}) với gạch ngang line là nóc căn
-                        var radSignItem = outerItems.FirstOrDefault(t => (t.Text.Contains("\\sqrt") || t.Text == "√" || t.Text == "\u00D6") && Math.Abs(t.X + t.Width - lineMinX) <= 40);
-                        string radText = string.Join("", denItems.Select(t => t.Text)).Trim();
-                        string sqrtLatex = $"\\sqrt{{{radText}}}";
-
-                        var remainingOuter = outerItems.Where(t => t != radSignItem).ToList();
-                        remainingOuter.Add(new WmfSimpleTextItem
-                        {
-                            Text = sqrtLatex,
-                            X = radSignItem != null ? radSignItem.X : lineMinX - 10,
-                            Y = (int)lineY,
-                            Width = Math.Max(15, lineMaxX - (radSignItem != null ? radSignItem.X : lineMinX)),
-                            FontSize = textItems[0].FontSize,
+                            Text = fracLatex,
+                            X = lineMinX,
+                            Y = baseFractionY,
+                            Width = Math.Max(10, lineMaxX - lineMinX),
+                            FontSize = baseFractionFs,
                             IsSymbol = false,
                             IsMtExtra = false
                         });
-                        textItems = remainingOuter.OrderBy(t => t.X).ToList();
-                    }
-                    else
-                    {
-                        // Phân số hàm số đa tầng phức tạp -> Giữ nguyên Vector SVG
-                        return false;
+                        textItems = outerItems.OrderBy(t => t.X).ToList();
+                        lines.Remove(hLine);
+                        hasStructuralMath = true;
                     }
                 }
-                else if (lines.Count >= 2 && lines.Count <= 6)
+
+                // Nếu vẫn còn đường nét lạ không giải mã được sau khi xử lý phân số/căn thức
+                if (lines.Count > 2)
                 {
-                    // 3. Nhận diện Căn Thức Đa Nét (Radical Expression gồm đường nóc căn và các nét vấu căn)
-                    var roofCandidate = lines
-                        .Where(l => Math.Abs(l.y1 - l.y2) <= 8 && Math.Abs(l.x2 - l.x1) >= 20)
-                        .OrderByDescending(l => Math.Abs(l.x2 - l.x1))
-                        .FirstOrDefault();
-
-                    if (roofCandidate.x1 != 0 || roofCandidate.x2 != 0 || roofCandidate.y1 != 0 || roofCandidate.y2 != 0)
-                    {
-                        int roofMinX = Math.Min(roofCandidate.x1, roofCandidate.x2);
-                        int roofMaxX = Math.Max(roofCandidate.x1, roofCandidate.x2);
-                        double roofY = (roofCandidate.y1 + roofCandidate.y2) / 2.0;
-
-                        // Các đường còn lại phải là nét vấu căn nằm ở bên trái
-                        var otherLines = lines.Where(l => !(l.x1 == roofCandidate.x1 && l.y1 == roofCandidate.y1 && l.x2 == roofCandidate.x2 && l.y2 == roofCandidate.y2)).ToList();
-                        bool allOthersAreVTick = otherLines.All(l => Math.Min(l.x1, l.x2) <= roofMinX + 35);
-
-                        if (allOthersAreVTick)
-                        {
-                            // Tách các ký tự dưới nóc căn (radicand)
-                            var radItems = textItems.Where(t => t.Y > roofY - 10 && t.X >= roofMinX - 35 && (t.X + Math.Min(t.Width, (int)(t.FontSize * 0.75f)) / 2) <= roofMaxX + 45).OrderBy(t => t.X).ToList();
-                            var radSet = new HashSet<WmfSimpleTextItem>(radItems);
-                            var outsideItems = textItems.Where(t => !radSet.Contains(t)).ToList();
-
-                            if (radItems.Count > 0 && radItems.Count <= 10 && radItems.All(t => Regex.IsMatch(t.Text, @"^[0-9a-zA-Z\+\-\.\s\(\)]+$")))
-                            {
-                                string radText = string.Join("", radItems.Select(t => t.Text)).Trim();
-                                string sqrtLatex = $"\\sqrt{{{radText}}}";
-
-                                int baseBaselineY = outsideItems.Count > 0 ? outsideItems[0].Y : (radItems.Count > 0 ? radItems[0].Y : (int)roofY);
-                                var newItems = new List<WmfSimpleTextItem>(outsideItems)
-                                {
-                                    new WmfSimpleTextItem
-                                    {
-                                        Text = sqrtLatex,
-                                        X = roofMinX,
-                                        Y = baseBaselineY,
-                                        Width = Math.Max(20, roofMaxX - roofMinX),
-                                        FontSize = textItems[0].FontSize,
-                                        IsSymbol = false,
-                                        IsMtExtra = false
-                                    }
-                                };
-                                textItems = newItems.OrderBy(t => t.X).ToList();
-                            }
-                            else
-                            {
-                                return false;
-                            }
-                        }
-                        else
-                        {
-                            return false;
-                        }
-                    }
-                    else
-                    {
-                        return false;
-                    }
+                    return false;
                 }
 
                 // 4. Nhận diện và gom Cụm Dấu Ngoặc Cao Nhiều Tầng (MathType Delimiter Pieces \xE6..\xE8, \xF6..\xF8)
@@ -1962,6 +1934,7 @@ namespace AegisQuiz.Infrastructure.Services
                             });
                         }
                         textItems = collapsedItems;
+                        hasStructuralMath = true;
                     }
                 }
 
@@ -1975,6 +1948,10 @@ namespace AegisQuiz.Infrastructure.Services
 
                 // Kiểm tra độ phân tán trục Y theo tỷ lệ cấu hình động
                 float maxDeltaYRatio = settings.SimplifierMaxDeltaYRatio > 0 ? Math.Max(0.70f, settings.SimplifierMaxDeltaYRatio) : 0.70f;
+                if (hasStructuralMath)
+                {
+                    maxDeltaYRatio = Math.Max(maxDeltaYRatio, 2.50f); // Nới lỏng độ phân tán Y cho công thức đa tầng
+                }
                 int minY = sortedItems.Min(t => t.Y);
                 int maxY = sortedItems.Max(t => t.Y);
                 if (maxY - minY > baseFs * maxDeltaYRatio)
@@ -2081,6 +2058,68 @@ namespace AegisQuiz.Infrastructure.Services
             {
                 return false;
             }
+        }
+
+        /// <summary>
+        /// [Giai Đoạn 3] Định dạng biểu thức toán con (tử số, mẫu số, biểu thức dưới căn)
+        /// Bảo toàn số mũ (^{...}), chỉ số dưới (_{...}) và ghép nối theo trật tự hoành độ X.
+        /// </summary>
+        private static string FormatMathSubExpression(List<WmfSimpleTextItem> items, int baseFs)
+        {
+            if (items == null || items.Count == 0) return string.Empty;
+            var sorted = items.OrderBy(t => t.X).ToList();
+            if (sorted.Count == 1) return sorted[0].Text;
+
+            var ys = sorted.Select(t => t.Y).OrderBy(y => y).ToList();
+            int medianY = ys[ys.Count / 2];
+
+            var sb = new StringBuilder();
+            bool inSup = false;
+            bool inSub = false;
+
+            for (int i = 0; i < sorted.Count; i++)
+            {
+                var item = sorted[i];
+
+                bool isSup = (medianY - item.Y) >= baseFs * 0.20f && item.FontSize <= baseFs * 0.85f;
+                bool isSub = (item.Y - medianY) >= baseFs * 0.15f && item.FontSize <= baseFs * 0.85f;
+
+                if (item.Text.StartsWith("\\frac") || item.Text.StartsWith("\\sqrt") || item.Text.StartsWith("\\begin") || item.Text.StartsWith("\\overrightarrow"))
+                {
+                    isSup = false;
+                    isSub = false;
+                }
+
+                if (isSup)
+                {
+                    if (!inSup)
+                    {
+                        if (inSub) { sb.Append('}'); inSub = false; }
+                        sb.Append("^{");
+                        inSup = true;
+                    }
+                    sb.Append(item.Text);
+                }
+                else if (isSub)
+                {
+                    if (!inSub)
+                    {
+                        if (inSup) { sb.Append('}'); inSup = false; }
+                        sb.Append("_{");
+                        inSub = true;
+                    }
+                    sb.Append(item.Text);
+                }
+                else
+                {
+                    if (inSup) { sb.Append('}'); inSup = false; }
+                    if (inSub) { sb.Append('}'); inSub = false; }
+                    sb.Append(item.Text);
+                }
+            }
+
+            if (inSup || inSub) sb.Append('}');
+            return sb.ToString().Trim();
         }
 
         private abstract class WmfGdiObj { }

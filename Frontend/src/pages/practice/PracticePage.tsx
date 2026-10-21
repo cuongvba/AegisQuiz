@@ -157,17 +157,27 @@ export function PracticePage() {
     setSubmitted(false);
     setHasStarted(true);
     setSecondsLeft(wrongQuestions.length * 90);
+    setExpiredQuestions({});
+
+    // Reset thời gian từng câu hỏi một cách trọn vẹn
+    const perQuestion: Record<string, number> = {};
+    for (const q of wrongQuestions) {
+      if (q.durationSec > 0) {
+        perQuestion[q.id] = Math.max(1, q.durationSec);
+      }
+    }
+    setQuestionSecondsLeft(perQuestion);
+    setFlaggedQuestions({});
+    setIsGlobalHintActive(false);
     setKidStreak(0);
-    setKidFeedback(lang === 'vi' ? '🔥 Bắt đầu phiên Chinh Phục Lỗi Sai! Cố lên bạn ơi!' : '🔥 Starting Mistake Retest! You got this!');
+    setKidFeedback(t('retestMistakesBanner') || '🔥 Bắt đầu phiên Chinh Phục Lỗi Sai! Cố lên bạn ơi!');
   };
 
   const handleGoBack = () => {
     if (hasStarted) {
       if (isWorkingSession) {
         const confirmExit = window.confirm(
-          lang === 'vi'
-            ? 'Bạn có chắc chắn muốn thoát khỏi phòng luyện thi và quay lại màn hình thiết lập? Tiến trình làm bài chưa nộp sẽ bị mất.'
-            : 'Are you sure you want to exit the practice session and return to the setup screen? Your unsubmitted progress will be lost.'
+          t('exitPracticeConfirm') || 'Bạn có chắc chắn muốn thoát khỏi phòng luyện thi và quay lại màn hình thiết lập? Tiến trình làm bài chưa nộp sẽ bị mất.'
         );
         if (!confirmExit) return;
       }
@@ -180,9 +190,7 @@ export function PracticePage() {
   const handleBackToDashboard = () => {
     if (isWorkingSession) {
       const confirmExit = window.confirm(
-        lang === 'vi'
-          ? 'Bạn có chắc chắn muốn thoát và quay lại Bảng điều khiển? Tiến trình làm bài chưa nộp sẽ bị mất.'
-          : 'Are you sure you want to exit and return to the Dashboard? Your unsubmitted progress will be lost.'
+        t('exitDashboardConfirm') || 'Bạn có chắc chắn muốn thoát và quay lại Bảng điều khiển? Tiến trình làm bài chưa nộp sẽ bị mất.'
       );
       if (!confirmExit) return;
     }
@@ -372,6 +380,7 @@ export function PracticePage() {
 
   useEffect(() => {
     if (!hasStarted || submitted || !currentQuestion) return;
+    if (sessionConfig?.enableQuestionTimer === false) return;
     if (currentQuestion.durationSec <= 0) return;
     if (expiredQuestions[currentQuestion.id]) return;
 
@@ -778,7 +787,7 @@ export function PracticePage() {
                       answer={answers[q.id]}
                       onAnswerChange={updateAnswer}
                       disabled={Boolean(expiredQuestions[q.id])}
-                      questionSecondsLeft={q.durationSec > 0 ? (questionSecondsLeft[q.id] ?? q.durationSec) : null}
+                      questionSecondsLeft={sessionConfig?.enableQuestionTimer !== false && q.durationSec > 0 ? (questionSecondsLeft[q.id] ?? q.durationSec) : null}
                       showHint={isGlobalHintActive}
                       t={t}
                     />
@@ -791,7 +800,7 @@ export function PracticePage() {
                     answer={answers[currentQuestion.id]}
                     onAnswerChange={updateAnswer}
                     disabled={Boolean(expiredQuestions[currentQuestion.id])}
-                    questionSecondsLeft={currentQuestion.durationSec > 0 ? (questionSecondsLeft[currentQuestion.id] ?? currentQuestion.durationSec) : null}
+                    questionSecondsLeft={sessionConfig?.enableQuestionTimer !== false && currentQuestion.durationSec > 0 ? (questionSecondsLeft[currentQuestion.id] ?? currentQuestion.durationSec) : null}
                     showHint={isStudyMode && isGlobalHintActive}
                     t={t}
                   />

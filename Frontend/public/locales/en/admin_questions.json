@@ -1,0 +1,139 @@
+{
+  "title": "Question Bank",
+  "subtitle": "Comprehensive exam repository governance, automated ingestion, and topic hierarchies.",
+  "stats": {
+    "questionsCount": "{{count}} questions",
+    "topicsCount": "{{count}} topics",
+    "missingAnswers": "{{count}} missing answers",
+    "filterMissing": "(Filter now)",
+    "unfilterMissing": "(Clear filter)"
+  },
+  "roles": {
+    "admin": "Admin",
+    "viewer": "Viewer"
+  },
+  "actions": {
+    "hierarchyAndDomain": "Hierarchy & Domains",
+    "addTopic": "+ Topic",
+    "importExam": "Import Exam",
+    "uploadFiles": "Upload Word / PDF / Excel",
+    "uploadFilesDesc": "Auto-parse & extract rubric",
+    "cognitiveStudio": "Cognitive Studio",
+    "cognitiveStudioDesc": "Multi-sheet inspection & AI Copilot",
+    "splitScreenStudio": "Split-Screen Studio (Sync)",
+    "splitScreenStudioDesc": "Real-time dual-viewport extraction 60fps",
+    "addQuestion": "Add Question",
+    "manualCompose": "Manual Authoring",
+    "manualComposeDesc": "Create question with standard rubric",
+    "aiGenerate": "Generate with AI",
+    "aiGenerateDesc": "Extract from documents via Gemini",
+    "refresh": "Refresh ↻"
+  },
+  "dropzone": {
+    "dragDropPrefix": "Drag and drop",
+    "dragDropSuffix": "here or click to parse questions",
+    "description": "Auto-detect exam structures, LaTeX formulas, MathType WMF, and rich tables",
+    "chooseFile": "Choose File...",
+    "studioButton": "Studio v3.0"
+  },
+  "tabs": {
+    "questions": "Question Bank",
+    "topics": "Topic Management",
+    "rules": "CIG Rules & Sandbox",
+    "questionsCardTitle": "Assessment Question Repository",
+    "topicsCardTitle": "System Topic Taxonomies"
+  },
+  "filters": {
+    "searchQuestion": "Search (type #tag or keyword)",
+    "searchQuestionPlaceholder": "Type #tag or keyword...",
+    "searchTopic": "Search Topic",
+    "searchTopicPlaceholder": "Search by name, description or code...",
+    "industryDomain": "🌐 Industry / Domain",
+    "allDomains": "All Industries",
+    "topicFilter": "Filter by Topic",
+    "allTopics": "All Topics",
+    "questionType": "Question Type",
+    "allTypes": "All Types",
+    "answerStatus": "Answer Status",
+    "allQuestions": "All Questions",
+    "missingAnswersOnly": "Missing Answer Configuration",
+    "questionRange": "Question Range (Index)",
+    "rangeFrom": "From",
+    "rangeTo": "To",
+    "rangeSelect": "Select",
+    "filteringByTag": "Filtering by tag:",
+    "removeTagFilter": "Clear tag filter"
+  },
+  "domains": {
+    "EDUCATION": "🎓 General Education",
+    "BANKING": "🏦 Banking & Finance",
+    "HEALTHCARE": "🏥 Healthcare & Clinical",
+    "HSE": "🛡️ Health, Safety & Environment",
+    "GOV_DRIVING": "🚗 Driver License Certification",
+    "IT_SECURITY": "💻 IT & Cybersecurity",
+    "GENERAL": "🏢 General Enterprise"
+  },
+  "types": {
+    "SINGLE": "Single Choice",
+    "MULTI": "Multiple Choice",
+    "TRUE_FALSE": "True / False",
+    "MULTI_TRUE_FALSE": "Multi True / False (4 Statements)",
+    "SHORT_ANSWER": "Short Answer",
+    "FILL_BLANK": "Fill in the Blank",
+    "ORDERING": "Sequence Ordering",
+    "MATCHING": "Pair Matching",
+    "ESSAY": "Essay (AI Evaluation)"
+  },
+  "table": {
+    "stt": "#",
+    "content": "Question Content",
+    "type": "Type",
+    "topic": "Topic",
+    "difficulty": "Difficulty",
+    "actions": "Actions",
+    "topicCode": "Topic Code",
+    "topicName": "Topic Name",
+    "path": "Path",
+    "description": "Description",
+    "visibilityScope": "Visibility Scope",
+    "correctAnswerPrefix": "Correct Answer:",
+    "missingAnswerWarning": "⚠️ Missing correct answer configuration!",
+    "readContext": "View Context",
+    "sharedContext": "Shared Reading Passage",
+    "unassignedTopic": "Unassigned",
+    "noQuestionsFound": "No questions match the current filters.",
+    "noTopicsFound": "No topics match the current filters.",
+    "paginationDisplay": "Showing {{from}} to {{to}} of {{total}}"
+  },
+  "scopes": {
+    "team": "Team Tier",
+    "teamPrefix": "Team: {{name}}",
+    "personal": "Personal",
+    "community": "Organization-Wide",
+    "pendingTenant": "⚡ Pending Tenant Approval",
+    "approvedTenant": "✅ Organization Approved"
+  },
+  "batch": {
+    "selectedCount": "{{count}} selected",
+    "assignContext": "🔗 Assign Passage",
+    "assignTags": "🏷️ Assign Tags & Domain",
+    "removeContext": "Detach Passage",
+    "deleteSelected": "🗑️ Delete Selected",
+    "deleting": "Deleting...",
+    "deselectAll": "Deselect"
+  },
+  "tooltips": {
+    "viewDetails": "View Details",
+    "editQuestion": "Edit Question",
+    "aiSolve": "AI Auto-Solve",
+    "activate": "Activate",
+    "deactivate": "Deactivate",
+    "deleteQuestion": "Delete Question",
+    "deleteTopic": "Delete Topic",
+    "contributeTenant": "⚡ Contribute this question to Tenant Bank"
+  },
+  "pagination": {
+    "prev": "Prev",
+    "next": "Next"
+  }
+}

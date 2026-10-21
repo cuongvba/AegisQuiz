@@ -853,7 +853,9 @@ namespace AegisQuiz.API.Controllers
                     var domain = !string.IsNullOrWhiteSpace(firstItem.DomainCode) ? firstItem.DomainCode.Trim() : "GENERAL";
                     var topicDesc = !string.IsNullOrWhiteSpace(firstItem.TopicDescription)
                         ? firstItem.TopicDescription
-                        : $"{topicName} | Số lượng: {group.Count()} câu hỏi";
+                        : (!string.IsNullOrWhiteSpace(parentName) 
+                            ? $"{topicName} | Đường dẫn: {parentName}" 
+                            : $"{topicName} ({domain})");
 
                     // 1. Xử lý Chủ đề cha (Parent Topic) nếu có
                     Guid? parentId = null;

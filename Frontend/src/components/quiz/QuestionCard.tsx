@@ -200,14 +200,34 @@ export function QuestionCard({
       </div>
 
       {/* Multimodal Media (Audio / Image) */}
-      {((question.contentType && question.contentType !== 'text') || (question.questionMediaType && question.questionMediaType !== 'text')) && (
-        <div className="mt-4 rounded-2xl overflow-hidden border border-slate-200 bg-slate-50 p-2 shadow-inner">
-          <MediaRenderer 
-            url={question.questionMediaUrl || question.content} 
-            mediaType={question.contentType || question.questionMediaType} 
-          />
-        </div>
-      )}
+      {(() => {
+        const mediaUrl = question.questionMediaUrl || question.payload?.imageUrl || question.payload?.mediaUrl;
+        if (!mediaUrl || !mediaUrl.trim()) return null;
+
+        const isImage = (
+          question.contentType === 'image' ||
+          question.questionMediaType === 'image' ||
+          /data:image|\.png|\.jpg|\.jpeg|\.webp|\.svg|\.gif/i.test(mediaUrl) ||
+          mediaUrl.startsWith('data:')
+        );
+
+        return (
+          <div className="mt-4 rounded-2xl overflow-hidden border border-slate-200 bg-slate-50 p-2 shadow-inner flex items-center justify-center">
+            {isImage ? (
+              <img
+                src={mediaUrl}
+                alt="Question Illustration"
+                className="max-h-56 w-auto object-contain rounded-xl shadow-xs bg-white p-1"
+              />
+            ) : (
+              <MediaRenderer 
+                url={mediaUrl} 
+                mediaType={question.contentType || question.questionMediaType || 'image'} 
+              />
+            )}
+          </div>
+        );
+      })()}
 
       {/* Interactive Micro-Widget Registry Body (Lazy Loaded & OCP Isolated) */}
       <div className="mt-6">

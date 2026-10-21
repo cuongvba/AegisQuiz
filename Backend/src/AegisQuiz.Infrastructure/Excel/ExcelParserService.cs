@@ -570,7 +570,9 @@ namespace AegisQuiz.Infrastructure.Excel
                 sheetPreview.QuestionCount = sheetPreview.Questions.Count;
                 if (sheetPreview.QuestionCount > 0)
                 {
-                    var finalDesc = $"{topicName} | Đường dẫn: {parentTopicName} | Số lượng: {sheetPreview.QuestionCount} câu hỏi";
+                    var finalDesc = !string.IsNullOrWhiteSpace(parentTopicName)
+                        ? $"{topicName} | Đường dẫn: {parentTopicName}"
+                        : topicName;
                     sheetPreview.DetectedTopicDescription = finalDesc;
                     foreach (var q in sheetPreview.Questions)
                     {

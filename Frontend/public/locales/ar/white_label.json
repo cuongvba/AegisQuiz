@@ -1,0 +1,29 @@
+{
+  "title": "تخصيص الهوية التجارية للشركات (White-Labeling)",
+  "subtitle": "تكوين هوية العلامة التجارية، ولوحة الألوان المختارة، ورموز CSS الديناميكية الموجهة بنسبة 100% بقاعدة البيانات",
+  "brandIdentity": "هوية العلامة التجارية",
+  "organizationName": "اسم المؤسسة / العلامة التجارية",
+  "logoUrl": "رابط شعار المؤسسة",
+  "logoPlaceholder": "https://company.com/logo.svg",
+  "customDomain": "النطاق المخصص (Custom Domain)",
+  "domainPlaceholder": "exam.yourcompany.com",
+  "colorSystem": "نظام الألوان ورموز التصميم",
+  "primaryColor": "اللون الأساسي (Primary)",
+  "secondaryColor": "اللون الثانوي (Secondary)",
+  "accentColor": "لون التمييز (Accent)",
+  "borderRadius": "استدارة الحواف (Border Radius)",
+  "fontFamily": "خط النظام (Font Family)",
+  "previewHeader": "معاينة مرئية مباشرة (زمن استجابة 0 مللي ثانية)",
+  "sampleQuizCardTitle": "بطاقة اختبار تجريبية للمعاينة",
+  "sampleQuizCardDesc": "ستعتمد واجهة بيئة اختبار الطلاب والمرشحين على الفور ألوان وخطوط مؤسستك دون الحاجة لإعادة نشر التعليمات البرمجية.",
+  "sampleButton": "تسليم الاختبار التجريبي",
+  "saveChanges": "حفظ إعدادات الهوية",
+  "resetDefault": "استعادة الإعدادات الافتراضية",
+  "savedSuccess": "تم تطبيق وحفظ رموز الهوية التجارية بنجاح على مستوى النظام بأكمله!",
+  "paywall": {
+    "title": "ميزة التخصيص الكامل مخصصة حصرياً لباقات Enterprise و Global",
+    "description": "لإعداد نطاق مخصص، وإزالة شعار AegisQuiz، وتطبيق رموز الهوية الخاصة بشركتك، يرجى الترقية إلى باقة Enterprise.",
+    "upgradeNow": "الترقية إلى Enterprise",
+    "contactSales": "التواصل مع إدارة الشركات"
+  }
+}

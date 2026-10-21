@@ -1,0 +1,73 @@
+{
+  "title": "クリエイター Zen Studio",
+  "subtitle": "教育者および研修専門家のために設計されたミニマリストデジタル空間",
+  "trialBanner": {
+    "title": "教育者パートナーシップ — 90日間完全無料トライアル",
+    "daysLeft": "プレミアム特典の残り期間：{{days}}日",
+    "referralLabel": "紹介コード：",
+    "copyReferral": "コードをコピー",
+    "copied": "コピー完了！",
+    "revShare": "80/20 レベニューシェア規約 ＆ カルマ蓄積"
+  },
+  "dropZone": {
+    "title": "Word試験ファイル (.docx) をここにドラッグ＆ドロップ",
+    "hint": "標準的なWord問題形式、MathType/LaTeX数式、画像をネイティブサポート",
+    "processing": "試験問題を解析し、認知的タクソノミーマトリックスを分析中...",
+    "browseButton": "またはファイルを選択",
+    "dropActive": "ファイルをドロップしてリアルタイム試験ルームを開設！"
+  },
+  "preview": {
+    "title": "プレビューと認知的CAS重複排除",
+    "totalQuestions": "総問題数：{{count}}",
+    "casDeduplication": "CAS重複排除：ストレージを {{rate}}% 節約",
+    "duplicateBadge": "CAS再利用（重複排除済み）",
+    "uniqueBadge": "新規オリジナル問題",
+    "questionNum": "第{{num}}問",
+    "correctAnswer": "正解：",
+    "explanation": "解説・根拠：",
+    "changeSubject": "科目・マトリックスを変更"
+  },
+  "taxonomy": {
+    "detected": "AI認識タクソノミー：",
+    "standard": "標準規格：",
+    "bloomLevel": "認知レベル：",
+    "confidence": "信頼度："
+  },
+  "launcher": {
+    "launchButton": "1クリックでリアルタイム試験ルームを開設",
+    "modalTitle": "リアルタイム試験ルームが開設されました！",
+    "modalSubtitle": "生徒はQRコードをスキャンするか、6桁のPINを入力して即時参加できます",
+    "pinLabel": "参加用PINコード",
+    "copyPin": "PINをコピー",
+    "copyLink": "リンクをコピー",
+    "openArena": "教室モニタリング画面へ",
+    "close": "閉じる"
+  },
+  "actions": {
+    "reset": "別の試験ファイルをアップロード",
+    "errorUpload": "アップロードに失敗しました。Word (.docx) ファイルをご確認ください"
+  },
+  "editor": {
+    "edit": "編集",
+    "save": "変更を保存",
+    "cancel": "キャンセル",
+    "editedBadge": "編集済み",
+    "content": "問題文（$数式対応）",
+    "options": "選択肢（文字をクリックして正解を設定）",
+    "markCorrect": "正解に設定",
+    "addOption": "選択肢を追加",
+    "removeOption": "選択肢を削除",
+    "answer": "正解／数値",
+    "explanation": "詳細な解説",
+    "addExplanation": "解説を追加"
+  },
+  "pagination": {
+    "label": "問題ナビゲーション",
+    "prev": "前のページ",
+    "next": "次のページ",
+    "range": "{{from}}–{{to}} / {{total}} 問",
+    "jumpTo": "問題番号へ…",
+    "perPage": "表示数",
+    "edited": "{{count}} 問編集済み"
+  }
+}

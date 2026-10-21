@@ -23,10 +23,11 @@ namespace AegisQuiz.Application.Interfaces
         ExcelImportPreviewResult ParseExcelFileToPreview(Stream fileStream, string? fileName = null);
     }
 
-    /// <summary>Kết quả preview toàn diện từ một file Excel theo kiến trúc UCIS</summary>
-    public class ExcelImportPreviewResult
+    /// <summary>Kết quả preview toàn diện từ một file đề thi (Excel, DOCX, PDF) theo kiến trúc Universal Ingestion</summary>
+    public class UniversalImportPreviewResult
     {
         public string FileName { get; set; } = string.Empty;
+        public string IngestionSource { get; set; } = "EXCEL"; // EXCEL, DOCX, PDF, OCR, AI
         public int TotalSheets { get; set; }
         public int TotalQuestions { get; set; }
         public List<ExcelSheetPreview> Sheets { get; set; } = new();
@@ -40,9 +41,9 @@ namespace AegisQuiz.Application.Interfaces
         public string DetectedDomainCode { get; set; } = "GENERAL";
         public string? DetectedTargetLevel { get; set; }
         public string? DetectedAssessmentPurpose { get; set; }
-        public string? DetectedIssuingOrg { get; set; }
-        public int? DetectedBenchmarkYear { get; set; }
-        public string? DetectedBenchmarkStandard { get; set; }
+        public string? DetectedIssuingOrg { get; set; } = "GDDT";
+        public int? DetectedBenchmarkYear { get; set; } = 2026;
+        public string? DetectedBenchmarkStandard { get; set; } = "CIG V3";
         public List<string> DetectedTags { get; set; } = new();
 
         // [Universal Exam Deduplication & Provenance Summary]
@@ -50,6 +51,14 @@ namespace AegisQuiz.Application.Interfaces
         public int UniqueCount { get; set; }
         public double DeduplicationRatePercentage => TotalQuestions > 0 ? System.Math.Round((double)DuplicateCount / TotalQuestions * 100, 1) : 0;
         public List<ExamClusterMatch> DetectedExamClusters { get; set; } = new();
+
+        // [Universal Question List] Danh sách câu hỏi phẳng (phục vụ DOCX, PDF, hoặc Excel tổng hợp)
+        public List<DocxImportPreviewDto> Questions { get; set; } = new();
+    }
+
+    /// <summary>Kết quả preview toàn diện từ một file Excel theo kiến trúc UCIS (kế thừa UniversalImportPreviewResult)</summary>
+    public class ExcelImportPreviewResult : UniversalImportPreviewResult
+    {
     }
 
     /// <summary>Thông tin thanh tra và câu hỏi trong một sheet Excel</summary>
@@ -145,8 +154,25 @@ namespace AegisQuiz.Application.Interfaces
         public string Explanation { get; set; } = string.Empty;
     }
 
-    // DTO cho chức năng nhập câu hỏi từ tệp Docx / PDF / AI Generator
-    public class DocxImportPreviewDto
+    /// <summary>
+    /// [Universal Cognitive Sub-Item / Statement / Stepped Essay Entity]
+    /// Thực thể phân cấp Ý con / Mệnh đề Đúng-Sai / Bước giải tự luận độc lập
+    /// </summary>
+    public class QuestionSubItemDto
+    {
+        public string Key { get; set; } = string.Empty;             // "a", "b", "c", "d" hoặc "1", "2"
+        public string Content { get; set; } = string.Empty;         // Nội dung ý hỏi / mệnh đề con
+        public string? ExpectedAnswer { get; set; }                 // "Đúng" / "Sai" / Giá trị đáp số (nếu có)
+        public string? Explanation { get; set; }                    // Lời giải ĐỘC LẬP của ý này (Tư liệu kịch bản hoạt họa / video storyboard)
+        public decimal? MaxScore { get; set; }                      // Biểu điểm riêng của ý (nếu là tự luận phân bước)
+        public int OrderIndex { get; set; }
+    }
+
+    /// <summary>
+    /// [Universal Cognitive Ingestion DTO]
+    /// DTO nhận thức toàn năng dùng chung cho mọi động cơ bóc tách đề thi (Excel, Word, PDF, Scanned OCR, AI Generator)
+    /// </summary>
+    public class UniversalQuestionPreviewDto
     {
         public string TempId { get; set; } = Guid.NewGuid().ToString();
         public string Content { get; set; } = string.Empty;
@@ -154,8 +180,14 @@ namespace AegisQuiz.Application.Interfaces
         public string ContentType { get; set; } = "text"; // text | image
         public string OptionType { get; set; } = "text"; // text | image
         public List<string> Options { get; set; } = new();
-        public string SuggestedAnswer { get; set; } = string.Empty; // Gợi ý đáp án (ví dụ: "1", "2")
-        public string AiExplanation { get; set; } = string.Empty; // Giải thích / căn cứ pháp lý từ Gemini
+
+        // [Adaptive Polymorphic Hierarchy: Tầng Ý Phân Cấp (Optional Resolution)]
+        public List<QuestionSubItemDto> SubItems { get; set; } = new();
+        public bool HasSubItems => SubItems != null && SubItems.Count > 0;
+        public bool HasGranularExplanations => HasSubItems && SubItems.Any(s => !string.IsNullOrWhiteSpace(s.Explanation));
+
+        public string SuggestedAnswer { get; set; } = string.Empty; // Gợi ý đáp án (ví dụ: "1", "2" hoặc "a) Đúng, b) Sai...")
+        public string AiExplanation { get; set; } = string.Empty; // Lời giải toàn văn / giải thích chung
         public string TopicCode { get; set; } = "PARTY_BUILDING";
         public string? TopicName { get; set; }
         public string? ParentTopicCode { get; set; }
@@ -175,9 +207,9 @@ namespace AegisQuiz.Application.Interfaces
         public List<string> Tags { get; set; } = new();
         public string? TargetLevel { get; set; }
         public string? AssessmentPurpose { get; set; }
-        public string? IssuingOrg { get; set; }
-        public int? BenchmarkYear { get; set; }
-        public string? BenchmarkStandard { get; set; }
+        public string? IssuingOrg { get; set; } = "GDDT";
+        public int? BenchmarkYear { get; set; } = 2026;
+        public string? BenchmarkStandard { get; set; } = "CIG V3";
 
         // [Universal Extended Fields: Sư phạm, Khảo thí & Đa phương tiện]
         public string? GradingRubric { get; set; } // Tiêu chí chấm điểm / Barem điểm
@@ -209,11 +241,48 @@ namespace AegisQuiz.Application.Interfaces
         public List<ProvenanceAppearance> ExistingAppearances { get; set; } = new();
     }
 
+    /// <summary>
+    /// [Legacy Compatibility Alias]
+    /// Giữ nguyên DocxImportPreviewDto kế thừa từ UniversalQuestionPreviewDto để đảm bảo 100% tương thích ngược
+    /// </summary>
+    public class DocxImportPreviewDto : UniversalQuestionPreviewDto
+    {
+    }
+
     public interface IDocxParserService
     {
         List<DocxImportPreviewDto> ParseDocxFile(Stream fileStream);
         List<DocxImportPreviewDto> ParseDocxFile(Stream fileStream, DynamicDomainContext? dynamicContext);
         string ExtractTextFromDocx(Stream fileStream);
+    }
+
+    /// <summary>
+    /// [SGI Engine] Hợp đồng quản trị phạm vi nhận thức khảo thí đa tầng
+    /// </summary>
+    public interface ICognitiveScopeManager
+    {
+        string CurrentMacroSection { get; }
+        string? CurrentSectionTitle { get; }
+        IReadOnlyList<DirectiveScopeWindow> ScopeWindows { get; }
+        IReadOnlyList<ContextStimulusWindow> ContextWindows { get; }
+
+        void RegisterMacroSection(string sectionKey, string? sectionTitle);
+        void RegisterScopeDirective(DirectiveScopeWindow window);
+        void RegisterScopeDirective(int startQ, int endQ, string questionType, string? rawDirective, double confidence = 1.0);
+        void RegisterContextPassage(int startQ, int endQ, string content, string? title = null, string? contextId = null);
+        string ResolveExpectedQuestionType(int qNum, string? fallbackType = null);
+        ContextStimulusWindow? ResolveContextForQuestion(int qNum);
+    }
+
+    /// <summary>
+    /// [CIG v4.0 Finite State Machine] Interface máy trạng thái bóc tách và phân loại câu hỏi đề thi
+    /// </summary>
+    public interface IDocxStateMachineClassifier
+    {
+        List<DocxImportPreviewDto> ParseParagraphList(
+            List<string> paragraphs,
+            Dictionary<string, Dictionary<string, Dictionary<int, string>>>? answerKeyMap = null,
+            DynamicDomainContext? dynamicContext = null);
     }
 
 

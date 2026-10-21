@@ -34,10 +34,10 @@ export function PracticeSetup({ topics, domainGroups, onStart, forcedDomainCode,
   const [topicConfigs, setTopicConfigs] = useState<PracticeTopicConfig[]>([]);
   const [shuffleOptions, setShuffleOptions] = useState(true);
   const [shuffleQuestions, setShuffleQuestions] = useState(true);
+  const [enableQuestionTimer, setEnableQuestionTimer] = useState(false);
   const [timeLimitMin, setTimeLimitMin] = useState(0);
   const [autoNextOnTimeout, setAutoNextOnTimeout] = useState(true);
   const [activePreset, setActivePreset] = useState<ExamCategoryPreset | null>(null);
-
 
   const handleSelectMultipleTopics = (keys: string[], select: boolean) => {
     if (select) {
@@ -133,6 +133,7 @@ export function PracticeSetup({ topics, domainGroups, onStart, forcedDomainCode,
       shuffleQuestions: mode === 'kids' ? true : shuffleQuestions,
       timeLimitSec: mode === 'exam' ? Math.max(0, timeLimitMin) * 60 : 0,
       autoNextOnTimeout: mode === 'kids' ? true : autoNextOnTimeout,
+      enableQuestionTimer,
       onlyCritical: activePreset === 'gplx_fatal_only',
       preset: activePreset ?? undefined,
     });
@@ -158,8 +159,8 @@ export function PracticeSetup({ topics, domainGroups, onStart, forcedDomainCode,
 
           <div className="flex items-center gap-2">
             <div className="rounded-2xl border border-slate-200/80 bg-slate-50/80 px-4 py-2 text-xs font-bold text-slate-700 shadow-2xs">
-              <span className="text-slate-400 font-normal">Tổng chọn:</span>{' '}
-              <span className="text-cyan-700 font-black text-sm">{totalSelected}</span> câu hỏi
+              <span className="text-slate-400 font-normal">{t('selectedQuestions') || 'Tổng chọn'}:</span>{' '}
+              <span className="text-cyan-700 font-black text-sm">{totalSelected}</span> {t('questionsUnit') || 'câu hỏi'}
             </div>
           </div>
         </div>
@@ -195,6 +196,8 @@ export function PracticeSetup({ topics, domainGroups, onStart, forcedDomainCode,
         onShuffleOptionsChange={setShuffleOptions}
         shuffleQuestions={shuffleQuestions}
         onShuffleQuestionsChange={setShuffleQuestions}
+        enableQuestionTimer={enableQuestionTimer}
+        onEnableQuestionTimerChange={setEnableQuestionTimer}
         autoNextOnTimeout={autoNextOnTimeout}
         onAutoNextChange={setAutoNextOnTimeout}
         onStart={handleStart}

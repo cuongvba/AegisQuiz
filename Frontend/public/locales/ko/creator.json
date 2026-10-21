@@ -1,0 +1,73 @@
+{
+  "title": "크리에이터 Zen Studio",
+  "subtitle": "교육자 및 강사를 위해 특별히 설계된 미니멀 디지털 작업 공간",
+  "trialBanner": {
+    "title": "교육자 파트너십 — 90일 완전 무료 체험",
+    "daysLeft": "프리미엄 혜택 남은 기간: {{days}}일",
+    "referralLabel": "동료 추천 코드:",
+    "copyReferral": "코드 복사",
+    "copied": "복사 완료!",
+    "revShare": "80/20 수익 공유 정책 및 누적 카르마"
+  },
+  "dropZone": {
+    "title": "Word 시험지 파일 (.docx)을 여기에 끌어다 놓으세요",
+    "hint": "일반적인 Word 시험지 서식, MathType/LaTeX 수식, 이미지 완벽 지원",
+    "processing": "시험지를 추출하고 인지 분류 매트릭스를 분석하는 중입니다...",
+    "browseButton": "또는 컴퓨터에서 파일 선택",
+    "dropActive": "파일을 놓아 실시간 시험방을 바로 생성하세요!"
+  },
+  "preview": {
+    "title": "미리보기 및 인지적 CAS 중복 제거",
+    "totalQuestions": "총 문항 수: {{count}}",
+    "casDeduplication": "CAS 중복 제거: 스토리지 {{rate}}% 절약",
+    "duplicateBadge": "CAS 재사용 (중복 제거됨)",
+    "uniqueBadge": "신규 고유 문항",
+    "questionNum": "문항 {{num}}",
+    "correctAnswer": "정답:",
+    "explanation": "해설 / 근거:",
+    "changeSubject": "과목 / 매트릭스 변경"
+  },
+  "taxonomy": {
+    "detected": "AI 감지 분류체계:",
+    "standard": "표준 규격:",
+    "bloomLevel": "인지 단계:",
+    "confidence": "신뢰도:"
+  },
+  "launcher": {
+    "launchButton": "원클릭 실시간 시험방 시작",
+    "modalTitle": "실시간 시험방이 개설되었습니다!",
+    "modalSubtitle": "학생들이 모바일로 QR 코드를 스캔하거나 6자리 PIN을 입력하여 즉시 입장합니다",
+    "pinLabel": "입장 PIN 코드",
+    "copyPin": "PIN 복사",
+    "copyLink": "링크 복사",
+    "openArena": "교실 모니터링 화면으로 이동",
+    "close": "닫기"
+  },
+  "actions": {
+    "reset": "다른 시험지 업로드",
+    "errorUpload": "업로드에 실패했습니다. 올바른 Word (.docx) 파일인지 확인해주세요"
+  },
+  "editor": {
+    "edit": "수정",
+    "save": "변경 사항 저장",
+    "cancel": "취소",
+    "editedBadge": "수정됨",
+    "content": "문항 내용 ($수식 지원)",
+    "options": "보기 (문자를 눌러 정답 지정)",
+    "markCorrect": "정답으로 지정",
+    "addOption": "보기 추가",
+    "removeOption": "보기 삭제",
+    "answer": "정답 / 값",
+    "explanation": "상세 해설",
+    "addExplanation": "해설 추가"
+  },
+  "pagination": {
+    "label": "문항 탐색",
+    "prev": "이전 페이지",
+    "next": "다음 페이지",
+    "range": "{{from}}–{{to}} / {{total}} 문항",
+    "jumpTo": "문항 번호로 이동…",
+    "perPage": "페이지당",
+    "edited": "{{count}}개 수정됨"
+  }
+}

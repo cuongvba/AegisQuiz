@@ -5,6 +5,7 @@ interface DocxModalHeaderProps {
   processingDurationMs?: number | null;
   singleMultiCount: number;
   essayCount: number;
+  ingestionSource?: 'client_edge' | 'cloud_server' | 'cloud_fallback';
 }
 
 export function DocxModalHeader({
@@ -12,6 +13,7 @@ export function DocxModalHeader({
   processingDurationMs,
   singleMultiCount,
   essayCount,
+  ingestionSource = 'client_edge',
 }: DocxModalHeaderProps) {
   return (
     <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-800/80 pr-8 shrink-0">
@@ -31,7 +33,31 @@ export function DocxModalHeader({
       </div>
 
       <div className="flex items-center gap-2 text-xs">
-        {typeof processingDurationMs === 'number' && processingDurationMs >= 0 && (
+        {ingestionSource === 'client_edge' && (
+          <span
+            className="px-2.5 py-0.5 bg-purple-950/70 text-purple-300 border border-purple-500/40 rounded-lg text-[11px] font-bold flex items-center gap-1 shadow-sm"
+            title="Được bóc tách siêu tốc bằng RAM trình duyệt Client Edge"
+          >
+            ⚡ Edge Ingestion ({processingDurationMs ?? 0}ms)
+          </span>
+        )}
+        {ingestionSource === 'cloud_fallback' && (
+          <span
+            className="px-2.5 py-0.5 bg-amber-950/70 text-amber-300 border border-amber-500/40 rounded-lg text-[11px] font-bold flex items-center gap-1 shadow-sm"
+            title="Tự động chuyển tiếp lên Cloud Server vì cấu trúc tài liệu nâng cao"
+          >
+            ☁️ Cloud Fallback ({processingDurationMs ?? 0}ms)
+          </span>
+        )}
+        {ingestionSource === 'cloud_server' && (
+          <span
+            className="px-2.5 py-0.5 bg-blue-950/70 text-blue-300 border border-blue-500/40 rounded-lg text-[11px] font-bold flex items-center gap-1 shadow-sm"
+            title="Xử lý trên Cloud Server Engine"
+          >
+            ☁️ Cloud Server ({processingDurationMs ?? 0}ms)
+          </span>
+        )}
+        {typeof processingDurationMs === 'number' && processingDurationMs >= 0 && ingestionSource === undefined && (
           <span
             className="px-2.5 py-0.5 bg-emerald-950/70 text-emerald-300 border border-emerald-500/40 rounded-lg text-[11px] font-bold font-mono flex items-center gap-1"
             title="Tổng thời gian đọc và phân tích cấu trúc tệp"

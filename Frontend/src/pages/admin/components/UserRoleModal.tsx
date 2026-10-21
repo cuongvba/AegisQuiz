@@ -14,6 +14,9 @@ export interface AdminUserItem {
   phoneNumber?: string;
   avatarUrl?: string;
   role: string;
+  tenantId?: string;
+  tenantName?: string;
+  tenantCode?: string;
   orgUnitId?: string | null;
   orgUnitName?: string | null;
   orgUnitHierarchyPath?: string | null;
@@ -37,6 +40,8 @@ export interface OrgUnitFlatItem {
 interface UserRoleModalProps {
   user: AdminUserItem | null;
   orgUnits: OrgUnitFlatItem[];
+  tenants?: { id: string; name: string; code: string }[];
+  isSystemAdmin?: boolean;
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
@@ -80,11 +85,12 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
   ]
 };
 
-export function UserRoleModal({ user, orgUnits, isOpen, onClose, onSuccess }: UserRoleModalProps) {
+export function UserRoleModal({ user, orgUnits, tenants, isSystemAdmin, isOpen, onClose, onSuccess }: UserRoleModalProps) {
   if (!isOpen || !user) return null;
 
   const [role, setRole] = useState(user.role || AppRole.Learner);
   const [orgUnitId, setOrgUnitId] = useState(user.orgUnitId || '');
+  const [targetTenantId, setTargetTenantId] = useState(user.tenantId || '');
   const [subscriptionTier, setSubscriptionTier] = useState(user.subscriptionTier || 'FREE');
   const [isActive, setIsActive] = useState(user.isActive ?? true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -104,6 +110,7 @@ export function UserRoleModal({ user, orgUnits, isOpen, onClose, onSuccess }: Us
     if (user) {
       setRole(user.role || AppRole.Learner);
       setOrgUnitId(user.orgUnitId || '');
+      setTargetTenantId(user.tenantId || '');
       setSubscriptionTier(user.subscriptionTier || 'FREE');
       setIsActive(user.isActive ?? true);
       setErrorMessage(null);
@@ -129,6 +136,7 @@ export function UserRoleModal({ user, orgUnits, isOpen, onClose, onSuccess }: Us
       await api.put(`/api/admin/users/${user.id}`, {
         role,
         orgUnitId: orgUnitId || null,
+        targetTenantId: targetTenantId || null,
         subscriptionTier,
         isActive
       });
@@ -336,6 +344,34 @@ export function UserRoleModal({ user, orgUnits, isOpen, onClose, onSuccess }: Us
                 ))}
               </select>
             </div>
+
+            {/* Tenant Assignment (Cross-Tenant Hub for SystemAdmin) */}
+            {isSystemAdmin && tenants && tenants.length > 0 && (
+              <div className="sm:col-span-2 p-3.5 rounded-2xl bg-gradient-to-r from-purple-950/40 to-blue-950/40 border border-purple-500/30">
+                <label className="block text-xs font-bold text-purple-300 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                  <Building2 size={14} className="text-purple-400" />
+                  <span>Điều chuyển Tổ chức / Không gian (Cross-Tenant Transfer)</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-mono border border-purple-500/30">
+                    SystemAdmin Panopticon
+                  </span>
+                </label>
+                <select
+                  value={targetTenantId}
+                  onChange={(e) => setTargetTenantId(e.target.value)}
+                  className="w-full bg-slate-950 border border-purple-500/40 focus:border-purple-400 rounded-xl px-4 py-2.5 text-white text-xs focus:outline-none transition-all cursor-pointer font-medium"
+                >
+                  <option value="">-- Giữ nguyên Tổ chức / Không gian hiện tại --</option>
+                  {tenants.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.code.startsWith('p_') ? '👤 [Cá nhân]' : '🏢 [Tổ chức]'} {t.name} ({t.code})
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[11px] text-purple-300/70 mt-1.5">
+                  ⭐ Năng lực Quản trị Hệ thống Toàn Cục: Bạn có thể điều chuyển tài khoản này từ Không gian Cá nhân sang Không gian Doanh nghiệp/Trường học để tích hợp thi cử tập trung.
+                </p>
+              </div>
+            )}
 
             {/* Subscription Tier */}
             <div>

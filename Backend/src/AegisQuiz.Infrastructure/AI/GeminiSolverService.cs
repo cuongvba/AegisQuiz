@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Caching.Memory;
@@ -25,6 +26,7 @@ namespace AegisQuiz.Infrastructure.AI
     {
         private readonly string _apiKey;
         private readonly IMemoryCache _cache;
+        private readonly IVisionMathService? _visionMathService;
         private static readonly HttpClient _httpClient = new()
         {
             Timeout = TimeSpan.FromSeconds(60)
@@ -34,10 +36,11 @@ namespace AegisQuiz.Infrastructure.AI
         private static readonly TimeSpan CacheTtl = TimeSpan.FromHours(24);
         private const string CacheKeyPrefix = "gemini_solver_";
 
-        public GeminiSolverService(string apiKey, IMemoryCache cache)
+        public GeminiSolverService(string apiKey, IMemoryCache cache, IVisionMathService? visionMathService = null)
         {
             _apiKey = apiKey;
             _cache = cache;
+            _visionMathService = visionMathService;
         }
 
         public async Task<List<DocxImportPreviewDto>> AutoSolveQuestionsAsync(List<DocxImportPreviewDto> rawQuestions)
@@ -307,6 +310,65 @@ DATA:
 
             if (targetQuestions.Count == 0)
                 return questions;
+
+            // [Giai Đoạn 3] Ưu tiên sử dụng IVisionMathService (Multimodal Vision + HybridCache + Multi-provider)
+            if (_visionMathService != null)
+            {
+                var base64Regex = new Regex(@"data:(image/[a-zA-Z\+\-]+);base64,([A-Za-z0-9\+/=\r\n]+)", RegexOptions.Compiled);
+                bool anyConverted = false;
+
+                foreach (var q in targetQuestions)
+                {
+                    // Chuyển đổi công thức trong Options
+                    for (int i = 0; i < q.Options.Count; i++)
+                    {
+                        var match = base64Regex.Match(q.Options[i]);
+                        if (match.Success)
+                        {
+                            try
+                            {
+                                var mimeType = match.Groups[1].Value;
+                                var bytes = Convert.FromBase64String(match.Groups[2].Value);
+                                var latex = await _visionMathService.ConvertImageToLatexAsync(bytes, mimeType);
+                                if (!string.IsNullOrEmpty(latex))
+                                {
+                                    q.Options[i] = latex;
+                                    anyConverted = true;
+                                }
+                            }
+                            catch { }
+                        }
+                    }
+
+                    // Chuyển đổi công thức trong Content nếu có
+                    var contentMatches = base64Regex.Matches(q.Content);
+                    foreach (Match cm in contentMatches)
+                    {
+                        try
+                        {
+                            var mimeType = cm.Groups[1].Value;
+                            var bytes = Convert.FromBase64String(cm.Groups[2].Value);
+                            var latex = await _visionMathService.ConvertImageToLatexAsync(bytes, mimeType);
+                            if (!string.IsNullOrEmpty(latex))
+                            {
+                                q.Content = q.Content.Replace(cm.Value, latex);
+                                anyConverted = true;
+                            }
+                        }
+                        catch { }
+                    }
+
+                    if (anyConverted && !q.Options.Any(o => o.Contains("data:image/")))
+                    {
+                        q.OptionType = "text";
+                    }
+                }
+
+                if (anyConverted)
+                {
+                    return questions;
+                }
+            }
 
             if (isMockKey)
             {

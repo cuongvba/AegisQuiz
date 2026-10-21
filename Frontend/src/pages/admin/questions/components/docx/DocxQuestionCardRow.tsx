@@ -10,6 +10,8 @@ import {
   convertMultiTfToMulti 
 } from '../../../../../shared/lib/quiz/normalizers';
 
+import { DocxSubItemsList } from './DocxSubItemsList';
+
 interface DocxQuestionCardRowProps {
   item: any;
   idx: number;
@@ -27,7 +29,20 @@ interface DocxQuestionCardRowProps {
   onSetTagInputPerQ: (idx: number, val: string) => void;
   onOpenCreateTopicModal: (qIdx: number | null) => void;
   onOptionChange: (itemIdx: number, optIdx: number, val: string) => void;
+  onUpdateSubItem?: (qIdx: number, subIdx: number, field: string, value: any) => void;
 }
+
+const normalizeSingleAnswer = (ans?: string): string => {
+  if (!ans) return '';
+  const trimmed = ans.trim();
+  if (['1', '2', '3', '4', '5', '6', '7'].includes(trimmed)) return trimmed;
+  const match = trimmed.match(/\b([A-G])\b/i);
+  if (match) {
+    const code = match[1].toUpperCase().charCodeAt(0) - 64;
+    if (code >= 1 && code <= 7) return code.toString();
+  }
+  return trimmed;
+};
 
 export function DocxQuestionCardRow({
   item,
@@ -46,7 +61,24 @@ export function DocxQuestionCardRow({
   onSetTagInputPerQ,
   onOpenCreateTopicModal,
   onOptionChange,
+  onUpdateSubItem,
 }: DocxQuestionCardRowProps) {
+  const handleUpdateSubItem = (qIdx: number, subIdx: number, field: string, value: any) => {
+    if (onUpdateSubItem) {
+      onUpdateSubItem(qIdx, subIdx, field, value);
+    } else {
+      const nextSubItems = [...(item.subItems || [])];
+      nextSubItems[subIdx] = { ...nextSubItems[subIdx], [field]: value };
+      onUpdateItem(qIdx, 'subItems', nextSubItems);
+
+      if (field === 'expectedAnswer' && (item.questionType === 'TRUE_FALSE' || item.questionType === 'MULTI_TRUE_FALSE')) {
+        const sub = nextSubItems[subIdx];
+        const currentMap = parseMultiTfAnswer(item.suggestedAnswer);
+        const nextMap = { ...currentMap, [sub.key]: value === 'Đúng' };
+        onUpdateItem(qIdx, 'suggestedAnswer', serializeMultiTfAnswer(nextMap));
+      }
+    }
+  };
   return (
     <div className="bg-slate-950/40 border border-slate-800/60 rounded-2xl p-4 space-y-2.5 hover:border-slate-700/80 transition-all">
       {/* Question Card Header */}
@@ -113,6 +145,11 @@ export function DocxQuestionCardRow({
             className="bg-slate-900 border border-slate-800 rounded-lg px-2 py-0.5 text-[11px] text-slate-300 focus:outline-none focus:border-blue-500 cursor-pointer max-w-[140px] truncate"
           >
             {localTopics.map(t => <option key={t.id || t.code} value={t.code} className="bg-slate-900">{t.name} ({t.code})</option>)}
+            {item.topicCode && !localTopics.some(t => t.code.toUpperCase() === item.topicCode.toUpperCase()) && (
+              <option value={item.topicCode} className="bg-slate-900 text-amber-300 font-bold">
+                ✨ {item.topicName || item.topicCode} ({item.topicCode})
+              </option>
+            )}
             <option value="__CREATE_NEW__" className="text-amber-400 font-bold bg-slate-950">➕ Tạo mới...</option>
           </select>
 
@@ -309,8 +346,17 @@ export function DocxQuestionCardRow({
         )}
       </div>
 
+      {/* [SGI v5.6] Chùm Ý Con / Mệnh Đề Vi Mô (Sub-Items Hierarchy) */}
+      {item.subItems && item.subItems.length > 0 && (
+        <DocxSubItemsList
+          subItems={item.subItems}
+          questionIdx={idx}
+          onUpdateSubItem={handleUpdateSubItem}
+        />
+      )}
+
       {/* Phương Án Lựa Chọn */}
-      {item.questionType !== 'ESSAY' && item.options && item.options.length > 0 && (
+      {item.questionType !== 'ESSAY' && item.options && item.options.length > 0 && (!item.subItems || item.subItems.length === 0) && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <label className="text-[10px] font-black uppercase text-slate-400 tracking-wide">
@@ -328,13 +374,19 @@ export function DocxQuestionCardRow({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {item.options.map((opt: string, optIdx: number) => {
               const isImageOrMath = opt?.includes('data:image/') || opt?.includes('$');
-              const isSelectedAnswer = item.suggestedAnswer === (optIdx + 1).toString();
+              const normalizedAns = normalizeSingleAnswer(item.suggestedAnswer);
+              const isSelectedAnswer = item.questionType === 'MULTI_TRUE_FALSE' ? false : normalizedAns === (optIdx + 1).toString();
               return (
                 <div
                   key={optIdx}
-                  className={`flex flex-col gap-1 p-3 rounded-xl text-xs transition-all border ${
+                  onClick={() => {
+                    if (item.questionType !== 'MULTI_TRUE_FALSE') {
+                      onUpdateItem(idx, 'suggestedAnswer', (optIdx + 1).toString());
+                    }
+                  }}
+                  className={`flex flex-col gap-1 p-3 rounded-xl text-xs transition-all border cursor-pointer hover:border-emerald-500/50 ${
                     isSelectedAnswer
-                      ? 'bg-emerald-950/30 border-emerald-500/60 shadow-sm shadow-emerald-950/40'
+                      ? 'bg-emerald-950/40 border-emerald-500/70 shadow-md shadow-emerald-950/50 ring-1 ring-emerald-500/40'
                       : 'bg-slate-900/60 border-slate-850 text-slate-300'
                   }`}
                 >
@@ -345,12 +397,12 @@ export function DocxQuestionCardRow({
                           {String.fromCharCode('a'.charCodeAt(0) + optIdx)})
                         </span>
                       ) : (
-                        <span className={`font-black ${isSelectedAnswer ? 'text-emerald-400' : 'text-slate-400'}`}>
+                        <span className={`font-black ${isSelectedAnswer ? 'text-emerald-400 font-bold' : 'text-slate-400'}`}>
                           {LETTERS[optIdx]}.
                         </span>
                       )}
                       {isSelectedAnswer && (
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-0.5">
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/25 text-emerald-300 border border-emerald-500/50 flex items-center gap-0.5">
                           ✓ Đáp án đúng
                         </span>
                       )}
@@ -377,6 +429,7 @@ export function DocxQuestionCardRow({
                     <input
                       type="text"
                       value={opt}
+                      onClick={e => e.stopPropagation()}
                       onChange={e => onOptionChange(idx, optIdx, e.target.value)}
                       className="mt-1 bg-slate-950/60 border border-slate-800 px-2 py-1 rounded text-[11px] font-mono text-slate-400 focus:outline-none focus:text-white"
                       placeholder="Nội dung phương án..."
@@ -398,8 +451,8 @@ export function DocxQuestionCardRow({
             </label>
             {item.suggestedAnswer && (
               <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800/50 px-2 py-0.5 rounded-lg">
-                {item.questionType === 'SINGLE' && parseInt(item.suggestedAnswer) >= 1 && parseInt(item.suggestedAnswer) <= 4
-                  ? `Đáp án ${LETTERS[parseInt(item.suggestedAnswer) - 1]}`
+                {item.questionType === 'SINGLE'
+                  ? `Đáp án ${LETTERS[parseInt(normalizeSingleAnswer(item.suggestedAnswer)) - 1] || item.suggestedAnswer}`
                   : item.suggestedAnswer}
               </span>
             )}
@@ -458,7 +511,7 @@ export function DocxQuestionCardRow({
             </div>
           ) : item.questionType !== 'ESSAY' && item.options && item.options.length > 0 ? (
             <select
-              value={item.suggestedAnswer}
+              value={normalizeSingleAnswer(item.suggestedAnswer)}
               onChange={e => onUpdateItem(idx, 'suggestedAnswer', e.target.value)}
               className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-300 focus:outline-none focus:border-blue-500 cursor-pointer"
             >

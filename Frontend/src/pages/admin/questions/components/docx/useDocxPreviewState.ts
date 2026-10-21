@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import type { BankTopic } from '../../types';
 import { DOMAIN_OPTIONS } from './docx-constants';
 import { useAdaptiveTenant } from '../../../../../hooks/useAdaptiveTenant';
@@ -6,12 +6,14 @@ import { useMathConfig } from '../../../../../shared/context/MathConfigContext';
 import { learnerQuizService } from '../../../../../services/learner-quiz.service';
 import { convertService } from '../../../../../services/convert.service';
 import type { BulkTaxonomyApplyPayload } from '../BulkTaxonomyModal';
+import type { DetectedTopicInfo } from './DocxTopicDecisionBanner';
 
 interface UseDocxPreviewStateParams {
   docxPreviewList: any[];
   topics: BankTopic[];
   setDocxPreviewList: (v: any[]) => void;
   processingFileName?: string;
+  onTopicCreated?: (topic: BankTopic) => void;
 }
 
 export function useDocxPreviewState({
@@ -19,17 +21,18 @@ export function useDocxPreviewState({
   topics,
   setDocxPreviewList,
   processingFileName,
+  onTopicCreated,
 }: UseDocxPreviewStateParams) {
   const { domains } = useAdaptiveTenant();
   const activeDomains = domains && domains.length > 0
     ? domains.map((d: any) => ({
-        code: d.code,
-        label: d.label || d.name,
-        short: (d.short || d.name || d.code).length > 15 ? (d.short || d.name || d.code).slice(0, 13) + '...' : (d.short || d.name || d.code),
-        icon: d.icon || '🌐',
-        color: 'from-purple-500 to-indigo-600',
-        badge: 'bg-purple-950/70 text-purple-300 border-purple-800/60'
-      }))
+      code: d.code,
+      label: d.label || d.name,
+      short: (d.short || d.name || d.code).length > 15 ? (d.short || d.name || d.code).slice(0, 13) + '...' : (d.short || d.name || d.code),
+      icon: d.icon || '🌐',
+      color: 'from-purple-500 to-indigo-600',
+      badge: 'bg-purple-950/70 text-purple-300 border-purple-800/60'
+    }))
     : DOMAIN_OPTIONS;
 
   const [localTopics, setLocalTopics] = useState<BankTopic[]>(topics);
@@ -63,6 +66,9 @@ export function useDocxPreviewState({
   const [showMathStudio, setShowMathStudio] = useState<boolean>(false);
   const [showCigRules, setShowCigRules] = useState<boolean>(false);
 
+  const [isDecisionDismissed, setIsDecisionDismissed] = useState<boolean>(false);
+  const [isCreatingVirtualTopic, setIsCreatingVirtualTopic] = useState<boolean>(false);
+
   useEffect(() => {
     let isMounted = true;
     learnerQuizService.getCoordinatePresets()
@@ -71,16 +77,118 @@ export function useDocxPreviewState({
           setDynamicPresets(data);
         }
       })
-      .catch(() => {});
+      .catch(() => { });
     return () => { isMounted = false; };
   }, []);
 
+const KNOWN_TOPIC_NAMES: Record<string, string> = {
+  'TIENG_ANH': 'Tiếng Anh',
+  'ENGLISH': 'Tiếng Anh',
+  'MATH': 'Toán học',
+  'TOAN': 'Toán học',
+  'HOA_HOC': 'Hóa học',
+  'VAT_LY': 'Vật lý',
+  'SINH_HOC': 'Sinh học',
+  'LICH_SU': 'Lịch sử',
+  'DIA_LY': 'Địa lý',
+  'NGU_VAN': 'Ngữ văn',
+  'CNTT': 'Tin học & CNTT',
+  'GDKT_PL': 'Giáo dục KT & Pháp luật',
+};
+
+function inferQuestionTopic(q: any): { topicCode: string; topicName: string; domainCode: string } | null {
+  const tags = Array.isArray(q.tags) ? q.tags : [];
+  const text = `${q.contextTitle || ''} ${q.contextContent || ''} ${q.content || ''} ${q.options?.join(' ') || ''}`.toLowerCase();
+
+  if (tags.some((t: string) => t === 'tieng_anh' || t === 'tieng-anh' || t === 'english')
+    || /\b(?:reading|passage|pronunciation|closest in meaning|opposite in meaning|mark the letter|best arrangement)\b/i.test(text)
+    || (text.match(/\b(?:the|and|is|in|of|to|that|it|for|with|was|on|are|by|an|at)\b/g)?.length || 0) >= 4) {
+    return { topicCode: 'TIENG_ANH', topicName: 'Tiếng Anh', domainCode: 'EDUCATION' };
+  }
+
+  if (tags.some((t: string) => t === 'toan' || t === 'toan-hoc' || t === 'math')
+    || text.includes('\\frac') || text.includes('\\sqrt') || text.includes('đạo hàm') || text.includes('tích phân') || text.includes('hàm số')) {
+    return { topicCode: 'MATH', topicName: 'Toán học', domainCode: 'EDUCATION' };
+  }
+
+  if (tags.some((t: string) => t === 'hoa_hoc' || t === 'hoa-hoc' || t === 'chemistry')
+    || text.includes('axit') || text.includes('acid') || text.includes('este') || text.includes('ancol') || text.includes('hcl')) {
+    return { topicCode: 'HOA_HOC', topicName: 'Hóa học', domainCode: 'EDUCATION' };
+  }
+
+  if (tags.some((t: string) => t === 'vat_ly' || t === 'vat-ly' || t === 'physics')
+    || text.includes('nhiệt lượng') || text.includes('từ trường') || text.includes('bước sóng')) {
+    return { topicCode: 'VAT_LY', topicName: 'Vật lý', domainCode: 'EDUCATION' };
+  }
+
+  if (tags.some((t: string) => t === 'sinh_hoc' || t === 'sinh-hoc' || t === 'biology')
+    || text.includes('nhiễm sắc thể') || text.includes('đột biến') || text.includes('gen') || text.includes('adn')) {
+    return { topicCode: 'SINH_HOC', topicName: 'Sinh học', domainCode: 'EDUCATION' };
+  }
+
+  return null;
+}
+
   useEffect(() => {
-    setLocalTopics(topics);
-    if (topics.length > 0 && (!bulkTopic || !topics.some(t => t.code === bulkTopic))) {
-      setBulkTopic(topics[0].code);
+    // 1. Tự động suy luận môn học cho từng câu hỏi nếu đang bị gán GENERAL
+    let hasChanges = false;
+    const effectiveList = docxPreviewList.map(q => {
+      if (!q.topicCode || q.topicCode === 'GENERAL' || q.topicCode === 'EDUCATION') {
+        const inferred = inferQuestionTopic(q);
+        if (inferred) {
+          hasChanges = true;
+          return {
+            ...q,
+            topicCode: inferred.topicCode,
+            topicName: inferred.topicName,
+            domainCode: inferred.domainCode,
+          };
+        }
+      }
+      return q;
+    });
+
+    if (hasChanges) {
+      setDocxPreviewList(effectiveList);
     }
-  }, [topics]);
+
+    // 2. Thu thập tất cả các TopicCode trong danh sách câu hỏi & tạo chủ đề ảo đưa vào localTopics
+    const mergedTopics: BankTopic[] = [...topics];
+    const existingCodes = new Set(topics.map(t => t.code.toUpperCase()));
+
+    effectiveList.forEach(q => {
+      const code = q.topicCode?.trim().toUpperCase();
+      if (code && code !== 'GENERAL' && code !== 'EDUCATION' && code !== 'THPT_NATIONAL' && !existingCodes.has(code)) {
+        existingCodes.add(code);
+        const displayName = KNOWN_TOPIC_NAMES[code] || q.topicName?.trim() || code;
+        mergedTopics.push({
+          id: `virtual_${code}`,
+          code: code,
+          name: displayName,
+          categoryCode: q.domainCode || 'EDUCATION',
+          enabled: true,
+          visibilityScope: 'PUBLIC',
+          domainCode: q.domainCode || 'EDUCATION',
+        });
+      }
+    });
+
+    setLocalTopics(mergedTopics);
+
+    // 3. Đồng bộ Chủ đề đã nhận diện lên thanh công cụ (bulkTopic)
+    const detectedTopic = effectiveList.find(q => q.topicCode && q.topicCode !== 'GENERAL' && q.topicCode !== 'EDUCATION' && q.topicCode !== 'THPT_NATIONAL')?.topicCode;
+    if (detectedTopic) {
+      setBulkTopic(detectedTopic);
+    } else if (mergedTopics.length > 0 && (!bulkTopic || !mergedTopics.some(t => t.code === bulkTopic))) {
+      setBulkTopic(mergedTopics[0].code);
+    }
+
+    // 4. Đồng bộ Miền ngành (Domain) đã nhận diện lên thanh công cụ (bulkDomain)
+    const detectedDomain = effectiveList.find(q => q.domainCode && q.domainCode !== 'GENERAL')?.domainCode;
+    if (detectedDomain && activeDomains.some((d: any) => d.code === detectedDomain)) {
+      setBulkDomain(detectedDomain);
+    }
+  }, [topics, docxPreviewList, activeDomains]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -118,6 +226,112 @@ export function useDocxPreviewState({
     }));
     setDocxPreviewList(updated);
     showToast(`Đã áp dụng Chủ đề, Độ khó & Ngành cho toàn bộ ${docxPreviewList.length} câu hỏi!`);
+  };
+
+  // Tính toán thông tin chủ đề nhận diện được từ bộ câu hỏi đã parse
+  const detectedTopicInfo = useMemo<DetectedTopicInfo | null>(() => {
+    const found = docxPreviewList.find(q =>
+      q.topicCode &&
+      q.topicCode !== 'GENERAL' &&
+      q.topicCode !== 'EDUCATION' &&
+      q.topicCode !== 'THPT_NATIONAL'
+    );
+    if (!found || !found.topicCode) return null;
+    const code = found.topicCode.trim().toUpperCase();
+    const name = KNOWN_TOPIC_NAMES[code] || found.topicName?.trim() || code;
+    const domainCode = found.domainCode?.trim() || 'EDUCATION';
+    const isVirtual = !topics.some(t => t.code.toUpperCase() === code);
+    return { code, name, domainCode, isVirtual };
+  }, [docxPreviewList, topics]);
+
+  // Hiển thị banner quyết định nếu phát hiện chủ đề và chưa bị người dùng đóng
+  const showTopicDecisionBanner = Boolean(
+    detectedTopicInfo &&
+    !isDecisionDismissed &&
+    (detectedTopicInfo.isVirtual || docxPreviewList.some(q => q.topicCode !== detectedTopicInfo.code) || bulkTopic !== detectedTopicInfo.code)
+  );
+
+  // Lựa chọn 1: Áp dụng chủ đề nhận diện (tạo mới chủ đề vào DB nếu là ảo)
+  const handleApplyDetectedTopic = async () => {
+    if (!detectedTopicInfo) return;
+    setIsCreatingVirtualTopic(true);
+    try {
+      const targetCode = detectedTopicInfo.code;
+      const targetName = detectedTopicInfo.name;
+      const targetDomain = detectedTopicInfo.domainCode || 'EDUCATION';
+
+      if (detectedTopicInfo.isVirtual) {
+        try {
+          const res = await learnerQuizService.createTopic({
+            code: targetCode,
+            name: targetName,
+            description: `Chủ đề tạo tự động từ bộ đề thi: ${processingFileName || targetName}`,
+            categoryCode: targetDomain,
+            domainCode: targetDomain,
+            enabled: true,
+            visibilityScope: 'PUBLIC',
+            scope: 'COMMUNITY',
+          });
+
+          const newTopic: BankTopic = {
+            id: res?.id || res?.data?.id || `topic_${Date.now()}`,
+            code: targetCode,
+            name: targetName,
+            description: `Chủ đề tạo tự động từ bộ đề thi: ${processingFileName || targetName}`,
+            categoryCode: targetDomain,
+            domainCode: targetDomain,
+            enabled: true,
+            visibilityScope: 'PUBLIC',
+          };
+
+          setLocalTopics(prev => {
+            const filtered = prev.filter(t => t.code.toUpperCase() !== targetCode);
+            return [...filtered, newTopic];
+          });
+          onTopicCreated?.(newTopic);
+        } catch (createErr: any) {
+          console.warn('Backend createTopic call warning (có thể đã tồn tại hoặc fallback)', createErr);
+        }
+      }
+
+      // Áp dụng chủ đề nhận diện cho toàn bộ câu hỏi
+      const updated = docxPreviewList.map(item => ({
+        ...item,
+        topicCode: targetCode,
+        topicName: targetName,
+        domainCode: targetDomain,
+      }));
+      setDocxPreviewList(updated);
+      setBulkTopic(targetCode);
+      setBulkDomain(targetDomain);
+      setIsDecisionDismissed(true);
+      showToast(`✨ Đã áp dụng chủ đề "${targetName}" (${targetCode}) cho toàn bộ ${docxPreviewList.length} câu hỏi!`);
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Có lỗi khi áp dụng chủ đề. Vui lòng thử lại.');
+    } finally {
+      setIsCreatingVirtualTopic(false);
+    }
+  };
+
+  // Lựa chọn 2: Đồng bộ theo chủ đề người dùng đang chọn
+  const handleSyncWithSelectedTopic = () => {
+    const selectedTopicObj = localTopics.find(t => t.code.toUpperCase() === bulkTopic.toUpperCase());
+    const targetName = selectedTopicObj?.name || bulkTopic;
+    const targetDomain = selectedTopicObj?.domainCode || bulkDomain;
+
+    const updated = docxPreviewList.map(item => ({
+      ...item,
+      topicCode: bulkTopic,
+      topicName: targetName,
+      domainCode: targetDomain,
+    }));
+    setDocxPreviewList(updated);
+    setIsDecisionDismissed(true);
+    showToast(`🔄 Đã đồng bộ toàn bộ ${docxPreviewList.length} câu hỏi theo chủ đề đã chọn: "${targetName}"!`);
+  };
+
+  const handleDismissTopicDecision = () => {
+    setIsDecisionDismissed(true);
   };
 
   const handleCorrectVietnamese = async () => {
@@ -186,6 +400,21 @@ export function useDocxPreviewState({
       } else if (text.includes('mật khẩu') || text.includes('giao thức') || text.includes('itsm') || text.includes('cntt') || text.includes('bảo mật')) {
         const found = topics.find(t => t.code === 'CNTT' || t.name.toLowerCase().includes('công nghệ') || t.name.toLowerCase().includes('cntt'));
         if (found) bestCode = found.code;
+      } else if (/\b(?:the|and|is|in|of|to|that|it|for|with|was|on|are|by|reading|passage|pronunciation|closest in meaning)\b/i.test(text)) {
+        const found = topics.find(t => t.code === 'TIENG_ANH' || t.code === 'ENGLISH' || t.name.toLowerCase().includes('tiếng anh'));
+        if (found) bestCode = found.code;
+      } else if (text.includes('đạo hàm') || text.includes('tích phân') || text.includes('hàm số') || text.includes('vectơ') || text.includes('phương trình') || text.includes('\\frac') || text.includes('\\sqrt')) {
+        const found = topics.find(t => t.code === 'MATH' || t.code === 'TOAN' || t.name.toLowerCase().includes('toán'));
+        if (found) bestCode = found.code;
+      } else if (text.includes('axit') || text.includes('acid') || text.includes('bazo') || text.includes('este') || text.includes('ancol') || text.includes('mol') || text.includes('hcl') || text.includes('h2so4')) {
+        const found = topics.find(t => t.code === 'HOA_HOC' || t.name.toLowerCase().includes('hóa'));
+        if (found) bestCode = found.code;
+      } else if (text.includes('nhiệt lượng') || text.includes('từ trường') || text.includes('bước sóng') || text.includes('hạt nhân') || text.includes('phóng xạ') || text.includes('quang điện')) {
+        const found = topics.find(t => t.code === 'VAT_LY' || t.name.toLowerCase().includes('vật lý') || t.name.toLowerCase().includes('vật lí'));
+        if (found) bestCode = found.code;
+      } else if (text.includes('nhiễm sắc thể') || text.includes('đột biến') || text.includes('gen') || text.includes('adn') || text.includes('quần thể')) {
+        const found = topics.find(t => t.code === 'SINH_HOC' || t.name.toLowerCase().includes('sinh'));
+        if (found) bestCode = found.code;
       }
 
       return { ...item, topicCode: bestCode };
@@ -197,7 +426,7 @@ export function useDocxPreviewState({
 
   const sniffCoordinatesFromDocxList = () => {
     const sample = docxPreviewList.find(q => q.targetLevel || q.assessmentPurpose || q.issuingOrg || (q.domainCode && q.domainCode !== 'GENERAL')) || docxPreviewList[0];
-    const allSampleText = docxPreviewList.slice(0, 30).map(q => 
+    const allSampleText = docxPreviewList.slice(0, 30).map(q =>
       `${q.contextTitle || ''} ${q.contextContent || ''} ${q.content || ''} ${q.options?.join(' ') || ''}`
     ).join('\n');
     const lowerAll = allSampleText.toLowerCase();
@@ -213,7 +442,7 @@ export function useDocxPreviewState({
     if (posMatch && posMatch[1]) {
       targetLevel = posMatch[1].trim().replace(/\s+/g, ' ');
     } else {
-      const matchedPreset = dynamicPresets.find((p: any) => 
+      const matchedPreset = dynamicPresets.find((p: any) =>
         p.coordinateType === 'TARGET_LEVEL' && (
           lowerAll.includes(p.presetLabel?.toLowerCase()) ||
           (Array.isArray(p.synonyms) && p.synonyms.some((s: string) => lowerAll.includes(s.toLowerCase())))
@@ -230,7 +459,7 @@ export function useDocxPreviewState({
     if (purposeMatch && purposeMatch[1]) {
       assessmentPurpose = purposeMatch[1].trim().replace(/\s+/g, ' ');
     } else {
-      const matchedPreset = dynamicPresets.find((p: any) => 
+      const matchedPreset = dynamicPresets.find((p: any) =>
         p.coordinateType === 'ASSESSMENT_PURPOSE' && (
           lowerAll.includes(p.presetLabel?.toLowerCase()) ||
           (Array.isArray(p.synonyms) && p.synonyms.some((s: string) => lowerAll.includes(s.toLowerCase())))
@@ -248,7 +477,7 @@ export function useDocxPreviewState({
     if (orgMatch && orgMatch[1]) {
       issuingOrg = orgMatch[1].trim().replace(/\s+/g, ' ');
     } else {
-      const matchedPreset = dynamicPresets.find((p: any) => 
+      const matchedPreset = dynamicPresets.find((p: any) =>
         p.coordinateType === 'ISSUING_ORG' && (
           lowerAll.includes(p.presetLabel?.toLowerCase()) ||
           (Array.isArray(p.synonyms) && p.synonyms.some((s: string) => lowerAll.includes(s.toLowerCase())))
@@ -266,7 +495,7 @@ export function useDocxPreviewState({
     if (stdMatch && stdMatch[1]) {
       benchmarkStandard = stdMatch[1].trim();
     } else {
-      const matchedPreset = dynamicPresets.find((p: any) => 
+      const matchedPreset = dynamicPresets.find((p: any) =>
         p.coordinateType === 'BENCHMARK_STANDARD' && (
           lowerAll.includes(p.presetLabel?.toLowerCase()) ||
           (Array.isArray(p.synonyms) && p.synonyms.some((s: string) => lowerAll.includes(s.toLowerCase())))
@@ -379,7 +608,7 @@ export function useDocxPreviewState({
       const activePresetsForDomain = dynamicPresets.filter((p: any) => !domain || p.domainCode === domain || p.domainCode === 'GENERAL');
 
       if (!targetLevel) {
-        const matchedLevel = activePresetsForDomain.find((p: any) => 
+        const matchedLevel = activePresetsForDomain.find((p: any) =>
           p.coordinateType === 'TARGET_LEVEL' && (
             text.includes(p.presetLabel?.toLowerCase()) ||
             (Array.isArray(p.synonyms) && p.synonyms.some((s: string) => text.includes(s.toLowerCase())))
@@ -389,7 +618,7 @@ export function useDocxPreviewState({
       }
 
       if (!assessmentPurpose) {
-        const matchedPurpose = activePresetsForDomain.find((p: any) => 
+        const matchedPurpose = activePresetsForDomain.find((p: any) =>
           p.coordinateType === 'ASSESSMENT_PURPOSE' && (
             text.includes(p.presetLabel?.toLowerCase()) ||
             (Array.isArray(p.synonyms) && p.synonyms.some((s: string) => text.includes(s.toLowerCase())))
@@ -399,7 +628,7 @@ export function useDocxPreviewState({
       }
 
       if (!benchmarkStandard) {
-        const matchedStd = activePresetsForDomain.find((p: any) => 
+        const matchedStd = activePresetsForDomain.find((p: any) =>
           p.coordinateType === 'BENCHMARK_STANDARD' && (
             text.includes(p.presetLabel?.toLowerCase()) ||
             (Array.isArray(p.synonyms) && p.synonyms.some((s: string) => text.includes(s.toLowerCase())))
@@ -409,7 +638,7 @@ export function useDocxPreviewState({
       }
 
       if (!issuingOrg) {
-        const matchedOrg = activePresetsForDomain.find((p: any) => 
+        const matchedOrg = activePresetsForDomain.find((p: any) =>
           p.coordinateType === 'ISSUING_ORG' && (
             text.includes(p.presetLabel?.toLowerCase()) ||
             (Array.isArray(p.synonyms) && p.synonyms.some((s: string) => text.includes(s.toLowerCase())))
@@ -553,9 +782,9 @@ export function useDocxPreviewState({
     }
   };
 
-  const hasFormulaImages = docxPreviewList.some(q => 
-    q.optionType === 'image' || 
-    (q.options && q.options.some((o: string) => o?.includes('data:image/'))) || 
+  const hasFormulaImages = docxPreviewList.some(q =>
+    q.optionType === 'image' ||
+    (q.options && q.options.some((o: string) => o?.includes('data:image/'))) ||
     q.content?.includes('data:image/')
   );
 
@@ -630,5 +859,11 @@ export function useDocxPreviewState({
     handleExportExcel,
     handleExportCustomTemplate,
     sniffCoordinatesFromDocxList,
+    detectedTopicInfo,
+    showTopicDecisionBanner,
+    isCreatingVirtualTopic,
+    handleApplyDetectedTopic,
+    handleSyncWithSelectedTopic,
+    handleDismissTopicDecision,
   };
 }

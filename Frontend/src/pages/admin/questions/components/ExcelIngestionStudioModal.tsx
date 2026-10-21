@@ -147,8 +147,7 @@ export function ExcelIngestionStudioModal({
       const parentName = sh.detectedParentTopicName || '2026-DOT2';
       const childCode = sh.detectedTopicCode || `${parentCode}_SHEET_${idx + 1}`;
       const childName = sh.detectedTopicName || sh.sheetName || 'Chủ đề chuyên môn';
-      const qCount = (sh.questions || []).length;
-      const desc = sh.detectedTopicDescription || `${childName} | Đường dẫn: ${parentName} | Số lượng: ${qCount} câu hỏi`;
+      const desc = sh.detectedTopicDescription || (!parentName ? childName : `${childName} | Đường dẫn: ${parentName}`);
 
       initialSheetTopics[sheetKey] = {
         parentTopicCode: parentCode,
@@ -697,7 +696,7 @@ export function ExcelIngestionStudioModal({
                                   handleUpdateSheetTopic(sheetKey, { 
                                     parentTopicName: pName,
                                     parentTopicCode: pCode,
-                                    topicDescription: `${sheetTopics[sheetKey].childTopicName} | Đường dẫn: ${pName} | Số lượng: ${qCount} câu hỏi`
+                                    topicDescription: `${sheetTopics[sheetKey].childTopicName} | Đường dẫn: ${pName}`
                                   });
                                 }}
                                 className="w-full text-xs bg-gray-950 border border-gray-800 rounded-lg px-2.5 py-1.5 text-indigo-200 focus:border-indigo-500 focus:outline-none font-semibold"
@@ -717,7 +716,7 @@ export function ExcelIngestionStudioModal({
                                   const cName = e.target.value;
                                   handleUpdateSheetTopic(sheetKey, { 
                                     childTopicName: cName,
-                                    topicDescription: `${cName} | Đường dẫn: ${sheetTopics[sheetKey].parentTopicName} | Số lượng: ${qCount} câu hỏi`
+                                    topicDescription: `${cName} | Đường dẫn: ${sheetTopics[sheetKey].parentTopicName}`
                                   });
                                 }}
                                 className="w-full text-xs bg-gray-950 border border-gray-800 rounded-lg px-2.5 py-1.5 text-white focus:border-purple-500 focus:outline-none font-semibold"
@@ -737,7 +736,7 @@ export function ExcelIngestionStudioModal({
                                   handleUpdateSheetTopic(sheetKey, {
                                     childTopicCode: selected.code,
                                     childTopicName: selected.name,
-                                    topicDescription: selected.description || `${selected.name} | Số lượng: ${qCount} câu hỏi`
+                                    topicDescription: selected.description || selected.name
                                   });
                                 }
                               }}

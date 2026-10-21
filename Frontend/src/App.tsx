@@ -6,6 +6,7 @@ import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { AppProviders } from '@/app/providers';
 import { ErrorBoundary } from '@/shared/ui/ErrorBoundary';
 import { PwaInstallBanner } from '@/components/common/PwaInstallBanner';
+import { useThemeInjector } from '@/shared/hooks/useThemeInjector';
 
 const Dashboard = lazy(() => import('@/pages/dashboard/Dashboard').then(m => ({ default: m.Dashboard })));
 const LandingPage = lazy(() => import('@/pages/landing/LandingPage').then(m => ({ default: m.LandingPage })));
@@ -23,6 +24,7 @@ const ArenaRoomPage = lazy(() => import('@/pages/arena/ArenaRoomPage').then(m =>
 const ArenaStudioPage = lazy(() => import('@/pages/arena/ArenaStudioPage').then(m => ({ default: m.ArenaStudioPage })));
 const TeamDashboard = lazy(() => import('@/pages/team-leader/TeamDashboard').then(m => ({ default: m.TeamDashboard })));
 const UniversalSymposiumPage = lazy(() => import('@/pages/symposium/UniversalSymposiumPage').then(m => ({ default: m.UniversalSymposiumPage })));
+const CreatorZenStudioPage = lazy(() => import('@/pages/creator/studio/CreatorZenStudioPage'));
 
 // Admin Lazy Pages
 const AdminLayout = lazy(() => import('@/pages/admin/AdminLayout').then(m => ({ default: m.AdminLayout })));
@@ -36,6 +38,8 @@ const TenantsPage = lazy(() => import('@/pages/admin/tenants/TenantsPage').then(
 const OrganizationUnitsPage = lazy(() => import('@/pages/admin/org-units/OrganizationUnitsPage').then(m => ({ default: m.OrganizationUnitsPage })));
 const AiSettingsPage = lazy(() => import('@/pages/admin/ai/AiSettingsPage').then(m => ({ default: m.AiSettingsPage })));
 const PromptForgeAdminPage = lazy(() => import('@/pages/admin/PromptForgeAdminPage').then(m => ({ default: m.PromptForgeAdminPage })));
+const SplitScreenStudioPage = lazy(() => import('@/pages/admin/studio').then(m => ({ default: m.SplitScreenStudioPage })));
+const TenantThemeCustomizerPage = lazy(() => import('@/pages/admin/white-label').then(m => ({ default: m.TenantThemeCustomizerPage })));
 
 // Auth Lazy Pages
 const LoginPage = lazy(() => import('@/pages/auth/LoginPage').then(m => ({ default: m.LoginPage })));
@@ -47,6 +51,7 @@ const ProfilePage = lazy(() => import('@/pages/profile/ProfilePage').then(m => (
 const MobileAppRootPage = lazy(() => import('@/mobile/pages/MobileAppRootPage'));
 
 export default function App() {
+  useThemeInjector();
   return (
     <ErrorBoundary>
       <AppProviders>
@@ -90,6 +95,7 @@ export default function App() {
                 <Route path="payments" element={<AdminPaymentsPage />} />
                 <Route path="exams" element={<AdminExamsPage />} />
                 <Route path="tenants" element={<TenantsPage />} />
+                <Route path="white-label" element={<TenantThemeCustomizerPage />} />
                 <Route path="org-units" element={<OrganizationUnitsPage />} />
                 <Route path="ai-settings" element={<AiSettingsPage />} />
                 <Route path="ai" element={<AiSettingsPage />} />
@@ -115,6 +121,15 @@ export default function App() {
 
               {/* Practice/Exam is full screen so it stays separate from MainLayout */}
               <Route path="/practice" element={<PracticePage />} />
+              <Route path="/creator/studio" element={<CreatorZenStudioPage />} />
+              <Route
+                path="/admin/studio"
+                element={
+                  <ProtectedRoute adminOnly>
+                    <SplitScreenStudioPage />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/paywall" element={<PaywallPage />} />
               <Route path="/arena/studio" element={<ArenaStudioPage />} />
               <Route path="/arena/:gameCode/:roomId" element={<ArenaRoomPage />} />

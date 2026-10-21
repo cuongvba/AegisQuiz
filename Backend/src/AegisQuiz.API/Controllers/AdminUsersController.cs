@@ -51,18 +51,41 @@ namespace AegisQuiz.API.Controllers
             [FromQuery] string? role = null,
             [FromQuery] Guid? orgUnitId = null,
             [FromQuery] string? tier = null,
-            [FromQuery] bool? isActive = null)
+            [FromQuery] bool? isActive = null,
+            [FromQuery] Guid? targetTenantId = null,
+            [FromQuery] bool? allTenants = null)
         {
             try
             {
+                var roleClaim = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? User.FindFirst("role")?.Value;
+                var isSystemAdmin = roleClaim == AppRoles.SystemAdmin;
                 var tenantId = _tenant.CurrentTenantId;
-                if (tenantId == Guid.Empty)
-                    return BadRequest(new { message = "Không xác định được Tenant ID của phiên làm việc." });
 
                 var query = _db.UserAccounts
                     .AsNoTracking()
                     .Include(u => u.OrgUnit)
-                    .Where(u => u.TenantId == tenantId);
+                    .AsQueryable();
+
+                // [Cross-Tenant Panopticon] Phân quyền hiển thị theo cấp độ quản trị
+                if (isSystemAdmin)
+                {
+                    if (targetTenantId.HasValue && targetTenantId.Value != Guid.Empty)
+                    {
+                        query = query.Where(u => u.TenantId == targetTenantId.Value);
+                    }
+                    else if (allTenants == false && tenantId != Guid.Empty)
+                    {
+                        query = query.Where(u => u.TenantId == tenantId);
+                    }
+                    // Mặc định SystemAdmin không bị giới hạn trong 1 tenant đơn lẻ
+                }
+                else
+                {
+                    if (tenantId == Guid.Empty)
+                        return BadRequest(new { message = "Không xác định được Tenant ID của phiên làm việc." });
+
+                    query = query.Where(u => u.TenantId == tenantId);
+                }
 
                 // 1. Tìm kiếm theo Tên hoặc Email
                 if (!string.IsNullOrWhiteSpace(search))
@@ -81,10 +104,9 @@ namespace AegisQuiz.API.Controllers
                 // 3. Lọc theo OrgUnit (Đơn vị phòng ban trong cây)
                 if (orgUnitId.HasValue && orgUnitId.Value != Guid.Empty)
                 {
-                    // Lấy hierarchyPath của node được chọn để lọc toàn bộ cây con nếu có
                     var selectedOrg = await _db.OrganizationUnits
                         .AsNoTracking()
-                        .FirstOrDefaultAsync(o => o.Id == orgUnitId.Value && o.TenantId == tenantId);
+                        .FirstOrDefaultAsync(o => o.Id == orgUnitId.Value);
 
                     if (selectedOrg != null && !string.IsNullOrEmpty(selectedOrg.HierarchyPath))
                     {
@@ -116,31 +138,42 @@ namespace AegisQuiz.API.Controllers
                 if (page < 1) page = 1;
                 if (pageSize < 1 || pageSize > 100) pageSize = 20;
 
-                var items = await query
+                var rawUsers = await query
                     .OrderByDescending(u => u.CreatedAt)
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
-                    .Select(u => new
-                    {
-                        id = u.Id.ToString(),
-                        email = u.Email,
-                        fullName = u.FullName,
-                        phoneNumber = u.PhoneNumber,
-                        avatarUrl = u.AvatarUrl,
-                        role = u.Role,
-                        orgUnitId = u.OrgUnitId.HasValue ? u.OrgUnitId.Value.ToString() : null,
-                        orgUnitName = u.OrgUnit != null ? u.OrgUnit.Name : null,
-                        orgUnitHierarchyPath = u.OrgUnit != null ? u.OrgUnit.HierarchyPath : null,
-                        isPremium = u.IsPremium,
-                        subscriptionTier = u.SubscriptionTier,
-                        subscriptionExpiresAt = u.SubscriptionExpiresAt,
-                        isActive = u.IsActive,
-                        failedLoginAttempts = u.FailedLoginAttempts,
-                        lockoutEnd = u.LockoutEnd,
-                        lastLoginAt = u.LastLoginAt,
-                        createdAt = u.CreatedAt
-                    })
                     .ToListAsync();
+
+                // Nạp thông tin Tenant tương ứng cho từng người dùng
+                var distinctTenantIds = rawUsers.Select(u => u.TenantId).Distinct().ToList();
+                var tenantsDict = await _db.Tenants
+                    .AsNoTracking()
+                    .Where(t => distinctTenantIds.Contains(t.Id))
+                    .ToDictionaryAsync(t => t.Id, t => new { t.Name, t.Code });
+
+                var items = rawUsers.Select(u => new
+                {
+                    id = u.Id.ToString(),
+                    email = u.Email,
+                    fullName = u.FullName,
+                    phoneNumber = u.PhoneNumber,
+                    avatarUrl = u.AvatarUrl,
+                    role = u.Role,
+                    tenantId = u.TenantId.ToString(),
+                    tenantName = tenantsDict.TryGetValue(u.TenantId, out var tn) ? tn.Name : "Tổ chức không xác định",
+                    tenantCode = tenantsDict.TryGetValue(u.TenantId, out var tc) ? tc.Code : "UNKNOWN",
+                    orgUnitId = u.OrgUnitId.HasValue ? u.OrgUnitId.Value.ToString() : null,
+                    orgUnitName = u.OrgUnit != null ? u.OrgUnit.Name : null,
+                    orgUnitHierarchyPath = u.OrgUnit != null ? u.OrgUnit.HierarchyPath : null,
+                    isPremium = u.IsPremium,
+                    subscriptionTier = u.SubscriptionTier,
+                    subscriptionExpiresAt = u.SubscriptionExpiresAt,
+                    isActive = u.IsActive,
+                    failedLoginAttempts = u.FailedLoginAttempts,
+                    lockoutEnd = u.LockoutEnd,
+                    lastLoginAt = u.LastLoginAt,
+                    createdAt = u.CreatedAt
+                }).ToList();
 
                 return Ok(new
                 {
@@ -163,17 +196,34 @@ namespace AegisQuiz.API.Controllers
         /// Thống kê KPI người dùng theo Tenant phục vụ Admin Dashboard.
         /// </summary>
         [HttpGet("stats")]
-        public async Task<IActionResult> GetUserStats()
+        public async Task<IActionResult> GetUserStats(
+            [FromQuery] Guid? targetTenantId = null,
+            [FromQuery] bool? allTenants = null)
         {
             try
             {
+                var roleClaim = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? User.FindFirst("role")?.Value;
+                var isSystemAdmin = roleClaim == AppRoles.SystemAdmin;
                 var tenantId = _tenant.CurrentTenantId;
-                if (tenantId == Guid.Empty)
-                    return BadRequest(new { message = "Không xác định được Tenant ID." });
 
-                var users = await _db.UserAccounts
-                    .AsNoTracking()
-                    .Where(u => u.TenantId == tenantId)
+                var query = _db.UserAccounts.AsNoTracking().AsQueryable();
+
+                if (isSystemAdmin)
+                {
+                    if (targetTenantId.HasValue && targetTenantId.Value != Guid.Empty)
+                        query = query.Where(u => u.TenantId == targetTenantId.Value);
+                    else if (allTenants == false && tenantId != Guid.Empty)
+                        query = query.Where(u => u.TenantId == tenantId);
+                }
+                else
+                {
+                    if (tenantId == Guid.Empty)
+                        return BadRequest(new { message = "Không xác định được Tenant ID." });
+
+                    query = query.Where(u => u.TenantId == tenantId);
+                }
+
+                var users = await query
                     .Select(u => new { u.Role, u.IsActive, u.IsPremium, u.SubscriptionTier })
                     .ToListAsync();
 
@@ -300,13 +350,27 @@ namespace AegisQuiz.API.Controllers
         {
             try
             {
+                var roleClaim = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? User.FindFirst("role")?.Value;
+                var isSystemAdmin = roleClaim == AppRoles.SystemAdmin;
                 var tenantId = _tenant.CurrentTenantId;
-                var user = await _db.UserAccounts
-                    .Include(u => u.OrgUnit)
-                    .FirstOrDefaultAsync(u => u.Id == id && u.TenantId == tenantId);
+
+                var user = isSystemAdmin
+                    ? await _db.UserAccounts.Include(u => u.OrgUnit).FirstOrDefaultAsync(u => u.Id == id)
+                    : await _db.UserAccounts.Include(u => u.OrgUnit).FirstOrDefaultAsync(u => u.Id == id && u.TenantId == tenantId);
 
                 if (user == null)
-                    return NotFound(new { message = "Không tìm thấy người dùng trong Tenant này." });
+                    return NotFound(new { message = "Không tìm thấy người dùng này." });
+
+                // [Cross-Tenant Migration] Cho phép SystemAdmin điều chuyển người dùng sang Tenant khác
+                if (isSystemAdmin && request.TargetTenantId.HasValue && request.TargetTenantId.Value != Guid.Empty && request.TargetTenantId.Value != user.TenantId)
+                {
+                    user.TenantId = request.TargetTenantId.Value;
+                    var userRolesList = await _db.UserRoles.Where(r => r.UserId == user.Id.ToString()).ToListAsync();
+                    foreach (var ur in userRolesList)
+                    {
+                        ur.TenantId = request.TargetTenantId.Value;
+                    }
+                }
 
                 var assignedBy = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "admin";
 
@@ -428,12 +492,16 @@ namespace AegisQuiz.API.Controllers
         {
             try
             {
+                var roleClaim = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? User.FindFirst("role")?.Value;
+                var isSystemAdmin = roleClaim == AppRoles.SystemAdmin;
                 var tenantId = _tenant.CurrentTenantId;
-                var user = await _db.UserAccounts
-                    .FirstOrDefaultAsync(u => u.Id == id && u.TenantId == tenantId);
+
+                var user = isSystemAdmin
+                    ? await _db.UserAccounts.FirstOrDefaultAsync(u => u.Id == id)
+                    : await _db.UserAccounts.FirstOrDefaultAsync(u => u.Id == id && u.TenantId == tenantId);
 
                 if (user == null)
-                    return NotFound(new { message = "Không tìm thấy người dùng trong Tenant này." });
+                    return NotFound(new { message = "Không tìm thấy người dùng này." });
 
                 string newPlainPassword;
                 if (!string.IsNullOrWhiteSpace(request.NewPassword))
@@ -481,12 +549,16 @@ namespace AegisQuiz.API.Controllers
         {
             try
             {
+                var roleClaim = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? User.FindFirst("role")?.Value;
+                var isSystemAdmin = roleClaim == AppRoles.SystemAdmin;
                 var tenantId = _tenant.CurrentTenantId;
-                var user = await _db.UserAccounts
-                    .FirstOrDefaultAsync(u => u.Id == id && u.TenantId == tenantId);
+
+                var user = isSystemAdmin
+                    ? await _db.UserAccounts.FirstOrDefaultAsync(u => u.Id == id)
+                    : await _db.UserAccounts.FirstOrDefaultAsync(u => u.Id == id && u.TenantId == tenantId);
 
                 if (user == null)
-                    return NotFound(new { message = "Không tìm thấy người dùng trong Tenant này." });
+                    return NotFound(new { message = "Không tìm thấy người dùng này." });
 
                 // Sinh cryptographic token 32-byte
                 var tokenBytes = new byte[32];
@@ -564,6 +636,7 @@ namespace AegisQuiz.API.Controllers
         public string? PhoneNumber { get; set; }
         public string? Role { get; set; }
         public Guid? OrgUnitId { get; set; }
+        public Guid? TargetTenantId { get; set; }
         public string? SubscriptionTier { get; set; }
         public DateTime? SubscriptionExpiresAt { get; set; }
         public bool? IsActive { get; set; }

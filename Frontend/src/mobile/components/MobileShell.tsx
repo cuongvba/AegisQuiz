@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Home, Zap, DownloadCloud, User, RefreshCw, Wifi, WifiOff, Sparkles } from 'lucide-react';
+import { Home, Zap, DownloadCloud, User, RefreshCw, Wifi, WifiOff, Sparkles, Globe } from 'lucide-react';
 import { DynamicDomainIcon } from '@/components/common/DynamicDomainIcon';
+import { useLearnerI18n } from '@/lib/i18n';
 import { useMobileApp } from '../context/MobileAppContext';
 import { MobileAppSwitcherModal } from './MobileAppSwitcherModal';
 
@@ -16,6 +17,7 @@ export const MobileShell: React.FC<MobileShellProps> = ({
   onTabChange,
 }) => {
   const { variant, setIsSwitcherOpen, downloadedCount, triggerHaptic } = useMobileApp();
+  const { lang, setLang, t } = useLearnerI18n();
   const [isOnline, setIsOnline] = useState<boolean>(() => (typeof navigator !== 'undefined' ? navigator.onLine : true));
 
   React.useEffect(() => {
@@ -65,6 +67,20 @@ export const MobileShell: React.FC<MobileShellProps> = ({
         </button>
 
         <div className="flex items-center gap-2">
+          {/* Nút Đổi Ngôn Ngữ Đồng Bộ VI/EN */}
+          <button
+            type="button"
+            onClick={() => {
+              triggerHaptic(12);
+              setLang(lang === 'vi' ? 'en' : 'vi');
+            }}
+            className="px-2 py-1 rounded-xl bg-slate-900 border border-slate-800 text-sky-400 hover:text-sky-300 text-xs font-mono font-black flex items-center gap-1 cursor-pointer"
+            title="Đổi ngôn ngữ giao diện"
+          >
+            <Globe size={11} />
+            <span>{lang.toUpperCase()}</span>
+          </button>
+
           {/* Badge trạng thái Mạng */}
           <div
             className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${
@@ -115,7 +131,7 @@ export const MobileShell: React.FC<MobileShellProps> = ({
           >
             <Home size={20} />
           </div>
-          <span className="text-[10px] font-extrabold mt-0.5">Luyện Thi</span>
+          <span className="text-[10px] font-extrabold mt-0.5">{t('mobilePractice')}</span>
         </button>
 
         <button
@@ -131,7 +147,7 @@ export const MobileShell: React.FC<MobileShellProps> = ({
           >
             <Zap size={20} />
           </div>
-          <span className="text-[10px] font-extrabold mt-0.5">Thi Thử</span>
+          <span className="text-[10px] font-extrabold mt-0.5">{t('mobileExam')}</span>
         </button>
 
         <button
@@ -147,7 +163,7 @@ export const MobileShell: React.FC<MobileShellProps> = ({
           >
             <DownloadCloud size={20} />
           </div>
-          <span className="text-[10px] font-extrabold mt-0.5">Ngoại Tuyến</span>
+          <span className="text-[10px] font-extrabold mt-0.5">{t('mobileOffline')}</span>
           {downloadedCount > 0 && (
             <span
               className="absolute top-1.5 right-2 w-4 h-4 rounded-full text-[9px] font-black flex items-center justify-center text-slate-950"
@@ -171,7 +187,7 @@ export const MobileShell: React.FC<MobileShellProps> = ({
           >
             <User size={20} />
           </div>
-          <span className="text-[10px] font-extrabold mt-0.5">Cá Nhân</span>
+          <span className="text-[10px] font-extrabold mt-0.5">{t('mobileProfile')}</span>
         </button>
       </nav>
 

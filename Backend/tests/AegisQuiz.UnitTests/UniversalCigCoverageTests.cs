@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using AegisQuiz.Application.DTOs;
+using AegisQuiz.Application.Interfaces;
 using AegisQuiz.Infrastructure.Services;
 using AegisQuiz.Infrastructure.Services.Docx;
 using Xunit;
@@ -269,6 +270,293 @@ namespace AegisQuiz.UnitTests
             Assert.Equal("vi", profileVi.HostLanguage);
             Assert.Equal("vi", profileVi.SubjectLanguage);
             Assert.False(profileVi.IsBilingual);
+        }
+
+        [Fact]
+        public void CIG_HeaderProfile_ShouldCorrectlyDetectChemistrySubject_EvenInTwoColumnHeader()
+        {
+            // Kiểm chứng đề thi thực tế: Header bảng 2 cột phân cách bằng tab, 'Môn thi: HOÁ HỌC'
+            var twoColumnHeader = new List<string>
+            {
+                "BỘ GIÁO DỤC VÀ ĐÀO TẠO\tKỲ THI TỐT NGHIỆP TRUNG HỌC PHỔ THÔNG NĂM 2026",
+                "ĐỀ THI CHÍNH THỨC\tMôn thi: HOÁ HỌC",
+                "(Đề thi có 04 trang)\tThời gian làm bài: 50 phút, không kể thời gian phát đề",
+                "\tMã đề thi: 101"
+            };
+
+            var headerProfile = _cig.ProfileHeader(twoColumnHeader);
+            _output.WriteLine($"Detected Subject: {headerProfile.DetectedSubject}");
+            Assert.Equal("HOA_HOC", headerProfile.DetectedSubject);
+
+            // Kiểm chứng cả 2 kiểu gõ dấu thanh: 'HOÁ HỌC' và 'HÓA HỌC'
+            var topicHoas = UniversalCoordinateTaxonomyEngine.ResolveTopicCode("HOÁ HỌC");
+            var topicHoas2 = UniversalCoordinateTaxonomyEngine.ResolveTopicCode("HÓA HỌC");
+            Assert.Equal("HOA_HOC", topicHoas);
+            Assert.Equal("HOA_HOC", topicHoas2);
+        }
+
+        [Fact]
+        public void CIG_TaxonomyEngine_ShouldBeDatabaseDriven_ForForeignLanguagesAndSubjects()
+        {
+            var ctx = DynamicDomainContext.CreateDefault();
+
+            // Kiểm tra các môn ngoại ngữ đa dạng được nạp từ DynamicDomainContext
+            Assert.Equal("TIENG_PHAP", UniversalCoordinateTaxonomyEngine.ResolveTopicCode("Tiếng Pháp", ctx));
+            Assert.Equal("TIENG_TRUNG", UniversalCoordinateTaxonomyEngine.ResolveTopicCode("Tiếng Trung Quốc", ctx));
+            Assert.Equal("TIENG_NHAT", UniversalCoordinateTaxonomyEngine.ResolveTopicCode("Tiếng Nhật", ctx));
+            Assert.Equal("TIENG_HAN", UniversalCoordinateTaxonomyEngine.ResolveTopicCode("Tiếng Hàn", ctx));
+            Assert.Equal("TIENG_DUC", UniversalCoordinateTaxonomyEngine.ResolveTopicCode("Tiếng Đức", ctx));
+            Assert.Equal("TIENG_NGA", UniversalCoordinateTaxonomyEngine.ResolveTopicCode("Tiếng Nga", ctx));
+            Assert.Equal("HOA_HOC", UniversalCoordinateTaxonomyEngine.ResolveTopicCode("Môn Hóa", ctx));
+            Assert.Equal("SINH_HOC", UniversalCoordinateTaxonomyEngine.ResolveTopicCode("Môn Sinh học", ctx));
+        }
+
+        [Fact]
+        public void CIG_TaxonomyEngine_InferTopicFromContent_ShouldNotMisclassifyChemistryWithEnglishStopWords()
+        {
+            // Câu hỏi Hóa học chứa các từ tiếng Anh và ký hiệu khoa học quốc tế ('at 25°C', 'in', 'and', 'mol', 'is')
+            var chemContent = "Đốt cháy hoàn toàn 0,1 mol hỗn hợp X in at 25°C and 1 atm, dẫn toàn bộ sản phẩm cháy vào dung dịch Ca(OH)2 dư thu được m gam kết tủa. Giá trị của m là:";
+            
+            var inferred = UniversalCoordinateTaxonomyEngine.InferTopicFromContent(chemContent);
+            _output.WriteLine($"Inferred Topic: {inferred}");
+            // Tuyệt đối không được nhầm thành TIENG_ANH vì chứa 'in', 'at', 'and'
+            Assert.NotEqual("TIENG_ANH", inferred);
+            Assert.Equal("HOA_HOC", inferred);
+        }
+
+        [Fact]
+        public void UCTE_TwoTierArchitecture_ExamEnvelopeMustBeInheritedWithoutCognitiveDrift()
+        {
+            // 1. TẦNG 1: Khởi tạo Vỏ bọc Nhận thức Đề thi (Exam Cognitive Envelope) từ Header
+            var headerBanners = new List<string>
+            {
+                "BỘ GIÁO DỤC VÀ ĐÀO TẠO\tKỲ THI TỐT NGHIỆP TRUNG HỌC PHỔ THÔNG NĂM 2026",
+                "ĐỀ THI CHÍNH THỨC\tMôn thi: HOÁ HỌC",
+                "(Đề thi có 04 trang)\tThời gian làm bài: 50 phút"
+            };
+
+            var envelope = UniversalCoordinateTaxonomyEngine.SniffCoordinates(
+                fileName: "De_Thi_Hoa_Hoc_2026.docx",
+                sheetName: null,
+                headerBannerLines: headerBanners);
+
+            Assert.Equal("HOA_HOC", envelope.TopicCode);
+            Assert.Equal("Hóa học", envelope.TopicName);
+            Assert.Equal("EDUCATION", envelope.DomainCode);
+            Assert.Equal("Bộ Giáo dục và Đào tạo", envelope.IssuingOrg);
+            Assert.Equal(2026, envelope.BenchmarkYear);
+
+            // 2. TẦNG 2: Thực thể Câu hỏi kế thừa Vỏ bọc Header và chỉ làm giàu Item-Delta
+            var q = new DocxImportPreviewDto
+            {
+                // Nội dung câu hỏi cố tình chứa từ khóa nhiễu (ngân hàng, tài chính, từ tiếng Anh)
+                Content = "Ngân hàng đề thi: Cho 1 mol kim loại tác dụng với axit in at 25°C thu được muối. Tính khối lượng?",
+                QuestionType = "SINGLE_CHOICE",
+                SourceExamName = "DE_101",
+                SourceSectionName = "PHẦN I",
+                SourceQuestionNo = "1",
+                DomainCode = envelope.DomainCode,
+                TopicCode = envelope.TopicCode,
+                TopicName = envelope.TopicName,
+                IssuingOrg = envelope.IssuingOrg,
+                AssessmentPurpose = envelope.AssessmentPurpose,
+                BenchmarkYear = envelope.BenchmarkYear,
+                BenchmarkStandard = envelope.BenchmarkStandard,
+                Tags = new List<string>(envelope.Tags)
+            };
+
+            // Thực hiện làm giàu tọa độ
+            UniversalCoordinateTaxonomyEngine.AutoEnrichTaxonomyAndTags(q);
+
+            // Xác minh tính bất biến của Vỏ bọc nhận thức (Không bị lệch sang BANKING hay TIENG_ANH)
+            Assert.Equal("EDUCATION", q.DomainCode);
+            Assert.Equal("HOA_HOC", q.TopicCode);
+            Assert.Equal("Bộ Giáo dục và Đào tạo", q.IssuingOrg);
+            Assert.Equal(2026, q.BenchmarkYear);
+
+            // Xác minh Thẻ vi mô ở cấp Câu hỏi (Item-Level Delta Tags)
+            Assert.Contains("phan-i", q.Tags);
+            Assert.Contains("hoa-hoc", q.Tags);
+            Assert.Contains("de-101", q.Tags);
+        }
+
+        [Fact]
+        public void UCTE_ZeroHardcode_CustomTenantPresets_ResolvedDynamically()
+        {
+            // 1. Arrange: Tạo ngữ cảnh tenant hoàn toàn tùy biến (Hàng không Vũ trụ - AEROSPACE)
+            var customContext = new DynamicDomainContext
+            {
+                Domains = new List<DynamicDomainSummaryDto>
+                {
+                    new() { Code = "AEROSPACE", Name = "Hàng không & Vũ trụ", Description = "Khí động học, tên lửa, vệ tinh", Synonyms = new() { "hàng không", "vũ trụ", "aerospace", "khí động" } }
+                },
+                CoordinatePresets = new List<TenantCoordinatePresetDto>
+                {
+                    new() { DomainCode = "AEROSPACE", CoordinateType = "TARGET_LEVEL", PresetCode = "SENIOR_FLIGHT_ENGINEER", PresetLabel = "Kỹ sư bay cấp cao", Synonyms = new() { "kỹ sư bay", "senior flight engineer" } },
+                    new() { DomainCode = "AEROSPACE", CoordinateType = "ISSUING_ORG", PresetCode = "VAST_VNSC", PresetLabel = "Trung tâm Vũ trụ Việt Nam (VNSC)", Synonyms = new() { "vnsc", "trung tâm vũ trụ", "viện hàn lâm" } },
+                    new() { DomainCode = "AEROSPACE", CoordinateType = "BENCHMARK_STANDARD", PresetCode = "AS9100D", PresetLabel = "Tiêu chuẩn Quản lý Hàng không Vũ trụ AS9100D", Synonyms = new() { "as9100d", "as9100", "iso 9100" } },
+                    new() { DomainCode = "AEROSPACE", CoordinateType = "ASSESSMENT_PURPOSE", PresetCode = "FLIGHT_CERTIFICATION", PresetLabel = "Sát hạch Chứng chỉ Năng định Bay", Synonyms = new() { "năng định bay", "flight certification" } }
+                },
+                Topics = new List<BankTopicSummaryDto>
+                {
+                    new() { Code = "PROPULSION", Name = "Hệ thống Lực đẩy Tên lửa", DomainCode = "AEROSPACE", Keywords = new() { "lực đẩy", "động cơ phản lực", "tên lửa", "nhiên liệu lỏng" } }
+                }
+            };
+
+            var header = new[]
+            {
+                "TRUNG TÂM VŨ TRỤ VIỆT NAM (VNSC) - VIỆN HÀN LÂM KH&CN",
+                "KỲ THI SÁT HẠCH CHỨNG CHỈ NĂNG ĐỊNH BAY NĂM 2026",
+                "Khung năng lực: Kỹ sư bay cấp cao",
+                "Môn thi: Hệ thống Lực đẩy Tên lửa",
+                "Căn cứ: Tiêu chuẩn Quản lý Hàng không Vũ trụ AS9100D"
+            };
+
+            // 2. Act: Bóc tách tọa độ
+            var result = UniversalCoordinateTaxonomyEngine.SniffCoordinates(
+                fileName: "DE_THI_VNSC_2026.docx",
+                sheetName: null,
+                headerBannerLines: header,
+                sampleContents: new[] { "Áp suất buồng đốt của động cơ tên lửa nhiên liệu lỏng được xác định theo công thức nào?" },
+                sampleReferences: null,
+                dynamicContext: customContext);
+
+            // 3. Assert: 100% tọa độ và thẻ thông minh được trích xuất động từ Tenant Presets
+            Assert.NotNull(result);
+            Assert.Equal("AEROSPACE", result.DomainCode);
+            Assert.Equal("PROPULSION", result.TopicCode);
+            Assert.Equal("Hệ thống Lực đẩy Tên lửa", result.TopicName);
+            Assert.Equal("Kỹ sư bay cấp cao", result.TargetLevel);
+            Assert.Equal("Trung tâm Vũ trụ Việt Nam (VNSC)", result.IssuingOrg);
+            Assert.Equal("Tiêu chuẩn Quản lý Hàng không Vũ trụ AS9100D", result.BenchmarkStandard);
+            Assert.Equal("Sát hạch Chứng chỉ Năng định Bay", result.AssessmentPurpose);
+            Assert.Equal(2026, result.BenchmarkYear);
+
+            // Xác minh thẻ thông minh được tạo tự động không hard-code
+            Assert.Contains(result.Tags, t => t.Contains("senior-flight-engineer") || t.Contains("ky-su-bay"));
+            Assert.Contains(result.Tags, t => t.Contains("as9100d") || t.Contains("as9100"));
+            Assert.Contains(result.Tags, t => t.Contains("vnsc"));
+        }
+
+        [Fact]
+        public void UCTE_ITaxonomyEngine_DependencyInjection_ContractCompliance()
+        {
+            // Kiểm tra tính tuân thủ Clean Architecture & Dependency Injection qua ITaxonomyEngine
+            AegisQuiz.Application.Interfaces.ITaxonomyEngine engine = new UniversalCoordinateTaxonomyEngine();
+
+            var result = engine.SniffCoordinates(
+                fileName: "De_Thi_THPT_2026.docx",
+                sheetName: null,
+                headerBannerLines: new[] { "BỘ GIÁO DỤC VÀ ĐÀO TẠO", "KỲ THI TỐT NGHIỆP THPT NĂM 2026", "Bài thi: MÔN HÓA HỌC" },
+                sampleContents: new[] { "Dung dịch NaOH phản ứng với dung dịch HCl tạo thành muối gì?" },
+                sampleReferences: null,
+                dynamicContext: null);
+
+            Assert.NotNull(result);
+            Assert.Equal("EDUCATION", result.DomainCode);
+            Assert.Equal("HOA_HOC", result.TopicCode);
+            Assert.Equal("Bộ Giáo dục và Đào tạo", result.IssuingOrg);
+            Assert.Equal("Kỳ thi Tốt nghiệp THPT Quốc Gia", result.AssessmentPurpose);
+            Assert.Equal("Chương trình GDPT 2018", result.BenchmarkStandard);
+        }
+
+        [Fact]
+        public void UCTE_DefaultStandardFallback_NoSwitchCase()
+        {
+            // Kiểm tra fallback chuẩn mực của tất cả các domain tiêu chuẩn đọc trực tiếp từ CoordinatePresets
+            var ctx = DynamicDomainContext.CreateDefault();
+
+            var govDriving = UniversalCoordinateTaxonomyEngine.SniffCoordinates(
+                fileName: "SAT_HACH_GPLX.docx",
+                sheetName: null,
+                headerBannerLines: new[] { "CỤC ĐƯỜNG BỘ VIỆT NAM", "SÁT HẠCH LÁI XE HẠNG B2" },
+                sampleContents: null,
+                sampleReferences: null,
+                dynamicContext: ctx);
+
+            Assert.Equal("GOV_DRIVING", govDriving.DomainCode);
+            Assert.Equal("Nghị định 100/2019/NĐ-CP & QC 41:2019", govDriving.BenchmarkStandard);
+
+            var healthcare = UniversalCoordinateTaxonomyEngine.SniffCoordinates(
+                fileName: "BAC_SI_NOI_KHOA.docx",
+                sheetName: null,
+                headerBannerLines: new[] { "BỘ Y TẾ", "KỲ THI SÁT HẠCH BÁC SĨ CKI" },
+                sampleContents: null,
+                sampleReferences: null,
+                dynamicContext: ctx);
+
+            Assert.Equal("HEALTHCARE", healthcare.DomainCode);
+            Assert.Equal("Phác đồ Điều trị Bộ Y tế 2025", healthcare.BenchmarkStandard);
+        }
+
+        [Fact]
+        public void InformaticsExam_With17SubCategories_MustMaintainSingleTopicAndMapSubCategories()
+        {
+            // Mô phỏng tài liệu đề thi thử môn Tin học có Header chuẩn và 17 phân mục/chủ đề bài học bên trong
+            var paragraphs = new List<string>
+            {
+                "SỞ GIÁO DỤC VÀ ĐÀO TẠO HÀ NỘI",
+                "KỲ THI THỬ TỐT NGHIỆP THPT NĂM 2025",
+                "BÀI THI: TIN HỌC",
+                "Thời gian làm bài: 50 phút"
+            };
+
+            for (int i = 1; i <= 17; i++)
+            {
+                paragraphs.Add($"Chủ đề {i}: Chuyên đề kiến thức tin học phần {i}");
+                paragraphs.Add($"Câu {i}: Nội dung câu hỏi trắc nghiệm của chủ đề {i} là gì?");
+                paragraphs.Add("A. Phương án A");
+                paragraphs.Add("B. Phương án B");
+                paragraphs.Add("C. Phương án C");
+                paragraphs.Add("D. Phương án D");
+                paragraphs.Add("Đáp án: A");
+            }
+
+            var langProfile = _cig.DetectDocumentLanguageProfile(paragraphs, "vi");
+            var activeRules = _cig.GetRulesForProfile(langProfile);
+            _output.WriteLine($"LangProfile: Host={langProfile.HostLanguage}, Subj={langProfile.SubjectLanguage}, RulesCount={activeRules.Count}");
+            foreach (var r in activeRules.Take(5))
+            {
+                _output.WriteLine($"  Rule: {r.RuleCode}, Lang={r.Language}, Anchor={r.AnchorSpec?.RegexPattern}");
+            }
+
+            for (int i = 0; i < Math.Min(10, paragraphs.Count); i++)
+            {
+                bool isQWithActive = _cig.TryMatchQuestionAnchor(paragraphs[i], out int qn1, out var r1, activeRules);
+                bool isQWithout = _cig.TryMatchQuestionAnchor(paragraphs[i], out int qn2, out var r2);
+                _output.WriteLine($"Line [{i}]: '{paragraphs[i]}' -> WithActive={isQWithActive} (Rule={r1?.RuleCode}), Without={isQWithout} (Rule={r2?.RuleCode})");
+            }
+
+            IDocxStateMachineClassifier classifier = new DocxStateMachineClassifierService();
+            var results = classifier.ParseParagraphList(paragraphs);
+
+            _output.WriteLine($"Total parsed questions: {results.Count}");
+            _output.WriteLine($"FSM Debug Logs ({DocxStateMachineClassifier.LastDebugLogs.Count} entries):");
+            foreach (var log in DocxStateMachineClassifier.LastDebugLogs.Take(30))
+            {
+                _output.WriteLine("  " + log);
+            }
+            foreach (var r in results)
+            {
+                _output.WriteLine($"Q: {r.SourceQuestionNo}, Content: {r.Content}, Topic: {r.TopicCode}, SubCat: {r.SubCategory}");
+            }
+
+            // 1. Phải nhận dạng chính xác 17 câu hỏi
+            Assert.Equal(17, results.Count);
+
+            // 2. TẤT CẢ câu hỏi BẮT BUỘC có cùng 1 Topic duy nhất là TIN_HOC (hoặc CNTT)
+            // TUYỆT ĐỐI KHÔNG sinh ra 17 TopicCode khác nhau!
+            var distinctTopics = results.Select(r => r.TopicCode).Distinct().ToList();
+            Assert.Single(distinctTopics);
+            Assert.True(distinctTopics[0] == "TIN_HOC" || distinctTopics[0] == "CNTT");
+
+            // 3. Toàn bộ 17 chủ đề phân mục phải được ánh xạ chính xác vào SubCategory
+            for (int i = 1; i <= 17; i++)
+            {
+                var q = results[i - 1];
+                Assert.NotNull(q.SubCategory);
+                Assert.Contains($"Chủ đề {i}", q.SubCategory);
+            }
         }
     }
 }

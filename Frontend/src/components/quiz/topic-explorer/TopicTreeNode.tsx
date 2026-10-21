@@ -23,6 +23,7 @@ interface TopicTreeNodeProps {
   onSelectTree: (node: CognitiveTopicNodeDto, select: boolean) => void;
   onUpdateConfig: (topicKey: string, patch: Partial<PracticeTopicConfig>) => void;
   childrenNodes?: React.ReactNode;
+  t?: (key: string) => string;
 }
 
 export const TopicTreeNode: React.FC<TopicTreeNodeProps> = ({
@@ -34,6 +35,7 @@ export const TopicTreeNode: React.FC<TopicTreeNodeProps> = ({
   onSelectTree,
   onUpdateConfig,
   childrenNodes,
+  t,
 }) => {
   const hasChildren = Array.isArray(node.children) && node.children.length > 0;
 
@@ -98,23 +100,23 @@ export const TopicTreeNode: React.FC<TopicTreeNodeProps> = ({
 
               {node.scope === 'COMMUNITY' ? (
                 <span className="inline-flex items-center gap-0.5 rounded bg-emerald-950/60 px-1.5 py-0.2 text-[10px] font-bold text-emerald-300 border border-emerald-500/30">
-                  <Globe2 className="h-2.5 w-2.5" /> Cộng đồng
+                  <Globe2 className="h-2.5 w-2.5" /> {t ? t('scopeCommunity') : 'Cộng đồng'}
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-0.5 rounded bg-indigo-950/60 px-1.5 py-0.2 text-[10px] font-bold text-indigo-300 border border-indigo-500/30">
-                  <Building2 className="h-2.5 w-2.5" /> Doanh nghiệp
+                  <Building2 className="h-2.5 w-2.5" /> {t ? t('scopeEnterprise') : 'Doanh nghiệp'}
                 </span>
               )}
 
               {hasChildren && (
                 <span className="rounded bg-sky-950/60 px-2 py-0.2 text-[10px] font-black text-sky-300 border border-sky-500/30">
-                  {(node.children || []).length} mục con
+                  {(node.children || []).length} {t ? t('subNodesCount') : 'mục con'}
                 </span>
               )}
             </div>
 
             <p className="text-[11px] text-slate-400 truncate mt-0.5">
-              Mã: <code className="font-mono text-cyan-300">{node.code}</code> • {(node.questionCount ?? 0).toLocaleString()} câu hỏi
+              Mã: <code className="font-mono text-cyan-300">{node.code}</code> • {(node.questionCount ?? 0).toLocaleString()} {t ? t('questionsUnit') : 'câu hỏi'}
             </p>
           </div>
         </div>

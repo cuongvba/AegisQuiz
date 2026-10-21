@@ -29,6 +29,7 @@ d:/Cuong/DuAn/mybank/AegisQuiz/docs/
 ├── ARENA_GAMESHOW_USER_MANUAL.md                     <-- Cẩm nang người dùng & luật chơi 6 Gameshow
 │
 ├── 🏛️ architecture/ (Kiến Trúc Phân Tầng)
+│   ├── DOCX_STATE_MACHINE_CLASSIFIER_DEEP_DIVE.md   <-- [DEEP DIVE 2026] Báo Cáo Chuyên Sâu Máy Trạng Thái FSM Phân Loại Đề Thi Word, CIG Grammar, Sentinel Boundaries & Kiểm Thử 53 Đề Thực Chiến
 │   ├── AEGIS_WORLD_CLASS_FRONTEND_ELEVATION_MASTER_PLAN.md <-- [SUPREME 2026] Kế Hoạch Hành Động Chiến Lược Nâng Tầm Frontend Đạt Đẳng Cấp Top 1 Thế Giới (Zero-Monolith, OCP Registry, 60fps)
 │   ├── AEGIS_UNIVERSAL_INGESTION_ENGINE_AND_GLOBAL_EXPANSION_STRATEGY.md <-- [SUPREME 2026] Bản Thiết Kế Kiến Trúc Phân Hệ Nhập Đề Thông Minh & Kế Hoạch Vươn Tầm Quốc Tế (CIG, MTEF Reverse, Multiline Accumulator)
 │   ├── AEGIS_UNIVERSAL_EPISTEMIC_SYMPOSIUM_MASTER_PLAN.md <-- [SUPREME 2026] Kế Hoạch Bậc Thầy Đại Hội Thảo Bách Khoa Vạn Vật Tri Thức & 9 Viện Hàn Lâm

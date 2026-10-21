@@ -239,6 +239,22 @@ export function normalizeQuestion(data: unknown, idx: number): LearnerQuestion {
       ((rawOptions.length >= 3 && rawOptions.some(o => /^[a-d][\)\.]/i.test(o.trim()))) ||
        (/(?:^|\b|\,)[a-d][\)\:\.\s]+(?:đúng|sai|true|false)/i.test(rawAnswer))));
 
+  // Ánh xạ chữ cái 'A', 'B', 'C', 'D'... về index 1-based (1, 2, 3, 4...) cho SINGLE / TRUE_FALSE
+  if (!isMultiTfDetected && (normalizedType === 'SINGLE' || normalizedType === 'TRUE_FALSE') && rawAnswer) {
+    const trimmed = rawAnswer.trim();
+    if (/^[a-j]$/i.test(trimmed)) {
+      rawAnswer = String(trimmed.toUpperCase().charCodeAt(0) - 64);
+    }
+  }
+
+  // Ánh xạ danh sách chữ cái 'A,B,C' về '1,2,3' cho MULTI
+  if (!isMultiTfDetected && (normalizedType === 'MULTI' || looksLikeMultiFromAnswer(normalizedType, rawAnswer)) && rawAnswer) {
+    const parts = rawAnswer.split(/[,;\s]+/).map(s => s.trim()).filter(Boolean);
+    if (parts.length > 0 && parts.every(p => /^[a-j]$/i.test(p))) {
+      rawAnswer = parts.map(p => String(p.toUpperCase().charCodeAt(0) - 64)).join(',');
+    }
+  }
+
   // Nếu answerRaw là text dài trùng với một trong các options → ánh xạ về index 1-based (CHỈ cho SINGLE)
   if (!isMultiTfDetected && normalizedType === 'SINGLE' && rawAnswer && !/^\d+$/.test(rawAnswer) && rawOptions.length > 0) {
     const cleanRaw = rawAnswer.trim().toLowerCase();
@@ -257,10 +273,35 @@ export function normalizeQuestion(data: unknown, idx: number): LearnerQuestion {
     if (foundIdx !== -1) rawAnswer = String(foundIdx + 1);
   }
 
-  const inferredMatching   = !isMultiTfDetected && looksLikeMatchingFromTwoColumns(normalizedType, rawOptions);
+  // Xử lý chuyên sâu cho MATCHING khi có leftItems / rightItems / correctPairs trong payload
+  let matchingOptions = rawOptions;
+  if ((normalizedType === 'MATCHING' || rawType === 'MATCHING') && Array.isArray(payload.leftItems) && Array.isArray(payload.rightItems)) {
+    matchingOptions = (payload.leftItems as unknown[]).map((left, i) => {
+      const right = (payload.rightItems as unknown[])[i] ?? '';
+      return `${String(left).trim()} => ${String(right).trim()}`;
+    });
+    if (Array.isArray(payload.correctPairs) && payload.correctPairs.length > 0) {
+      rawAnswer = (payload.correctPairs as Array<{ left: unknown; right: unknown }>)
+        .map(p => `${String(p.left).trim()}:${String(p.right).trim()}`)
+        .join(',');
+    }
+  } else if (normalizedType === 'MATCHING' || rawType === 'MATCHING') {
+    // Nếu options có dấu gạch ngang ' - ' hoặc ' – ' hoặc ' — ', chuẩn hóa sang 'left => right'
+    matchingOptions = rawOptions.map(opt => {
+      const s = String(opt || '');
+      if (s.includes('=>') || s.includes('|')) return s;
+      const dashParts = s.split(/\s+[-–—]\s+/);
+      if (dashParts.length === 2) {
+        return `${dashParts[0].trim()} => ${dashParts[1].trim()}`;
+      }
+      return s;
+    });
+  }
+
+  const inferredMatching   = !isMultiTfDetected && looksLikeMatchingFromTwoColumns(normalizedType, matchingOptions);
   const matchingNormalized = inferredMatching
-    ? normalizeMatchingFromTwoColumns(rawOptions, rawAnswer)
-    : { options: rawOptions, answerRaw: rawAnswer };
+    ? normalizeMatchingFromTwoColumns(matchingOptions, rawAnswer)
+    : { options: matchingOptions, answerRaw: rawAnswer };
 
   const inferredMulti = !isMultiTfDetected && !inferredMatching && looksLikeMultiFromAnswer(normalizedType, matchingNormalized.answerRaw);
 
@@ -316,15 +357,33 @@ export function normalizeQuestion(data: unknown, idx: number): LearnerQuestion {
     }
   }
 
+  const mediaUrl = String(pickFirst(source, payload, [
+    'questionMediaUrl', 'question_media_url',
+    'imageUrl', 'image_url',
+    'mediaUrl', 'media_url',
+  ]) ?? '');
+  let mediaType = String(pickFirst(source, payload, [
+    'questionMediaType', 'question_media_type',
+    'contentType', 'content_type',
+    'mediaType', 'media_type',
+  ]) ?? 'text');
+  if (mediaType === 'text' && mediaUrl) {
+    if (/data:image|\.png|\.jpg|\.jpeg|\.webp|\.svg|\.gif/i.test(mediaUrl)) {
+      mediaType = 'image';
+    } else if (/\.mp3|\.wav|\.ogg|\.m4a/i.test(mediaUrl)) {
+      mediaType = 'audio';
+    }
+  }
+
   return {
     id:                  String(pickFirst(source, payload, ['id']) ?? `local-${idx + 1}`),
     questNo:             Number(pickFirst(source, payload, ['questNo', 'quest_no', 'index']) ?? idx + 1),
     content,
     questionType:        finalType,
-    questionMediaUrl:    String(pickFirst(source, payload, ['questionMediaUrl', 'question_media_url']) ?? ''),
-    questionMediaType:   String(pickFirst(source, payload, ['questionMediaType', 'question_media_type', 'contentType', 'content_type']) ?? 'text'),
+    questionMediaUrl:    mediaUrl,
+    questionMediaType:   mediaType,
     optionMediaType:     String(pickFirst(source, payload, ['optionMediaType', 'option_media_type', 'optionType', 'option_type']) ?? 'text'),
-    contentType:         String(pickFirst(source, payload, ['contentType', 'content_type', 'questionMediaType', 'question_media_type']) ?? 'text'),
+    contentType:         mediaType,
     optionType:          String(pickFirst(source, payload, ['optionType', 'option_type', 'optionMediaType', 'option_media_type']) ?? 'text'),
     options:             optionsArray.length > 0 ? optionsArray : matchingNormalized.options.filter((x) => x.trim() !== ''),
     answerRaw:           matchingNormalized.answerRaw,
@@ -355,6 +414,7 @@ export function normalizeQuestion(data: unknown, idx: number): LearnerQuestion {
     scope:               (pickFirst(source, payload, ['scope']) as any) || 'COMMUNITY',
     visibilityScope:     (pickFirst(source, payload, ['visibilityScope', 'visibility_scope']) as any) || 'PUBLIC',
     contributionStatus:  (pickFirst(source, payload, ['contributionStatus', 'contribution_status']) as any) || undefined,
+    payload,
   };
 }
 

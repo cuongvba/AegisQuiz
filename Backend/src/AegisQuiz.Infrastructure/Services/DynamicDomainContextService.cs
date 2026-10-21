@@ -165,6 +165,7 @@ namespace AegisQuiz.Infrastructure.Services
                             Code = t.Code,
                             Name = t.Name,
                             Description = t.Description,
+                            DomainCode = t.DomainCode,
                             Keywords = kw
                         };
                     }).ToList();

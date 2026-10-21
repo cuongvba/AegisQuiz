@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import api from '@/services/api';
 import { AppRole } from '@/types/auth';
+import { useAuth } from '@/hooks/useAuth';
 import { UserRoleModal, type AdminUserItem, type OrgUnitFlatItem } from './components/UserRoleModal';
 
 interface UserStats {
@@ -18,16 +19,26 @@ interface UserStats {
   vipUsers: number;
 }
 
+interface TenantOption {
+  id: string;
+  name: string;
+  code: string;
+}
+
 export function AdminUsersPage() {
+  const { isSystemAdmin } = useAuth();
+
   // Data state
   const [users, setUsers] = useState<AdminUserItem[]>([]);
   const [stats, setStats] = useState<UserStats | null>(null);
   const [orgUnits, setOrgUnits] = useState<OrgUnitFlatItem[]>([]);
+  const [tenantsList, setTenantsList] = useState<TenantOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Filter & Pagination state
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedTenant, setSelectedTenant] = useState<string>('');
   const [selectedRole, setSelectedRole] = useState<string>('');
   const [selectedOrgUnit, setSelectedOrgUnit] = useState<string>('');
   const [selectedTier, setSelectedTier] = useState<string>('');
@@ -65,17 +76,38 @@ export function AdminUsersPage() {
     }
   }, []);
 
+  // ── Load Tenants for SystemAdmin ──────────────────────────────────────────
+  const loadTenants = useCallback(async () => {
+    if (!isSystemAdmin) return;
+    try {
+      const res = await api.get('/api/admin/tenants', { params: { pageSize: 100 } });
+      if (res.data?.items) {
+        setTenantsList(res.data.items);
+      }
+    } catch (err) {
+      console.warn('Could not load tenants list', err);
+    }
+  }, [isSystemAdmin]);
+
   // ── Load Stats ──────────────────────────────────────────────────────────
   const loadStats = useCallback(async () => {
     try {
-      const res = await api.get('/api/admin/users/stats');
+      const params: Record<string, any> = {};
+      if (isSystemAdmin) {
+        if (selectedTenant) {
+          params.targetTenantId = selectedTenant;
+        } else {
+          params.allTenants = true;
+        }
+      }
+      const res = await api.get('/api/admin/users/stats', { params });
       if (res.data) {
         setStats(res.data);
       }
     } catch (err) {
       console.warn('Could not load user stats', err);
     }
-  }, []);
+  }, [isSystemAdmin, selectedTenant]);
 
   // ── Load Users List ─────────────────────────────────────────────────────
   const loadUsers = useCallback(async () => {
@@ -94,6 +126,14 @@ export function AdminUsersPage() {
       if (selectedStatus === 'active') params.isActive = true;
       if (selectedStatus === 'locked') params.isActive = false;
 
+      if (isSystemAdmin) {
+        if (selectedTenant) {
+          params.targetTenantId = selectedTenant;
+        } else {
+          params.allTenants = true;
+        }
+      }
+
       const res = await api.get('/api/admin/users', { params });
       if (res.data) {
         setUsers(res.data.items || []);
@@ -106,12 +146,16 @@ export function AdminUsersPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize, searchTerm, selectedRole, selectedOrgUnit, selectedTier, selectedStatus]);
+  }, [page, pageSize, searchTerm, selectedRole, selectedOrgUnit, selectedTier, selectedStatus, isSystemAdmin, selectedTenant]);
 
   useEffect(() => {
     loadOrgUnits();
+    loadTenants();
+  }, [loadOrgUnits, loadTenants]);
+
+  useEffect(() => {
     loadStats();
-  }, [loadOrgUnits, loadStats]);
+  }, [loadStats]);
 
   useEffect(() => {
     loadUsers();
@@ -126,6 +170,7 @@ export function AdminUsersPage() {
 
   const handleResetFilters = () => {
     setSearchTerm('');
+    setSelectedTenant('');
     setSelectedRole('');
     setSelectedOrgUnit('');
     setSelectedTier('');
@@ -171,6 +216,7 @@ export function AdminUsersPage() {
       'Họ và Tên',
       'Số Điện Thoại',
       'Vai Trò',
+      ...(isSystemAdmin ? ['Tổ Chức / Không Gian', 'Mã Không Gian'] : []),
       'Đơn Vị Phòng Ban',
       'Đường Dẫn Cây OU',
       'Gói Thuê Bao',
@@ -184,6 +230,7 @@ export function AdminUsersPage() {
       `"${u.fullName || ''}"`,
       `"${u.phoneNumber || ''}"`,
       `"${u.role}"`,
+      ...(isSystemAdmin ? [`"${u.tenantName || 'Mặc định'}"`, `"${u.tenantCode || ''}"`] : []),
       `"${u.orgUnitName || 'Toàn tổ chức'}"`,
       `"${u.orgUnitHierarchyPath || ''}"`,
       `"${u.subscriptionTier || 'FREE'}"`,
@@ -346,7 +393,7 @@ export function AdminUsersPage() {
 
       {/* ── FILTER TOOLBAR ───────────────────────────────────────────────── */}
       <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 backdrop-blur-xl space-y-3">
-        <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+        <form onSubmit={handleSearchSubmit} className={`grid grid-cols-1 sm:grid-cols-2 ${isSystemAdmin ? 'lg:grid-cols-7' : 'lg:grid-cols-6'} gap-3`}>
           {/* Search Box */}
           <div className="lg:col-span-2 relative">
             <Search size={16} className="absolute left-3.5 top-3 text-slate-500" />
@@ -358,6 +405,25 @@ export function AdminUsersPage() {
               className="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none transition-all font-medium"
             />
           </div>
+
+          {/* Tenant Filter (SystemAdmin Panopticon) */}
+          {isSystemAdmin && (
+            <div>
+              <select
+                value={selectedTenant}
+                onChange={(e) => { setSelectedTenant(e.target.value); setPage(1); }}
+                className="w-full bg-slate-950 border border-purple-500/40 focus:border-purple-400 rounded-xl px-3 py-2.5 text-xs text-purple-200 focus:outline-none transition-all cursor-pointer font-medium"
+                title="Lọc người dùng theo Khách thuê / Không gian cá nhân"
+              >
+                <option value="">🌐 Tất cả Tổ chức & Không gian</option>
+                {tenantsList.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.code.startsWith('p_') ? '👤 [Cá nhân]' : '🏢 [Tổ chức]'} {t.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Role Filter */}
           <div>
@@ -421,7 +487,7 @@ export function AdminUsersPage() {
           </div>
         </form>
 
-        {(searchTerm || selectedRole || selectedOrgUnit || selectedTier || selectedStatus) && (
+        {(searchTerm || selectedTenant || selectedRole || selectedOrgUnit || selectedTier || selectedStatus) && (
           <div className="flex items-center justify-between pt-2 border-t border-slate-800/80 text-xs">
             <span className="text-slate-400">
               Đang lọc: Tìm thấy <strong className="text-white">{totalCount}</strong> kết quả
@@ -450,6 +516,7 @@ export function AdminUsersPage() {
             <thead>
               <tr className="border-b border-slate-800 text-slate-400 text-[11px] font-black tracking-wider uppercase bg-slate-950/40">
                 <th className="p-4">Người dùng</th>
+                {isSystemAdmin && <th className="p-4 w-44">Tổ chức / Không gian</th>}
                 <th className="p-4 w-36">Vai trò (Role)</th>
                 <th className="p-4 w-48">Đơn vị tổ chức (OU)</th>
                 <th className="p-4 w-32">Thuê bao</th>
@@ -461,14 +528,14 @@ export function AdminUsersPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="p-10 text-center text-slate-500 text-sm">
+                  <td colSpan={isSystemAdmin ? 8 : 7} className="p-10 text-center text-slate-500 text-sm">
                     <RefreshCw size={24} className="animate-spin mx-auto mb-2 text-blue-500" />
                     Đang tải danh sách người dùng...
                   </td>
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-10 text-center text-slate-500 text-sm">
+                  <td colSpan={isSystemAdmin ? 8 : 7} className="p-10 text-center text-slate-500 text-sm">
                     Không tìm thấy tài khoản người dùng nào khớp với bộ lọc.
                   </td>
                 </tr>
@@ -490,6 +557,28 @@ export function AdminUsersPage() {
                         </div>
                       </div>
                     </td>
+
+                    {/* Tenant Column for SystemAdmin */}
+                    {isSystemAdmin && (
+                      <td className="p-4 text-xs">
+                        <div className="space-y-1 max-w-[170px]">
+                          <div className="text-slate-200 font-semibold truncate" title={item.tenantName || 'Không gian mặc định'}>
+                            {item.tenantName || 'Không gian mặc định'}
+                          </div>
+                          <div>
+                            {item.tenantCode?.startsWith('p_') ? (
+                              <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-purple-500/10 text-purple-400 border border-purple-500/20 inline-block truncate max-w-full">
+                                👤 Cá nhân
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-blue-500/10 text-blue-400 border border-blue-500/20 inline-block truncate max-w-full">
+                                🏢 {item.tenantCode || 'Doanh nghiệp'}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                    )}
 
                     {/* Role badge */}
                     <td className="p-4">
@@ -600,6 +689,8 @@ export function AdminUsersPage() {
       <UserRoleModal
         user={selectedUserForRole}
         orgUnits={orgUnits}
+        tenants={tenantsList}
+        isSystemAdmin={isSystemAdmin}
         isOpen={isRoleModalOpen}
         onClose={() => { setIsRoleModalOpen(false); setSelectedUserForRole(null); }}
         onSuccess={() => { loadUsers(); loadStats(); }}

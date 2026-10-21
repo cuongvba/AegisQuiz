@@ -15,14 +15,13 @@ namespace AegisQuiz.Infrastructure.Services.Docx
     /// - Nhận diện mã đề thi, bài đọc chia sẻ (Reading Passage).
     /// - Tự động suy luận môn thi và gắn thẻ tri thức thông minh (Taxonomy & Tags).
     /// </summary>
-    public static class DocxStateMachineClassifier
+    public static partial class DocxStateMachineClassifier
     {
-        public class ParsedOption
+        public class ParsedOption : ParsedOptionDto
         {
-            public char Letter { get; set; }
-            public string Content { get; set; } = string.Empty;
-            public bool IsMarkedCorrect { get; set; }
         }
+
+        public static List<string> LastDebugLogs { get; } = new();
 
         public static List<DocxImportPreviewDto> ParseParagraphList(
             List<string> paragraphs,
@@ -30,6 +29,7 @@ namespace AegisQuiz.Infrastructure.Services.Docx
             DynamicDomainContext? dynamicContext = null,
             DynamicQuestionIngestionEngine? engineOverride = null)
         {
+            LastDebugLogs.Clear();
             var results = new List<DocxImportPreviewDto>();
             var questionMap = new Dictionary<string, DocxImportPreviewDto>(StringComparer.OrdinalIgnoreCase);
             var cig = engineOverride ?? DynamicQuestionIngestionEngine.Instance;
@@ -37,8 +37,11 @@ namespace AegisQuiz.Infrastructure.Services.Docx
             DocxImportPreviewDto? currentQuestion = null;
             int currentQuestionNumber = 0;
             string currentSection = "SINGLE"; // SINGLE, TRUE_FALSE, SHORT_ANSWER, ESSAY
+            string? currentSectionTitle = null;
             string currentExamCode = "DEFAULT";
             string currentTopicCode = "GENERAL";
+            string? documentSubject = null;
+            string? currentSubCategory = null;
             bool inExplanation = false;
             string? currentReadingPassage = null;
             int passageStartQ = 0;
@@ -52,65 +55,127 @@ namespace AegisQuiz.Infrastructure.Services.Docx
             var languageProfile = cig.DetectDocumentLanguageProfile(paragraphs, dynamicContext?.Language ?? "vi");
             var activeRules = cig.GetRulesForProfile(languageProfile);
 
-            if (languageProfile.SubjectLanguage == "en" && currentTopicCode == "GENERAL")
+            // [Zero-Hardcode Ingestion Directives] Nạp mẫu chỉ thị ngắt bài đọc hiểu từ cấu hình Rule CIG
+            var instructionDirectivePatterns = activeRules
+                .SelectMany(r => r.StimulusSpec?.InstructionDirectivePatterns ?? Enumerable.Empty<string>())
+                .Where(p => !string.IsNullOrWhiteSpace(p))
+                .Distinct()
+                .ToList();
+            if (instructionDirectivePatterns.Count == 0)
             {
-                currentTopicCode = "TIENG_ANH";
+                instructionDirectivePatterns.Add(@"^(?:Mark\s+the\s+letter|Choose\s+the\s+letter|Choose\s+the\s+word|Read\s+the\s+following\s+(?:passage|text|announcement|advertisement|leaflet)|Đọc\s+(?:đoạn\s+văn|bài\s+đọc)|(?:Sử\s*dụng|Dựa\s*(?:vào|trên)|Cho|Dùng)\s+(?:các\s+)?(?:thông\s*tin|ngữ\s*liệu|dữ\s*kiện|đoạn\s*văn))\b");
             }
 
-            // Quét tìm tiêu đề môn học trong phần đầu tài liệu (ví dụ: MÔN: TOÁN 12, Môn thi: Vật lý...)
-            foreach (var p in paragraphs.Take(30))
+            // [Zero-Hardcode End of Exam & Proctor Sentinels] Nạp mẫu kết thúc đề và chỉ thị coi thi từ Rule CIG & StructureDictionary
+            var endOfExamPatterns = activeRules
+                .SelectMany(r => r.LifecycleSpec?.EndOfExamPatterns ?? Enumerable.Empty<string>())
+                .Concat(cig.StructureDictionary.EndOfExamMarkers ?? Enumerable.Empty<string>())
+                .Where(p => !string.IsNullOrWhiteSpace(p))
+                .Distinct()
+                .ToList();
+            if (endOfExamPatterns.Count == 0)
             {
-                var matchSubject = Regex.Match(p, @"\b(?:MÔN|MÔN\s*THI|HỌC\s*PHẦN)[\:\s\-]+([A-Za-zÀ-ỹ0-9\s]+?)(?:\(|\d|\-|$)", RegexOptions.IgnoreCase);
-                if (matchSubject.Success)
-                {
-                    string subjRaw = matchSubject.Groups[1].Value.Trim();
-                    string resolved = ResolveTopicCode(subjRaw, dynamicContext);
-                    if (resolved != "GENERAL")
-                    {
-                        currentTopicCode = resolved;
-                        break;
-                    }
-                }
+                endOfExamPatterns.Add(@"^(?:[\-\–\—_*\=.\s]*\b(?:HẾT|HET|THE\s*END|END\s*OF\s*(?:TEST|EXAM|PAPER)|HẾT\s+ĐỀ\s+THI)\b[\-\–\—_*\=.\s]*)$");
+                endOfExamPatterns.Add(@"^(?:[\-\–\—_\s]*HẾT[\-\–\—_\s]*)$");
+            }
+
+            var proctorInstructionPatterns = activeRules
+                .SelectMany(r => r.LifecycleSpec?.ProctorInstructionPatterns ?? Enumerable.Empty<string>())
+                .Concat(cig.StructureDictionary.ProctorInstructionMarkers ?? Enumerable.Empty<string>())
+                .Where(p => !string.IsNullOrWhiteSpace(p))
+                .Distinct()
+                .ToList();
+            if (proctorInstructionPatterns.Count == 0)
+            {
+                proctorInstructionPatterns.Add(@"(?i)(?:Cán\s*bộ\s*coi\s*thi|Giám\s*thị|Giám\s*khảo)\s+không\s+giải\s+thích(?:\s+gì)?\s+thêm");
+                proctorInstructionPatterns.Add(@"(?i)Thí\s*sinh\s+không\s+được\s+sử\s+dụng\s+tài\s+liệu");
+                proctorInstructionPatterns.Add(@"(?i)Họ\s*(?:và)?\s*tên\s+thí\s*sinh[\.\:\s_]+Số\s*báo\s*danh");
+            }
+
+            // [CHIP v4.0 - Early Reconnaissance & Header Profiling via CIG]
+            // Ưu tiên tuyệt đối thông tin môn thi tuyên bố tường minh trên Header (Tầng 1 - SSoT)
+            var headerProfile = cig.ProfileHeader(paragraphs.Take(35), paragraphs.Skip(35).Take(15), dynamicContext);
+            var headerTaxonomy = headerProfile.TaxonomyCoordinates;
+            int headerDurationSeconds = headerProfile.DurationSeconds;
+            string? headerDetectedExamCode = headerProfile.DetectedExamCode;
+
+            if (!string.IsNullOrEmpty(headerProfile.DetectedSubject) && headerProfile.DetectedSubject != "GENERAL")
+            {
+                documentSubject = headerProfile.DetectedSubject;
+                currentTopicCode = headerProfile.DetectedSubject;
+            }
+            else if (languageProfile.SubjectLanguage == "en" && currentTopicCode == "GENERAL")
+            {
+                // Chỉ dự phòng TIENG_ANH khi Header hoàn toàn không có thông tin môn học
+                var englishTopic = dynamicContext?.Topics?.FirstOrDefault(t => t.Code == "TIENG_ANH" || t.Code == "ENGLISH");
+                string enCode = englishTopic?.Code ?? "TIENG_ANH";
+                currentTopicCode = enCode;
+                documentSubject = enCode;
+            }
+
+            if (!string.IsNullOrEmpty(headerDetectedExamCode) && currentExamCode == "DEFAULT")
+            {
+                currentExamCode = headerDetectedExamCode;
             }
 
             var currentQuestionPendingLines = new List<string>();
+            string? currentSubItemExplKey = null;
 
             Action finalizeCurrentQuestion = () =>
             {
                 if (currentQuestion != null && !isSolutionPhase)
                 {
-                    ResolveQuestionBlockBottomUp(currentQuestion, currentQuestionPendingLines, currentSection, currentMatchedRule, cig);
-                    FinalizeAndMergeQuestion(results, questionMap, currentQuestion, currentExamCode, currentQuestionNumber, dynamicContext);
+                    LastDebugLogs.Add($"[FINALIZE] QNum={currentQuestionNumber}, Type={currentQuestion.QuestionType}, PendingLines={currentQuestionPendingLines.Count}, Content={currentQuestion.Content}");
+                    cig.ResolveQuestionBlockBottomUp(currentQuestion, currentQuestionPendingLines, currentSection, currentMatchedRule);
+                    cig.FinalizeAndMergeQuestion(results, questionMap, currentQuestion, currentExamCode, currentQuestionNumber, dynamicContext, currentMatchedRule);
                     examQuestionsByNum[currentQuestionNumber] = currentQuestion;
+                    LastDebugLogs.Add($"[AFTER MERGE] ResultsCount={results.Count}");
                     currentQuestion = null;
                     currentQuestionPendingLines.Clear();
+                    currentSubItemExplKey = null;
+                }
+                else
+                {
+                    LastDebugLogs.Add($"[FINALIZE SKIPPED] currentQuestion={(currentQuestion == null ? "NULL" : "EXISTS")}, isSolutionPhase={isSolutionPhase}");
                 }
             };
 
-            foreach (var rawLine in paragraphs)
+            // [SGI v5.0 - Cognitive Scope Orchestrator]
+            // Khởi tạo bộ điều phối phạm vi nhận thức đa tầng thông qua CIG Engine Factory
+            var scopeManager = cig.CreateScopeManager();
+
+            // [Phase 4 Enhancements - Structural Boundary Streamer via CIG]
+            var flattenedLines = cig.FlattenDocument(paragraphs, languageProfile);
+
+            foreach (var rawLine in flattenedLines)
             {
                 var line = rawLine.Trim();
                 if (string.IsNullOrEmpty(line)) continue;
+                LastDebugLogs.Add($"[LINE] '{line}'");
+
+                // 00. Bỏ qua dòng/bảng Header thông tin thí sinh, số báo danh, thời gian làm bài nếu chưa vào câu hỏi đầu tiên
+                if (currentQuestion == null && cig.IsStudentInfoLine(line))
+                {
+                    if (cig.TryExtractExamCode(line, out var cCode) && !string.IsNullOrEmpty(cCode))
+                    {
+                        currentExamCode = cCode;
+                    }
+                    continue;
+                }
 
                 // 0. Nhận dạng Tiêu đề Đề thi động qua CIG: "ĐỀ 1", "EXAM 02", "TEST 3"...
                 if (cig.TryMatchExamHeading(line, out string examNumStr) && int.TryParse(examNumStr, out int examNum))
                 {
-                    if (examNum >= 1900 && examNum <= 2099)
+                    if (cig.IsYearLikeNumber(examNum))
                     {
                         continue; // Bỏ qua năm học (2024..2026)
                     }
 
                     finalizeCurrentQuestion();
-                    currentTopicCode = "GENERAL"; // [Sprint 1 - 7.3] Reset topic moi lan doi de
+                    currentTopicCode = documentSubject ?? "GENERAL"; // Bảo toàn môn học đã nhận diện ở đầu tài liệu khi đổi đề
+                    currentSubCategory = null;
 
-                    // [Sprint 1 - 7.2] Xay examPrefix dong tu DynamicDomainContext
-                    string examPrefix = "DE_";
-                    if (dynamicContext != null && !string.IsNullOrWhiteSpace(dynamicContext.DefaultExamPrefix)
-                        && dynamicContext.DefaultExamPrefix != "EXAM" && dynamicContext.DefaultExamPrefix != "DE")
-                    {
-                        examPrefix = $"{dynamicContext.DefaultExamPrefix}_";
-                    }
-                    string targetExamCode = $"{examPrefix}{examNum:D2}";
+                    string targetExamCode = cig.BuildExamCode(examNum, dynamicContext);
 
                     bool alreadyHasQuestions = results.Any(r => r.SourceExamName == targetExamCode);
                     if (isSolutionPhase && !alreadyHasQuestions)
@@ -121,6 +186,7 @@ namespace AegisQuiz.Infrastructure.Services.Docx
 
                     currentExamCode = targetExamCode;
                     currentSection = "SINGLE";
+                    currentSectionTitle = null;
                     inExplanation = false;
                     currentReadingPassage = null;
                     passageStartQ = 0;
@@ -137,17 +203,108 @@ namespace AegisQuiz.Infrastructure.Services.Docx
                     continue;
                 }
 
+                // 0a. Nhận dạng Dấu hiệu Kết thúc Đề thi (End of Exam Sentinel: "HẾT", "---------- HẾT ----------", "THE END"...)
+                // Đóng gói câu hỏi trước đó ngay lập tức và ngắt dòng, tuyệt đối không đưa vào nội dung câu hỏi cuối cùng!
+                bool isEndOfExam = cig.TryMatchEndOfExam(line) || endOfExamPatterns.Any(p => Regex.IsMatch(line, p, RegexOptions.IgnoreCase));
+                if (isEndOfExam)
+                {
+                    finalizeCurrentQuestion();
+                    inExplanation = false;
+                    currentReadingPassage = null;
+                    passageStartQ = 0;
+                    passageEndQ = 0;
+                    continue;
+                }
+
+                // 0a1. Nhận dạng Chỉ thị Coi thi / Ghi chú phụ ("Cán bộ coi thi không giải thích gì thêm", "Thí sinh không được sử dụng tài liệu"...)
+                bool isProctorLine = cig.IsProctorDisclaimerLine(line) || proctorInstructionPatterns.Any(p => Regex.IsMatch(line, p, RegexOptions.IgnoreCase));
+                if (isProctorLine)
+                {
+                    continue; // Bỏ qua hoàn toàn dòng chỉ thị coi thi/thí sinh
+                }
+
+                // 0a2. Nhận diện dòng Đáp án inline ngay dưới câu hỏi trước khi kiểm tra chuyển Phase
+                var cleanLinePre = Regex.Replace(line, @"^<[a-z0-9]+>", "", RegexOptions.IgnoreCase).Trim();
+                if (currentQuestion != null && !isSolutionPhase && (cig.IsAnswerLine(cleanLinePre, currentMatchedRule, out string inlineAnsPre) || LinguisticMatch(cig, LinguisticKeys.ChoiceAnswerLine, cleanLinePre).Success))
+                {
+                    if (string.IsNullOrEmpty(inlineAnsPre))
+                    {
+                        var mAns = LinguisticMatch(cig, LinguisticKeys.ChoiceAnswerLine, cleanLinePre);
+                        if (mAns.Success) inlineAnsPre = mAns.Groups[1].Value.Trim();
+                    }
+                    if (!string.IsNullOrWhiteSpace(inlineAnsPre))
+                    {
+                        if (inlineAnsPre.Length == 1 && char.IsLetter(inlineAnsPre[0]))
+                        {
+                            currentQuestion.SuggestedAnswer = (char.ToUpperInvariant(inlineAnsPre[0]) - 'A' + 1).ToString();
+                        }
+                        else
+                        {
+                            currentQuestion.SuggestedAnswer = inlineAnsPre;
+                        }
+                    }
+                    continue;
+                }
+
                 // 0b. Nhận dạng Tiêu đề Phần Bảng Đáp án hoặc Lời giải tham khảo qua CIG
                 // Tiêu đề Phase (LỜI GIẢI THAM KHẢO, ĐÁP ÁN THAM KHẢO, BẢNG ĐÁP ÁN) có mức ưu tiên tài liệu cao nhất,
                 // đánh dấu kết thúc pha đề bài và bắt đầu pha lời giải/đáp án chi tiết.
                 bool isSolPhaseMatch = cig.TryMatchSolutionPhase(line);
                 bool isAnsTableMatch = cig.TryMatchAnswerTablePhase(line);
+
                 if (isSolPhaseMatch || isAnsTableMatch)
                 {
+                    // [Sovereignty Rule]: Nếu đã đang ở trong Pha Lời giải (isSolutionPhase == true):
+                    // Các dòng như "Hướng dẫn giải", "Lời giải", "Đáp án" đứng độc lập bên dưới câu hỏi
+                    // TUYỆT ĐỐI KHÔNG được reset currentSection về "SINGLE".
+                    // Nếu dòng đó có chứa định danh phân đoạn rõ ràng (ví dụ "HƯỚNG DẪN GIẢI PHẦN III"):
+                    // -> Chuyển sang phân đoạn đó.
+                    // Nếu dòng đó KHÔNG chứa phân đoạn mới (chỉ là "Hướng dẫn giải" của câu hỏi đang xét):
+                    // -> Đây là dòng bắt đầu giải thích (inExplanation = true) của câu hỏi hiện tại!
+                    if (isSolutionPhase && isSolPhaseMatch)
+                    {
+                        if (cig.TryMatchSectionHeader(line, out string secInSol))
+                        {
+                            finalizeCurrentQuestion();
+                            currentSection = secInSol;
+                            var mSecTitle = LinguisticMatch(cig, LinguisticKeys.SectionTitle, line);
+                            currentSectionTitle = mSecTitle.Success ? mSecTitle.Groups[1].Value.ToUpperInvariant() : secInSol;
+                            inExplanation = false;
+                            continue;
+                        }
+                        else
+                        {
+                            inExplanation = true;
+                            continue;
+                        }
+                    }
+
+                    // Nếu chưa vào pha Lời giải nhưng đang có câu hỏi inline mở, và dòng giải thích không phải macro phase header
+                    if (!isSolutionPhase && currentQuestion != null && isSolPhaseMatch)
+                    {
+                        if (!LinguisticMatch(cig, LinguisticKeys.MacroPhaseHint, line).Success)
+                        {
+                            inExplanation = true;
+                            continue;
+                        }
+                    }
+
                     finalizeCurrentQuestion();
                     if (isSolPhaseMatch)
                     {
                         isSolutionPhase = true;
+                        // Nếu tiêu đề pha có chứa kèm chỉ định Phân đoạn (ví dụ: "HƯỚNG DẪN GIẢI PHẦN III")
+                        if (cig.TryMatchSectionHeader(line, out string secInSol))
+                        {
+                            currentSection = secInSol;
+                            var mSecTitle = LinguisticMatch(cig, LinguisticKeys.SectionTitle, line);
+                            currentSectionTitle = mSecTitle.Success ? mSecTitle.Groups[1].Value.ToUpperInvariant() : secInSol;
+                        }
+                        else
+                        {
+                            currentSection = "SINGLE"; // Mặc định reset về Phần I khi bắt đầu pha lời giải
+                            currentSectionTitle = null;
+                        }
                     }
                     inExplanation = false;
                     currentReadingPassage = null;
@@ -156,18 +313,111 @@ namespace AegisQuiz.Infrastructure.Services.Docx
                     continue;
                 }
 
-                // 1. Nhận dạng thay đổi Chủ đề qua CIG: "Chủ đề: Toán học", "Môn: Tiếng Anh", "Topic: Science"...
-                if (cig.TryMatchTopicHeading(line, out string rawTopic))
-                {
-                    currentTopicCode = ResolveTopicCode(rawTopic, dynamicContext);
-                    continue;
-                }
-
                 var upper = line.ToUpperInvariant();
                 bool isQuestionLine = cig.TryMatchQuestionAnchor(line, out _, out _, activeRules);
                 bool isExplanationLine = cig.IsExplanationLine(line);
 
-                // 2. Nhận dạng Tiêu đề Đoạn văn Đọc hiểu qua CIG (Passage / Advertisement / Leaflet)
+                // 1. Nhận dạng thay đổi Chủ đề qua CIG: "Chủ đề: Toán học", "Môn: Tiếng Anh", "Topic: Science"...
+                if (!isQuestionLine && cig.TryMatchTopicHeading(line, out string rawTopic))
+                {
+                    finalizeCurrentQuestion();
+                    string resolvedTopic = ResolveTopicCode(rawTopic, dynamicContext);
+
+                    // Phân biệt ranh giới: Nếu dòng bắt đầu bằng các nhãn phân mục con ("Chủ đề 1", "Chương 2", "Bài 3", "Module 4", "Phần I"...)
+                    // -> Đây là tiêu đề phân mục con (SubCategory), TUYỆT ĐỐI KHÔNG làm phân mảnh hay đổi môn học của đề!
+                    bool isSubCategoryHeading = Regex.IsMatch(line, @"^(?:[\t\s|•\-–—;]*)(?:CHỦ\s*ĐỀ|CHU\s*DE|CHƯƠNG|CHUONG|BÀI|BAI|MODULE|PHẦN|PART|SECTION)\s*(?:[0-9IVXABCD]+)?\b", RegexOptions.IgnoreCase);
+
+                    if (!isSubCategoryHeading && resolvedTopic != "GENERAL" && resolvedTopic != "EDUCATION" && resolvedTopic != "THPT_NATIONAL")
+                    {
+                        // Khớp Môn học thực sự mới (ví dụ trong đề thi tổ hợp KHTN: "Môn: Hóa học")
+                        currentTopicCode = resolvedTopic;
+                        currentSubCategory = null;
+                    }
+                    else
+                    {
+                        // Tiêu đề Phân mục / Bài học / Chuyên đề con (VD: "Chủ đề 1: Máy tính và cộng đồng", "Chương II: ...")
+                        // Lưu trữ trọn vẹn toàn bộ dòng vào SubCategory của các câu hỏi tiếp theo!
+                        currentSubCategory = line.Trim();
+                        currentSectionTitle = line.Trim();
+                    }
+                    continue;
+                }
+
+
+                // 2b. Nhận dạng Section Headers động từ CIG & StructureDictionary (hỗ trợ GDPT 2025, Ngoại ngữ, SAT, Gaokao)
+                // Ưu tiên cao hơn isExplanationLine để nhận diện chính xác các tiêu đề như "PHẦN III. HƯỚNG DẪN GIẢI CHI TIẾT"
+                bool isSecHeader = cig.TryMatchSectionHeader(line, out string detectedSection);
+                if (!isQuestionLine && isSecHeader)
+                {
+                    finalizeCurrentQuestion();
+                    currentQuestion = null; // Reset câu hỏi hiện tại để tránh tràn lời giải xuyên phân đoạn
+                    currentSection = detectedSection;
+                    scopeManager.RegisterMacroSection(detectedSection, line);
+
+                    var mSecTitle = LinguisticMatch(cig, LinguisticKeys.SectionTitle, line);
+                    currentSectionTitle = mSecTitle.Success ? mSecTitle.Groups[1].Value.ToUpperInvariant() : (line.Length > 30 ? line.Substring(0, 30) : line);
+                    inExplanation = false;
+                    currentReadingPassage = null;
+                    passageStartQ = 0;
+                    passageEndQ = 0;
+                    if (currentTopicCode == "GENERAL" && (upper.Contains("ENGLISH") || upper.Contains("TIENG ANH") || upper.Contains("PRONUNCIATION") || upper.Contains("READING")))
+                    {
+                        currentTopicCode = "TIENG_ANH";
+                    }
+
+                    // Nếu trong dòng Section Header này có chứa kèm chỉ thị dải câu (ví dụ: "PHẦN II. ... Thí sinh trả lời từ câu 1 đến câu 4.")
+                    // Đăng ký bổ sung vào ScopeManager thông qua CIG Engine
+                    if (cig.TryParseScopeDirective(line, out var embeddedScope) && embeddedScope != null)
+                    {
+                        scopeManager.RegisterScopeDirective(embeddedScope);
+                    }
+
+                    continue;
+                }
+
+                // [SGI v5.0 Pillar 1]: Nhận diện Dải Chỉ Thị Tác Vụ Tuyến Tính (Scope-Guided Directives) thông qua CIG
+                // Ví dụ: "Từ câu 1 đến câu 12: Mỗi câu chỉ chọn một phương án...", "Questions 1-5: Mark the letter A, B, C or D..."
+                if (!isQuestionLine && !isExplanationLine && cig.TryParseScopeDirective(line, out var scopeWindow) && scopeWindow != null)
+                {
+                    finalizeCurrentQuestion();
+                    scopeManager.RegisterScopeDirective(scopeWindow);
+
+                    // Đăng ký dòng chỉ dẫn này làm Ngữ cảnh chung (Context Stimulus) cho dải câu hỏi tương ứng
+                    scopeManager.RegisterContextPassage(scopeWindow.StartQuestion, scopeWindow.EndQuestion, line, scopeWindow.RawDirective);
+                    currentReadingPassage = line;
+                    passageStartQ = scopeWindow.StartQuestion;
+                    passageEndQ = scopeWindow.EndQuestion > 0 ? scopeWindow.EndQuestion : int.MaxValue;
+                    inExplanation = false;
+
+                    // Đồng bộ currentSection nếu dải câu này bao quát từ câu kế tiếp
+                    if (scopeWindow.QuestionType != "UNKNOWN")
+                    {
+                        currentSection = scopeWindow.QuestionType;
+                        var mSecTitle = LinguisticMatch(cig, LinguisticKeys.SectionTitle, scopeWindow.RawDirective ?? "");
+                        currentSectionTitle = mSecTitle.Success ? mSecTitle.Groups[1].Value.ToUpperInvariant() : (scopeWindow.RawDirective?.Length > 40 ? scopeWindow.RawDirective.Substring(0, 40) + "..." : scopeWindow.RawDirective);
+                    }
+
+                    if (currentTopicCode == "GENERAL" && (upper.Contains("TIẾNG ANH") || upper.Contains("ENGLISH") || upper.Contains("PASSAGE") || upper.Contains("CLOZE")))
+                    {
+                        currentTopicCode = "TIENG_ANH";
+                    }
+                    continue;
+                }
+
+                // [SGI v5.0 Pillar 2]: Nhận diện Dải Ngữ cảnh Bài đọc hiểu / Tình huống (Passage Context Stimulus) thông qua CIG
+                // Ví dụ: "Read the following passage and mark the letter A, B, C or D on your answer sheet to indicate the correct answer to each of the questions from 1 to 5."
+                if (!isQuestionLine && !isExplanationLine && cig.TryParsePassageContextPrompt(line, out int ctxStartQ, out int ctxEndQ, out string ctxPromptTitle))
+                {
+                    finalizeCurrentQuestion();
+                    currentReadingPassage = line;
+                    passageStartQ = ctxStartQ;
+                    passageEndQ = ctxEndQ > 0 ? ctxEndQ : int.MaxValue;
+                    inExplanation = false;
+                    if (currentTopicCode == "GENERAL") currentTopicCode = "TIENG_ANH";
+                    continue;
+                }
+
+                // 2. Nhận dạng Tiêu đề Đoạn văn Đọc hiểu qua CIG (Passage / Advertisement / Leaflet / Cloze Test)
                 if (cig.TryMatchReadingPassage(line, out int pStart, out int pEnd))
                 {
                     finalizeCurrentQuestion();
@@ -179,40 +429,93 @@ namespace AegisQuiz.Infrastructure.Services.Docx
                     continue;
                 }
 
-                // 2b. Nhận dạng Section Headers động từ CIG & StructureDictionary (hỗ trợ GDPT 2025, Ngoại ngữ, SAT, Gaokao)
-                bool isSecHeader = cig.TryMatchSectionHeader(line, out string detectedSection);
-                if (!isQuestionLine && !isExplanationLine && isSecHeader)
+                // 2a. Nhận dạng chỉ dẫn làm bài (Instruction Directive: "Mark the letter...", "Choose the word...")
+                // Khi chuyển sang dạng bài tập mới: nếu chỉ dẫn có phạm vi câu hỏi (from X to Y) thì lưu làm Stimulus Context; nếu không thì reset context
+                bool isInstructionDirective = instructionDirectivePatterns.Any(p => Regex.IsMatch(line, p, RegexOptions.IgnoreCase));
+                if (!isQuestionLine && !isExplanationLine && isInstructionDirective)
                 {
-                    finalizeCurrentQuestion();
-                    currentSection = detectedSection;
-                    inExplanation = false;
-                    currentReadingPassage = null;
-                    passageStartQ = 0;
-                    passageEndQ = 0;
-                    if (currentTopicCode == "GENERAL" && (upper.Contains("ENGLISH") || upper.Contains("TIENG ANH") || upper.Contains("PRONUNCIATION") || upper.Contains("READING")))
+                    int dirStart = 0, dirEnd = 0;
+                    bool hasRange = cig.TryMatchReadingPassage(line, out dirStart, out dirEnd);
+                    if (!hasRange)
                     {
-                        currentTopicCode = "TIENG_ANH";
+                        var rangePatterns = cig.GetStructureDictionary().PassageRangePatterns;
+                        if (rangePatterns != null)
+                        {
+                            foreach (var rp in rangePatterns)
+                            {
+                                var mRange = Regex.Match(line, rp, RegexOptions.IgnoreCase);
+                                if (mRange.Success && mRange.Groups.Count >= 3)
+                                {
+                                    if (int.TryParse(mRange.Groups[1].Value, out dirStart) && int.TryParse(mRange.Groups[2].Value, out dirEnd))
+                                    {
+                                        hasRange = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
                     }
-                    continue;
+
+                    if (hasRange)
+                    {
+                        finalizeCurrentQuestion();
+                        currentReadingPassage = line;
+                        passageStartQ = dirStart;
+                        passageEndQ = dirEnd > 0 ? dirEnd : int.MaxValue;
+                        inExplanation = false;
+                        if (currentTopicCode == "GENERAL") currentTopicCode = "TIENG_ANH";
+                        continue;
+                    }
+
+                    if (currentQuestion == null || currentQuestionPendingLines.Count > 0 || !string.IsNullOrWhiteSpace(currentQuestion.Content))
+                    {
+                        finalizeCurrentQuestion();
+                        currentReadingPassage = null;
+                        passageStartQ = 0;
+                        passageEndQ = 0;
+                        continue;
+                    }
                 }
 
-                // 2c. Thu thập các đoạn văn tiếp theo của bài đọc hiểu khi chưa vào câu hỏi con
+                // 2b. Đọc tiếp nội dung đoạn văn đọc hiểu nếu đang ở trạng thái đọc bài và chưa gặp câu hỏi mới
                 if (!string.IsNullOrEmpty(currentReadingPassage) && currentQuestion == null && !isQuestionLine)
                 {
                     currentReadingPassage += "\n\n" + line;
                     continue;
                 }
 
-                // 3. Nhận dạng câu hỏi mới: Hỗ trợ hoàn toàn thông qua CIG Engine
+                // 2d. Nhận diện dòng Đáp án inline ngay dưới câu hỏi
                 var cleanLine = Regex.Replace(line, @"^<[a-z0-9]+>", "", RegexOptions.IgnoreCase).Trim();
-                if (cig.TryMatchQuestionAnchor(cleanLine, out int qNum, out var matchedRule, activeRules))
+                if (currentQuestion != null && !isSolutionPhase && (cig.IsAnswerLine(cleanLine, currentMatchedRule, out string inlineAns) || LinguisticMatch(cig, LinguisticKeys.ChoiceAnswerLine, cleanLine).Success))
                 {
+                    if (string.IsNullOrEmpty(inlineAns))
+                    {
+                        var mAns = LinguisticMatch(cig, LinguisticKeys.ChoiceAnswerLine, cleanLine);
+                        if (mAns.Success) inlineAns = mAns.Groups[1].Value.Trim();
+                    }
+                    if (!string.IsNullOrWhiteSpace(inlineAns))
+                    {
+                        if (inlineAns.Length == 1 && char.IsLetter(inlineAns[0]))
+                        {
+                            currentQuestion.SuggestedAnswer = (char.ToUpperInvariant(inlineAns[0]) - 'A' + 1).ToString();
+                        }
+                        else
+                        {
+                            currentQuestion.SuggestedAnswer = inlineAns;
+                        }
+                    }
+                    continue;
+                }
+
+                if (cig.TryMatchQuestionAnchor(cleanLine, out int qNum, out var matchedRule, activeRules) && matchedRule?.TargetExamType != "TABLE_MATRIX")
+                {
+                    LastDebugLogs.Add($"[MATCHED Q] '{cleanLine}' -> qNum={qNum}, isSol={isSolutionPhase}, topic={currentTopicCode}, rule={matchedRule?.RuleCode}");
                     currentMatchedRule = matchedRule;
                     string remainderText = "";
-                    var mStandard = Regex.Match(cleanLine, @"^(?:Câu|Question|Item|Task|Exercise|Q)\s*\d+[\.\:\s\-]+(.*)", RegexOptions.IgnoreCase);
+                    var mStandard = LinguisticMatch(cig, LinguisticKeys.StandardQuestionAnchor, cleanLine);
                     if (mStandard.Success)
                     {
-                        remainderText = mStandard.Groups[1].Value.Trim();
+                        remainderText = mStandard.Groups[1].Success ? mStandard.Groups[1].Value.Trim() : "";
                     }
                     else if (matchedRule != null)
                     {
@@ -228,28 +531,66 @@ namespace AegisQuiz.Infrastructure.Services.Docx
                         if (existingQ != null)
                         {
                             currentQuestion = existingQ;
+                            currentSubItemExplKey = null;
 
-                            // Kiểm tra xem dòng tiêu đề này có chứa Lời giải thực sự hay không
-                            var mExpl = Regex.Match(remainderText, @"^(?:(?:Lời\s*giải|L[.\?\s]*i\s*gi[.\?\s]*i|Hướng\s*dẫn\s*giải|Hu?ng\s*d?n\s*gi?i|HƯỚNG\s*DẪN|LỜI\s*GIẢI|HD|Giải\s*thích|Explanation|Rationale)[\.\:\s\-]+|Chọn\s+[A-D0-9,\.\-]+\s*[\.\:\s\-]+)(.*)", RegexOptions.IgnoreCase);
-                            if (mExpl.Success)
+                            // Kiểm tra xem dòng tiêu đề này có chứa Lời giải thực sự hay không (ủy quyền qua CIG Engine đa ngôn ngữ)
+                            if (cig.TryMatchExplanationStart(remainderText, matchedRule, out string explPart))
                             {
                                 inExplanation = true;
-                                string explPart = mExpl.Groups[1].Value.Trim();
                                 if (!string.IsNullOrWhiteSpace(explPart))
                                 {
-                                    AppendExplanationLine(currentQuestion, explPart, matchedRule);
+                                    AppendExplanationLine(currentQuestion, explPart, matchedRule, cig);
                                 }
-                                TryExtractAnswer(currentQuestion, remainderText, matchedRule);
+                                TryExtractAnswer(currentQuestion, remainderText, matchedRule, cig);
+                            }
+                            else if (Has(cig, existingQ.QuestionType, QuestionTypeProfileDto.CapFreeText))
+                            {
+                                // Đối với câu Tự luận hoặc Trả lời ngắn trong Pha Lời giải: Mọi nội dung đều là lời giải / bước tính
+                                inExplanation = true;
+                                if (!string.IsNullOrWhiteSpace(remainderText))
+                                {
+                                    AppendExplanationLine(currentQuestion, remainderText, matchedRule, cig);
+                                    TryExtractAnswer(currentQuestion, remainderText, matchedRule, cig);
+                                }
+                            }
+                            else if (Has(cig, existingQ.QuestionType, QuestionTypeProfileDto.CapTrueFalseFamily))
+                            {
+                                // Đối với câu Đúng/Sai trong Pha Lời giải: Mọi dòng dẫn nhập hoặc sub items đều là lời giải
+                                inExplanation = true;
+                                if (!string.IsNullOrWhiteSpace(remainderText))
+                                {
+                                    AppendExplanationLine(currentQuestion, remainderText, matchedRule, cig);
+                                }
+                            }
+                            else if (!string.IsNullOrWhiteSpace(remainderText) && Regex.IsMatch(remainderText, @"^[A-Ga-g][\.\:\)]"))
+                            {
+                                // Đối với câu Trắc nghiệm đơn: nếu ngay sau số câu là phương án đúng (ví dụ: "Câu 1. D. Chống lại...")
+                                inExplanation = true;
+                                var mAnsOpt = Regex.Match(remainderText, @"^([A-Ga-g])[\.\:\)]\s*(.*)");
+                                if (mAnsOpt.Success)
+                                {
+                                    string letter = mAnsOpt.Groups[1].Value.ToUpperInvariant();
+                                    if (string.IsNullOrWhiteSpace(existingQ.SuggestedAnswer) || existingQ.SuggestedAnswer.Contains("Điền đáp số"))
+                                    {
+                                        existingQ.SuggestedAnswer = (letter[0] - 'A' + 1).ToString();
+                                    }
+                                    string restContent = mAnsOpt.Groups[2].Value.Trim();
+                                    if (!string.IsNullOrWhiteSpace(restContent))
+                                    {
+                                        AppendExplanationLine(currentQuestion, restContent, matchedRule, cig);
+                                    }
+                                }
                             }
                             else
                             {
-                                // Dòng này chỉ là đề bài lặp lại -> chưa vào lời giải thực sự
+                                // Dòng này chỉ là đề bài lặp lại của trắc nghiệm -> chưa vào lời giải thực sự
                                 inExplanation = false;
                             }
                         }
                         else
                         {
                             currentQuestion = null;
+                            currentSubItemExplKey = null;
                             inExplanation = false;
                         }
                         continue;
@@ -260,9 +601,13 @@ namespace AegisQuiz.Infrastructure.Services.Docx
                     currentQuestionNumber = qNum;
                     inExplanation = false;
 
+                    // [SGI v5.0 Pillar 3]: Phân giải Dạng câu hỏi mong đợi từ Bộ điều phối CognitiveScopeManager
+                    // Kết hợp 3 tầng suy luận: [Scope Directives -> Section Macros -> CIG Rule Specification]
+                    string resolvedScopeType = scopeManager.ResolveExpectedQuestionType(currentQuestionNumber, currentSection);
+
                     var contentText = remainderText;
-                    var sameLineOptions = (currentSection == "SINGLE" || currentSection == "MULTI")
-                        ? ExtractUppercaseOptionsFromLine(contentText, matchedRule)
+                    var sameLineOptions = Has(cig, resolvedScopeType, QuestionTypeProfileDto.CapChoice)
+                        ? ExtractUppercaseOptionsFromLine(contentText, matchedRule, cig)
                         : new List<ParsedOption>();
                     if (sameLineOptions.Count < 2 && !sameLineOptions.Any(o => o.IsMarkedCorrect))
                     {
@@ -292,25 +637,49 @@ namespace AegisQuiz.Infrastructure.Services.Docx
 
                     if (!string.IsNullOrEmpty(currentReadingPassage) && currentQuestionNumber >= passageStartQ && currentQuestionNumber <= passageEndQ)
                     {
-                        attachedContextId = $"CTX_{currentExamCode}_{passageStartQ}_{passageEndQ}";
-                        attachedContextTitle = $"Bài đọc hiểu (Câu {passageStartQ} - {passageEndQ})";
+                        if (passageStartQ == 0) passageStartQ = currentQuestionNumber;
+                        attachedContextId = $"CTX_{currentExamCode}_{passageStartQ}";
+                        attachedContextTitle = passageEndQ < int.MaxValue && passageEndQ > passageStartQ
+                            ? $"Bài đọc hiểu (Câu {passageStartQ} - {passageEndQ})"
+                            : $"Bài đọc hiểu (Từ câu {passageStartQ})";
                         attachedContextContent = currentReadingPassage.Trim();
                     }
+                    else
+                    {
+                        var resolvedContext = scopeManager.ResolveContextForQuestion(currentQuestionNumber);
+                        if (resolvedContext != null)
+                        {
+                            attachedContextId = $"CTX_{currentExamCode}_{resolvedContext.StartQuestion}";
+                            attachedContextTitle = resolvedContext.ContextTitle;
+                            attachedContextContent = resolvedContext.ContextContent;
+                        }
+                    }
 
-                    var inferredTopic = currentTopicCode != "GENERAL" ? currentTopicCode : InferTopicFromContent(questionBody, dynamicContext);
+                    var inferredTopic = currentTopicCode != "GENERAL" 
+                        ? currentTopicCode 
+                        : (documentSubject ?? InferTopicFromContent(questionBody, dynamicContext));
 
                     string initialAnswer = "";
                     if (answerKeyMap != null)
                     {
                         var examCodes = new[] { currentExamCode, "DEFAULT" };
-                        var sections = new[] { currentSection, "SINGLE", "TRUE_FALSE", "MULTI_TRUE_FALSE", "SHORT_ANSWER" };
-                        var qNums = new[] { currentQuestionNumber, results.Count + 1 };
+                        // Tuân thủ nghiêm ngặt phân cấp Đề-Phần-Câu-Ý: CHỈ tra cứu trong Section tương đương của câu hỏi này
+                        var allowedSections = GetEquivalentSections(resolvedScopeType);
+                        if (!string.IsNullOrWhiteSpace(currentSection))
+                        {
+                            var secEquivs = GetEquivalentSections(currentSection);
+                            foreach (var s in secEquivs)
+                            {
+                                if (!allowedSections.Contains(s, StringComparer.OrdinalIgnoreCase)) allowedSections.Add(s);
+                            }
+                        }
+                        var qNums = new[] { currentQuestionNumber };
 
                         foreach (var ec in examCodes)
                         {
                             if (answerKeyMap.TryGetValue(ec, out var secMap))
                             {
-                                foreach (var sec in sections)
+                                foreach (var sec in allowedSections)
                                 {
                                     if (secMap.TryGetValue(sec, out var qAnsMap))
                                     {
@@ -331,10 +700,10 @@ namespace AegisQuiz.Infrastructure.Services.Docx
                     }
 
                     bool isFatal = cig.IsCriticalQuestion(questionBody, matchedRule);
-                    string? subCat = cig.DetectSubCategory(questionBody, matchedRule);
+                    string? subCat = cig.DetectSubCategory(questionBody, matchedRule) ?? currentSubCategory;
 
-                    string determinedQuestionType = currentSection;
-                    if (currentSection == "SINGLE" && !string.IsNullOrEmpty(matchedRule?.InteractionSpec?.DefaultQuestionType) && matchedRule.InteractionSpec.DefaultQuestionType != "SINGLE")
+                    string determinedQuestionType = resolvedScopeType;
+                    if (determinedQuestionType == "SINGLE" && !string.IsNullOrEmpty(matchedRule?.InteractionSpec?.DefaultQuestionType) && matchedRule.InteractionSpec.DefaultQuestionType != "SINGLE")
                     {
                         determinedQuestionType = matchedRule.InteractionSpec.DefaultQuestionType;
                     }
@@ -344,7 +713,8 @@ namespace AegisQuiz.Infrastructure.Services.Docx
                         Content = sameLineOptions.Count > 0 ? questionBody : "",
                         QuestionType = determinedQuestionType,
                         TopicCode = inferredTopic,
-                        Difficulty = isFatal ? 5 : (determinedQuestionType == "SINGLE" ? 2 : (determinedQuestionType == "TRUE_FALSE" ? 3 : 4)),
+                        TopicName = dynamicContext?.Topics?.FirstOrDefault(t => t.Code.Equals(inferredTopic, StringComparison.OrdinalIgnoreCase))?.Name ?? (inferredTopic == "MATH" || inferredTopic == "TOAN" ? "Toán học" : null),
+                        Difficulty = isFatal ? 5 : cig.GetDefaultDifficulty(determinedQuestionType),
                         ContentType = questionBody.Contains("data:image/") ? "image" : "text",
                         OptionType = "text",
                         SuggestedAnswer = initialAnswer,
@@ -354,8 +724,17 @@ namespace AegisQuiz.Infrastructure.Services.Docx
                         ContextTitle = attachedContextTitle,
                         ContextContent = attachedContextContent,
                         SourceExamName = currentExamCode,
-                        SourceSectionName = currentSection,
-                        SourceQuestionNo = currentQuestionNumber > 0 ? currentQuestionNumber.ToString() : null
+                        SourceSectionName = currentSectionTitle ?? currentSection,
+                        SourceQuestionNo = currentQuestionNumber > 0 ? currentQuestionNumber.ToString() : null,
+                        DurationSeconds = headerDurationSeconds,
+                        DomainCode = headerTaxonomy.DomainCode ?? "GENERAL",
+                        TargetLevel = headerTaxonomy.TargetLevel,
+                        AssessmentPurpose = headerTaxonomy.AssessmentPurpose,
+                        IssuingOrg = headerTaxonomy.IssuingOrg,
+                        OrgUnitName = headerTaxonomy.IssuingOrg != null && headerTaxonomy.IssuingOrg.Contains("Trường", StringComparison.OrdinalIgnoreCase) ? headerTaxonomy.IssuingOrg : null,
+                        BenchmarkYear = headerTaxonomy.BenchmarkYear ?? 2026,
+                        BenchmarkStandard = headerTaxonomy.BenchmarkStandard,
+                        Tags = new List<string>(headerTaxonomy.Tags)
                     };
 
                     if (sameLineOptions.Count > 0)
@@ -363,9 +742,13 @@ namespace AegisQuiz.Infrastructure.Services.Docx
                         foreach (var opt in sameLineOptions)
                         {
                             currentQuestion.Options.Add(opt.Content);
-                            if (opt.IsMarkedCorrect)
+                            if (opt.IsMarkedCorrect && string.IsNullOrEmpty(currentQuestion.SuggestedAnswer))
                             {
                                 currentQuestion.SuggestedAnswer = (opt.Letter - 'A' + 1).ToString();
+                            }
+                            if (opt.Content.Contains("data:image/"))
+                            {
+                                currentQuestion.OptionType = "image";
                             }
                         }
                     }
@@ -385,30 +768,30 @@ namespace AegisQuiz.Infrastructure.Services.Docx
                     {
                         if (!inExplanation)
                         {
-                            // Kiểm tra xem dòng này có phải là mở đầu của Lời giải không
-                            var mExplLine = Regex.Match(line, @"^(?:Lời\s*giải|L[.\?\s]*i\s*gi[.\?\s]*i|Hướng\s*dẫn\s*giải|Hu?ng\s*d?n\s*gi?i|HƯỚNG\s*DẪN|LỜI\s*GIẢI|HD|Giải\s*thích|Explanation|Rationale)[\.\:\s\-]*(.*)", RegexOptions.IgnoreCase);
-                            if (mExplLine.Success)
+                            // Kiểm tra xem dòng này có phải là mở đầu của Lời giải không (CIG Engine đa ngôn ngữ)
+                            if (cig.TryMatchExplanationStart(line, currentMatchedRule, out string rest))
                             {
                                 inExplanation = true;
-                                string rest = mExplLine.Groups[1].Value.Trim();
                                 if (!string.IsNullOrWhiteSpace(rest))
                                 {
-                                    AppendExplanationLine(currentQuestion, rest, currentMatchedRule);
+                                    AppendExplanationLine(currentQuestion, rest, currentMatchedRule, cig);
                                 }
+                                TryExtractAnswer(currentQuestion, line, currentMatchedRule, cig);
                                 continue;
                             }
-                            else if (Regex.IsMatch(line, @"^(?:Chọn|Đáp\s*án|Đáp\s*số)\s+[A-D0-9,\.\-]+", RegexOptions.IgnoreCase))
+                            else if (Has(cig, currentQuestion.QuestionType, QuestionTypeProfileDto.CapFreeText))
                             {
+                                // Đối với câu Tự luận hoặc Trả lời ngắn trong Pha Lời giải: Mọi dòng đều là bước giải/hướng dẫn giải
                                 inExplanation = true;
-                                AppendExplanationLine(currentQuestion, line, currentMatchedRule);
-                                TryExtractAnswer(currentQuestion, line, currentMatchedRule);
+                                AppendExplanationLine(currentQuestion, line, currentMatchedRule, cig);
+                                TryExtractAnswer(currentQuestion, line, currentMatchedRule, cig);
                                 continue;
                             }
 
                             // Kiểm tra xem dòng này có chứa phương án gạch chân / đánh dấu đúng trước khi vào Lời giải hay không
-                            if (currentQuestion.QuestionType == "SINGLE" || currentQuestion.QuestionType == "MULTI")
+                            if (Has(cig, currentQuestion.QuestionType, QuestionTypeProfileDto.CapChoice))
                             {
-                                var sameLineOpts = ExtractUppercaseOptionsFromLine(line, currentMatchedRule);
+                                var sameLineOpts = ExtractUppercaseOptionsFromLine(line, currentMatchedRule, cig);
                                 var markedOpt = sameLineOpts.FirstOrDefault(o => o.IsMarkedCorrect);
                                 if (markedOpt != null)
                                 {
@@ -417,28 +800,71 @@ namespace AegisQuiz.Infrastructure.Services.Docx
                                         currentQuestion.SuggestedAnswer = (markedOpt.Letter - 'A' + 1).ToString();
                                     }
                                 }
-                            }
-                            else if (currentQuestion.QuestionType == "TRUE_FALSE" || currentQuestion.QuestionType == "MULTI_TRUE_FALSE")
-                            {
-                                var matchTfItem = Regex.Match(line, @"^(?:<u>|\*|\*\*|\<b\>)?[\(\s]*([a-d1-4])[\)\.\:]\s*(?:</u>|\*|\*\*|\</b\>)?(.*)", RegexOptions.IgnoreCase);
-                                if (matchTfItem.Success)
+
+                                // Nếu dòng này chứa các phương án trắc nghiệm A, B, C, D lặp lại -> bỏ qua
+                                if (sameLineOpts.Count > 0 || Regex.IsMatch(line.Trim(), @"^[A-Ga-g][\.\:\)]\s+"))
                                 {
-                                    char itemChar = char.ToLowerInvariant(matchTfItem.Groups[1].Value[0]);
-                                    string itemLetter = (char.IsDigit(itemChar) ? (char)('a' + (itemChar - '1')) : itemChar).ToString();
+                                    continue;
+                                }
+
+                                // Nếu không phải các lựa chọn A, B, C, D lặp lại mà là văn bản giải thích tự nhiên -> BẬT LỜI GIẢI!
+                                inExplanation = true;
+                                AppendExplanationLine(currentQuestion, line, currentMatchedRule, cig);
+                                TryExtractAnswer(currentQuestion, line, currentMatchedRule, cig);
+                                continue;
+                            }
+                            else if (Has(cig, currentQuestion.QuestionType, QuestionTypeProfileDto.CapTrueFalseFamily))
+                            {
+                                if (cig.TryMatchSubItemMarker(line, currentMatchedRule, out string itemLetter, out string itemContent, out string inlineVal))
+                                {
                                     bool isUnderlinedOrMarked = line.Contains($"<u>{itemLetter}") || line.Contains($"<u>({itemLetter}") 
                                                              || line.Contains($"*{itemLetter}") || line.Contains($"<b>{itemLetter}")
                                                              || Regex.IsMatch(line, $@"<u>\s*\(?{itemLetter}[\)\.]?\s*</u>", RegexOptions.IgnoreCase);
-                                    string val = isUnderlinedOrMarked ? "Đúng" : "Sai";
+                                    string val = !string.IsNullOrEmpty(inlineVal) ? inlineVal : (isUnderlinedOrMarked ? "Đúng" : "Sai");
                                     UpdateTrueFalseAnswer(currentQuestion, itemLetter, val);
+
+                                    inExplanation = true;
+                                    currentSubItemExplKey = itemLetter;
+                                    AppendExplanationLine(currentQuestion, line, currentMatchedRule, cig);
+                                    string explText = string.IsNullOrWhiteSpace(itemContent) ? line : itemContent;
+                                    AppendSubItemExplanation(currentQuestion, currentSubItemExplKey, explText);
+                                    continue;
+                                }
+                                else
+                                {
+                                    // Dòng giải thích chung / công thức dẫn nhập của câu Đúng/Sai
+                                    inExplanation = true;
+                                    AppendExplanationLine(currentQuestion, line, currentMatchedRule, cig);
+                                    continue;
                                 }
                             }
 
-                            // Chưa vào lời giải và dòng này là các lựa chọn A, B, C, D lặp lại -> bỏ qua
+                            // Dạng câu hỏi mở rộng (MATCHING, ORDERING, FILL_BLANK, plugin Strategy...): không có Ý con.
+                            // Mọi dòng không phải phương án lặp lại đều là lời giải cấp ĐỀ_PHẦN_CÂU -> làm học liệu.
+                            if (!Regex.IsMatch(line.Trim(), @"^[A-Ga-g][\.\:\)]\s+"))
+                            {
+                                inExplanation = true;
+                                AppendExplanationLine(currentQuestion, line, currentMatchedRule, cig);
+                                TryExtractAnswer(currentQuestion, line, currentMatchedRule, cig);
+                            }
                             continue;
                         }
 
-                        AppendExplanationLine(currentQuestion, line, currentMatchedRule);
-                        TryExtractAnswer(currentQuestion, line, currentMatchedRule);
+                        AppendExplanationLine(currentQuestion, line, currentMatchedRule, cig);
+                        TryExtractAnswer(currentQuestion, line, currentMatchedRule, cig);
+
+                        // [SGI v5.5]: Tự động phân rã Lời giải vi mô vào từng SubItem (Ý con) phục vụ tạo Storyboard / Hoạt họa (CIG Engine)
+                        if (Has(cig, currentQuestion.QuestionType, QuestionTypeProfileDto.CapSubItems)
+                            && cig.TryMatchSubItemMarker(line, currentMatchedRule, out string subKey, out string subContent, out _))
+                        {
+                            currentSubItemExplKey = subKey;
+                            string explText = string.IsNullOrWhiteSpace(subContent) ? line : subContent;
+                            AppendSubItemExplanation(currentQuestion, currentSubItemExplKey, explText);
+                        }
+                        else if (!string.IsNullOrEmpty(currentSubItemExplKey))
+                        {
+                            AppendSubItemExplanation(currentQuestion, currentSubItemExplKey, line);
+                        }
                         continue;
                     }
 
@@ -456,23 +882,35 @@ namespace AegisQuiz.Infrastructure.Services.Docx
                     var q = results[i];
                     bool needsAns = string.IsNullOrWhiteSpace(q.SuggestedAnswer) 
                         || q.SuggestedAnswer.Contains("Điền đáp số")
-                        || (q.QuestionType == "MULTI_TRUE_FALSE" && !q.SuggestedAnswer.Contains(")"));
+                        || (Has(cig, q.QuestionType, QuestionTypeProfileDto.CapMultiStatement) && !q.SuggestedAnswer.Contains(")"));
 
                     if (needsAns)
                     {
                         int qNum1Based = i + 1;
                         var examCodes = new[] { q.SourceExamName ?? currentExamCode, currentExamCode, "DEFAULT" };
-                        var sections = new[] { q.QuestionType, "TRUE_FALSE", "MULTI_TRUE_FALSE", "SINGLE", "SHORT_ANSWER" };
-                        var matchQNum = Regex.Match(q.Content, @"^(?:Câu|Bài|Question|Item|Aufgabe|Exercice|CÂU|BÀI)?\s*(\d+)", RegexOptions.IgnoreCase);
-                        int localQNum = matchQNum.Success ? int.Parse(matchQNum.Groups[1].Value) : 0;
-                        var qNumsToTry = localQNum > 0 && localQNum != qNum1Based ? new[] { qNum1Based, localQNum } : new[] { qNum1Based };
+                        // Tuân thủ nghiêm ngặt phân cấp Đề-Phần-Câu-Ý: CHỈ tra cứu trong Section tương đương cùng dạng
+                        var allowedSections = GetEquivalentSections(q.QuestionType);
+                        if (!string.IsNullOrWhiteSpace(q.SourceSectionName))
+                        {
+                            var secEquivs = GetEquivalentSections(q.SourceSectionName);
+                            foreach (var s in secEquivs)
+                            {
+                                if (!allowedSections.Contains(s, StringComparer.OrdinalIgnoreCase)) allowedSections.Add(s);
+                            }
+                        }
+
+                        cig.TryExtractQuestionNumber(q.Content, null, out int localQNum);
+                        int.TryParse(q.SourceQuestionNo, out int sourceQNum);
+                        var qNumsToTry = new List<int>();
+                        if (sourceQNum > 0) qNumsToTry.Add(sourceQNum);
+                        if (localQNum > 0 && !qNumsToTry.Contains(localQNum)) qNumsToTry.Add(localQNum);
 
                         string foundAns = "";
                         foreach (var ec in examCodes)
                         {
                             if (answerKeyMap.TryGetValue(ec, out var secMap))
                             {
-                                foreach (var sec in sections)
+                                foreach (var sec in allowedSections)
                                 {
                                     if (secMap.TryGetValue(sec, out var qAnsMap))
                                     {
@@ -493,265 +931,93 @@ namespace AegisQuiz.Infrastructure.Services.Docx
 
                         if (!string.IsNullOrEmpty(foundAns))
                         {
-                            q.SuggestedAnswer = foundAns;
+                            if (Has(cig, q.QuestionType, QuestionTypeProfileDto.CapSingleAnswer))
+                            {
+                                var mLetter = Regex.Match(foundAns, @"\b([A-G])\b", RegexOptions.IgnoreCase);
+                                q.SuggestedAnswer = mLetter.Success ? (char.ToUpperInvariant(mLetter.Value[0]) - 'A' + 1).ToString() : foundAns;
+                            }
+                            else
+                            {
+                                q.SuggestedAnswer = foundAns;
+                            }
+
+                            // [SGI v5.5]: Đồng bộ đáp án từ bảng vào thực thể SubItems
+                            if (Has(cig, q.QuestionType, QuestionTypeProfileDto.CapTrueFalseFamily))
+                            {
+                                var subMatches = Regex.Matches(foundAns, @"([a-d])[\:\)]\s*(Đúng|Sai|True|False)", RegexOptions.IgnoreCase);
+                                foreach (Match m in subMatches)
+                                {
+                                    string sKey = m.Groups[1].Value.ToLowerInvariant();
+                                    string sVal = m.Groups[2].Value.StartsWith("đ", StringComparison.OrdinalIgnoreCase) || m.Groups[2].Value.StartsWith("d", StringComparison.OrdinalIgnoreCase) ? "Đúng" : "Sai";
+                                    var sub = q.SubItems.FirstOrDefault(s => string.Equals(s.Key, sKey, StringComparison.OrdinalIgnoreCase));
+                                    if (sub == null)
+                                    {
+                                        sub = new QuestionSubItemDto
+                                        {
+                                            Key = sKey,
+                                            Content = $"Mệnh đề {sKey})",
+                                            ExpectedAnswer = sVal,
+                                            OrderIndex = q.SubItems.Count + 1
+                                        };
+                                        q.SubItems.Add(sub);
+                                    }
+                                    else
+                                    {
+                                        sub.ExpectedAnswer = sVal;
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
 
-            // [Post-Process Pha 2: Đồng nhất Chủ đề cho toàn bộ Đề thi (Tránh phân mảnh 1 đề thành 2 chủ đề)]
-            var nonGeneralTopics = results
-                .Where(q => !string.IsNullOrEmpty(q.TopicCode) && q.TopicCode != "GENERAL")
-                .GroupBy(q => q.TopicCode)
-                .OrderByDescending(g => g.Count())
-                .ToList();
-
-            if (nonGeneralTopics.Count > 0)
-            {
-                var dominantTopic = nonGeneralTopics.First();
-                // Nếu chủ đề này chiếm từ 40% câu hỏi trở lên (ví dụ Toán học chiếm 16/22 = 73%)
-                if (dominantTopic.Count() >= results.Count * 0.4)
-                {
-                    string domCode = dominantTopic.Key;
-                    string domName = domCode switch
-                    {
-                        "MATH" => "Toán học",
-                        "VAT_LY" => "Vật lý",
-                        "HOA_HOC" => "Hóa học",
-                        "TIENG_ANH" => "Tiếng Anh",
-                        "SINH_HOC" => "Sinh học",
-                        "LICH_SU" => "Lịch sử",
-                        "DIA_LY" => "Địa lý",
-                        "TIN_HOC" => "Tin học",
-                        _ => domCode
-                    };
-
-                    foreach (var q in results)
-                    {
-                        if (string.IsNullOrEmpty(q.TopicCode) || q.TopicCode == "GENERAL")
-                        {
-                            q.TopicCode = domCode;
-                        }
-                        if (string.IsNullOrEmpty(q.TopicName))
-                        {
-                            q.TopicName = domName;
-                        }
-                    }
-                }
-            }
-
-            // [Post-Process Pha 3: Tự động bổ sung Hệ 5 Trục Tọa Độ và Thẻ thông minh cấp Đề thi qua UniversalCoordinateTaxonomyEngine]
-            var examGroups = results.GroupBy(q => q.SourceExamName ?? "DEFAULT").ToList();
-            foreach (var eg in examGroups)
-            {
-                var examQuestions = eg.ToList();
-                var sampleQ = examQuestions.Take(5).Select(q => q.Content).ToList();
-                var sampleRefs = examQuestions.Take(5).Select(q => q.AiExplanation ?? "").Where(e => !string.IsNullOrWhiteSpace(e)).ToList();
-                var dominantTopic = examQuestions.Select(q => q.TopicCode).FirstOrDefault(t => !string.IsNullOrEmpty(t) && t != "GENERAL") ?? "GENERAL";
-
-                var sniffed = UniversalCoordinateTaxonomyEngine.SniffCoordinates(
-                    fileName: null,
-                    sheetName: dominantTopic,
-                    headerBannerLines: new[] { eg.Key },
-                    sampleContents: sampleQ,
-                    sampleReferences: sampleRefs,
-                    dynamicContext: dynamicContext);
-
-                foreach (var q in examQuestions)
-                {
-                    if (string.IsNullOrWhiteSpace(q.DomainCode) || q.DomainCode == "GENERAL")
-                    {
-                        q.DomainCode = !string.IsNullOrWhiteSpace(sniffed.DomainCode) && sniffed.DomainCode != "GENERAL" ? sniffed.DomainCode : q.TopicCode;
-                    }
-                    if (string.IsNullOrWhiteSpace(q.TargetLevel)) q.TargetLevel = sniffed.TargetLevel;
-                    q.AssessmentPurpose ??= sniffed.AssessmentPurpose;
-                    q.IssuingOrg ??= sniffed.IssuingOrg;
-                    q.BenchmarkYear ??= sniffed.BenchmarkYear;
-                    q.BenchmarkStandard ??= sniffed.BenchmarkStandard;
-
-                    q.Tags ??= new List<string>();
-                    foreach (var t in sniffed.Tags)
-                    {
-                        AddTagIfNotExists(q.Tags, t);
-                    }
-                }
-            }
+            // [Taxonomy SSoT Delegation] Ủy quyền toàn bộ việc làm giàu tọa độ và taxonomy cấp đề cho UniversalCoordinateTaxonomyEngine
+            UniversalCoordinateTaxonomyEngine.EnrichExamTaxonomy(results, dynamicContext);
 
             return results;
         }
 
-        public static void AppendExplanationLine(DocxImportPreviewDto q, string line, QuestionParsingRuleDto? rule = null)
+        public static void AppendExplanationLine(DocxImportPreviewDto q, string line, QuestionParsingRuleDto? rule = null, IDynamicQuestionIngestionEngine? engine = null)
         {
-            if (string.IsNullOrWhiteSpace(line)) return;
-
-            if (Regex.IsMatch(line, @"^(?:Lời\s*giải|L?i\s*gi?i|Hướng\s*dẫn\s*giải|Hu?ng\s*d?n\s*gi?i|HƯỚNG\s*DẪN|LỜI\s*GIẢI|HD|Explanation|Rationale)[\.\:\s\-]*$", RegexOptions.IgnoreCase))
-                return;
-
-            if (string.IsNullOrWhiteSpace(q.AiExplanation))
-            {
-                q.AiExplanation = line;
-            }
-            else
-            {
-                q.AiExplanation += "\n" + line;
-            }
+            (engine ?? DynamicQuestionIngestionEngine.Instance).AppendExplanationLine(q, line, rule);
         }
 
         public static void UpdateTrueFalseAnswer(DocxImportPreviewDto q, string itemLetter, string val)
         {
-            var validLetters = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "a", "b", "c", "d" };
-            if (!validLetters.Contains(itemLetter)) return;
-
-            var parts = (q.SuggestedAnswer ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries)
-                .Select(p => p.Trim())
-                .Where(p => {
-                    var m = Regex.Match(p, @"^([a-d])[\:\)]", RegexOptions.IgnoreCase);
-                    return m.Success && !m.Groups[1].Value.Equals(itemLetter, StringComparison.OrdinalIgnoreCase);
-                })
-                .ToList();
-            parts.Add($"{itemLetter.ToLowerInvariant()}) {val}");
-            parts.Sort();
-            q.SuggestedAnswer = string.Join(", ", parts);
+            DynamicQuestionIngestionEngine.Instance.UpdateTrueFalseAnswer(q, itemLetter, val);
         }
 
-        public static void TryExtractAnswer(DocxImportPreviewDto q, string line, QuestionParsingRuleDto? rule = null)
+        /// <summary>
+        /// Nối dòng Lời giải vi mô cho từng Ý con (SubItem), phục vụ Storyboard / Phân cảnh Hoạt họa AI
+        /// </summary>
+        public static void AppendSubItemExplanation(DocxImportPreviewDto q, string subKey, string text)
         {
-            if (string.IsNullOrWhiteSpace(line)) return;
-
-            if (DynamicQuestionIngestionEngine.Instance.TryExtractInlineAnswer(line, q.QuestionType, rule, out string inlineAns))
-            {
-                if (q.QuestionType == "TRUE_FALSE" || q.QuestionType == "MULTI_TRUE_FALSE")
-                {
-                    var matchTf = Regex.Match(inlineAns, @"^([a-d1-4])[\:\)]\s*(.+)", RegexOptions.IgnoreCase);
-                    if (matchTf.Success)
-                    {
-                        char rawChar = matchTf.Groups[1].Value[0];
-                        string itemLetter = (char.IsDigit(rawChar) ? (char)('a' + (rawChar - '1')) : char.ToLowerInvariant(rawChar)).ToString();
-                        string val = matchTf.Groups[2].Value.Trim();
-                        string formattedVal = val.StartsWith("Đ", StringComparison.OrdinalIgnoreCase) || val.StartsWith("D", StringComparison.OrdinalIgnoreCase) ? "Đúng" : "Sai";
-                        UpdateTrueFalseAnswer(q, itemLetter, formattedVal);
-                        return;
-                    }
-                }
-                q.SuggestedAnswer = inlineAns;
-                return;
-            }
-
-            // Fallback tương thích ngược nếu rule không trích xuất được
-            if (q.QuestionType == "SINGLE")
-            {
-                var matchChon = Regex.Match(line, @"(?:^|[\.\:\s])(?:Chọn|Ch[oọ\?]n|Choose|Option)\s*(?:câu\s*|đáp\s*án\s*)?([A-D])\b", RegexOptions.IgnoreCase);
-                if (matchChon.Success)
-                {
-                    char letter = char.ToUpperInvariant(matchChon.Groups[1].Value[0]);
-                    q.SuggestedAnswer = (letter - 'A' + 1).ToString();
-                    return;
-                }
-
-                var matchDapAn = Regex.Match(line, @"^(?:suy\s*ra\s*)?(?:đáp\s*án|dap\s*an|d[\?\.]*p\s*[\?\.]*n|answer|key)(?:\s*(?:đúng\s*)?là)?[\:\s]+([A-D])\b", RegexOptions.IgnoreCase);
-                if (matchDapAn.Success)
-                {
-                    char letter = char.ToUpperInvariant(matchDapAn.Groups[1].Value[0]);
-                    q.SuggestedAnswer = (letter - 'A' + 1).ToString();
-                    return;
-                }
-
-                if (string.IsNullOrWhiteSpace(q.SuggestedAnswer) || q.SuggestedAnswer == "0")
-                {
-                    var matchLaDapAn = Regex.Match(line, @"\b([A-D])\s*(?:là\s*đáp\s*án|đúng)\b", RegexOptions.IgnoreCase);
-                    if (matchLaDapAn.Success)
-                    {
-                        char letter = char.ToUpperInvariant(matchLaDapAn.Groups[1].Value[0]);
-                        q.SuggestedAnswer = (letter - 'A' + 1).ToString();
-                        return;
-                    }
-                }
-            }
-            else if (q.QuestionType == "SHORT_ANSWER")
-            {
-                var matchShort = Regex.Match(line, @"^(?:Đáp\s*số|Đáp\s*án|Dap\s*so|Dap\s*an|Da['\s]*p\s*a['\s]*n|Kết\s*quả)(?:\s*bằng)?[\.\:\s\=]+\$?([0-9\,\.\-]+)\$?", RegexOptions.IgnoreCase);
-                if (matchShort.Success)
-                {
-                    q.SuggestedAnswer = matchShort.Groups[1].Value.Trim().Trim('$').Trim();
-                    return;
-                }
-            }
-            else if (q.QuestionType == "TRUE_FALSE" || q.QuestionType == "MULTI_TRUE_FALSE")
-            {
-                var matchTf = Regex.Match(line, @"(?:^|[\(\s])([a-d1-4])[\)\.\:]\s*.*?\b(?:chọn\s+)?(đúng|sai|true|false)\b", RegexOptions.IgnoreCase);
-                if (!matchTf.Success)
-                {
-                    matchTf = Regex.Match(line, @"\b(?:ý|mệnh\s*đề|khẳng\s*định)\s+([a-d1-4])\b.*?\b(?:chọn\s+)?(đúng|sai|true|false)\b", RegexOptions.IgnoreCase);
-                }
-                if (matchTf.Success)
-                {
-                    char raw = matchTf.Groups[1].Value[0];
-                    string itemLetter = (char.IsDigit(raw) ? (char)('a' + (raw - '1')) : char.ToLowerInvariant(raw)).ToString();
-                    string valToken = matchTf.Groups[2].Value.ToLowerInvariant();
-                    string val = (valToken.StartsWith("đ") || valToken.StartsWith("d") || valToken.StartsWith("t")) ? "Đúng" : "Sai";
-                    UpdateTrueFalseAnswer(q, itemLetter, val);
-                }
-            }
+            DynamicQuestionIngestionEngine.Instance.AppendSubItemExplanation(q, subKey, text);
         }
 
-        public static void FinalizeAndMergeQuestion(
-            List<DocxImportPreviewDto> results,
-            Dictionary<string, DocxImportPreviewDto> questionMap,
+        public static void TryExtractAnswer(
             DocxImportPreviewDto q,
-            string examCode,
-            int qNum,
-            DynamicDomainContext? ctx = null)
+            string line,
+            QuestionParsingRuleDto? rule = null,
+            IDynamicQuestionIngestionEngine? engine = null)
         {
-            FinalizeQuestion(q, ctx);
+            (engine ?? DynamicQuestionIngestionEngine.Instance).TryExtractAnswer(q, line, rule);
+        }
 
-            string key = $"{examCode}_{q.QuestionType}_{qNum}";
+        public static string NormalizeSectionKey(string? rawSec, IDynamicQuestionIngestionEngine? engine = null)
+        {
+            return (engine ?? DynamicQuestionIngestionEngine.Instance).NormalizeSectionKey(rawSec);
+        }
 
-            if (questionMap.TryGetValue(key, out var existing))
-            {
-                if (string.IsNullOrWhiteSpace(existing.AiExplanation) && !string.IsNullOrWhiteSpace(q.AiExplanation))
-                {
-                    existing.AiExplanation = q.AiExplanation;
-                }
-                else if (!string.IsNullOrWhiteSpace(q.AiExplanation) && q.AiExplanation.Length > existing.AiExplanation.Length)
-                {
-                    existing.AiExplanation = q.AiExplanation;
-                }
-
-                if ((string.IsNullOrWhiteSpace(existing.SuggestedAnswer) || existing.SuggestedAnswer.Contains("Điền đáp số"))
-                    && !string.IsNullOrWhiteSpace(q.SuggestedAnswer))
-                {
-                    existing.SuggestedAnswer = q.SuggestedAnswer;
-                }
-
-                if (existing.Options.Count == 0 && q.Options.Count > 0)
-                {
-                    existing.Options = q.Options;
-                    existing.OptionType = q.OptionType;
-                }
-
-                if (q.Content.Length > existing.Content.Length && q.Content.Contains("data:image/"))
-                {
-                    existing.Content = q.Content;
-                    existing.ContentType = q.ContentType;
-                }
-            }
-            else
-            {
-                questionMap[key] = q;
-                if (!string.IsNullOrEmpty(q.SourceSectionName))
-                {
-                    questionMap[$"{examCode}_{q.SourceSectionName}_{qNum}"] = q;
-                }
-                if (q.QuestionType == "MULTI_TRUE_FALSE")
-                {
-                    questionMap[$"{examCode}_TRUE_FALSE_{qNum}"] = q;
-                }
-                else if (q.QuestionType == "TRUE_FALSE")
-                {
-                    questionMap[$"{examCode}_MULTI_TRUE_FALSE_{qNum}"] = q;
-                }
-                results.Add(q);
-            }
+        /// <summary>
+        /// Chuẩn hóa khóa phân đoạn: ưu tiên dấu hiệu trong tên phần (alias đa ngôn ngữ từ hồ sơ dạng câu hỏi);
+        /// nếu tên phần không nhận diện được (ví dụ "PHẦN IV", "PHẦN TỰ CHỌN") thì dùng dạng câu hỏi đã phân loại
+        /// để khóa ĐỀ_PHẦN_CÂU luôn duy nhất.
+        /// </summary>
+        public static string NormalizeSectionKey(string? rawSec, string? questionType, IDynamicQuestionIngestionEngine? engine = null)
+        {
+            return (engine ?? DynamicQuestionIngestionEngine.Instance).NormalizeSectionKey(rawSec, questionType);
         }
 
         /// <summary>
@@ -764,822 +1030,93 @@ namespace AegisQuiz.Infrastructure.Services.Docx
             string section,
             int qNum)
         {
-            var candidateSections = GetEquivalentSections(section);
-
-            // 1. Tra cứu theo questionMap với các candidate sections
-            foreach (var sec in candidateSections)
-            {
-                string key = $"{examCode}_{sec}_{qNum}";
-                if (questionMap.TryGetValue(key, out var found))
-                {
-                    return found;
-                }
-            }
-
-            // 2. Tra cứu trong danh sách kết quả đã bóc tách
-            var matchedInResults = results.FirstOrDefault(r =>
-                (string.Equals(r.SourceExamName, examCode, StringComparison.OrdinalIgnoreCase) || examCode == "DEFAULT") &&
-                candidateSections.Any(s => string.Equals(r.SourceSectionName, s, StringComparison.OrdinalIgnoreCase) 
-                                        || string.Equals(r.QuestionType, s, StringComparison.OrdinalIgnoreCase)) &&
-                r.SourceQuestionNo == qNum.ToString());
-
-            if (matchedInResults != null)
-            {
-                return matchedInResults;
-            }
-
-            // 3. Fallback an toàn: CHỈ KHI toàn bộ đề này có DUY NHẤT một câu mang số qNum đó (đề không chia phần hoặc đánh số câu liên tục từ 1..N)
-            var allWithQNum = results.Where(r =>
-                (string.Equals(r.SourceExamName, examCode, StringComparison.OrdinalIgnoreCase) || examCode == "DEFAULT") &&
-                r.SourceQuestionNo == qNum.ToString()).ToList();
-
-            if (allWithQNum.Count == 1)
-            {
-                return allWithQNum[0];
-            }
-
-            return null;
+            return DynamicQuestionIngestionEngine.Instance.FindQuestionByHierarchy(questionMap, results, examCode, section, qNum);
         }
 
-        public static List<string> GetEquivalentSections(string section)
+        public static List<string> GetEquivalentSections(string section, IDynamicQuestionIngestionEngine? engine = null)
         {
-            var secUpper = (section ?? "SINGLE").ToUpperInvariant();
-            if (secUpper == "TRUE_FALSE" || secUpper == "MULTI_TRUE_FALSE")
-                return new List<string> { "MULTI_TRUE_FALSE", "TRUE_FALSE" };
-            if (secUpper == "SINGLE" || secUpper == "MULTI")
-                return new List<string> { "SINGLE", "MULTI" };
-            if (secUpper == "SHORT_ANSWER")
-                return new List<string> { "SHORT_ANSWER" };
-            if (secUpper == "ESSAY")
-                return new List<string> { "ESSAY" };
-            return new List<string> { secUpper };
+            return (engine ?? DynamicQuestionIngestionEngine.Instance).GetEquivalentSections(section);
         }
 
-        public static List<ParsedOption> ExtractUppercaseOptionsFromLine(string line, QuestionParsingRuleDto? rule = null)
+        public static List<ParsedOption> ExtractUppercaseOptionsFromLine(string line, QuestionParsingRuleDto? rule = null, IDynamicQuestionIngestionEngine? engine = null)
         {
-            var options = new List<ParsedOption>();
-            if (string.IsNullOrWhiteSpace(line)) return options;
-
-            var cigOpts = DynamicQuestionIngestionEngine.Instance.ExtractOptions(line, rule);
-            if (cigOpts.Count > 0)
-            {
-                foreach (var opt in cigOpts)
-                {
-                    char rawChar = opt.Letter;
-                    if (char.IsUpper(rawChar) || char.IsDigit(rawChar))
-                    {
-                        char letter = char.IsDigit(rawChar) ? (char)('A' + (rawChar - '1')) : rawChar;
-                        options.Add(new ParsedOption
-                        {
-                            Letter = letter,
-                            Content = opt.Content,
-                            IsMarkedCorrect = opt.IsMarkedCorrect
-                        });
-                    }
-                }
-                if (options.Count > 0) return options;
-            }
-
-            bool isGplx = rule?.RuleCode == "VN_GPLX_600_STANDARD" || rule?.TargetExamType == "GPLX";
-            string pattern = isGplx
-                ? @"(?:^|[\s\t\–\—]+)(?:<u>|\*|\*\*|\<b\>)?(\*?)((?-i:[A-H])|[1-4])(\*?)(?:</u>|\*|\*\*|\</b\>)?[\.\:\)](?:</u>|\</b\>)?[\s\t]+"
-                : @"(?:^|[\s\t\–\—]+)(?:<u>|\*|\*\*|\<b\>)?(\*?)(?-i:([A-H]))(\*?)(?:</u>|\*|\*\*|\</b\>)?[\.\:\)](?:</u>|\</b\>)?[\s\t]+";
-
-            var regex = new Regex(pattern);
-            var matches = regex.Matches(line);
-            if (matches.Count == 0) return options;
-
-            if (matches.Count == 1 && char.IsDigit(matches[0].Groups[2].Value[0]) && !isGplx)
-            {
-                return options;
-            }
-
-            for (int i = 0; i < matches.Count; i++)
-            {
-                var match = matches[i];
-                char rawChar = match.Groups[2].Value[0];
-                char letter = char.IsDigit(rawChar) ? (char)('A' + (rawChar - '1')) : char.ToUpperInvariant(rawChar);
-                bool isCorrect = match.Value.Contains("<u>") || match.Value.Contains("<b>") || match.Groups[1].Value == "*" || match.Groups[3].Value == "*";
-
-                int contentStart = match.Index + match.Length;
-                int contentEnd = (i + 1 < matches.Count) ? matches[i + 1].Index : line.Length;
-
-                string content = line.Substring(contentStart, contentEnd - contentStart).Trim();
-                content = Regex.Replace(content, @"[\.\s\t]+$", "").Trim();
-
-                options.Add(new ParsedOption
-                {
-                    Letter = letter,
-                    Content = content,
-                    IsMarkedCorrect = isCorrect
-                });
-            }
-
-            return options;
+            var cig = engine ?? DynamicQuestionIngestionEngine.Instance;
+            return cig.ExtractUppercaseOptionsFromLine(line, rule)
+                .Select(o => new ParsedOption { Letter = o.Letter, Content = o.Content, IsMarkedCorrect = o.IsMarkedCorrect })
+                .ToList();
         }
 
-        private static bool TryExtractOptionsBottomUp(
-            List<string> lines,
-            string currentSection,
-            QuestionParsingRuleDto? rule,
-            out List<ParsedOption> options,
-            out int optionStartIndex,
-            out string questionType)
+        public static List<ParsedOption> ExtractOptionsFromLine(string line, QuestionParsingRuleDto? rule = null, IDynamicQuestionIngestionEngine? engine = null)
         {
-            options = new List<ParsedOption>();
-            optionStartIndex = lines.Count;
-            questionType = currentSection;
-
-            if (lines.Count == 0) return false;
-
-            bool isTfSection = currentSection == "TRUE_FALSE" || currentSection == "MULTI_TRUE_FALSE";
-            bool hasExplicitTfPrompt = lines.Any(l => Regex.IsMatch(l, @"(?:đúng\s*[-–\/\s]*sai|chọn\s+đúng\s+hoặc\s+sai|mệnh\s+đề\s+đúng\s+hay\s+sai|true\s*[-–\/\s]*false)", RegexOptions.IgnoreCase));
-
-            // [ƯU TIÊN SECTION ĐÚNG/SAI GDPT 2025]: Nếu đang ở Section TRUE_FALSE hoặc có prompt Đúng/Sai rõ ràng
-            if (isTfSection || hasExplicitTfPrompt)
-            {
-                if (TryExtractTrueFalseOptions(lines, out var tfOptions, out int tfStartIdx))
-                {
-                    options = tfOptions;
-                    optionStartIndex = tfStartIdx;
-                    questionType = "MULTI_TRUE_FALSE";
-                    return true;
-                }
-            }
-
-            // 1. ƯU TIÊN SỐ 1: Phương án in HOA (Chuẩn SINGLE / MULTI: A., B., C., D.)
-            // 1A. Quét Inline Options ở cuối (dòng chứa >= 2 options hoa, ví dụ A... B... C... D... hoặc A... B... và C... D...)
-            int inlineStart = lines.Count;
-            var inlineOpts = new List<ParsedOption>();
-            for (int i = lines.Count - 1; i >= 0; i--)
-            {
-                var lineOpts = ExtractUppercaseOptionsFromLine(lines[i], rule);
-                if (lineOpts.Count >= 2)
-                {
-                    inlineOpts.InsertRange(0, lineOpts);
-                    inlineStart = i;
-                    if (lineOpts[0].Letter == 'A') break;
-                }
-                else if (lineOpts.Count == 1 && inlineOpts.Count > 0)
-                {
-                    inlineOpts.InsertRange(0, lineOpts);
-                    inlineStart = i;
-                    if (lineOpts[0].Letter == 'A') break;
-                }
-                else
-                {
-                    break;
-                }
-            }
-
-            if (inlineOpts.Count >= 2 && (inlineOpts[0].Letter == 'A' || inlineOpts[0].Letter == '1'))
-            {
-                options = inlineOpts;
-                optionStartIndex = inlineStart;
-                questionType = "SINGLE";
-                return true;
-            }
-
-            // 1B. Quét Multiline Options ở cuối (A., B., C., D. trên nhiều dòng, bao gồm công thức toán hoặc ảnh xuống dòng riêng)
-            if (TryExtractUppercaseMultilineOptions(lines, out var multilineOpts, out int multilineStart))
-            {
-                options = multilineOpts;
-                optionStartIndex = multilineStart;
-                questionType = "SINGLE";
-                return true;
-            }
-
-            // Fallback cho trường hợp đề Đúng/Sai nhưng Section ban đầu chưa xác định
-            if (!isTfSection && !hasExplicitTfPrompt)
-            {
-                if (TryExtractTrueFalseOptions(lines, out var fallbackTfOpts, out int fallbackTfStart))
-                {
-                    options = fallbackTfOpts;
-                    optionStartIndex = fallbackTfStart;
-                    questionType = "MULTI_TRUE_FALSE";
-                    return true;
-                }
-            }
-
-            // 3. ƯU TIÊN SỐ 3: Phương án chữ thường cá biệt (a., b., c., d.) khi không có chữ hoa
-            if (currentSection == "SINGLE")
-            {
-                var lowerOpts = new List<ParsedOption>();
-                int lowerStart = lines.Count;
-                char expectedLower = '\0';
-                for (int i = lines.Count - 1; i >= 0; i--)
-                {
-                    var match = Regex.Match(lines[i], @"^(\*?)(?:([a-d])|[\(]([a-d])[\)])[\.\:\)][\s\t]+(.*)", RegexOptions.None);
-                    if (match.Success)
-                    {
-                        char ltr = (!string.IsNullOrEmpty(match.Groups[2].Value) ? match.Groups[2].Value : match.Groups[3].Value)[0];
-                        bool isCorrect = match.Groups[1].Value == "*";
-                        string cnt = match.Groups[4].Value.Trim();
-
-                        if (expectedLower == '\0')
-                        {
-                            if (ltr >= 'b' && ltr <= 'd')
-                            {
-                                expectedLower = (char)(ltr - 1);
-                                lowerOpts.Insert(0, new ParsedOption { Letter = char.ToUpperInvariant(ltr), Content = cnt, IsMarkedCorrect = isCorrect });
-                                lowerStart = i;
-                            }
-                            else break;
-                        }
-                        else if (ltr == expectedLower)
-                        {
-                            lowerOpts.Insert(0, new ParsedOption { Letter = char.ToUpperInvariant(ltr), Content = cnt, IsMarkedCorrect = isCorrect });
-                            lowerStart = i;
-                            if (ltr == 'a') break;
-                            expectedLower = (char)(ltr - 1);
-                        }
-                        else break;
-                    }
-                    else break;
-                }
-
-                if (lowerOpts.Count >= 2 && lowerOpts[0].Letter == 'A')
-                {
-                    bool hasMoreItemsAbove = lowerStart > 0 && Regex.IsMatch(lines[lowerStart - 1], @"^[a-z][\.\)]", RegexOptions.IgnoreCase);
-                    if (!hasMoreItemsAbove)
-                    {
-                        options = lowerOpts;
-                        optionStartIndex = lowerStart;
-                        questionType = "SINGLE";
-                        return true;
-                    }
-                }
-            }
-
-            return false;
+            var cig = engine ?? DynamicQuestionIngestionEngine.Instance;
+            return cig.ExtractOptionsFromLine(line, rule)
+                .Select(o => new ParsedOption { Letter = o.Letter, Content = o.Content, IsMarkedCorrect = o.IsMarkedCorrect })
+                .ToList();
         }
 
-        private static bool TryExtractTrueFalseOptions(
-            List<string> lines,
-            out List<ParsedOption> options,
-            out int startIndex)
+        public static void FinalizeQuestion(
+            DocxImportPreviewDto q, 
+            DynamicDomainContext? ctx = null,
+            IDynamicQuestionIngestionEngine? engine = null,
+            QuestionParsingRuleDto? rule = null)
         {
-            options = new List<ParsedOption>();
-            startIndex = lines.Count;
-
-            var tfSubItems = new List<ParsedOption>();
-            int tfStart = -1;
-            char expectedLetter = 'a';
-            ParsedOption? currentTfOpt = null;
-
-            for (int i = 0; i < lines.Count; i++)
-            {
-                var line = lines[i].Trim();
-                if (string.IsNullOrWhiteSpace(line)) continue;
-
-                // Match nhãn đúng sai: a), a., (a), <u>b)</u>, <b>c.</b>, etc.
-                var matchTf = Regex.Match(line, @"^(?:<u>|\*|\*\*|\<b\>|\<strong\>|\<em\>)*[\(\[\s]*((?-i:[a-d])|[1-4])(?:\</[a-z0-9]+\>)*[\)\]\.\:\-]+(?:\</[a-z0-9]+\>)*\s*(.*)");
-                if (matchTf.Success)
-                {
-                    char rawChar = matchTf.Groups[1].Value[0];
-                    char letterChar = char.IsDigit(rawChar) ? (char)('a' + (rawChar - '1')) : char.ToLowerInvariant(rawChar);
-
-                    if (letterChar == expectedLetter)
-                    {
-                        if (tfStart == -1) tfStart = i;
-                        string content = matchTf.Groups[2].Value.Trim();
-                        bool isCorrect = line.Contains("<u>") || line.Contains("<b>") || line.Contains("*");
-                        currentTfOpt = new ParsedOption
-                        {
-                            Letter = letterChar,
-                            Content = $"{letterChar}) {content}",
-                            IsMarkedCorrect = isCorrect
-                        };
-                        tfSubItems.Add(currentTfOpt);
-                        expectedLetter = (char)(expectedLetter + 1);
-                        continue;
-                    }
-                }
-
-                // Nếu đã bắt đầu vào khối phương án a, b, c, d
-                if (currentTfOpt != null)
-                {
-                    // Dòng này là dòng nội dung nhiều dòng (công thức toán, hình ảnh, văn bản xuống dòng) của option hiện tại
-                    currentTfOpt.Content = string.IsNullOrEmpty(currentTfOpt.Content) ? line : $"{currentTfOpt.Content}\n{line}";
-                    if (line.Contains("<u>") || line.Contains("<b>") || line.Contains("*"))
-                    {
-                        currentTfOpt.IsMarkedCorrect = true;
-                    }
-                }
-            }
-
-            if (tfSubItems.Count >= 2)
-            {
-                options = tfSubItems;
-                startIndex = tfStart;
-                return true;
-            }
-
-            return false;
+            (engine ?? DynamicQuestionIngestionEngine.Instance).FinalizeQuestion(q, ctx, rule);
         }
 
-        private static bool TryExtractUppercaseMultilineOptions(
-            List<string> lines,
-            out List<ParsedOption> options,
-            out int startIndex)
+        public static void FinalizeAndMergeQuestion(
+            List<DocxImportPreviewDto> results,
+            Dictionary<string, DocxImportPreviewDto> questionMap,
+            DocxImportPreviewDto q,
+            string examCode,
+            int qNum,
+            DynamicDomainContext? ctx = null,
+            IDynamicQuestionIngestionEngine? engine = null,
+            QuestionParsingRuleDto? rule = null)
         {
-            options = new List<ParsedOption>();
-            startIndex = lines.Count;
-
-            var subItems = new List<ParsedOption>();
-            int singleStart = -1;
-            char expectedUpper = 'A';
-            ParsedOption? currentUpperOpt = null;
-
-            for (int i = 0; i < lines.Count; i++)
-            {
-                var line = lines[i].Trim();
-                if (string.IsNullOrWhiteSpace(line)) continue;
-
-                // Match nhãn in hoa: A., A), [A], <u>A.</u>, etc.
-                var matchUpper = Regex.Match(line, @"^(?:<u>|\*|\*\*|\<b\>|\<strong\>|\<em\>)*[\(\[\s]*((?-i:[A-H])|[1-4])(?:\</[a-z0-9]+\>)*[\)\]\.\:\-]+(?:\</[a-z0-9]+\>)*\s*(.*)");
-                if (matchUpper.Success)
-                {
-                    char rawChar = matchUpper.Groups[1].Value[0];
-                    char letterChar = char.IsDigit(rawChar) ? (char)('A' + (rawChar - '1')) : rawChar;
-
-                    if (letterChar == expectedUpper)
-                    {
-                        if (singleStart == -1) singleStart = i;
-                        string content = matchUpper.Groups[2].Value.Trim();
-                        bool isCorrect = line.Contains("<u>") || line.Contains("<b>") || line.Contains("*");
-                        currentUpperOpt = new ParsedOption
-                        {
-                            Letter = letterChar,
-                            Content = content,
-                            IsMarkedCorrect = isCorrect
-                        };
-                        subItems.Add(currentUpperOpt);
-                        expectedUpper = (char)(expectedUpper + 1);
-                        continue;
-                    }
-                }
-
-                if (currentUpperOpt != null)
-                {
-                    currentUpperOpt.Content = string.IsNullOrEmpty(currentUpperOpt.Content) ? line : $"{currentUpperOpt.Content}\n{line}";
-                    if (line.Contains("<u>") || line.Contains("<b>") || line.Contains("*"))
-                    {
-                        currentUpperOpt.IsMarkedCorrect = true;
-                    }
-                }
-            }
-
-            if (subItems.Count >= 2 && subItems[0].Letter == 'A')
-            {
-                options = subItems;
-                startIndex = singleStart;
-                return true;
-            }
-
-            return false;
-        }
-
-        private static void ResolveQuestionBlockBottomUp(
-            DocxImportPreviewDto currentQuestion,
-            List<string> rawLines,
-            string currentSection,
-            QuestionParsingRuleDto? matchedRule,
-            DynamicQuestionIngestionEngine cig)
-        {
-            var lines = new List<string>(rawLines.Where(l => !string.IsNullOrWhiteSpace(l)));
-            if (lines.Count == 0) return;
-
-            if (currentQuestion.Options.Count > 0)
-            {
-                while (lines.Count > 0)
-                {
-                    var lastLine = lines[^1].Trim();
-                    if (cig.IsAnswerLine(lastLine, matchedRule, out string ansToken))
-                    {
-                        currentQuestion.SuggestedAnswer = ansToken;
-                        lines.RemoveAt(lines.Count - 1);
-                        continue;
-                    }
-                    if (cig.IsExplanationLine(lastLine, matchedRule))
-                    {
-                        AppendExplanationLine(currentQuestion, lastLine, matchedRule);
-                        lines.RemoveAt(lines.Count - 1);
-                        continue;
-                    }
-                    break;
-                }
-                foreach (var line in lines)
-                {
-                    currentQuestion.Content += "\n" + line;
-                }
-                return;
-            }
-
-            // 1. Tách dòng Lời giải hoặc Đáp án ở cuối (nếu có)
-            int expStart = -1;
-            for (int i = 0; i < lines.Count; i++)
-            {
-                if (cig.IsExplanationLine(lines[i], matchedRule) || Regex.IsMatch(lines[i], @"^(?:Lời\s*giải|L[\.\?\s]*i\s*gi[\.\?\s]*i|Hướng\s*dẫn\s*giải|Hu?ng\s*d?n\s*gi?i|HƯỚNG\s*DẪN|LỜI\s*GIẢI|HD|Giải\s*thích|Explanation|Rationale)[\.\:\s\-]*$", RegexOptions.IgnoreCase))
-                {
-                    expStart = i;
-                    break;
-                }
-            }
-            if (expStart >= 0)
-            {
-                var expLines = lines.Skip(expStart).ToList();
-                foreach (var exp in expLines)
-                {
-                    AppendExplanationLine(currentQuestion, exp, matchedRule);
-                    TryExtractAnswer(currentQuestion, exp, matchedRule);
-                }
-                lines = lines.Take(expStart).ToList();
-            }
-
-            while (lines.Count > 0)
-            {
-                var lastLine = lines[^1].Trim();
-                if (cig.IsAnswerLine(lastLine, matchedRule, out string ansToken))
-                {
-                    if (ansToken.Length == 1 && char.IsLetter(ansToken[0]))
-                    {
-                        int optIndex = char.ToUpperInvariant(ansToken[0]) - 'A' + 1;
-                        currentQuestion.SuggestedAnswer = optIndex.ToString();
-                    }
-                    else
-                    {
-                        currentQuestion.SuggestedAnswer = ansToken;
-                    }
-                    lines.RemoveAt(lines.Count - 1);
-                    continue;
-                }
-
-                var matchExp = Regex.Match(lastLine, @"^(?:Giải\s*thích|Căn\s*cứ|Ghi\s*chú)[\.\:\s]+(.*)", RegexOptions.IgnoreCase);
-                if (matchExp.Success)
-                {
-                    currentQuestion.AiExplanation = matchExp.Groups[1].Value.Trim();
-                    lines.RemoveAt(lines.Count - 1);
-                    continue;
-                }
-
-                if (cig.IsExplanationLine(lastLine, matchedRule))
-                {
-                    AppendExplanationLine(currentQuestion, lastLine, matchedRule);
-                    lines.RemoveAt(lines.Count - 1);
-                    continue;
-                }
-
-                break;
-            }
-
-            // 2. Trích xuất phương án trắc nghiệm Bottom-Up (từ cuối trở lên kẹp giữa 2 câu)
-            if (TryExtractOptionsBottomUp(lines, currentSection, matchedRule, out var extractedOptions, out int optStartIdx, out string detectedType))
-            {
-                currentQuestion.QuestionType = detectedType;
-                foreach (var opt in extractedOptions)
-                {
-                    currentQuestion.Options.Add(opt.Content);
-                    if (opt.IsMarkedCorrect && string.IsNullOrEmpty(currentQuestion.SuggestedAnswer))
-                    {
-                        currentQuestion.SuggestedAnswer = currentQuestion.Options.Count.ToString();
-                    }
-                    if (opt.Content.Contains("data:image/"))
-                    {
-                        currentQuestion.OptionType = "image";
-                    }
-                }
-
-                lines = lines.Take(optStartIdx).ToList();
-            }
-
-            // 3. Toàn bộ các dòng còn lại thuộc về Thân câu hỏi (Content)
-            var contentBuilder = new StringBuilder();
-            if (!string.IsNullOrWhiteSpace(currentQuestion.Content))
-            {
-                contentBuilder.Append(currentQuestion.Content);
-            }
-
-            foreach (var line in lines)
-            {
-                if (line.StartsWith("data:image/") || line.StartsWith("![Hình vẽ]") || line.Contains("data:image/"))
-                {
-                    if (!contentBuilder.ToString().Contains("data:image/"))
-                    {
-                        contentBuilder.Append("\n\n" + (line.StartsWith("![") ? line : $"![Hình minh họa]({line})"));
-                        currentQuestion.ContentType = "image";
-                    }
-                    else
-                    {
-                        contentBuilder.Append("\n\n" + line);
-                    }
-                }
-                else
-                {
-                    if (contentBuilder.Length > 0) contentBuilder.Append("\n");
-                    contentBuilder.Append(line);
-                }
-            }
-
-            currentQuestion.Content = contentBuilder.ToString().Trim();
-            if (string.IsNullOrWhiteSpace(currentQuestion.Content))
-            {
-                currentQuestion.Content = $"Chọn phương án đúng nhất điền vào vị trí ({currentQuestion.SourceQuestionNo}):";
-            }
-
-            if (cig.IsCriticalQuestion(currentQuestion.Content, matchedRule))
-            {
-                currentQuestion.IsCritical = true;
-                currentQuestion.Difficulty = 5;
-            }
-
-            var subCat = cig.DetectSubCategory(currentQuestion.Content, matchedRule);
-            if (!string.IsNullOrEmpty(subCat))
-            {
-                currentQuestion.SubCategory = subCat;
-            }
-        }
-
-        public static List<ParsedOption> ExtractOptionsFromLine(string line, QuestionParsingRuleDto? rule = null)
-        {
-            var options = new List<ParsedOption>();
-            if (string.IsNullOrWhiteSpace(line)) return options;
-
-            var cigOpts = DynamicQuestionIngestionEngine.Instance.ExtractOptions(line, rule);
-            if (cigOpts.Count > 0)
-            {
-                foreach (var opt in cigOpts)
-                {
-                    char rawChar = opt.Letter;
-                    char letter = char.IsDigit(rawChar) ? (char)('A' + (rawChar - '1')) : char.ToUpperInvariant(rawChar);
-                    options.Add(new ParsedOption
-                    {
-                        Letter = letter,
-                        Content = opt.Content,
-                        IsMarkedCorrect = opt.IsMarkedCorrect
-                    });
-                }
-                return options;
-            }
-
-            var regex = new Regex(@"(?:^|[\s\t\–\—]+)(?:<u>|\*|\*\*|\<b\>)?(\*?)((?-i:[A-H]|[a-h])|[1-4])(\*?)(?:</u>|\*|\*\*|\</b\>)?[\.\:\)](?:</u>|\</b\>)?[\s\t]+");
-            var matches = regex.Matches(line);
-
-            if (matches.Count == 0) return options;
-
-            // Nếu chỉ có 1 nhãn số trên dòng (1., 2...) và quy tắc không phải là GPLX,
-            // thì đây là mệnh đề liệt kê trong đề bài (ví dụ: 1. Nước sôi..., 2. Kim loại...), không phải phương án trắc nghiệm
-            if (matches.Count == 1 && char.IsDigit(matches[0].Groups[2].Value[0]))
-            {
-                bool isGplx = rule?.RuleCode == "VN_GPLX_600_STANDARD" || rule?.TargetExamType == "GPLX";
-                if (!isGplx) return options;
-            }
-
-            for (int i = 0; i < matches.Count; i++)
-            {
-                var match = matches[i];
-                char rawChar = match.Groups[2].Value[0];
-                char letter = char.IsDigit(rawChar) ? (char)('A' + (rawChar - '1')) : char.ToUpperInvariant(rawChar);
-                bool isCorrect = match.Value.Contains("<u>") || match.Value.Contains("<b>") || match.Groups[1].Value == "*" || match.Groups[3].Value == "*";
-
-                int contentStart = match.Index + match.Length;
-                int contentEnd = (i + 1 < matches.Count) ? matches[i + 1].Index : line.Length;
-
-                string content = line.Substring(contentStart, contentEnd - contentStart).Trim();
-                content = Regex.Replace(content, @"[\.\s\t]+$", "").Trim();
-
-                options.Add(new ParsedOption
-                {
-                    Letter = letter,
-                    Content = content,
-                    IsMarkedCorrect = isCorrect
-                });
-            }
-
-            return options;
-        }
-
-        public static void FinalizeQuestion(DocxImportPreviewDto q, DynamicDomainContext? ctx = null)
-        {
-            if (q.TopicCode == "GENERAL")
-            {
-                q.TopicCode = InferTopicFromContent(q.Content, ctx);
-            }
-
-            if (q.Options.Any(o => o.Contains("data:image/")))
-            {
-                q.OptionType = "image";
-            }
-
-            if (q.QuestionType == "SHORT_ANSWER")
-            {
-                q.Difficulty = Math.Max(q.Difficulty, 4);
-                if (string.IsNullOrWhiteSpace(q.SuggestedAnswer))
-                {
-                    q.SuggestedAnswer = "Điền đáp số / giá trị số.";
-                }
-            }
-            else if (q.QuestionType == "TRUE_FALSE")
-            {
-                q.Difficulty = Math.Max(q.Difficulty, 3);
-            }
-            else if (q.Options.Count == 0 && q.QuestionType == "SINGLE")
-            {
-                q.QuestionType = "SHORT_ANSWER";
-            }
-
-            if (string.IsNullOrWhiteSpace(q.CanonicalContentHash) && !string.IsNullOrWhiteSpace(q.Content))
-            {
-                q.CanonicalContentHash = ExamDeduplicationEngine.GenerateCanonicalFingerprint(q.Content, q.Options);
-            }
-
-            if (string.IsNullOrWhiteSpace(q.DomainCode) || q.DomainCode == "GENERAL")
-            {
-                q.DomainCode = q.TopicCode;
-            }
+            (engine ?? DynamicQuestionIngestionEngine.Instance).FinalizeAndMergeQuestion(results, questionMap, q, examCode, qNum, ctx, rule);
         }
 
         public static string ResolveTopicCode(string raw, DynamicDomainContext? ctx = null)
         {
-            var clean = raw.Trim();
-            if (string.IsNullOrWhiteSpace(clean)) return "GENERAL";
-
-            // 1. Khớp theo danh mục Topics động từ DB của Tenant
-            if (ctx?.Topics != null && ctx.Topics.Count > 0)
-            {
-                var foundTopic = ctx.Topics.FirstOrDefault(t =>
-                    t.Name.Contains(clean, StringComparison.OrdinalIgnoreCase)
-                    || clean.Contains(t.Name, StringComparison.OrdinalIgnoreCase)
-                    || t.Code.Equals(clean, StringComparison.OrdinalIgnoreCase)
-                    || t.Keywords.Any(k => clean.Contains(k, StringComparison.OrdinalIgnoreCase)));
-                if (foundTopic != null) return foundTopic.Code;
-            }
-
-            // 2. Khớp theo danh mục DynamicDomains động từ DB
-            if (ctx?.Domains != null && ctx.Domains.Count > 0)
-            {
-                var foundDomain = ctx.Domains.FirstOrDefault(d =>
-                    d.Code.Equals(clean, StringComparison.OrdinalIgnoreCase)
-                    || d.Name.Contains(clean, StringComparison.OrdinalIgnoreCase)
-                    || clean.Contains(d.Name, StringComparison.OrdinalIgnoreCase)
-                    || d.Synonyms.Any(s => clean.Contains(s, StringComparison.OrdinalIgnoreCase)));
-                if (foundDomain != null) return foundDomain.Code;
-            }
-
-            // 3. Khớp theo TenantCoordinatePresets động từ DB
-            if (ctx?.CoordinatePresets != null && ctx.CoordinatePresets.Count > 0)
-            {
-                var foundPreset = ctx.CoordinatePresets.FirstOrDefault(p =>
-                    p.PresetCode.Equals(clean, StringComparison.OrdinalIgnoreCase)
-                    || p.PresetLabel.Contains(clean, StringComparison.OrdinalIgnoreCase)
-                    || clean.Contains(p.PresetLabel, StringComparison.OrdinalIgnoreCase)
-                    || p.Synonyms.Any(s => clean.Contains(s, StringComparison.OrdinalIgnoreCase)));
-                if (foundPreset != null) return foundPreset.PresetCode;
-            }
-
-            // 4. Chuẩn hóa Topic Code theo slug không dấu (Ví dụ: "Tiếng Anh" -> "TIENG_ANH", "Toán học" -> "MATH")
-            var slug = NormalizeToCodeSlug(clean);
-            if (slug == "TOAN" || slug == "TOAN_HOC") return "MATH";
-            if (!string.IsNullOrEmpty(slug) && slug.Length >= 2 && slug != "DE" && slug != "EXAM")
-            {
-                return slug;
-            }
-
-            // 5. Đối chiếu từ khóa nhanh chuẩn hóa hệ thống (0ms)
-            var lower = clean.ToLowerInvariant();
-            if (lower.Contains("toán") || lower.Contains("toan") || lower.Contains("giải tích") || lower.Contains("hình học")) return "MATH";
-            if (lower.Contains("hóa") || lower.Contains("hoá") || lower.Contains("hoa") || lower.Contains("chemistry")) return "HOA_HOC";
-            if (lower.Contains("vật lí") || lower.Contains("vật lý") || lower.Contains("vat li") || lower.Contains("vat ly") || lower.Contains("physics")) return "VAT_LY";
-            if (lower.Contains("tiếng anh") || lower.Contains("english") || lower.Contains("ngoại ngữ") || lower.Contains("ngoaingu") || lower.Contains("toeic") || lower.Contains("ielts")) return "TIENG_ANH";
-            if (lower.Contains("sinh") || lower.Contains("biology")) return "SINH_HOC";
-            if (lower.Contains("sử") || lower.Contains("history")) return "LICH_SU";
-            if (lower.Contains("địa") || lower.Contains("dia") || lower.Contains("geography")) return "DIA_LY";
-            if (lower.Contains("kinh tế") || lower.Contains("pháp luật") || lower.Contains("gdkt")) return "GDKT_PL";
-            if (lower.Contains("tín dụng") || lower.Contains("cho vay")) return "382";
-            if (lower.Contains("kế toán") || lower.Contains("ngân quỹ") || lower.Contains("kho tiền")) return "381";
-            if (lower.Contains("công nghệ") || lower.Contains("cntt") || lower.Contains("tin học")) return "CNTT";
-            if (lower.Contains("đảng") || lower.Contains("chi bộ")) return "PARTY_BUILDING";
-            if (lower.Contains("pháp chế") || lower.Contains("luật")) return "LAW";
-
-            return clean;
-        }
-
-        private static string NormalizeToCodeSlug(string text)
-        {
-            if (string.IsNullOrWhiteSpace(text)) return string.Empty;
-            var normalized = text.Normalize(System.Text.NormalizationForm.FormD);
-            var sb = new System.Text.StringBuilder();
-            foreach (var ch in normalized)
-            {
-                var cat = System.Globalization.CharUnicodeInfo.GetUnicodeCategory(ch);
-                if (cat == System.Globalization.UnicodeCategory.NonSpacingMark) continue;
-                if (ch == 'đ' || ch == 'Đ') sb.Append('D');
-                else sb.Append(ch);
-            }
-            var cleanAscii = sb.ToString().Normalize(System.Text.NormalizationForm.FormC);
-            return Regex.Replace(cleanAscii, @"[^a-zA-Z0-9]+", "_").Trim('_').ToUpperInvariant();
+            return UniversalCoordinateTaxonomyEngine.ResolveTopicCode(raw, ctx);
         }
 
         public static string InferTopicFromContent(string content, DynamicDomainContext? ctx = null)
         {
-            if (string.IsNullOrWhiteSpace(content)) return "GENERAL";
-
-            // 1. Ưu tiên đối chiếu danh mục Topics động của Tenant
-            if (ctx?.Topics != null && ctx.Topics.Count > 0)
-            {
-                var lowerContent = content.ToLowerInvariant();
-                foreach (var t in ctx.Topics)
-                {
-                    if (t.Keywords.Any(k => lowerContent.Contains(k.ToLowerInvariant())) || lowerContent.Contains(t.Name.ToLowerInvariant()))
-                        return t.Code;
-                }
-            }
-
-            var lower = content.ToLowerInvariant();
-
-            if (Regex.IsMatch(lower, @"\b(mark\s+the\s+letter|pronunciation|primary\s+stress|closest\s+in\s+meaning|opposite\s+in\s+meaning|underlined\s+part|synonym|antonym|read\s+the\s+following\s+passage|in\s+paragraph|according\s+to\s+paragraph)\b"))
-                return "TIENG_ANH";
-
-            if (lower.Contains("hóa học") || lower.Contains("hoá học") || lower.Contains("axit") || lower.Contains("acid") || lower.Contains("ancol") || lower.Contains("alcohol")
-                || lower.Contains("este") || lower.Contains("ester") || lower.Contains("amino acid") || lower.Contains("polime") || lower.Contains("polymer") || lower.Contains("thế điện cực")
-                || lower.Contains("galvani") || lower.Contains("chỉ số octane") || lower.Contains("số sóng") || lower.Contains("phổ hồng ngoại") || lower.Contains("chất giặt rửa")
-                || lower.Contains("chất hữu cơ") || lower.Contains("chất vô cơ") || lower.Contains("glycine") || lower.Contains("glucose") || lower.Contains("fructose")
-                || lower.Contains("dung dịch") || lower.Contains("kết tủa") || lower.Contains("kim loại") || lower.Contains("đồng đẳng") || lower.Contains("đồng phân"))
-                return "HOA_HOC";
-
-            if (lower.Contains("vật lí") || lower.Contains("vật lý") || lower.Contains("nhiệt lượng") || lower.Contains("nhiệt dung") || lower.Contains("chuyển thể")
-                || lower.Contains("khí lí tưởng") || lower.Contains("đẳng nhiệt") || lower.Contains("đẳng tích") || lower.Contains("đẳng áp") || lower.Contains("phóng xạ")
-                || lower.Contains("hạt nhân") || lower.Contains("tia alpha") || lower.Contains("tia beta") || lower.Contains("tia gamma") || lower.Contains("quang điện")
-                || lower.Contains("lực từ") || lower.Contains("cảm ứng từ") || lower.Contains("suất điện động") || lower.Contains("từ trường") || lower.Contains("bước sóng")
-                || lower.Contains("tần số") || lower.Contains("dao động") || lower.Contains("dòng điện"))
-                return "VAT_LY";
-
-            if (lower.Contains("hàm số") || lower.Contains("đồ thị") || lower.Contains("hình lập phương") || lower.Contains("hình chóp") || lower.Contains("lăng trụ")
-                || lower.Contains("tích phân") || lower.Contains("đạo hàm") || lower.Contains("nguyên hàm") || lower.Contains("xác suất") || lower.Contains("tiệm cận")
-                || lower.Contains("vectơ") || lower.Contains("vector") || lower.Contains("phương trình") || lower.Contains("bất phương trình") || lower.Contains("tọa độ")
-                || lower.Contains("oxyz") || lower.Contains("bảng biến thiên") || lower.Contains("cực trị") || lower.Contains("tối giản"))
-                return "MATH";
-
-            if (lower.Contains("đảng") || lower.Contains("chi bộ") || lower.Contains("đảng viên"))
-                return "PARTY_BUILDING";
-
-            if (lower.Contains("kho tiền") || lower.Contains("chìa khóa") || lower.Contains("niêm phong"))
-                return "381";
-
-            if (lower.Contains("tín dụng") || lower.Contains("thế chấp") || lower.Contains("cho vay") || lower.Contains("nợ xấu"))
-                return "382";
-
-            if (lower.Contains("giao thức") || lower.Contains("mật khẩu") || lower.Contains("tấn công") || lower.Contains("cntt") || lower.Contains("mã độc"))
-                return "CNTT";
-
-            return "GENERAL";
+            return UniversalCoordinateTaxonomyEngine.InferTopicFromContent(content, ctx);
         }
 
         public static void AutoEnrichTaxonomyAndTags(DocxImportPreviewDto q, DynamicDomainContext? ctx = null)
         {
-            q.Tags ??= new List<string>();
-
-            // Chuyển việc phân tích Tọa độ và Thẻ sang UniversalCoordinateTaxonomyEngine (hỗ trợ DynamicDomainContext)
-            var sniffed = UniversalCoordinateTaxonomyEngine.SniffCoordinates(
-                fileName: null,
-                sheetName: q.TopicCode,
-                headerBannerLines: new[] { q.ContextTitle ?? "", q.SubCategory ?? "" },
-                sampleContents: new[] { q.Content },
-                sampleReferences: string.IsNullOrWhiteSpace(q.AiExplanation) ? null : new[] { q.AiExplanation },
-                dynamicContext: ctx);
-
-            if (string.IsNullOrWhiteSpace(q.DomainCode) || q.DomainCode == "GENERAL")
-            {
-                q.DomainCode = sniffed.DomainCode;
-            }
-
-            if (string.IsNullOrWhiteSpace(q.TargetLevel))
-            {
-                q.TargetLevel = sniffed.TargetLevel;
-            }
-
-            q.AssessmentPurpose ??= sniffed.AssessmentPurpose;
-            q.IssuingOrg ??= sniffed.IssuingOrg;
-            q.BenchmarkYear ??= sniffed.BenchmarkYear;
-            q.BenchmarkStandard ??= sniffed.BenchmarkStandard;
-
-            foreach (var t in sniffed.Tags)
-            {
-                AddTagIfNotExists(q.Tags, t);
-            }
+            UniversalCoordinateTaxonomyEngine.AutoEnrichTaxonomyAndTags(q, ctx);
         }
 
         public static void AutoEnrichTaxonomyAndTags(DocxImportPreviewDto q)
         {
-            AutoEnrichTaxonomyAndTags(q, null);
+            UniversalCoordinateTaxonomyEngine.AutoEnrichTaxonomyAndTags(q, null);
+        }
+    }
+
+    /// <summary>
+    /// [Clean Architecture Wrapper] Triển khai IDocxStateMachineClassifier phục vụ Dependency Injection
+    /// </summary>
+    public class DocxStateMachineClassifierService : IDocxStateMachineClassifier
+    {
+        public List<DocxImportPreviewDto> ParseParagraphList(
+            List<string> paragraphs,
+            Dictionary<string, Dictionary<string, Dictionary<int, string>>>? answerKeyMap = null,
+            DynamicDomainContext? dynamicContext = null)
+        {
+            return DocxStateMachineClassifier.ParseParagraphList(paragraphs, answerKeyMap, dynamicContext, null);
         }
 
-        private static void AddTagIfNotExists(List<string> tags, string tag)
+        public List<DocxImportPreviewDto> ParseParagraphList(
+            List<string> paragraphs,
+            Dictionary<string, Dictionary<string, Dictionary<int, string>>>? answerKeyMap,
+            DynamicDomainContext? dynamicContext,
+            DynamicQuestionIngestionEngine? engineOverride)
         {
-            if (!tags.Any(t => string.Equals(t, tag, StringComparison.OrdinalIgnoreCase)))
-            {
-                tags.Add(tag);
-            }
+            return DocxStateMachineClassifier.ParseParagraphList(paragraphs, answerKeyMap, dynamicContext, engineOverride);
         }
     }
 }

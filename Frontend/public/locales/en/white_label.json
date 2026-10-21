@@ -1,0 +1,29 @@
+{
+  "title": "Enterprise White-Labeling & Brand Theming",
+  "subtitle": "Configure brand identity, curated color palette, and dynamic CSS tokens driven 100% by database",
+  "brandIdentity": "Brand Identity",
+  "organizationName": "Organization / Brand Name",
+  "logoUrl": "Enterprise Logo URL",
+  "logoPlaceholder": "https://company.com/logo.svg",
+  "customDomain": "Custom Domain",
+  "domainPlaceholder": "exam.yourcompany.com",
+  "colorSystem": "Color System & Tokens",
+  "primaryColor": "Primary Color",
+  "secondaryColor": "Secondary Color",
+  "accentColor": "Accent Color",
+  "borderRadius": "Corner Border Radius",
+  "fontFamily": "System Font Family",
+  "previewHeader": "Live Visual Preview (0ms Latency)",
+  "sampleQuizCardTitle": "Sample Interactive Quiz Card",
+  "sampleQuizCardDesc": "The student and candidate test environment will instantly adopt your organization colors and typography without code redeployment.",
+  "sampleButton": "Submit Sample Exam",
+  "saveChanges": "Save Brand Configuration",
+  "resetDefault": "Reset to Defaults",
+  "savedSuccess": "Brand tokens successfully applied and saved system-wide!",
+  "paywall": {
+    "title": "White-Labeling Feature is Exclusive to Enterprise & Global Tiers",
+    "description": "To configure custom domain, remove AegisQuiz branding, and apply bespoke company theme tokens, please upgrade to Enterprise.",
+    "upgradeNow": "Upgrade to Enterprise",
+    "contactSales": "Contact Enterprise Sales"
+  }
+}

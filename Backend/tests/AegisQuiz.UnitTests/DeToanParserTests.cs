@@ -593,6 +593,174 @@ namespace AegisQuiz.UnitTests
                 }
             }
         }
+
+        [Fact]
+        public void ParseDeHoa_Debug_InspectExplanations()
+        {
+            var filePath = @"D:\Cuong\DuAn\DETHI\TNPT\thuvienhoclieu.com-De-thi-TN-THPT-2026-mon-Hoa-Bo-GD-ma-de-0323.docx";
+            if (!File.Exists(filePath))
+            {
+                _output.WriteLine("FILE NOT FOUND: " + filePath);
+                return;
+            }
+
+            var cigEngine = AegisQuiz.Infrastructure.Services.DynamicQuestionIngestionEngine.Instance;
+            var dict = cigEngine.GetStructureDictionary();
+            if (dict.ScopeDirectiveMarkers.TryGetValue("SHORT_ANSWER", out var shortPatterns))
+            {
+                foreach (var pat in shortPatterns)
+                {
+                    bool m = System.Text.RegularExpressions.Regex.IsMatch("Phần I. Thí sinh trả lời từ câu 1 đến câu 18. Mỗi câu hỏi thí sinh chọn một phương án.", pat);
+                    _output.WriteLine($"[SHORT_PAT] '{pat}' => MATCH={m}");
+                }
+            }
+            if (dict.ScopeDirectiveMarkers.TryGetValue("SINGLE", out var singlePatterns))
+            {
+                foreach (var pat in singlePatterns)
+                {
+                    bool m = System.Text.RegularExpressions.Regex.IsMatch("Phần I. Thí sinh trả lời từ câu 1 đến câu 18. Mỗi câu hỏi thí sinh chọn một phương án.", pat);
+                    _output.WriteLine($"[SINGLE_PAT] '{pat}' => MATCH={m}");
+                }
+            }
+
+            var service = new DocxParserService();
+            using var fs = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            var results = service.ParseDocxFile(fs);
+
+            _output.WriteLine($"TỔNG SỐ CÂU: {results.Count}");
+            for (int i = 0; i < results.Count; i++)
+            {
+                var q = results[i];
+                _output.WriteLine($"[CÂU #{i+1}] Exam='{q.SourceExamName}' Sec='{q.SourceSectionName}' QNo='{q.SourceQuestionNo}' Type={q.QuestionType} OptsCount={q.Options.Count} Ans='{q.SuggestedAnswer}' Content='{q.Content.Substring(0, Math.Min(40, q.Content.Length))}'");
+            }
+
+            // Kiểm tra tổng thể: 28 câu hỏi chuẩn GDPT 2025
+            Assert.Equal(28, results.Count);
+
+            // 18 câu Phần I: Trắc nghiệm đơn (SINGLE)
+            for (int i = 0; i < 18; i++)
+            {
+                var q = results[i];
+                Assert.Contains("PHẦN I", q.SourceSectionName, StringComparison.OrdinalIgnoreCase);
+                Assert.Equal("SINGLE", q.QuestionType);
+                Assert.True(q.Options.Count >= 2, $"Câu {i+1} Phần I phải có >= 2 phương án nhưng thực tế có {q.Options.Count}");
+                Assert.False(string.IsNullOrWhiteSpace(q.SuggestedAnswer), $"Câu {i+1} Phần I phải có đáp án");
+            }
+
+            // 4 câu Phần II: Đúng / Sai (MULTI_TRUE_FALSE)
+            for (int i = 18; i < 22; i++)
+            {
+                var q = results[i];
+                Assert.Contains("PHẦN II", q.SourceSectionName, StringComparison.OrdinalIgnoreCase);
+                Assert.Equal("MULTI_TRUE_FALSE", q.QuestionType);
+                Assert.True(q.SubItems.Count >= 2, $"Câu {q.SourceQuestionNo} Phần II phải có sub items");
+                Assert.Contains(")", q.SuggestedAnswer); // Phải có format a) Đúng/Sai...
+            }
+
+            // 6 câu Phần III: Trả lời ngắn (SHORT_ANSWER)
+            for (int i = 22; i < 28; i++)
+            {
+                var q = results[i];
+                Assert.Contains("PHẦN III", q.SourceSectionName, StringComparison.OrdinalIgnoreCase);
+                Assert.Equal("SHORT_ANSWER", q.QuestionType);
+                Assert.False(string.IsNullOrWhiteSpace(q.SuggestedAnswer), $"Câu {q.SourceQuestionNo} Phần III phải có đáp án");
+                Assert.False(q.SuggestedAnswer.Contains("Điền đáp số"), $"Câu {q.SourceQuestionNo} Phần III phải có đáp số thực tế");
+            }
+
+            // Kiểm tra Lời giải Phần III câu 1 và câu 2 được map đúng vào Phần III
+            var q23 = results[22]; // Câu 1 Phần III
+            Assert.Equal("1", q23.SourceQuestionNo);
+            Assert.Equal("3412", q23.SuggestedAnswer.TrimEnd('.'));
+            Assert.Contains("3412", q23.AiExplanation ?? "");
+
+            var q24 = results[23]; // Câu 2 Phần III
+            Assert.Equal("2", q24.SourceQuestionNo);
+            Assert.True(q24.SuggestedAnswer.Contains("0,64") || q24.SuggestedAnswer.Contains("0.64"));
+            Assert.Contains("0,64", q24.AiExplanation ?? "");
+        }
+
+        [Fact]
+        public void ParseDeVatLy_Debug_InspectExplanations()
+        {
+            var filePath = @"D:\Cuong\DuAn\DETHI\TNPT\thuvienhoclieu.com-De-thi-TN-THPT-2026-mon-Vat-Li-Li-Bo-GD-ma-de-0211.docx";
+            if (!File.Exists(filePath))
+            {
+                filePath = @"D:\Cuong\DuAn\DETHI\TNPT\thuvienhoclieu.com-De-thi-TN-THPT-2026-mon-Vat-Li-Li-Lan-2-Bo-GD-ma-de-0233.docx";
+            }
+
+            if (!File.Exists(filePath))
+            {
+                _output.WriteLine("FILE NOT FOUND: " + filePath);
+                return;
+            }
+
+            // Inspect answerKeyMap
+            using (var docxStream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            using (var archive = new System.IO.Compression.ZipArchive(docxStream, System.IO.Compression.ZipArchiveMode.Read))
+            {
+                var entry = archive.GetEntry("word/document.xml");
+                if (entry != null)
+                {
+                    using var s = entry.Open();
+                    var xdoc = System.Xml.Linq.XDocument.Load(s);
+                    var debugMap = AegisQuiz.Infrastructure.Services.Docx.DocxTableQuestionExtractor.ExtractAnswerTables(xdoc, out var debugTables);
+                    _output.WriteLine($"[DEBUG_TABLES] Số bảng đáp án nhận diện: {debugTables.Count}");
+                    foreach (var (ex, secs) in debugMap)
+                    {
+                        foreach (var (sec, qAns) in secs)
+                        {
+                            _output.WriteLine($"  -> Map Exam='{ex}' Sec='{sec}': {qAns.Count} câu ({string.Join(", ", qAns.OrderBy(k => k.Key).Select(k => $"{k.Key}:{k.Value}"))})");
+                        }
+                    }
+                }
+            }
+
+            var service = new DocxParserService();
+            using var fs = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            var results = service.ParseDocxFile(fs);
+
+            _output.WriteLine($"[VẬT LÝ] TỔNG SỐ CÂU: {results.Count} từ {Path.GetFileName(filePath)}");
+            for (int i = 0; i < results.Count; i++)
+            {
+                var q = results[i];
+                _output.WriteLine($"[CÂU #{i+1}] Exam='{q.SourceExamName}' Sec='{q.SourceSectionName}' QNo='{q.SourceQuestionNo}' Type={q.QuestionType} OptsCount={q.Options.Count} SubsCount={q.SubItems.Count} Ans='{q.SuggestedAnswer}' ExplLen={q.AiExplanation?.Length ?? 0} Expl='{q.AiExplanation?.Substring(0, Math.Min(35, q.AiExplanation.Length))}' Content='{q.Content.Substring(0, Math.Min(40, q.Content.Length))}'");
+            }
+
+            _output.WriteLine($"\n=== AI EXPLANATION CỦA CÂU 18 (Độ dài: {results[17].AiExplanation?.Length}) ===");
+            _output.WriteLine(results[17].AiExplanation ?? "(null)");
+
+            // Kiểm tra tổng thể: Đề thi GDPT 2025 môn Vật Lý chuẩn có 28 câu (18 câu Phần I, 4 câu Phần II, 6 câu Phần III)
+            Assert.Equal(28, results.Count);
+
+            // 18 câu Phần I: SINGLE
+            for (int i = 0; i < 18; i++)
+            {
+                var q = results[i];
+                Assert.Contains("PHẦN I", q.SourceSectionName, StringComparison.OrdinalIgnoreCase);
+                Assert.Equal("SINGLE", q.QuestionType);
+                Assert.True(q.Options.Count >= 2, $"Câu {i+1} Phần I phải có >= 2 phương án nhưng thực tế có {q.Options.Count}");
+                Assert.False(string.IsNullOrWhiteSpace(q.SuggestedAnswer), $"Câu {i+1} Phần I phải có đáp án");
+            }
+
+            // 4 câu Phần II: MULTI_TRUE_FALSE
+            for (int i = 18; i < 22; i++)
+            {
+                var q = results[i];
+                Assert.Contains("PHẦN II", q.SourceSectionName, StringComparison.OrdinalIgnoreCase);
+                Assert.Equal("MULTI_TRUE_FALSE", q.QuestionType);
+                Assert.True(q.SubItems.Count >= 2, $"Câu {q.SourceQuestionNo} Phần II phải có sub items");
+            }
+
+            // 6 câu Phần III: SHORT_ANSWER
+            for (int i = 22; i < 28; i++)
+            {
+                var q = results[i];
+                Assert.Contains("PHẦN III", q.SourceSectionName, StringComparison.OrdinalIgnoreCase);
+                Assert.Equal("SHORT_ANSWER", q.QuestionType);
+                Assert.False(string.IsNullOrWhiteSpace(q.SuggestedAnswer), $"Câu {q.SourceQuestionNo} Phần III phải có đáp án");
+            }
+        }
     }
 }
+
 

@@ -35,6 +35,11 @@ env/
 .env.development.local
 .env.test.local
 .env.production.local
+APIKey.txt
+*apikey*.txt
+*.pem
+*.pfx
+secrets/
 
 # Temporary files & local tests
 ~$*

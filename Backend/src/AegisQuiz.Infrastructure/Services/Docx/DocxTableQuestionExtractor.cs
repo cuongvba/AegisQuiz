@@ -76,7 +76,10 @@ namespace AegisQuiz.Infrastructure.Services.Docx
             {
                 EnsureMap(exam, sec);
                 map[exam][sec][qNum] = ans;
-                map["DEFAULT"][sec][qNum] = ans;
+                if (exam.Equals("DEFAULT", StringComparison.OrdinalIgnoreCase) || !map["DEFAULT"][sec].ContainsKey(qNum))
+                {
+                    map["DEFAULT"][sec][qNum] = ans;
+                }
             }
 
             foreach (var el in body.Elements())
@@ -120,13 +123,56 @@ namespace AegisQuiz.Infrastructure.Services.Docx
                     var rows = el.Descendants(W + "tr").ToList();
                     if (rows.Count < 2) continue;
 
-                    var row0 = rows[0].Descendants(W + "tc").Select(tc => string.Concat(tc.Descendants(W + "t").Select(t => t.Value)).Trim()).ToList();
-                    var row1 = rows[1].Descendants(W + "tc").Select(tc => string.Concat(tc.Descendants(W + "t").Select(t => t.Value)).Trim()).ToList();
-                    if (row0.Count == 0 || row1.Count == 0) continue;
+                    // [Table Exam Heading Synchronization]
+                    // Nếu bảng này là bảng tiêu đề chứa thông tin Đề thi (ví dụ ĐỀ 1, EXAM 02, SỞ GD&ĐT...):
+                    foreach (var tp in el.Descendants(W + "p"))
+                    {
+                        var tpText = string.Concat(tp.Descendants(W + "t").Select(t => t.Value)).Trim();
+                        if (!string.IsNullOrWhiteSpace(tpText) && cig.TryMatchExamHeading(tpText, out string tExamCode))
+                        {
+                            if (int.TryParse(tExamCode, out int tExamNum))
+                            {
+                                if (tExamNum < 1900 || tExamNum > 2099)
+                                {
+                                    currentExam = $"{prefix}_{tExamNum:D2}";
+                                }
+                            }
+                            else
+                            {
+                                currentExam = $"{prefix}_{tExamCode}";
+                            }
+                        }
+                    }
 
                     int offset = examCumulativeOffsets.GetValueOrDefault(currentExam, 0);
 
-                    // ── DẠNG 1: Bảng lưới số thuần túy (Row 0: 1 | 2 | 3... không có cột "Câu" / "Chọn") ──
+                    // ── [CHIP v3.1 / SCIE v4.0 - Trụ cột 1: Nhận diện Merged Header & Trích xuất Section] ──
+                    int startRow = 0;
+                    var r0Cells = rows[0].Descendants(W + "tc").ToList();
+                    var r0Text = string.Concat(r0Cells.SelectMany(tc => tc.Descendants(W + "t").Select(t => t.Value))).Trim();
+
+                    if (r0Cells.Count <= 2 && rows.Count >= 3)
+                    {
+                        var r1Cells = rows[1].Descendants(W + "tc").ToList();
+                        if (r1Cells.Count >= 3 && (r0Text.Contains("ĐÁP ÁN", StringComparison.OrdinalIgnoreCase) ||
+                                                   r0Text.Contains("PHẦN", StringComparison.OrdinalIgnoreCase) ||
+                                                   r0Text.Contains("HƯỚNG DẪN", StringComparison.OrdinalIgnoreCase) ||
+                                                   r0Text.Contains("ANSWER", StringComparison.OrdinalIgnoreCase) ||
+                                                   r0Text.Contains("KEY", StringComparison.OrdinalIgnoreCase)))
+                        {
+                            if (cig.TryMatchSectionHeader(r0Text, out string secFromHeader))
+                            {
+                                currentSection = secFromHeader;
+                            }
+                            startRow = 1;
+                        }
+                    }
+
+                    var row0 = ExtractRowCellsNormalized(rows[startRow], W);
+                    var row1 = ExtractRowCellsNormalized(rows[startRow + 1], W);
+                    if (row0.Count == 0 || row1.Count == 0) continue;
+
+                    // ── DẠNG 1: Bảng lưới số thuần túy đa tầng (Row 2k: 1 | 2 | 3... không có cột "Câu" / "Chọn") ──
                     bool isNumberedGrid = row0.Count >= 2 && row0.All(c => int.TryParse(c, out _));
                     if (!isNumberedGrid && row0.Count >= 2 && int.TryParse(row0[0], out int fst) && fst == 1)
                     {
@@ -139,66 +185,76 @@ namespace AegisQuiz.Infrastructure.Services.Docx
                     if (isNumberedGrid)
                     {
                         answerTableElements.Add(el);
-
-                        // Suy luận phân đoạn dựa trên dữ liệu các ô hàng 1
-                        string sec = currentSection;
-                        if (row1.All(v => Regex.IsMatch(v, @"^[SĐTFsdtf]{2,5}$")))
-                        {
-                            sec = "TRUE_FALSE";
-                        }
-                        else if (row1.All(v => Regex.IsMatch(v, @"^[A-Da-d]$")))
-                        {
-                            sec = "SINGLE";
-                        }
-                        else if (currentSection == "SHORT_ANSWER" || row1.Any(v => double.TryParse(v.Replace(',', '.'), out _)))
-                        {
-                            sec = "SHORT_ANSWER";
-                        }
-
                         int tableQCount = 0;
-                        for (int c = 0; c < Math.Min(row0.Count, row1.Count); c++)
+
+                        // Duyệt qua tất cả các cặp hàng (startRow, startRow + 1), (startRow + 2, startRow + 3)...
+                        for (int rIdx = startRow; rIdx < rows.Count - 1; rIdx += 2)
                         {
-                            if (int.TryParse(row0[c], out int qNum))
+                            var pairRow0 = rows[rIdx].Descendants(W + "tc").Select(tc => string.Concat(tc.Descendants(W + "t").Select(t => t.Value)).Trim()).ToList();
+                            var pairRow1 = rows[rIdx + 1].Descendants(W + "tc").Select(tc => string.Concat(tc.Descendants(W + "t").Select(t => t.Value)).Trim()).ToList();
+                            if (pairRow0.Count < 2 || pairRow1.Count == 0) continue;
+
+                            // Bỏ qua nếu dòng này không phải số câu
+                            if (!int.TryParse(pairRow0[0], out _)) continue;
+
+                            // Suy luận phân đoạn dựa trên dữ liệu các ô hàng đáp án
+                            string sec = currentSection;
+                            if (pairRow1.All(v => Regex.IsMatch(v, @"^[SĐTFsdtf]{2,5}$")))
                             {
-                                tableQCount++;
-                                string rawAns = row1[c].Trim();
-                                int globalQ = (qNum <= offset) ? (offset + qNum) : qNum;
-                                int localQ = (qNum > offset) ? (qNum - offset) : qNum;
+                                sec = "TRUE_FALSE";
+                            }
+                            else if (pairRow1.All(v => Regex.IsMatch(v, @"^[A-Da-d]$")))
+                            {
+                                sec = "SINGLE";
+                            }
+                            else if (currentSection == "SHORT_ANSWER" || pairRow1.Any(v => double.TryParse(v.Replace(',', '.'), out _)))
+                            {
+                                sec = "SHORT_ANSWER";
+                            }
 
-                                if (sec == "SINGLE")
+                            for (int c = 0; c < Math.Min(pairRow0.Count, pairRow1.Count); c++)
+                            {
+                                if (int.TryParse(pairRow0[c], out int qNum))
                                 {
-                                    string ansIndex = Regex.IsMatch(rawAns, @"^[A-Da-d]$")
-                                        ? (char.ToUpperInvariant(rawAns[0]) - 'A' + 1).ToString()
-                                        : rawAns;
+                                    tableQCount++;
+                                    string rawAns = pairRow1[c].Trim();
+                                    int globalQ = (qNum <= offset) ? (offset + qNum) : qNum;
+                                    int localQ = (qNum > offset) ? (qNum - offset) : qNum;
 
-                                    StoreAnswer(currentExam, "SINGLE", localQ, ansIndex);
-                                    if (globalQ != localQ) StoreAnswer(currentExam, "SINGLE", globalQ, ansIndex);
-                                }
-                                else if (sec == "TRUE_FALSE")
-                                {
-                                    // Chuyển chuỗi SĐSĐ -> a) Sai, b) Đúng, c) Sai, d) Đúng theo cấu hình TrueFalseColumnLabels của COD
-                                    var tfList = new List<string>();
-                                    for (int i = 0; i < rawAns.Length && i < tfLabels.Count; i++)
+                                    if (sec == "SINGLE")
                                     {
-                                        string sub = tfLabels[i];
-                                        char ch = char.ToUpperInvariant(rawAns[i]);
-                                        string isTrue = (ch == 'Đ' || ch == 'D' || ch == 'T') ? "Đúng" : "Sai";
-                                        tfList.Add($"{sub}) {isTrue}");
-                                    }
-                                    string formattedTf = tfList.Count > 0 ? string.Join(", ", tfList) : rawAns;
+                                        string ansIndex = Regex.IsMatch(rawAns, @"^[A-Da-d]$")
+                                            ? (char.ToUpperInvariant(rawAns[0]) - 'A' + 1).ToString()
+                                            : rawAns;
 
-                                    StoreAnswer(currentExam, "TRUE_FALSE", localQ, formattedTf);
-                                    StoreAnswer(currentExam, "MULTI_TRUE_FALSE", localQ, formattedTf);
-                                    if (globalQ != localQ)
-                                    {
-                                        StoreAnswer(currentExam, "TRUE_FALSE", globalQ, formattedTf);
-                                        StoreAnswer(currentExam, "MULTI_TRUE_FALSE", globalQ, formattedTf);
+                                        StoreAnswer(currentExam, "SINGLE", localQ, ansIndex);
+                                        if (globalQ != localQ) StoreAnswer(currentExam, "SINGLE", globalQ, ansIndex);
                                     }
-                                }
-                                else if (sec == "SHORT_ANSWER")
-                                {
-                                    StoreAnswer(currentExam, "SHORT_ANSWER", localQ, rawAns);
-                                    if (globalQ != localQ) StoreAnswer(currentExam, "SHORT_ANSWER", globalQ, rawAns);
+                                    else if (sec == "TRUE_FALSE")
+                                    {
+                                        var tfList = new List<string>();
+                                        for (int i = 0; i < rawAns.Length && i < tfLabels.Count; i++)
+                                        {
+                                            string sub = tfLabels[i];
+                                            char ch = char.ToUpperInvariant(rawAns[i]);
+                                            string isTrue = (ch == 'Đ' || ch == 'D' || ch == 'T') ? "Đúng" : "Sai";
+                                            tfList.Add($"{sub}) {isTrue}");
+                                        }
+                                        string formattedTf = tfList.Count > 0 ? string.Join(", ", tfList) : rawAns;
+
+                                        StoreAnswer(currentExam, "TRUE_FALSE", localQ, formattedTf);
+                                        StoreAnswer(currentExam, "MULTI_TRUE_FALSE", localQ, formattedTf);
+                                        if (globalQ != localQ)
+                                        {
+                                            StoreAnswer(currentExam, "TRUE_FALSE", globalQ, formattedTf);
+                                            StoreAnswer(currentExam, "MULTI_TRUE_FALSE", globalQ, formattedTf);
+                                        }
+                                    }
+                                    else if (sec == "SHORT_ANSWER")
+                                    {
+                                        StoreAnswer(currentExam, "SHORT_ANSWER", localQ, rawAns);
+                                        if (globalQ != localQ) StoreAnswer(currentExam, "SHORT_ANSWER", globalQ, rawAns);
+                                    }
                                 }
                             }
                         }
@@ -208,27 +264,62 @@ namespace AegisQuiz.Infrastructure.Services.Docx
                         continue;
                     }
 
-                    // ── DẠNG 2A: Bảng trắc nghiệm có cột tiêu đề "Câu" / "Chọn" (COD AnswerTableSpecs) ──
+                    // ── DẠNG 2A: Bảng trắc nghiệm có cột tiêu đề "Câu" / "Chọn" đa tầng (COD AnswerTableSpecs) ──
                     if (row0.Count >= 2 && qHeaderRegex.IsMatch(row0[0]) && aHeaderRegex.IsMatch(row1[0]))
                     {
                         answerTableElements.Add(el);
                         int tableQCount = 0;
-                        for (int c = 1; c < Math.Min(row0.Count, row1.Count); c++)
+
+                        for (int rIdx = startRow; rIdx < rows.Count - 1; rIdx += 2)
                         {
-                            if (int.TryParse(row0[c], out int qNum))
+                            var pairRow0 = rows[rIdx].Descendants(W + "tc").Select(tc => string.Concat(tc.Descendants(W + "t").Select(t => t.Value)).Trim()).ToList();
+                            var pairRow1 = rows[rIdx + 1].Descendants(W + "tc").Select(tc => string.Concat(tc.Descendants(W + "t").Select(t => t.Value)).Trim()).ToList();
+                            if (pairRow0.Count < 2 || pairRow1.Count < 2) continue;
+                            if (!qHeaderRegex.IsMatch(pairRow0[0]) && !int.TryParse(pairRow0[1], out _)) continue;
+
+                            for (int c = 1; c < Math.Min(pairRow0.Count, pairRow1.Count); c++)
                             {
-                                tableQCount++;
-                                string ans = row1[c].Trim();
-                                string sec = Regex.IsMatch(ans, @"^[A-D]$", RegexOptions.IgnoreCase) ? "SINGLE" : "SHORT_ANSWER";
-                                string finalAns = (sec == "SINGLE" && Regex.IsMatch(ans, @"^[A-Da-d]$"))
-                                    ? (char.ToUpperInvariant(ans[0]) - 'A' + 1).ToString()
-                                    : ans;
+                                if (int.TryParse(pairRow0[c], out int qNum))
+                                {
+                                    tableQCount++;
+                                    string ans = pairRow1[c].Trim();
+                                    string sec = currentSection;
+                                    string finalAns = ans;
 
-                                int globalQ = (qNum <= offset) ? (offset + qNum) : qNum;
-                                int localQ = (qNum > offset) ? (qNum - offset) : qNum;
+                                    if (Regex.IsMatch(ans, @"^[A-Da-d]$"))
+                                    {
+                                        sec = "SINGLE";
+                                        finalAns = (char.ToUpperInvariant(ans[0]) - 'A' + 1).ToString();
+                                    }
+                                    else if (Regex.IsMatch(ans, @"(?:[a-d][\:\)]\s*[ĐSdtsTF]|[ĐS]{2,4})", RegexOptions.IgnoreCase)
+                                             || sec == "TRUE_FALSE" || sec == "MULTI_TRUE_FALSE")
+                                    {
+                                        sec = "MULTI_TRUE_FALSE";
+                                        var subM = Regex.Matches(ans, @"([a-d])[\:\)]\s*(Đ|S|Đúng|Sai|True|False|D|T)", RegexOptions.IgnoreCase);
+                                        if (subM.Count > 0)
+                                        {
+                                            var tfList = new List<string>();
+                                            foreach (Match sm in subM)
+                                            {
+                                                string sk = sm.Groups[1].Value.ToLowerInvariant();
+                                                string sv = sm.Groups[2].Value.StartsWith("đ", StringComparison.OrdinalIgnoreCase) || sm.Groups[2].Value.StartsWith("d", StringComparison.OrdinalIgnoreCase) || sm.Groups[2].Value.StartsWith("t", StringComparison.OrdinalIgnoreCase) ? "Đúng" : "Sai";
+                                                tfList.Add($"{sk}) {sv}");
+                                            }
+                                            finalAns = string.Join(", ", tfList);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        sec = "SHORT_ANSWER";
+                                    }
 
-                                StoreAnswer(currentExam, sec, localQ, finalAns);
-                                if (globalQ != localQ) StoreAnswer(currentExam, sec, globalQ, finalAns);
+                                    int localQ = qNum;
+                                    StoreAnswer(currentExam, sec, localQ, finalAns);
+                                    if (sec == "MULTI_TRUE_FALSE")
+                                    {
+                                        StoreAnswer(currentExam, "TRUE_FALSE", localQ, finalAns);
+                                    }
+                                }
                             }
                         }
 
@@ -333,36 +424,211 @@ namespace AegisQuiz.Infrastructure.Services.Docx
                         continue;
                     }
 
+                    // ── DẠNG 3B: Bảng Đúng / Sai Hàng-Câu Cột-Ý (GDPT 2025: Row 0: Câu | a | b | c | d - Row 1..N: Câu 1 | Đ | S | Đ | S) ──
+                    bool isRowBasedTf = row0.Count >= 5 && qHeaderRegex.IsMatch(row0[0])
+                        && row0.Skip(1).Take(4).All(c => Regex.IsMatch(c.Trim(), @"^(?:ý\s*)?[a-dA-D][\)\.]?$", RegexOptions.IgnoreCase));
+
+                    if (isRowBasedTf)
+                    {
+                        answerTableElements.Add(el);
+                        int tableQCount = 0;
+                        for (int r = startRow + 1; r < rows.Count; r++)
+                        {
+                            var rCells = ExtractRowCellsNormalized(rows[r], W);
+                            if (rCells.Count < 5) continue;
+
+                            var mQ = Regex.Match(rCells[0], @"\d+");
+                            if (!mQ.Success) continue;
+                            int qNum = int.Parse(mQ.Value);
+                            tableQCount++;
+
+                            var tfParts = new List<string>();
+                            for (int c = 1; c <= 4 && c < rCells.Count; c++)
+                            {
+                                string sub = tfLabels.ElementAtOrDefault(c - 1) ?? ((char)('a' + c - 1)).ToString();
+                                string val = rCells[c].Trim();
+                                bool isTrue = Regex.IsMatch(val, @"^(?:Đ|D|T|Đúng|True)$", RegexOptions.IgnoreCase);
+                                tfParts.Add($"{sub}) {(isTrue ? "Đúng" : "Sai")}");
+                            }
+
+                            if (tfParts.Count > 0)
+                            {
+                                string formattedTf = string.Join(", ", tfParts);
+                                int globalQ = (qNum <= offset) ? (offset + qNum) : qNum;
+                                int localQ = (qNum > offset) ? (qNum - offset) : qNum;
+
+                                StoreAnswer(currentExam, "TRUE_FALSE", localQ, formattedTf);
+                                StoreAnswer(currentExam, "MULTI_TRUE_FALSE", localQ, formattedTf);
+                                if (globalQ != localQ)
+                                {
+                                    StoreAnswer(currentExam, "TRUE_FALSE", globalQ, formattedTf);
+                                    StoreAnswer(currentExam, "MULTI_TRUE_FALSE", globalQ, formattedTf);
+                                }
+                            }
+                        }
+
+                        examCumulativeOffsets[currentExam] = offset + tableQCount;
+                        continue;
+                    }
+
                     // ── Dạng 4: Bảng lưới đa cột dọc (Câu | Đáp án | Câu | Đáp án ...) theo COD AnswerTableSpecs ──
                     if (row0.Count >= 2 && qHeaderRegex.IsMatch(row0[0]) && aHeaderRegex.IsMatch(row0[1]))
                     {
                         answerTableElements.Add(el);
                         int tableQCount = 0;
+
+                        // Thu thập tất cả các ô đáp án để suy luận Section chính xác (Zero Hard-code)
+                        var sampleAnswers = new List<string>();
                         for (int r = 1; r < rows.Count; r++)
                         {
-                            var cells = rows[r].Descendants(W + "tc").Select(tc => string.Concat(tc.Descendants(W + "t").Select(t => t.Value)).Trim()).ToList();
+                            var cells = ExtractRowCellsNormalized(rows[r], W);
+                            for (int c = 0; c < cells.Count - 1; c += 2)
+                            {
+                                if (int.TryParse(cells[c], out _) && !string.IsNullOrWhiteSpace(cells[c + 1]))
+                                {
+                                    sampleAnswers.Add(cells[c + 1].Trim());
+                                }
+                            }
+                        }
+
+                        // Suy luận target section:
+                        // 1. Nếu currentSection là SHORT_ANSWER hoặc có mẫu đáp số (chứa số, dấu phẩy, đơn vị đo mA, mW, %, kJ...) -> SHORT_ANSWER
+                        // 2. Nếu tất cả là [A-G] -> SINGLE
+                        // 3. Nếu là Đúng/Sai -> MULTI_TRUE_FALSE
+                        string targetSec = currentSection;
+                        if (sampleAnswers.Count > 0)
+                        {
+                            if (sampleAnswers.All(a => Regex.IsMatch(a, @"^[A-Ga-g]$")))
+                            {
+                                targetSec = "SINGLE";
+                            }
+                            else if (currentSection == "SHORT_ANSWER" || sampleAnswers.Any(a => Regex.IsMatch(a, @"[\d,\.\%\+\-]")))
+                            {
+                                targetSec = "SHORT_ANSWER";
+                            }
+                        }
+
+                        for (int r = 1; r < rows.Count; r++)
+                        {
+                            var cells = ExtractRowCellsNormalized(rows[r], W);
                             for (int c = 0; c < cells.Count - 1; c += 2)
                             {
                                 if (int.TryParse(cells[c], out int qNum))
                                 {
                                     tableQCount++;
-                                    string ans = cells[c + 1].Trim().ToUpperInvariant();
-                                    string finalAns = Regex.IsMatch(ans, @"^[A-D]$")
-                                        ? (ans[0] - 'A' + 1).ToString()
-                                        : ans;
+                                    string rawAns = cells[c + 1].Trim();
+                                    string finalAns = rawAns;
+
+                                    if (targetSec == "SINGLE")
+                                    {
+                                        var upperA = rawAns.ToUpperInvariant();
+                                        finalAns = Regex.IsMatch(upperA, @"^[A-G]$")
+                                            ? (upperA[0] - 'A' + 1).ToString()
+                                            : rawAns;
+                                    }
 
                                     if (!string.IsNullOrWhiteSpace(finalAns))
                                     {
                                         int globalQ = (qNum <= offset) ? (offset + qNum) : qNum;
                                         int localQ = (qNum > offset) ? (qNum - offset) : qNum;
 
-                                        StoreAnswer(currentExam, "SINGLE", localQ, finalAns);
-                                        if (globalQ != localQ) StoreAnswer(currentExam, "SINGLE", globalQ, finalAns);
+                                        StoreAnswer(currentExam, targetSec, localQ, finalAns);
+                                        if (globalQ != localQ) StoreAnswer(currentExam, targetSec, globalQ, finalAns);
                                     }
                                 }
                             }
                         }
 
+                        examCumulativeOffsets[currentExam] = offset + tableQCount;
+                        continue;
+                    }
+
+                    // ── DẠNG 6: Bảng Ma Trận Đa Mã Đề (Multi-Exam Code Cross-Matrix: Row 0: Câu | 101 | 102 | 103...) ──
+                    bool isMultiExamMatrix = row0.Count >= 3 && qHeaderRegex.IsMatch(row0[0])
+                        && row0.Skip(1).All(c => Regex.IsMatch(c.Trim(), @"^(?:(?:mã\s*đề|đề|exam|code)\s*)?\d{2,4}$", RegexOptions.IgnoreCase));
+
+                    if (isMultiExamMatrix)
+                    {
+                        answerTableElements.Add(el);
+                        var colExamMap = new Dictionary<int, string>();
+                        for (int c = 1; c < row0.Count; c++)
+                        {
+                            var matchCode = Regex.Match(row0[c].Trim(), @"\d{2,4}");
+                            if (matchCode.Success)
+                            {
+                                colExamMap[c] = $"{prefix}_{matchCode.Value}";
+                            }
+                        }
+
+                        if (colExamMap.Count > 0)
+                        {
+                            int tableQCount = 0;
+                            for (int r = startRow + 1; r < rows.Count; r++)
+                            {
+                                var rCells = ExtractRowCellsNormalized(rows[r], W);
+                                if (rCells.Count < 2) continue;
+
+                                var mQ = Regex.Match(rCells[0], @"\d+");
+                                if (!mQ.Success) continue;
+                                int qNum = int.Parse(mQ.Value);
+                                tableQCount++;
+
+                                foreach (var (colIdx, examTarget) in colExamMap)
+                                {
+                                    if (colIdx < rCells.Count)
+                                    {
+                                        string rawVal = rCells[colIdx].Trim().ToUpperInvariant();
+                                        string finalAns = Regex.IsMatch(rawVal, @"^[A-D]$")
+                                            ? (rawVal[0] - 'A' + 1).ToString()
+                                            : rawVal;
+
+                                        StoreAnswer(examTarget, "SINGLE", qNum, finalAns);
+                                    }
+                                }
+                            }
+                            examCumulativeOffsets[currentExam] = offset + tableQCount;
+                            continue;
+                        }
+                    }
+
+                    // ── Dạng 5: Ô tổ hợp (Composite Cell Pattern dạng "1A 2B", "1.A 2.B" hoặc "Câu 1: A  Câu 2: B") ──
+                    var compositeMatches = new List<(int QNum, string Ans)>();
+                    var compositeRegex = new Regex(@"(?:^|\b|\s)(?:(?:Câu|C[\.\?\s]*u|Q)\s*)?([1-9]\d?)\s*[\.\:\-\)]?\s*([A-D]|Đúng|Sai|[ĐS])\b", RegexOptions.IgnoreCase);
+                    foreach (var r in rows)
+                    {
+                        foreach (var tc in r.Descendants(W + "tc"))
+                        {
+                            var cellText = string.Concat(tc.Descendants(W + "t").Select(t => t.Value)).Trim();
+                            if (string.IsNullOrWhiteSpace(cellText)) continue;
+                            var matches = compositeRegex.Matches(cellText);
+                            foreach (Match m in matches)
+                            {
+                                if (int.TryParse(m.Groups[1].Value, out int qNum))
+                                {
+                                    compositeMatches.Add((qNum, m.Groups[2].Value));
+                                }
+                            }
+                        }
+                    }
+
+                    if (compositeMatches.Count >= 3)
+                    {
+                        answerTableElements.Add(el);
+                        int tableQCount = 0;
+                        foreach (var (qNum, rawAns) in compositeMatches)
+                        {
+                            tableQCount++;
+                            string finalAns = rawAns.ToUpperInvariant();
+                            if (finalAns == "Đ" || finalAns == "ĐÚNG") finalAns = "Đúng";
+                            else if (finalAns == "S" || finalAns == "SAI") finalAns = "Sai";
+                            else if (Regex.IsMatch(finalAns, @"^[A-D]$")) finalAns = (finalAns[0] - 'A' + 1).ToString();
+
+                            string sec = (finalAns == "Đúng" || finalAns == "Sai") ? "TRUE_FALSE" : (currentSection == "TRUE_FALSE" || currentSection == "MULTI_TRUE_FALSE" ? "MULTI_TRUE_FALSE" : "SINGLE");
+                            int localQ = qNum;
+
+                            StoreAnswer(currentExam, sec, localQ, finalAns);
+                            if (sec == "TRUE_FALSE") StoreAnswer(currentExam, "MULTI_TRUE_FALSE", localQ, finalAns);
+                        }
                         examCumulativeOffsets[currentExam] = offset + tableQCount;
                         continue;
                     }
@@ -417,6 +683,34 @@ namespace AegisQuiz.Infrastructure.Services.Docx
             }
 
             return sb.ToString().TrimEnd();
+        }
+
+        /// <summary>
+        /// Chuẩn hóa các ô trong hàng bảng OpenXML, giải nén ô gộp w:gridSpan thành các cột logic ảo.
+        /// Triệt tiêu hoàn toàn hiện tượng lệch chỉ số cột (Column Index Drift).
+        /// </summary>
+        public static List<string> ExtractRowCellsNormalized(XElement row, XNamespace W)
+        {
+            var result = new List<string>();
+            foreach (var tc in row.Elements(W + "tc"))
+            {
+                var text = string.Concat(tc.Descendants(W + "t").Select(t => t.Value)).Trim();
+                int span = 1;
+                var gridSpanEl = tc.Element(W + "tcPr")?.Element(W + "gridSpan");
+                if (gridSpanEl != null)
+                {
+                    var valAttr = gridSpanEl.Attribute(W + "val");
+                    if (valAttr != null && int.TryParse(valAttr.Value, out int sVal) && sVal > 1)
+                    {
+                        span = sVal;
+                    }
+                }
+                for (int i = 0; i < span; i++)
+                {
+                    result.Add(text);
+                }
+            }
+            return result;
         }
     }
 }

@@ -41,6 +41,7 @@ export const MOBILE_APP_VARIANTS: Record<string, MobileAppVariant> = {
     features: ['Từ Vựng Qua Hình Ảnh', 'Nghe Bản Xứ Chuẩn Mỹ', 'Mở Khóa Rương Kho Báu'],
     suggestedTags: ['animals', 'colors', 'numbers', 'food', 'family'],
     sampleTopics: [
+      { id: 'GUEST_SHOW', name: '🌟 GuestShow — Trải Nghiệm Đỉnh Cao', questionCount: 9, icon: 'Sparkles' },
       { id: 'kid-animals', name: 'Thế Giới Động Vật (Animals) 🦁', questionCount: 25, icon: 'Cat' },
       { id: 'kid-colors', name: 'Sắc Màu Kỳ Diệu (Colors) 🎨', questionCount: 20, icon: 'Palette' },
       { id: 'kid-food', name: 'Món Ăn Bé Yêu (Yummy Food) 🍎', questionCount: 20, icon: 'Apple' },
@@ -66,6 +67,7 @@ export const MOBILE_APP_VARIANTS: Record<string, MobileAppVariant> = {
     features: ['60 Câu Điểm Liệt', 'Mẹo Sa Hình & Biển Báo', 'Thi Thử B1/B2/C/D'],
     suggestedTags: ['diem-liet', 'sa-hinh', 'bien-bao', 'gplx-b2', 'gplx-c'],
     sampleTopics: [
+      { id: 'GUEST_SHOW', name: '🌟 GuestShow — Trải Nghiệm Đỉnh Cao', questionCount: 9, icon: 'Sparkles' },
       { id: 'dl-60', name: '60 Câu Hỏi Điểm Liệt Cốt Tử', questionCount: 60, icon: 'AlertTriangle' },
       { id: 'bb-road', name: 'Hệ Thống Biển Báo Đường Bộ', questionCount: 182, icon: 'ShieldAlert' },
       { id: 'sh-rule', name: 'Quy Tắc Sa Hình & Thứ Tự Đi', questionCount: 114, icon: 'Navigation' },
@@ -92,6 +94,7 @@ export const MOBILE_APP_VARIANTS: Record<string, MobileAppVariant> = {
     features: ['Tín Dụng & Thẩm Định', 'Phòng Chống Rửa Tiền AML', 'Chuẩn Mực Basel II/III'],
     suggestedTags: ['aml', 'tin-dung', 'tham-dinh', 'kiem-soat-noi-bo', 'ngoai-hoi'],
     sampleTopics: [
+      { id: 'GUEST_SHOW', name: '🌟 GuestShow — Trải Nghiệm Đỉnh Cao', questionCount: 9, icon: 'Sparkles' },
       { id: 'aml-law', name: 'Luật Phòng Chống Rửa Tiền (AML)', questionCount: 120, icon: 'ShieldCheck' },
       { id: 'cr-appr', name: 'Thẩm Định Phương Án Vay Vốn', questionCount: 95, icon: 'FileText' },
       { id: 'fx-risk', name: 'Quản Trị Rủi Ro Ngoại Hối & Lãi Suất', questionCount: 75, icon: 'TrendingUp' },
@@ -118,6 +121,7 @@ export const MOBILE_APP_VARIANTS: Record<string, MobileAppVariant> = {
     features: ['Toán Học 12 Chuyên Sâu', 'ĐGNL ĐHQG Hà Nội & TP.HCM', 'Format Đề Mới 2026'],
     suggestedTags: ['toan-12', 'ham-so', 'hinh-khong-gian', 'dgnl', 'gdpt-2018'],
     sampleTopics: [
+      { id: 'GUEST_SHOW', name: '🌟 GuestShow — Trải Nghiệm Đỉnh Cao', questionCount: 9, icon: 'Sparkles' },
       { id: 'math-func', name: 'Khảo Sát Hàm Số & Ứng Dụng Thực Tế', questionCount: 150, icon: 'TrendingUp' },
       { id: 'math-geo', name: 'Hình Học Không Gian Tọa Độ Oxyz', questionCount: 120, icon: 'Box' },
       { id: 'math-prob', name: 'Xác Suất Có Điều Kiện & Thống Kê', questionCount: 90, icon: 'PieChart' },

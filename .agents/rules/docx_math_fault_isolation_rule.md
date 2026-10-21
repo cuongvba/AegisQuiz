@@ -104,4 +104,6 @@ Khi nhận diện triệu chứng lỗi trực quan trên màn hình (View), k�
    Khi cần kiểm tra một chuỗi công thức bị lỗi, sử dụng công cụ có sẵn `MathFormulaInspectorModal` để thanh tra dữ liệu tại chỗ trong 5 giây thay vì debug toàn bộ hệ thống.
 4. **Nguyên tắc "Kiểm thử Khoanh vùng & Xác nhận trước khi chạy Full Suite":**
    Khi can thiệp sửa lỗi Docx hoặc Math, **CHỈ ĐƯỢC CHẠY KIỂM THỬ KHOANH VÙNG** cho module liên quan (ví dụ: `dotnet test ... --filter "FullyQualifiedName~Math"`). **TUYỆT ĐỐI KHÔNG TỰ Ý CHẠY TOÀN BỘ BỘ TEST SUITE** của hệ thống nếu chưa hỏi và nhận được xác nhận trực tiếp từ người dùng.
+5. **Nguyên tắc Phân định Ranh giới SoC & SSoT (Docx Classifier & CIG Engine):**
+   Khi can thiệp nâng cấp bộ bóc tách đề thi, TUYỆT ĐỐI TUÂN THỦ [`.agents/rules/docx_dsmc_cig_soc_ssot_rule.md`](file:///.agents/rules/docx_dsmc_cig_soc_ssot_rule.md). `DocxStateMachineClassifier` chỉ đóng vai trò Skinny State Orchestrator điều phối trạng thái OpenXML ($\le 1,200$ dòng). Toàn bộ thuật toán bóc tách, trích xuất phương án, gộp câu hỏi và taxonomy thuộc bản quyền độc quyền của `DynamicQuestionIngestionEngine` và `UniversalCoordinateTaxonomyEngine`.
 

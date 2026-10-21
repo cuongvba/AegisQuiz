@@ -52,6 +52,7 @@ export interface LearnerQuestion {
   scope?: 'COMMUNITY' | 'TENANT' | 'TEAM' | 'PERSONAL';
   visibilityScope?: 'PUBLIC' | 'ORG_UNIT' | 'TEAM' | 'PRIVATE';
   contributionStatus?: 'DRAFT' | 'TEAM_PUBLISHED' | 'SUBMITTED_FOR_TENANT' | 'APPROVED_TENANT';
+  payload?: Record<string, any>;
 }
 
 export interface TopicSummary {
@@ -107,6 +108,8 @@ export interface PracticeConfig {
   shuffleQuestions: boolean;
   timeLimitSec: number;
   autoNextOnTimeout: boolean;
+  enableQuestionTimer?: boolean;
+  questionTimeLimitSec?: number;
   onlyCritical?: boolean;
   preset?: ExamCategoryPreset;
 }
@@ -115,8 +118,8 @@ export interface DisplayOption {
   id: string;
   label: string;
   value: string;
-  isMedia: boolean;
-  mediaType: string;
+  isMedia?: boolean;
+  mediaType?: string;
 }
 
 export interface MatchingPair {
@@ -156,3 +159,86 @@ export interface TopicResult {
   totalPoints: number;
   percentage: number;
 }
+
+export interface QuestionSubItemDto {
+  key: string;
+  content: string;
+  expectedAnswer?: string;
+  explanation?: string;
+  maxScore?: number;
+}
+
+/** [Universal Cognitive Ingestion DTO] Đồng bộ 28 siêu trường nhận thức */
+export interface UniversalQuestionPreviewDto {
+  tempId: string;
+  content: string;
+  questionType: QuestionType | string;
+  contentType?: string;
+  optionType?: string;
+  options: string[];
+  subItems?: QuestionSubItemDto[];
+  suggestedAnswer: string;
+  aiExplanation?: string;
+  topicCode: string;
+  topicName?: string;
+  parentTopicCode?: string;
+  parentTopicName?: string;
+  topicDescription?: string;
+  difficulty: number;
+  isCritical?: boolean;
+  subCategory?: string;
+  contextId?: string;
+  contextTitle?: string;
+  contextContent?: string;
+  domainCode: string;
+  tags: string[];
+  targetLevel?: string;
+  assessmentPurpose?: string;
+  issuingOrg?: string;
+  benchmarkYear?: number;
+  benchmarkStandard?: string;
+  gradingRubric?: string;
+  durationSeconds?: number;
+  mediaUrl?: string;
+  creatorId?: string;
+  creatorName?: string;
+  orgUnitId?: string;
+  orgUnitName?: string;
+  scope?: string;
+  visibilityScope?: string;
+  contributionStatus?: string;
+  sourceFileName?: string;
+  sourceExamName?: string;
+  sourceSectionName?: string;
+  sourceQuestionNo?: string;
+  sourceRowIndex?: number;
+  fileHashSha256?: string;
+  canonicalContentHash?: string;
+  canonicalExamUrn?: string;
+  isDuplicate?: boolean;
+}
+
+/** Tương thích ngược với tên Docx cũ */
+export type DocxImportPreviewDto = UniversalQuestionPreviewDto;
+
+export interface UniversalImportPreviewResult {
+  fileName: string;
+  ingestionSource: 'EXCEL' | 'DOCX' | 'PDF' | 'OCR' | 'AI';
+  totalSheets: number;
+  totalQuestions: number;
+  warnings: string[];
+  detectedDomainCode: string;
+  detectedTargetLevel?: string;
+  detectedAssessmentPurpose?: string;
+  detectedIssuingOrg?: string;
+  detectedBenchmarkYear?: number;
+  detectedBenchmarkStandard?: string;
+  detectedTags: string[];
+  duplicateCount: number;
+  uniqueCount: number;
+  deduplicationRatePercentage: number;
+  sheets?: any[];
+  skippedSheets?: any[];
+  questions?: UniversalQuestionPreviewDto[];
+}
+

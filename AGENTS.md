@@ -24,6 +24,8 @@ Mọi giải pháp, dòng code và tài liệu xuất bản bắt buộc phải 
   👉 Đọc và tuân thủ tuyệt đối [`.agents/rules/aegis_modular_saas_entitlements_rule.md`](file:///.agents/rules/aegis_modular_saas_entitlements_rule.md).
 * **Khi xử lý Bóc tách Word/Docx, MathType, Vector WMF hoặc Công thức Toán LaTeX:**  
   👉 Đọc và tuân thủ quy trình cô lập lỗi tại [`.agents/rules/docx_math_fault_isolation_rule.md`](file:///.agents/rules/docx_math_fault_isolation_rule.md).
+* **Khi nâng cấp, sửa đổi hoặc mở rộng phân hệ Bóc đề thi Word/Docx, DocxStateMachineClassifier (DSMC) hoặc CIG Engine:**  
+  👉 Đọc và tuân thủ tuyệt đối quy định phân tách ranh giới trách nhiệm (SoC) và chân lý duy nhất (SSoT) tại [`.agents/rules/docx_dsmc_cig_soc_ssot_rule.md`](file:///.agents/rules/docx_dsmc_cig_soc_ssot_rule.md).
 * **Khi viết hoặc cập nhật Tài liệu Kỹ thuật, Báo cáo Kiến trúc:**  
   👉 Bắt buộc áp dụng 5 Trụ cột tại [`docs/standards/AEGIS_LIVING_DOCUMENTATION_STANDARD.md`](file:///docs/standards/AEGIS_LIVING_DOCUMENTATION_STANDARD.md).
 
@@ -41,12 +43,14 @@ Mọi giải pháp, dòng code và tài liệu xuất bản bắt buộc phải 
 5. **Zero Regression for UI**: Khi sửa Frontend, tuyệt đối không vi phạm React Rules of Hooks (không đặt `return` trước Hooks).
 6. **Action-Oriented Communication**: Không nói dài dòng, không tụng xưng danh hiệu. Tập trung phân tích bản chất vấn đề, đưa ra mã nguồn sắc bén và kèm liên kết tệp sống ([filename](file:///...)).
 7. **Zero Ungated Features & B2B Modular Strictness**: Tuyệt đối không phơi bày tính năng lộ thiên cào bằng (No Naked Features). Mọi tính năng nghiệp vụ/công nghệ mới bắt buộc phải định danh bằng `FeatureKey`, phân bổ gói thuê bao trong `PlanFeatureCatalog`, kiểm soát qua ma trận 4 tầng `Tenant -> Domain -> Group -> User` và bọc trong `<FeatureGate />` kèm luồng kích hoạt Paywall.
+8. **SoC & SSoT Sovereignty (Bóc đề thi Docx & Máy trạng thái FSM)**: Tuyệt đối không nhồi nhét logic parsing, trích xuất phương án, bóc tách đáp án, gộp câu hỏi, regex mẫu hay hardcode môn học/taxonomy vào [DocxStateMachineClassifier.cs](file:///d:/Cuong/DuAn/mybank/AegisQuiz/Backend/src/AegisQuiz.Infrastructure/Services/Docx/DocxStateMachineClassifier.cs). DSMC chỉ là **Skinny State Orchestrator** ($\le 1,200$ dòng code) thuần túy điều phối trạng thái OpenXML. Toàn bộ tri thức parsing/vòng đời thuộc về [DynamicQuestionIngestionEngine.cs](file:///d:/Cuong/DuAn/mybank/AegisQuiz/Backend/src/AegisQuiz.Infrastructure/Services/DynamicQuestionIngestionEngine.cs) (SSoT), và toàn bộ 5 trục tọa độ/taxonomy/môn học thuộc về [UniversalCoordinateTaxonomyEngine.cs](file:///d:/Cuong/DuAn/mybank/AegisQuiz/Backend/src/AegisQuiz.Infrastructure/Services/UniversalCoordinateTaxonomyEngine.cs) (SSoT). Mọi API công khai cũ của DSMC bắt buộc duy trì qua Thin Facade Delegation.
 
 ---
 
 ## IV. BỘ LỌC TỰ VẤN TRƯỚC KHI TRẢ LỜI (HEURISTIC SELF-AUDIT GATE)
-Trước khi bàn giao kết quả cho người dùng, hãy tự trả lời nhanh 6 câu hỏi:
+Trước khi bàn giao kết quả cho người dùng, hãy tự trả lời nhanh 7 câu hỏi:
 - [ ] *Giải pháp này có vi phạm nguyên lý Open/Closed (OCP) hoặc tạo thêm nợ kỹ thuật không?*
+- [ ] *Khi sửa đổi DocxStateMachineClassifier: Đã bảo đảm DSMC chỉ là Skinny Orchestrator chưa? Có vi phạm đưa logic parsing/taxonomy vào DSMC thay vì CIG/Taxonomy Engine không?*
 - [ ] *Component UI mới có vượt quá 250 dòng code không (Zero-Monolith)? Đã áp dụng Code Splitting / Lazy Loading chưa?*
 - [ ] *Mọi tham số, nhãn, quy tắc phân nhánh mới đã được cấu hình hóa từ Database/Config chưa (Zero Hard-code)?*
 - [ ] *Tính năng mới có bị hiển thị cào bằng không? Đã khai báo FeatureKey, gắn PlanCatalog và bọc FeatureGate/Paywall chưa?*

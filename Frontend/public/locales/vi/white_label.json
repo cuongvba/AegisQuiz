@@ -1,0 +1,29 @@
+{
+  "title": "Tùy Biến Thương Hiệu & Giao Diện Doanh Nghiệp (White-Labeling)",
+  "subtitle": "Cấu hình bản sắc thương hiệu, bảng màu HSL và CSS Tokens động 100% hướng cơ sở dữ liệu",
+  "brandIdentity": "Bản sắc nhận diện thương hiệu",
+  "organizationName": "Tên tổ chức / Thương hiệu",
+  "logoUrl": "URL Logo doanh nghiệp",
+  "logoPlaceholder": "https://company.com/logo.svg",
+  "customDomain": "Tên miền riêng (Custom Domain)",
+  "domainPlaceholder": "exam.yourcompany.com",
+  "colorSystem": "Hệ thống Bảng Màu & Tokens",
+  "primaryColor": "Màu chủ đạo (Primary)",
+  "secondaryColor": "Màu phụ trợ (Secondary)",
+  "accentColor": "Màu điểm nhấn (Accent)",
+  "borderRadius": "Độ bo góc giao diện (Border Radius)",
+  "fontFamily": "Phông chữ hệ thống (Font Family)",
+  "previewHeader": "Khung Xem Trước Trực Quan (Live 0ms Preview)",
+  "sampleQuizCardTitle": "Câu hỏi mẫu thi thử trực quan",
+  "sampleQuizCardDesc": "Giao diện bài thi của thí sinh sẽ áp dụng tức thì các token màu và phông chữ doanh nghiệp của bạn mà không cần biên dịch lại.",
+  "sampleButton": "Nộp bài thi mẫu",
+  "saveChanges": "Lưu cấu hình thương hiệu",
+  "resetDefault": "Khôi phục mặc định",
+  "savedSuccess": "Đã lưu và áp dụng CSS Tokens thành công cho toàn bộ hệ thống!",
+  "paywall": {
+    "title": "Tính Năng White-Labeling Dành Riêng Cho Gói Enterprise & Global",
+    "description": "Để thiết lập tên miền riêng, xóa logo AegisQuiz và áp dụng bộ nhận diện thương hiệu riêng, vui lòng liên hệ nâng cấp gói Enterprise.",
+    "upgradeNow": "Nâng cấp lên Enterprise",
+    "contactSales": "Liên hệ Ban Quản Trị"
+  }
+}

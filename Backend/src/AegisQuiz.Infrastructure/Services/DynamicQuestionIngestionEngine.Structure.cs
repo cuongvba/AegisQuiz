@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using AegisQuiz.Application.DTOs;
+using AegisQuiz.Application.Interfaces;
+using AegisQuiz.Infrastructure.Services.Docx;
 
 namespace AegisQuiz.Infrastructure.Services
 {
@@ -27,14 +29,16 @@ namespace AegisQuiz.Infrastructure.Services
 
         /// <summary>Thứ tự kiểm tra phân đoạn từ đặc thù đến tổng quát (SINGLE cuối cùng vì "trắc nghiệm" là từ bao trùm).</summary>
         private static readonly string[] SectionKeySpecificityOrder =
-            { "SHORT_ANSWER", "TRUE_FALSE", "MULTI", "MATCHING", "ORDERING", "ESSAY", "SINGLE" };
+            { "ESSAY", "SHORT_ANSWER", "TRUE_FALSE", "MULTI", "MATCHING", "ORDERING", "SINGLE" };
 
-        private const string BuiltInExamHeadingPattern = @"^(?:ĐỀ|D[E|Ê]|EXAM|TEST|MOCK\s*TEST)\s*(?:SỐ|THI|KIỂM\s*TRA|TEST|NO\.?|NUMBER|CODE|MÃ)?\s*(\d{1,3})\b";
-        private const string BuiltInTopicHeadingPattern = @"^(?:Chủ\s*đề|Chương|Lĩnh\s*vực|Môn\s*thi|Môn|Học\s*phần|Mã\s*CĐ|Topic|Subject)[\.\:\s\-]+([^\n\r]+)";
-        private const string BuiltInSolutionPhasePattern = @"^(?:LỜI\s*GIẢI|L[\.\?\s]*I\s*GI[\.\?\s]*I|HƯỚNG\s*DẪN\s*GIẢI|HU[\.\?\s]*NG\s*D[\.\?\s]*N\s*GI[\.\?\s]*I|SOLUTIONS?|EXPLANATIONS?|MARK\s*SCHEME)\s+(?:THAM\s*KHẢO|CHI\s*TIẾT|DETAILS?|APPENDIX)[.\:\s\-]*$";
-        private const string BuiltInAnswerPhasePattern = @"^(?:ĐÁP\s*ÁN|D[\.\?\s]*P\s*[\.\?\s]*N|ANSWER\s*KEY|KEY|ANSWERS?)\s*(?:THAM\s*KHẢO|CHI\s*TIẾT)?[.\:\s\-]*$";
-        private const string BuiltInPassageStartPattern = @"^(?:Read\s+(?:the\s+)?(?:following\s+)?(?:passage|advertisement|leaflet|text|article|announcement)|Đọc\s+(?:đoạn\s+văn|bài\s+đọc|thông\s+báo|tờ\s+rơi)\s+sau)[\s\S]*";
-        private const string BuiltInPassageRangePattern = @"\b(?:from|từ|questions?)\s*(\d+)\s*(?:to|đến|-|through)\s*(\d+)\b";
+        private const string BuiltInExamHeadingPattern = @"^(?:ĐỀ|D[E|Ê]|EXAM|TEST|MOCK\s*TEST)\s*(?:SỐ|THI(?:\s*THỬ)?|KIỂM\s*TRA|TEST|NO\.?|NUMBER|CODE|MÃ)?\s*(\d{1,3})\b";
+        private const string BuiltInTopicHeadingPattern = @"(?i)^(?:[\t\s|•\-–—;]*)(?:BÀI\s*THI\s*(?:MÔN)?|MÔN\s*THI|MÔN|HỌC\s*PHẦN|CHỦ\s*ĐỀ|CHƯƠNG|LĨNH\s*VỰC|MÃ\s*CĐ|TOPIC|SUBJECT|COURSE|MODULE)[\.\:\s\-]+([^\n\r\t|;]+)";
+        private const string BuiltInSolutionPhasePattern = @"^(?:(?:PHẦN|PART|SECTION)\s+[IVXLCDM\d]+[\.\:\-\s]+)?(?:ĐÁP\s*ÁN\s*(?:VÀ|&)?\s*(?:LỜI\s*GIẢI|HƯỚNG\s*DẪN\s*(?:CHẤM|GIẢI))|HƯỚNG\s*DẪN\s*(?:CHẤM|GIẢI)\s*(?:VÀ|&)?\s*(?:BIỂU|THANG|ĐÁP)?\s*(?:ĐIỂM|ÁN)?|BIỂU\s*ĐIỂM\s*(?:VÀ|&)?\s*ĐÁP\s*ÁN|THANG\s*ĐIỂM\s*(?:VÀ|&)?\s*HƯỚNG\s*DẪN|(?:LỜI\s*GIẢI|HƯỚNG\s*DẪN\s*GIẢI)\s+(?:CHI\s*TIẾT|THAM\s*KHẢO|CÁC\s*ĐỀ|ĐỀ\s*THI)|SOLUTIONS?|EXPLANATIONS?|MARK\s*SCHEME)(?:\s+(?:THAM\s*KHẢO|CHI\s*TIẾT|DETAILS?|APPENDIX|THI))?[.\:\s\-]*$";
+        private const string BuiltInAnswerPhasePattern = @"^(?:(?:PHẦN|PART|SECTION)\s+[IVXLCDM\d]+[\.\:\-\s]+)?(?:BẢNG\s*ĐÁP\s*ÁN(?:\s*TRẮC\s*NGHIỆM)?|ĐÁP\s*ÁN|D[\.\?\s]*P\s*[\.\?\s]*N|ANSWER\s*KEY|KEY|ANSWERS?)\s*(?:TRẮC\s*NGHIỆM|THAM\s*KHẢO|CHI\s*TIẾT)?[.\:\s\-]*$";
+        private const string BuiltInPassageStartPattern = @"^(?:Read\s+(?:the\s+)?(?:following\s+)?(?:passage|advertisement|leaflet|text|article|announcement)|Đọc\s+(?:đoạn\s+văn|bài\s+đọc|thông\s+báo|tờ\s+rơi)\s+sau|(?:Sử\s*dụng|Dựa\s*(?:vào|trên)|Cho|Dùng)\s+(?:các\s+)?(?:thông\s*tin|ngữ\s*liệu|đoạn\s*văn|bài\s*đọc|dữ\s*kiện|bảng|hình)(?:\s+(?:cho|dưới\s*đây|sau))?.*?(?:trả\s*lời|làm\s*bài|cho)|(?:Mark|Choose)\s+the\s+letter.*(?:fits?\s+each|fill.*blank|arrangement|cohesive|coherent|exchange|meaningful|conversation|pronunciation|stress))[\s\S]*";
+        private const string BuiltInPassageRangePattern = @"\b(?:from|từ\s+(?:các\s+)?câu(?:\s+số)?|(?:các\s+)?(?:questions?|câu)(?:\s+số)?)\s*(?:from\s+)?(\d+)\s*(?:to|đến|through|[-–—])\s*(\d+)\b";
+        private const string BuiltInEndOfExamPattern = @"^(?:[\-\–\—_*\=.\s]*\b(?:HẾT|HET|THE\s*END|END\s*OF\s*(?:TEST|EXAM|PAPER)|HẾT\s+ĐỀ\s+THI)\b[\-\–\—_*\=.\s]*)$";
+        private const string BuiltInProctorPattern = @"(?i)(?:Cán\s*bộ\s*coi\s*thi|Giám\s*thị|Giám\s*khảo)\s+không\s+giải\s+thích(?:\s+gì)?\s+thêm|Thí\s*sinh\s+không\s+được\s+sử\s+dụng\s+tài\s+liệu|Họ\s*(?:và)?\s*tên\s+thí\s*sinh[\.\:\s_]+Số\s*báo\s*danh";
 
         // ─────────────────────────────────────────────────────────────────────
         // Biên giới đề thi & chủ đề
@@ -67,9 +71,19 @@ namespace AegisQuiz.Infrastructure.Services
             if (captured == null) return false;
 
             // Loại trừ hoàn toàn số năm (1900..2099)
-            if (int.TryParse(captured, out int examNum) && examNum >= 1900 && examNum <= 2099)
+            if (int.TryParse(captured, out int examNum))
             {
-                return false;
+                if (examNum >= 1900 && examNum <= 2099)
+                {
+                    return false;
+                }
+
+                // Loại trừ số khối lớp học (Lớp 10, Khối 12, Grade 9...) nếu không có tiền tố Đề/Exam/Mã đề
+                if (Regex.IsMatch(line, @"(?i)\b(?:LỚP|KHỐI|GRADE)\s*" + examNum + @"\b")
+                    && !Regex.IsMatch(line, @"(?i)\b(?:ĐỀ|EXAM|TEST|MÃ\s*ĐỀ)\s*(?:SỐ\s*|NO\.?\s*)?" + examNum + @"\b"))
+                {
+                    return false;
+                }
             }
 
             examCode = captured;
@@ -105,46 +119,24 @@ namespace AegisQuiz.Infrastructure.Services
         /// <summary>
         /// Nhận diện tiêu đề phân đoạn và trả về loại câu hỏi tương ứng (SINGLE, TRUE_FALSE, SHORT_ANSWER, ESSAY...).
         /// Hỗ trợ GDPT 2025 (PHẦN I/II/III), SAT (PART A/B/C), Gaokao (单项选择 / 填空题 / 解答题).
+        /// 100% Data-Driven (Zero Hard-code): Khớp từ điển cấu trúc tài liệu -> Khớp LifecycleSpec từng quy tắc -> Dự phòng La Mã khi từ điển rỗng.
         /// </summary>
         public bool TryMatchSectionHeader(string line, out string sectionKey)
         {
             sectionKey = string.Empty;
             if (string.IsNullOrWhiteSpace(line)) return false;
 
-            var upper = line.ToUpperInvariant();
-
-            // 1. Ưu tiên tuyệt đối ngữ nghĩa rõ ràng của tiêu đề phân đoạn
-            if (upper.Contains("TỰ LUẬN") || upper.Contains("TU LUAN") || upper.Contains("ESSAY") || upper.Contains("FREE RESPONSE") || upper.Contains("XỬ LÝ TÌNH HUỐNG") || upper.Contains("解答题"))
-            {
-                sectionKey = "ESSAY";
-                return true;
-            }
-            if (upper.Contains("TRẢ LỜI NGẮN") || upper.Contains("TRA LOI NGAN") || upper.Contains("SHORT ANSWER") || upper.Contains("ĐIỀN ĐÁP SỐ") || upper.Contains("ĐIỀN KẾT QUẢ") || upper.Contains("填空题"))
-            {
-                sectionKey = "SHORT_ANSWER";
-                return true;
-            }
-            if (upper.Contains("ĐÚNG SAI") || upper.Contains("DUNG SAI") || upper.Contains("ĐÚNG - SAI") || upper.Contains("ĐÚNG/SAI") || upper.Contains("TRUE FALSE") || upper.Contains("TRUE/FALSE") || upper.Contains("判断题"))
-            {
-                sectionKey = "TRUE_FALSE";
-                return true;
-            }
-            if ((upper.Contains("TRẮC NGHIỆM") || upper.Contains("MULTIPLE CHOICE") || upper.Contains("ĐƠN LỰA CHỌN") || upper.Contains("NHIỀU LỰA CHỌN") || upper.Contains("单项选择") || upper.Contains("ĐỌC HIỂU") || upper.Contains("READING") || upper.Contains("LISTENING"))
-                && !upper.Contains("ĐÚNG") && !upper.Contains("TRUE"))
-            {
-                sectionKey = "SINGLE";
-                return true;
-            }
-
-            // 2. Khớp theo từ điển cấu trúc của tài liệu
+            // 1. Khớp theo từ điển cấu trúc của tài liệu (Ưu tiên số 1 - cấu hình nạp từ registry JSON hoặc CSDL)
             if (TryMatchSectionMapping(line, _structureDictionary.SectionMarkers, out sectionKey)) return true;
 
+            // 2. Khớp theo LifecycleSpec của từng quy tắc CIG đang kích hoạt
             foreach (var rule in SnapshotRules())
             {
                 if (TryMatchSectionMapping(line, rule.LifecycleSpec?.SectionHeaderMapping, out sectionKey)) return true;
             }
 
-            // 3. Mẫu lõi dự phòng theo số thứ tự La Mã thuần túy (khi không kèm từ khóa ngữ nghĩa)
+            // 3. Mẫu lõi dự phòng theo số thứ tự La Mã thuần túy (chỉ dùng khi không khớp từ điển hoặc từ điển rỗng)
+            var upper = line.ToUpperInvariant();
             if (GetOrAddRegex(@"\b(?:PHẦN|PHAN|PART|SECTION)\s+(?:III|3|C)\b").IsMatch(upper))
             {
                 sectionKey = "SHORT_ANSWER";
@@ -204,6 +196,26 @@ namespace AegisQuiz.Infrastructure.Services
             if (MatchesAny(line, _structureDictionary.AnswerPhaseMarkers)) return true;
             if (SnapshotRules().Any(rule => MatchesAny(line, rule.LifecycleSpec?.AnswerPhasePatterns))) return true;
             return GetOrAddRegex(BuiltInAnswerPhasePattern).IsMatch(line);
+        }
+
+        /// <summary>Nhận diện ranh giới kết thúc đề thi (HẾT, THE END, END OF TEST, END OF PAPER...).</summary>
+        public bool TryMatchEndOfExam(string line)
+        {
+            if (string.IsNullOrWhiteSpace(line)) return false;
+            var clean = line.Trim();
+            if (MatchesAny(clean, _structureDictionary.EndOfExamMarkers)) return true;
+            if (SnapshotRules().Any(rule => MatchesAny(clean, rule.LifecycleSpec?.EndOfExamPatterns))) return true;
+            return GetOrAddRegex(BuiltInEndOfExamPattern).IsMatch(clean);
+        }
+
+        /// <summary>Nhận diện dòng chỉ thị coi thi / ghi chú phụ ngoài nội dung câu hỏi (Cán bộ coi thi..., Thí sinh không được...).</summary>
+        public bool IsProctorDisclaimerLine(string line)
+        {
+            if (string.IsNullOrWhiteSpace(line)) return false;
+            var clean = line.Trim();
+            if (MatchesAny(clean, _structureDictionary.ProctorInstructionMarkers)) return true;
+            if (SnapshotRules().Any(rule => MatchesAny(clean, rule.LifecycleSpec?.ProctorInstructionPatterns))) return true;
+            return GetOrAddRegex(BuiltInProctorPattern).IsMatch(clean);
         }
 
         // ─────────────────────────────────────────────────────────────────────
@@ -460,6 +472,315 @@ namespace AegisQuiz.Infrastructure.Services
             }
 
             return anomalyIndex >= 0.35 || !string.IsNullOrEmpty(detectedPatternHint);
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // SGI — Phạm vi nhận thức chỉ thị dải câu & ngữ cảnh bài đọc (Zero-Hardcode)
+        // ─────────────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Tạo một đối tượng CognitiveScopeManager mới tuân thủ interface ICognitiveScopeManager.
+        /// </summary>
+        public ICognitiveScopeManager CreateScopeManager()
+        {
+            return new AegisQuiz.Infrastructure.Services.Docx.CognitiveScopeManager();
+        }
+
+        /// <summary>
+        /// Phân tích dòng văn bản để trích xuất chỉ thị dải câu (Scope Directive) 100% từ dữ liệu cấu hình.
+        /// </summary>
+        public bool TryParseScopeDirective(string line, out DirectiveScopeWindow? window)
+        {
+            window = null;
+            if (string.IsNullOrWhiteSpace(line)) return false;
+
+            int startQ = 0, endQ = 0;
+            bool foundRange = false;
+
+            // 1. Quét dải số câu từ cấu hình ScopeRangePatterns
+            var rangePatterns = _structureDictionary.ScopeRangePatterns ?? new List<string>();
+            foreach (var pat in rangePatterns)
+            {
+                var match = GetOrAddRegex(pat).Match(line);
+                if (match.Success)
+                {
+                    if (match.Groups.Count >= 3 && int.TryParse(match.Groups[1].Value, out var s) && int.TryParse(match.Groups[2].Value, out var e))
+                    {
+                        startQ = s;
+                        endQ = e;
+                        foundRange = true;
+                        break;
+                    }
+                    else if (match.Groups.Count >= 2 && int.TryParse(match.Groups[1].Value, out var sSingle))
+                    {
+                        startQ = sSingle;
+                        endQ = 9999;
+                        foundRange = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!foundRange || startQ <= 0) return false;
+            if (endQ < startQ) endQ = startQ;
+
+            // 2. Nhận diện hành vi khảo thí từ cấu hình ScopeDirectiveMarkers
+            string? detectedType = null;
+            var directiveMarkers = _structureDictionary.ScopeDirectiveMarkers;
+            if (directiveMarkers != null)
+            {
+                // Duyệt theo thứ tự ưu tiên: MULTI_TRUE_FALSE -> SHORT_ANSWER -> ORDERING -> MATCHING -> MULTI -> SINGLE -> ESSAY
+                var priorityOrder = new[] { "MULTI_TRUE_FALSE", "SHORT_ANSWER", "ORDERING", "MATCHING", "MULTI", "SINGLE", "ESSAY" };
+                foreach (var type in priorityOrder)
+                {
+                    if (directiveMarkers.TryGetValue(type, out var patterns) && patterns != null)
+                    {
+                        if (patterns.Any(p => GetOrAddRegex(p).IsMatch(line)))
+                        {
+                            detectedType = type;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (detectedType == null) return false;
+
+            window = new DirectiveScopeWindow
+            {
+                StartQuestion = startQ,
+                EndQuestion = endQ,
+                QuestionType = detectedType,
+                RawDirective = line.Trim(),
+                Confidence = 0.95
+            };
+            return true;
+        }
+
+        /// <summary>
+        /// Nhận diện dòng bài đọc / tình huống thực tế áp dụng cho dải câu hỏi.
+        /// </summary>
+        public bool TryParsePassageContextPrompt(string line, out int startQ, out int endQ, out string contextTitle)
+        {
+            startQ = 0;
+            endQ = 0;
+            contextTitle = string.Empty;
+            if (string.IsNullOrWhiteSpace(line)) return false;
+
+            var rules = SnapshotRules();
+            bool isPassagePrompt = MatchesAny(line, _structureDictionary.PassageStartPatterns)
+                                  || rules.Any(rule => MatchesAny(line, rule.StimulusSpec?.PassageStartPatterns))
+                                  || GetOrAddRegex(BuiltInPassageStartPattern).IsMatch(line);
+
+            if (!isPassagePrompt) return false;
+
+            if (TryCaptureRange(line, _structureDictionary.ScopeRangePatterns, out startQ, out endQ)
+                || TryCaptureRange(line, _structureDictionary.PassageRangePatterns, out startQ, out endQ))
+            {
+                // Thỏa mãn
+            }
+            else
+            {
+                foreach (var rule in rules)
+                {
+                    if (TryCaptureRange(line, rule.StimulusSpec?.PassageRangePatterns, out startQ, out endQ)) break;
+                }
+            }
+
+            if (startQ <= 0)
+            {
+                TryCaptureRange(line, new[] { BuiltInPassageRangePattern }, out startQ, out endQ);
+            }
+
+            if (startQ <= 0) return false;
+            if (endQ < startQ) endQ = startQ;
+
+            contextTitle = BuildContextTitle(startQ, endQ);
+            return true;
+        }
+
+        /// <summary>
+        /// [CIG v4.0 - Structural Boundary Streamer]
+        /// Làm phẳng danh sách paragraphs thành các dòng văn bản đơn vị (tokens),
+        /// chỉ phân tách tại các ranh giới cấu trúc khách quan (Sau ảnh Media hoặc Sau dấu kết thúc câu logic).
+        /// Tuyệt đối không ngắt giữa câu văn tự do hay trong cụm chỉ thị phạm vi (từ... đến...).
+        /// </summary>
+        public List<string> FlattenDocument(IEnumerable<string> paragraphs, DocumentLanguageProfileDto? languageProfile = null)
+        {
+            var flattenedLines = new List<string>();
+            const string questionBoundaryLookahead = @"(?=(?:Câu|Question|Item|Task|Exercise|Bài|Bai)\s*\d+(?:[\.\:\)\–—\-]|[\s\t]*[\.\:\)\–—\-])\s*)";
+
+            foreach (var p in paragraphs)
+            {
+                if (string.IsNullOrWhiteSpace(p)) continue;
+
+                // 1. Tách ranh giới cấu trúc nếu câu hỏi đứng ngay sau ảnh/media Markdown: !\[...\]\(...\) hoặc data:image
+                var normalizedP = Regex.Replace(p, @"(!\[[^\]]*\]\([^)]+\)|data:image\/[a-z0-9\+\-\.]+;base64,[A-Za-z0-9+/=]+)\s*" + questionBoundaryLookahead, "$1\n\n", RegexOptions.IgnoreCase);
+
+                // 2. Tách nếu hai câu hỏi bị dính chùm trên cùng một paragraph sau dấu ngắt câu (. ; ! ? ) ])
+                // Phía trước KHÔNG ĐƯỢC là giới từ hoặc từ chỉ phạm vi (từ, đến, from, to, ở, theo, in, at, xem, vd...)
+                normalizedP = Regex.Replace(normalizedP, @"(?<=[\.\!\?;\)\]])\s*(?<!\b(?:từ|đến|ở|theo|trong|from|to|at|in|see|vd|ví\s*dụ)\s+)" + questionBoundaryLookahead, "\n\n", RegexOptions.IgnoreCase);
+
+                var subLines = normalizedP.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+                foreach (var sl in subLines)
+                {
+                    var trimmed = sl.Trim();
+                    if (!string.IsNullOrEmpty(trimmed)) flattenedLines.Add(trimmed);
+                }
+            }
+            return flattenedLines;
+        }
+
+        /// <summary>
+        /// [CHIP v4.0 - Header Reconnaissance & Profiling]
+        /// Quét và trích xuất hồ sơ tổng quan của tài liệu từ các đoạn văn bản đầu đề thi.
+        /// </summary>
+        public DocumentHeaderProfileDto ProfileHeader(
+            IEnumerable<string> headerParagraphs,
+            IEnumerable<string>? sampleContents = null,
+            DynamicDomainContext? dynamicContext = null)
+        {
+            var headerList = headerParagraphs?.ToList() ?? new List<string>();
+            var profile = new DocumentHeaderProfileDto
+            {
+                DurationSeconds = 60,
+                TaxonomyCoordinates = UniversalCoordinateTaxonomyEngine.SniffCoordinates(
+                    fileName: null,
+                    sheetName: null,
+                    headerBannerLines: headerList,
+                    sampleContents: sampleContents ?? Enumerable.Empty<string>(),
+                    dynamicContext: dynamicContext)
+            };
+
+            // Ưu tiên TopicCode đã được phát hiện từ Vỏ bọc Header đề thi
+            if (!string.IsNullOrEmpty(profile.TaxonomyCoordinates?.TopicCode) && profile.TaxonomyCoordinates.TopicCode != "GENERAL")
+            {
+                profile.DetectedSubject = profile.TaxonomyCoordinates.TopicCode;
+            }
+
+            foreach (var p in headerList)
+            {
+                if (TryMatchTopicHeading(p, out string rawSubj) && (profile.DetectedSubject == null || profile.DetectedSubject == "GENERAL"))
+                {
+                    string cleanSubj = SanitizeSubjectHeading(rawSubj);
+                    string resolved = UniversalCoordinateTaxonomyEngine.ResolveTopicCode(cleanSubj, dynamicContext);
+                    if (resolved != "GENERAL" && resolved != "EDUCATION" && resolved != "THPT_NATIONAL" && resolved != "MON" && resolved != "BAI_THI")
+                    {
+                        profile.DetectedSubject = resolved;
+                        if (profile.TaxonomyCoordinates != null)
+                        {
+                            profile.TaxonomyCoordinates.TopicCode = resolved;
+                        }
+                    }
+                }
+
+                var dur = TryExtractDurationMinutes(p);
+                if (dur.HasValue && dur.Value > 0)
+                {
+                    profile.DurationSeconds = dur.Value * 60;
+                }
+
+                if (TryExtractExamCode(p, out var examCode) && !string.IsNullOrEmpty(examCode))
+                {
+                    profile.DetectedExamCode = examCode;
+                }
+            }
+
+            if (profile.TaxonomyCoordinates != null && !string.IsNullOrEmpty(profile.DetectedSubject) && profile.DetectedSubject != "GENERAL")
+            {
+                var matched = dynamicContext?.Topics?.FirstOrDefault(t => t.Code.Equals(profile.DetectedSubject, StringComparison.OrdinalIgnoreCase))
+                    ?? DynamicDomainContext.CreateDefault().Topics.FirstOrDefault(t => t.Code.Equals(profile.DetectedSubject, StringComparison.OrdinalIgnoreCase));
+                if (matched != null)
+                {
+                    profile.TaxonomyCoordinates.TopicName = matched.Name;
+                    if (!string.IsNullOrWhiteSpace(matched.DomainCode) && matched.DomainCode != "GENERAL")
+                    {
+                        profile.TaxonomyCoordinates.DomainCode = matched.DomainCode;
+                    }
+                }
+            }
+
+            return profile;
+        }
+
+        /// <summary>
+        /// Kiểm tra dòng thông tin thí sinh, giám thị, số báo danh, thời gian làm bài nếu chưa vào câu hỏi.
+        /// </summary>
+        public bool IsStudentInfoLine(string line)
+        {
+            if (string.IsNullOrWhiteSpace(line)) return false;
+            return Regex.IsMatch(line, @"(?i)(?:thời\s*gian\s*làm\s*bài|không\s*kể\s*thời\s*gian|số\s*báo\s*danh|họ\s*(?:và)?\s*tên\s*thí\s*sinh)");
+        }
+
+        /// <summary>
+        /// Trích xuất mã đề thi ("DE_01", "DE_02"...) từ dòng văn bản.
+        /// </summary>
+        public bool TryExtractExamCode(string line, out string? examCode)
+        {
+            examCode = null;
+            if (string.IsNullOrWhiteSpace(line)) return false;
+            var match = Regex.Match(line, @"(?i)(?:Mã\s*đề(?:\s*thi)?|Đề(?:\s*thi)?\s*số|Exam\s*Code|Test\s*Code)[\:\s\-]*(\d+)", RegexOptions.IgnoreCase);
+            if (match.Success && int.TryParse(match.Groups[1].Value, out int cNum))
+            {
+                examCode = $"DE_{cNum:D2}";
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Trích xuất thời lượng thi (phút) từ dòng văn bản.
+        /// </summary>
+        public int? TryExtractDurationMinutes(string line)
+        {
+            if (string.IsNullOrWhiteSpace(line)) return null;
+            var matchDuration = Regex.Match(line, @"(?:thời\s*gian(?:\s*làm\s*bài)?|thời\s*lượng|duration)[\:\s\-]*(\d+)\s*(?:phút|min|minutes)", RegexOptions.IgnoreCase);
+            if (matchDuration.Success && int.TryParse(matchDuration.Groups[1].Value, out int durMins) && durMins > 0)
+            {
+                return durMins;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Kiểm tra số đề có phải là năm học (1900..2099) để tránh nhầm mã đề.
+        /// </summary>
+        public bool IsYearLikeNumber(int examNum)
+        {
+            return examNum >= 1900 && examNum <= 2099;
+        }
+
+        /// <summary>
+        /// Làm sạch tiêu đề môn học, loại bỏ các từ khóa rác phía sau như: đề, chính thức, thử, mã, khối...
+        /// </summary>
+        public string SanitizeSubjectHeading(string rawSubject)
+        {
+            if (string.IsNullOrWhiteSpace(rawSubject)) return string.Empty;
+            return Regex.Replace(rawSubject, @"\b(?:đề|de|chính\s*thức|chinh\s*thuc|thử|thu|mã|khối|khoi|lớp|lop|năm|nam|thời\s*gian|thoi\s*gian|học\s*kỳ|hoc\s*ky)\b.*$", "", RegexOptions.IgnoreCase).Trim();
+        }
+
+        /// <summary>
+        /// Xây dựng mã đề chuẩn hóa theo tiền tố của ngữ cảnh miền (VD: DE_01, EXAM_01...).
+        /// </summary>
+        public string BuildExamCode(int examNum, DynamicDomainContext? dynamicContext = null)
+        {
+            string examPrefix = "DE_";
+            if (dynamicContext != null && !string.IsNullOrWhiteSpace(dynamicContext.DefaultExamPrefix)
+                && dynamicContext.DefaultExamPrefix != "EXAM" && dynamicContext.DefaultExamPrefix != "DE")
+            {
+                examPrefix = $"{dynamicContext.DefaultExamPrefix}_";
+            }
+            return $"{examPrefix}{examNum:D2}";
+        }
+
+        /// <summary>
+        /// Tạo tiêu đề ngữ cảnh bài đọc hiểu chuẩn hóa theo khoảng câu hỏi.
+        /// </summary>
+        public string BuildContextTitle(int startQ, int endQ)
+        {
+            return startQ == endQ
+                ? $"Bài đọc hiểu (Câu {startQ})"
+                : (endQ >= 9999 ? $"Bài đọc hiểu (Từ câu {startQ})" : $"Bài đọc hiểu (Câu {startQ} - {endQ})");
         }
     }
 }

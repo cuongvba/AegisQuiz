@@ -241,7 +241,7 @@ export function getSampleBankingUcisData() {
         detectedParentTopicName: '2026-DOT2',
         detectedTopicCode: '2026_DOT2_1_TIN_DUNG_KHDN_240_CAU',
         detectedTopicName: '1. Tín dụng KHDN - 240 câu',
-        detectedTopicDescription: '1. Tín dụng KHDN - 240 câu | Đường dẫn: 2026-DOT2 | Số lượng: 240 câu hỏi',
+        detectedTopicDescription: '1. Tín dụng KHDN - 240 câu | Đường dẫn: 2026-DOT2',
         detectedDomainCode: 'BANKING',
         detectedTargetLevel: 'Chuyên viên KHDN',
         detectedAssessmentPurpose: 'Sát hạch nghiệp vụ 2026',

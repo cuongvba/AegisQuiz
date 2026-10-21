@@ -13,6 +13,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { getDisplayOptions, isQuestionAnswered, parseIndexList, parseMatchingPairs, scoreQuestion } from '@/lib/quiz-helpers';
+import { parseMultiTfAnswer } from '@/shared/lib/quiz/normalizers';
 import type { LearnerAnswer, LearnerQuestion, QuizResult } from '@/types/quiz';
 import { MathRenderer } from '@/components/common/MathRenderer';
 
@@ -161,15 +162,21 @@ function renderQuestionDetail(
   }
 
   if (question.questionType === 'ORDERING') {
-    const selected = answer?.ordering ?? [];
+    const displayOpts = getDisplayOptions(question);
+    const selected = (answer?.ordering && answer.ordering.length > 0)
+      ? answer.ordering
+      : displayOpts.map((x) => x.id);
     const earned = scoreQuestion(question, answer);
     const isCorrect = earned >= (question.points || 1);
+    const isDefaultOrder = !answer?.ordering || answer.ordering.length === 0;
+
     return (
       <div className="mt-3 space-y-2 text-sm rounded-2xl border border-slate-200 bg-slate-50/80 p-3.5">
         <div className={isCorrect ? 'text-emerald-800 font-bold' : 'text-rose-700 font-bold'}>
-          <span>{isCorrect ? '✔️' : '❌'} {t('yourAnswer')}: </span>
+          <span>{isCorrect ? '✔️' : '❌'} {t('yourAnswer') || 'Thứ tự lựa chọn'}: </span>
           <span className="font-semibold text-slate-800">
-            {selected.length > 0 ? formatIndexedAnswerText(question, selected.join(',')) : '-'}
+            {formatIndexedAnswerText(question, selected.join(','))}
+            {isDefaultOrder && <span className="ml-1 text-xs text-slate-500 font-normal">(Giữ nguyên thứ tự chuẩn)</span>}
           </span>
           {isCorrect && (
             <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-black text-emerald-800">
@@ -179,12 +186,72 @@ function renderQuestionDetail(
         </div>
         {!isCorrect && (
           <div className="text-emerald-800 font-bold pt-1.5 border-t border-slate-200">
-            <span>✔️ {t('correctAnswer')}: </span>
+            <span>✔️ {t('correctAnswer') || 'Thứ tự đúng'}: </span>
             <span className="font-semibold text-slate-800">
               {formatIndexedAnswerText(question, question.answerRaw)}
             </span>
           </div>
         )}
+      </div>
+    );
+  }
+
+  if (question.questionType === 'MULTI_TRUE_FALSE') {
+    const expectedMap = parseMultiTfAnswer(question.answerRaw);
+    const userMap = (answer?.matrixAnswer && Object.keys(answer.matrixAnswer).length > 0)
+      ? answer.matrixAnswer
+      : parseMultiTfAnswer(answer?.shortText);
+    const displayOpts = getDisplayOptions(question);
+    const earned = scoreQuestion(question, answer);
+    const isFullCorrect = earned >= (question.points || 1);
+
+    return (
+      <div className="mt-3 space-y-2">
+        <div className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between pb-1">
+          <span>Chi tiết đối chiếu ma trận Đúng / Sai (GDPT 2025):</span>
+          <span className={`px-2 py-0.5 rounded-full font-black text-[11px] ${
+            isFullCorrect ? 'bg-emerald-100 text-emerald-800' : earned > 0 ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800'
+          }`}>
+            Đạt: {earned}/{question.points || 1} Đ
+          </span>
+        </div>
+        {displayOpts.map((opt, idx) => {
+          const letter = String.fromCharCode(97 + idx); // a, b, c, d
+          const cleanText = opt.value.replace(/^[a-d0-9]+[\)\.\:\s\-]+/i, '').trim();
+          const userVal = userMap[letter];
+          const expVal = expectedMap[letter];
+          const isItemCorrect = userVal !== undefined && userVal === expVal;
+
+          return (
+            <div
+              key={letter}
+              className={`flex items-center justify-between p-3 rounded-xl border text-xs transition-all ${
+                isItemCorrect
+                  ? 'border-emerald-300 bg-emerald-50/70 text-emerald-950 font-semibold'
+                  : 'border-rose-300 bg-rose-50/70 text-rose-950'
+              }`}
+            >
+              <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
+                <span className={`w-5 h-5 rounded-md font-mono font-bold flex items-center justify-center shrink-0 text-[11px] ${
+                  isItemCorrect ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'
+                }`}>
+                  {letter})
+                </span>
+                <span className="truncate">{cleanText || opt.value}</span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${
+                  userVal === true ? 'bg-emerald-200 text-emerald-800' : userVal === false ? 'bg-rose-200 text-rose-800' : 'bg-slate-200 text-slate-600'
+                }`}>
+                  Bạn: {userVal === true ? 'Đúng' : userVal === false ? 'Sai' : 'Chưa chọn'}
+                </span>
+                <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[11px] font-bold border border-emerald-300">
+                  Đáp án: {expVal === true ? 'Đúng' : 'Sai'}
+                </span>
+              </div>
+            </div>
+          );
+        })}
       </div>
     );
   }
@@ -269,10 +336,19 @@ function renderQuestionDetail(
   }
 
   return (
-    <div className="mt-3 space-y-2 text-sm rounded-xl border border-slate-200 bg-slate-50 p-3">
-      <div><span className="font-bold">{t('yourAnswer')}:</span> {textOrDash(answer?.essay)}</div>
-      <div className="text-amber-700 font-semibold">{t('manualGrading')}</div>
-      {typeof essayScore === 'number' && <div className="text-cyan-700 font-bold">{t('essayScore')}: {essayScore.toFixed(2)} / {question.points}</div>}
+    <div className="mt-3 space-y-2.5 text-sm rounded-2xl border border-amber-200 bg-amber-50/70 p-4">
+      <div>
+        <span className="font-bold text-slate-800">{t('yourAnswer') || 'Bài làm của bạn'}: </span>
+        <span className="text-slate-700 font-medium italic">{textOrDash(answer?.essay)}</span>
+      </div>
+      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-100 text-amber-900 font-bold text-xs border border-amber-300 shadow-2xs">
+        📝 {t('manualGrading') || 'Chấm thủ công (Đang chờ giáo viên/giám khảo chấm điểm)'}
+      </div>
+      {typeof essayScore === 'number' && (
+        <div className="text-cyan-700 font-bold text-xs pt-1">
+          {t('essayScore')}: {essayScore.toFixed(2)} / {question.points} Đ
+        </div>
+      )}
     </div>
   );
 }
@@ -289,7 +365,7 @@ type PrintStatus = 'correct' | 'incorrect' | 'pending';
 function statusLabel(status: PrintStatus, t: (key: string) => string): string {
   if (status === 'correct') return t('statusCorrect') || 'Chính xác';
   if (status === 'incorrect') return t('statusIncorrect') || 'Chưa đúng';
-  return t('statusPending') || 'Chờ chấm';
+  return 'Chấm thủ công';
 }
 
 function statusClass(status: PrintStatus): string {

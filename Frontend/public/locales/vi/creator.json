@@ -1,0 +1,73 @@
+{
+  "title": "Creator Zen Studio",
+  "subtitle": "Không gian số tối giản dành riêng cho Thầy Cô và Chuyên gia Đào tạo",
+  "trialBanner": {
+    "title": "Gói Đối Tác Giáo Viên — Dùng Thử 90 Ngày Miễn Phí",
+    "daysLeft": "Còn {{days}} ngày trải nghiệm trọn vẹn đặc quyền",
+    "referralLabel": "Mã giới thiệu đồng nghiệp:",
+    "copyReferral": "Sao chép mã",
+    "copied": "Đã sao chép!",
+    "revShare": "Chính sách chia sẻ doanh thu 80/20 & Karma tích lũy"
+  },
+  "dropZone": {
+    "title": "Kéo & Thả Đề Thi Word (.docx) Vào Đây",
+    "hint": "Hỗ trợ định dạng đề thi Word tự nhiên, công thức MathType/LaTeX và hình ảnh",
+    "processing": "Đang bóc tách đề thi và phân tích ma trận tri thức...",
+    "browseButton": "Hoặc bấm để chọn tệp từ máy tính",
+    "dropActive": "Thả tệp để bắt đầu khởi tạo phòng thi!"
+  },
+  "preview": {
+    "title": "Xem Trước & Khử Trùng Lặp Tri Thức",
+    "totalQuestions": "Tổng số câu: {{count}}",
+    "casDeduplication": "Khử trùng lặp CAS: Tiết kiệm {{rate}}% kho lưu trữ",
+    "duplicateBadge": "Trùng lặp CAS (Tái sử dụng)",
+    "uniqueBadge": "Câu hỏi mới độc bản",
+    "questionNum": "Câu {{num}}",
+    "correctAnswer": "Đáp án:",
+    "explanation": "Lời giải / Căn cứ:",
+    "changeSubject": "Đổi môn học / Ma trận"
+  },
+  "taxonomy": {
+    "detected": "AI Nhận diện ma trận:",
+    "standard": "Chuẩn:",
+    "bloomLevel": "Cấp độ nhận thức:",
+    "confidence": "Độ tin cậy:"
+  },
+  "launcher": {
+    "launchButton": "Kích Hoạt Phòng Thi Realtime 1-Chạm",
+    "modalTitle": "Phòng Thi Realtime Đã Sẵn Sàng!",
+    "modalSubtitle": "Học sinh quét mã QR hoặc nhập mã PIN 6 số trên điện thoại để tham gia ngay",
+    "pinLabel": "MÃ PIN THAM GIA",
+    "copyPin": "Sao chép PIN",
+    "copyLink": "Sao chép đường dẫn",
+    "openArena": "Vào Màn Hình Giám Sát Lớp Học",
+    "close": "Đóng"
+  },
+  "actions": {
+    "reset": "Tải đề khác",
+    "errorUpload": "Tải tệp thất bại, vui lòng kiểm tra lại định dạng Word (.docx)"
+  },
+  "editor": {
+    "edit": "Sửa",
+    "save": "Lưu thay đổi",
+    "cancel": "Hủy",
+    "editedBadge": "Đã chỉnh sửa",
+    "content": "Nội dung câu hỏi (hỗ trợ $công thức)",
+    "options": "Các phương án (bấm chữ cái để chọn đáp án đúng)",
+    "markCorrect": "Đặt làm đáp án đúng",
+    "addOption": "Thêm phương án",
+    "removeOption": "Xóa phương án",
+    "answer": "Đáp án / Đáp số",
+    "explanation": "Lời giải chi tiết",
+    "addExplanation": "Thêm lời giải"
+  },
+  "pagination": {
+    "label": "Điều hướng câu hỏi",
+    "prev": "Trang trước",
+    "next": "Trang sau",
+    "range": "Câu {{from}}–{{to}} / {{total}}",
+    "jumpTo": "Đến câu số…",
+    "perPage": "Mỗi trang",
+    "edited": "{{count}} câu đã sửa"
+  }
+}

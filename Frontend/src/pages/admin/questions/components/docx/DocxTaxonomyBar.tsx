@@ -99,6 +99,11 @@ export function DocxTaxonomyBar({
               className="bg-transparent text-slate-200 text-xs font-medium focus:outline-none cursor-pointer max-w-[150px] sm:max-w-[180px] truncate"
             >
               {localTopics.map(t => <option key={t.id || t.code} value={t.code} className="bg-slate-900">{t.name} ({t.code})</option>)}
+              {bulkTopic && !localTopics.some(t => t.code.toUpperCase() === bulkTopic.toUpperCase()) && (
+                <option value={bulkTopic} className="bg-slate-900 text-amber-300 font-bold">
+                  ✨ {bulkTopic}
+                </option>
+              )}
               <option value="__CREATE_NEW__" className="text-amber-400 font-bold bg-slate-950">➕ Tạo chủ đề mới...</option>
             </select>
             <button

@@ -79,6 +79,7 @@ builder.Services.AddHttpClient("irt-service", client =>
 // Services (S.O.L.I.D Interface bindings)
 builder.Services.AddSingleton<IVietnameseTextCorrectionService, VietnameseTextCorrectionService>();
 builder.Services.AddSingleton<ISmartOptionShufflerService, SmartOptionShufflerService>();
+builder.Services.AddSingleton<ITaxonomyEngine, UniversalCoordinateTaxonomyEngine>();
 builder.Services.AddScoped<IExcelParserService, ExcelParserService>();
 // [Universal Excel Export Engine — DTaaS]
 builder.Services.AddSingleton<IExcelExportStrategy, AegisQuiz.Infrastructure.Excel.Strategies.NativeIsomorphicExportStrategy>();
@@ -92,6 +93,7 @@ builder.Services.AddSingleton<ITranspilerExportStrategy, AegisQuiz.Infrastructur
 builder.Services.AddSingleton<ITranspilerExportStrategy, AegisQuiz.Infrastructure.Transpiler.Qti30PackageExportStrategy>();
 builder.Services.AddScoped<IUniversalExamTranspilerService, AegisQuiz.Infrastructure.Transpiler.UniversalExamTranspilerService>();
 builder.Services.AddScoped<IDocxParserService, DocxParserService>();
+builder.Services.AddScoped<IDocxStateMachineClassifier, AegisQuiz.Infrastructure.Services.Docx.DocxStateMachineClassifierService>();
 builder.Services.AddScoped<IDynamicDomainContextService, DynamicDomainContextService>();
 builder.Services.AddScoped<IPdfExtractorService, PdfParserService>();
 builder.Services.AddScoped<IExamDeduplicationEngine, ExamDeduplicationEngine>();
@@ -106,7 +108,8 @@ builder.Services.AddScoped<IGeminiMentorService, GeminiMentorService>();
 builder.Services.AddScoped<IGeminiSolverService>(sp =>
     new GeminiSolverService(
         builder.Configuration["Gemini:ApiKey"] ?? "",
-        sp.GetRequiredService<Microsoft.Extensions.Caching.Memory.IMemoryCache>()));
+        sp.GetRequiredService<Microsoft.Extensions.Caching.Memory.IMemoryCache>(),
+        sp.GetService<IVisionMathService>()));
 
 // [Kịch bản B] AI Question Generator từ tài liệu PDF / Word / Text
 builder.Services.AddScoped<IAiQuestionGeneratorService>(sp =>
@@ -117,8 +120,9 @@ builder.Services.AddScoped<IAiQuestionGeneratorService>(sp =>
         sp.GetRequiredService<IDocxParserService>(),
         sp.GetRequiredService<Microsoft.Extensions.Caching.Memory.IMemoryCache>()));
 
-// [Universal Ingestion Engine Phase 4] AI Rule Autopilot (Gemini 1.5 Flash + Local Heuristic Sniffer)
+// [Universal Ingestion Engine Phase 4] AI Rule Autopilot (Gemini 1.5 Flash + Local Heuristic Sniffer) & Shadow Testing Pipeline
 builder.Services.AddScoped<IAiRuleAutopilotService, GeminiRuleAutopilotService>();
+builder.Services.AddScoped<IShadowTestingService, ShadowTestingService>();
 
 // [Cognitive Ingestion Grammar] Động cơ bóc tách câu hỏi động — singleton dùng chung với DocxStateMachineClassifier,
 // được gắn ScopeFactory để đồng bộ quy tắc với PostgreSQL (bảng QuestionParsingRules) khi khởi động.
@@ -127,8 +131,9 @@ builder.Services.AddSingleton<IDynamicQuestionIngestionEngine>(sp =>
         sp.GetRequiredService<IServiceScopeFactory>(),
         sp.GetRequiredService<ILogger<DynamicQuestionIngestionEngine>>()));
 
-// [Universal Dynamic Math Dictionary]
+// [Universal Dynamic Math Dictionary & Locale Normalizer]
 builder.Services.AddSingleton<IDynamicMathDictionaryService>(_ => DynamicMathDictionaryService.Instance);
+builder.Services.AddSingleton<AegisQuiz.Application.Interfaces.IMathLocaleNormalizer>(_ => AegisQuiz.Infrastructure.Services.Docx.MathLocaleNormalizer.Default);
 
 // [Hybrid L1+L2 Cache & Universal AI Router (OpenAdapter Engine Architecture)]
 builder.Services.AddScoped<ICacheService, HybridCacheService>();
@@ -138,6 +143,7 @@ builder.Services.AddSingleton<AegisQuiz.Infrastructure.AI.Adapters.IAiProviderAd
 builder.Services.AddSingleton<AegisQuiz.Infrastructure.AI.Adapters.IAiProviderAdapter, AegisQuiz.Infrastructure.AI.Adapters.ReplicateAdapter>();
 builder.Services.AddSingleton<AegisQuiz.Infrastructure.AI.Adapters.OpenAiCompatibleAdapter>();
 builder.Services.AddSingleton<IUniversalAiRouter, UniversalAiRouter>();
+builder.Services.AddScoped<IVisionMathService, VisionMathService>();
 builder.Services.AddScoped<IMultiAgentCommitteeEngine, MultiAgentCommitteeEngine>();
 
 // [AegisCoPilot OCP Command Strategy Handlers & Orchestrator]
@@ -195,6 +201,23 @@ builder.Services.AddScoped<IPedagogicalRagService, PedagogicalRagService>();
 builder.Services.AddScoped<IContentModerationService, ContentModerationService>();
 builder.Services.AddScoped<INotebookService, NotebookProcessingService>();
 
+// [P1 Supreme Scoring Sovereign] Đăng ký IQuestionEvaluatorStrategy OCP & Dispatcher
+builder.Services.AddSingleton<IQuestionEvaluatorStrategy, AegisQuiz.Application.Services.Scoring.SingleChoiceEvaluatorStrategy>();
+builder.Services.AddSingleton<IQuestionEvaluatorStrategy, AegisQuiz.Application.Services.Scoring.MultiChoiceEvaluatorStrategy>();
+builder.Services.AddSingleton<IQuestionEvaluatorStrategy, AegisQuiz.Application.Services.Scoring.MultiTrueFalseEvaluatorStrategy>();
+builder.Services.AddSingleton<IQuestionEvaluatorStrategy, AegisQuiz.Application.Services.Scoring.ShortAnswerEvaluatorStrategy>();
+builder.Services.AddSingleton<IQuestionEvaluatorStrategy, AegisQuiz.Application.Services.Scoring.OrderingEvaluatorStrategy>();
+builder.Services.AddSingleton<IQuestionEvaluatorStrategy, AegisQuiz.Application.Services.Scoring.MatchingEvaluatorStrategy>();
+builder.Services.AddSingleton<IQuestionEvaluatorStrategy, AegisQuiz.Application.Services.Scoring.EssayEvaluatorStrategy>();
+builder.Services.AddSingleton<IQuestionEvaluationDispatcher, AegisQuiz.Application.Services.Scoring.QuestionEvaluationDispatcher>();
+
+// [Creator Zen Studio] Đăng ký ITaxonomySnifferStrategy OCP & Dispatcher
+builder.Services.AddSingleton<ITaxonomySnifferStrategy, AegisQuiz.Application.Services.Taxonomy.K12MathTaxonomySnifferStrategy>();
+builder.Services.AddSingleton<ITaxonomySnifferStrategy, AegisQuiz.Application.Services.Taxonomy.DrivingLicenseTaxonomySnifferStrategy>();
+builder.Services.AddSingleton<ITaxonomySnifferStrategy, AegisQuiz.Application.Services.Taxonomy.BankingComplianceTaxonomySnifferStrategy>();
+builder.Services.AddSingleton<ITaxonomySnifferStrategy, AegisQuiz.Application.Services.Taxonomy.GeneralFallbackTaxonomySnifferStrategy>();
+builder.Services.AddSingleton<ITaxonomySnifferDispatcher, AegisQuiz.Application.Services.Taxonomy.TaxonomySnifferDispatcher>();
+
 // [Phase B] Multi-Tenancy — Scoped per request
 builder.Services.AddScoped<AegisQuiz.Application.Interfaces.ITenantContext,
                             AegisQuiz.Infrastructure.Services.TenantContext>();
@@ -242,6 +265,16 @@ var isDevelopment = builder.Environment.IsDevelopment();
 var oidcAuthority = builder.Configuration["Oidc:Authority"] ?? "http://localhost:8180/realms/dehoc";
 var jwtSecret = builder.Configuration["Jwt:Secret"]
     ?? throw new InvalidOperationException("[CG2] Jwt:Secret is not configured. Set via env var JWT_SECRET.");
+
+// [P0 Excellence] HS256 cần khóa >= 256-bit; placeholder "SET_VIA_*" không bao giờ được chạy ngoài Dev.
+var isWeakJwtSecret = jwtSecret.StartsWith("SET_VIA", StringComparison.OrdinalIgnoreCase)
+    || System.Text.Encoding.UTF8.GetByteCount(jwtSecret) < 32;
+if (isWeakJwtSecret)
+{
+    if (!isDevelopment)
+        throw new InvalidOperationException("[CG2] Jwt:Secret is a placeholder or shorter than 32 bytes. Set a strong JWT_SECRET.");
+    Log.Warning("[CG2] Jwt:Secret is a placeholder/weak value — accepted only in Development.");
+}
 
 builder.Services.AddAuthentication(Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -738,6 +771,28 @@ using (var scope = app.Services.CreateScope())
                         ""TenantId"" uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000'
                     );
                     CREATE INDEX IF NOT EXISTS ""IX_SymposiumSessions_ConvenedAt"" ON ""SymposiumSessions"" (""ConvenedAt"");
+
+                    -- 10. BẢNG EducatorPartnerships (Creator Economy & 90 Ngày Trial Toàn Năng)
+                    CREATE TABLE IF NOT EXISTS ""EducatorPartnerships"" (
+                        ""Id"" uuid NOT NULL PRIMARY KEY,
+                        ""UserId"" uuid NOT NULL,
+                        ""TenantId"" uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
+                        ""ReferralCode"" text NOT NULL DEFAULT '',
+                        ""ReferredByUserId"" uuid NULL,
+                        ""TrialExpiresAt"" timestamp with time zone NOT NULL DEFAULT (now() + interval '90 days'),
+                        ""RevenueShareRate"" numeric(5,2) NOT NULL DEFAULT 0.80,
+                        ""KarmaPoints"" integer NOT NULL DEFAULT 0,
+                        ""PayoutBankAccount"" text NULL,
+                        ""PayoutBankName"" text NULL,
+                        ""PayoutAccountHolder"" text NULL,
+                        ""TotalEarnings"" numeric(18,2) NOT NULL DEFAULT 0,
+                        ""PendingPayoutBalance"" numeric(18,2) NOT NULL DEFAULT 0,
+                        ""IsActive"" boolean NOT NULL DEFAULT true,
+                        ""CreatedAt"" timestamp with time zone NOT NULL DEFAULT now(),
+                        ""UpdatedAt"" timestamp with time zone NULL
+                    );
+                    CREATE INDEX IF NOT EXISTS ""IX_EducatorPartnerships_UserId"" ON ""EducatorPartnerships"" (""UserId"");
+                    CREATE INDEX IF NOT EXISTS ""IX_EducatorPartnerships_ReferralCode"" ON ""EducatorPartnerships"" (""ReferralCode"");
 
                     -- Hạt giống 6 Viện Hàn Lâm Nhận Thức Vũ Trụ
                     INSERT INTO ""UniversalAiCouncils"" (""Id"", ""CouncilCode"", ""DisplayName"", ""DisciplineArea"", ""MaterializedTaxonomyPath"", ""EpistemicManifesto"", ""BenchmarkPrestigeElo"", ""IsActive"", ""CreatedAt"")

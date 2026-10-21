@@ -1,43 +1,365 @@
 {
-  "version": "3.0.0",
-  "lastUpdated": "2026-09-29T10:30:00Z",
-  "releaseNote": "Giai đoạn 7 (CHIP v3.0) — Khôi phục Document Structure Dictionary v2.1.0, bổ sung Language Signatures (Dual-Layer Language Cognition) và Fast Classification Spec; hợp nhất 18 quy tắc (THCS Toán / Tiếng Anh kích hoạt; ma trận đáp án & tự luận phân cấp ở trạng thái chờ kích hoạt).",
+  "version": "6.0.0",
+  "lastUpdated": "2026-10-20T12:12:00.000Z",
+  "releaseNote": "Kỷ nguyên CIG v6.0 — Tái cấu trúc triệt để Hệ thống Khảo thí Đa tầng: Khóa Chủ Quyền Phân Đoạn (Sovereignty Section Lock), Cô lập Khung Kích Thích Bài Đọc Hiểu (Stimulus Context Isolation Frame), Bản đồ Tọa độ Khảo thí Bất biến (Canonical Exam Coordinates: ĐỀ{PHẦN{CÂU{Ý}}}), Triệt tiêu tuyệt đối va chạm băm Đáp án & Lời giải.",
   "documentStructureDictionary": {
     "sectionMarkers": {
-      "SINGLE": [
-        "^(?:PHẦN|PHAN)\\s+I\\b",
-        "^(?:PART|SECTION)\\s+I\\b",
-        "^(?:PHẦN|PHAN)\\s+1\\b",
-        "^(?:CHƯƠNG|CHUONG)\\s+[I|V|X\\d]+",
-        "^TRẮC\\s*NGHIỆM(?:\\s*(?:NHIỀU\\s*LỰA\\s*CHỌN|ĐƠN|4\\s*PHƯƠNG\\s*ÁN))?$"
-      ],
-      "TRUE_FALSE": [
-        "^(?:PHẦN|PHAN)\\s+II(?:[\\.\\:\\s\\-]+.*(?:ĐÚNG|TRUE|SAI|FALSE).*)?$",
-        "^(?:PART|SECTION)\\s+II(?:[\\.\\:\\s\\-]+.*(?:TRUE|FALSE|ĐÚNG|SAI).*)?$",
-        "^(?:PHẦN|PHAN)\\s+2(?:[\\.\\:\\s\\-]+.*(?:ĐÚNG|TRUE|SAI|FALSE).*)?$",
-        "^TRẮC\\s*NGHIỆM\\s*ĐÚNG\\s*[-–\\s\\/]*SAI",
-        "^CÂU\\s*HỎI\\s*ĐÚNG\\s*[-–\\s\\/]*SAI"
+      "ESSAY": [
+        "(?i)(?:TỰ\\s*LUẬN|TU\\s*LUAN|\\bESSAY\\b|FREE\\s*RESPONSE|XỬ\\s*LÝ\\s*TÌNH\\s*HUỐNG|解答题)",
+        "^(?:PHẦN\\s+)?TỰ\\s*LUẬN",
+        "^BÀI\\s*TẬP\\s*TỰ\\s*LUẬN",
+        "^(?:PHẦN\\s+)?XỬ\\s*LÝ\\s*TÌNH\\s*HUỐNG",
+        "^(?:PHẦN|PHAN)\\s+(?:IV|4)\\b",
+        "^(?:PART|SECTION)\\s+IV\\b"
       ],
       "SHORT_ANSWER": [
+        "(?i)(?:TRẢ\\s*LỜI\\s*NGẮN|TRA\\s*LOI\\s*NGAN|SHORT\\s*ANSWER|ĐIỀN\\s*(?:ĐÁP\\s*SỐ|KẾT\\s*QUẢ)|填空题)",
         "^(?:PHẦN|PHAN)\\s+III\\b",
         "^(?:PART|SECTION)\\s+III\\b",
         "^(?:PHẦN|PHAN)\\s+3\\b",
         "^(?:CÂU\\s*)?TRẢ\\s*LỜI\\s*NGẮN$",
         "^ĐIỀN\\s*(?:ĐÁP\\s*SỐ|KẾT\\s*QUẢ)$"
       ],
-      "ESSAY": [
-        "^(?:PHẦN\\s+)?TỰ\\s*LUẬN",
-        "^BÀI\\s*TẬP\\s*TỰ\\s*LUẬN",
-        "^(?:PHẦN\\s+)?XỬ\\s*LÝ\\s*TÌNH\\s*HUỐNG"
+      "TRUE_FALSE": [
+        "(?i)(?:ĐÚNG\\s*[-–/\\s]*SAI|DUNG\\s*[-–/\\s]*SAI|TRUE\\s*[-–/\\s]*FALSE|判断题)",
+        "^(?:PHẦN|PHAN)\\s+II(?:[\\.\\:\\s\\-]+.*(?:ĐÚNG|TRUE|SAI|FALSE).*)?$",
+        "^(?:PART|SECTION)\\s+II(?:[\\.\\:\\s\\-]+.*(?:TRUE|FALSE|ĐÚNG|SAI).*)?$",
+        "^(?:PHẦN|PHAN)\\s+2(?:[\\.\\:\\s\\-]+.*(?:ĐÚNG|TRUE|SAI|FALSE).*)?$",
+        "^TRẮC\\s*NGHIỆM\\s*ĐÚNG\\s*[-–\\s\\/]*SAI",
+        "^CÂU\\s*HỎI\\s*ĐÚNG\\s*[-–\\s\\/]*SAI"
+      ],
+      "SINGLE": [
+        "(?i)(?:TRẮC\\s*NGHIỆM(?:\\s*(?:NHIỀU\\s*LỰA\\s*CHỌN|ĐƠN|4\\s*PHƯƠNG\\s*ÁN))?|MULTIPLE\\s*CHOICE|ĐƠN\\s*LỰA\\s*CHỌN|NHIỀU\\s*LỰA\\s*CHỌN|单项选择|ĐỌC\\s*HIỂU|READING|LISTENING)",
+        "^(?:PHẦN|PHAN)\\s+I\\b",
+        "^(?:PART|SECTION)\\s+I\\b",
+        "^(?:PHẦN|PHAN)\\s+1\\b",
+        "^(?:CHƯƠNG|CHUONG)\\s+[I|V|X\\d]+",
+        "^TRẮC\\s*NGHIỆM(?:\\s*(?:NHIỀU\\s*LỰA\\s*CHỌN|ĐƠN|4\\s*PHƯƠNG\\s*ÁN))?$"
       ]
     },
     "solutionPhaseMarkers": [
-      "^(?:HƯỚNG\\s*DẪN\\s*CHẤM|ĐÁP\\s*ÁN\\s*VÀ\\s*BIỂU\\s*ĐIỂM|ĐÁP\\s*ÁN\\s*THAM\\s*KHẢO|ĐÁP\\s*ÁN\\s*CHI\\s*TIẾT|LỜI\\s*GIẢI\\s*THAM\\s*KHẢO|LỜI\\s*GIẢI\\s*CHI\\s*TIẾT|HƯỚNG\\s*DẪN\\s*GIẢI\\s*CHI\\s*TIẾT)[\\.\\:\\s\\-]*$",
-      "^(?:(?:BẢNG\\s*)?ĐÁP\\s*ÁN|D[\\.\\?\\s]*P\\s*[\\.\\?\\s]*N)\\s+(?:THAM\\s*KHẢO|CHI\\s*TIẾT|VÀ\\s*LỜI\\s*GIẢI.*)[\\.\\:\\s\\-]*$"
+      "^(?:HƯỚNG\\s*DẪN\\s*(?:CHẤM|GIẢI)\\s+(?:CHI\\s*TIẾT|THAM\\s*KHẢO|VÀ\\s*BIỂU\\s*ĐIỂM)|HƯỚNG\\s*DẪN\\s*CHẤM\\s*VÀ\\s*BIỂU\\s*ĐIỂM|ĐÁP\\s*ÁN\\s*(?:VÀ|&)?\\s*(?:BIỂU|THANG)?\\s*ĐIỂM|ĐÁP\\s*ÁN\\s*THAM\\s*KHẢO|ĐÁP\\s*ÁN\\s*CHI\\s*TIẾT|LỜI\\s*GIẢI\\s*THAM\\s*KHẢO|LỜI\\s*GIẢI\\s*CHI\\s*TIẾT|HƯỚNG\\s*DẪN\\s*GIẢI\\s*CHI\\s*TIẾT|BIỂU\\s*ĐIỂM\\s*(?:VÀ|&)?\\s*HƯỚNG\\s*DẪN|THANG\\s*ĐIỂM\\s*CHI\\s*TIẾT|HƯỚNG\\s*DẪN\\s*TỰ\\s*LUẬN|MARKING\\s*SCHEME|RUBRICS?|MODEL\\s*ANSWERS?|SOLUTIONS?)[\\.\\:\\s\\-]*$",
+      "^(?:(?:BẢNG\\s*)?ĐÁP\\s*ÁN|D[\\.\\?\\s]*P\\s*[\\.\\?\\s]*N)\\s+(?:THAM\\s*KHẢO|CHI\\s*TIẾT|VÀ\\s*LỜI\\s*GIẢI.*)[\\.\\:\\s\\-]*$",
+      "^(?:HƯỚNG\\s*DẪN\\s*GIẢI\\s*VÀ\\s*ĐÁP\\s*ÁN|ĐÁP\\s*ÁN\\s*VÀ\\s*HƯỚNG\\s*DẪN\\s*GIẢI)[\\.\\:\\s\\-]*$"
+    ],
+    "explanationMarkers": [
+      "(?i)^(?:Lời\\s*giải|L[\\.\\?\\s]*i\\s*gi[\\.\\?\\s]*i|Hướng\\s*dẫn\\s*(?:giải|chấm|ý\\s*giải)|Hu?ng\\s*d?n\\s*(?:gi?i|ch?m)|HƯỚNG\\s*DẪN|LỜI\\s*GIẢI|HD|Giải\\s*thích|Gợi\\s*ý(?:\\s*làm\\s*bài|\\s*giải)?|Ý\\s*tưởng\\s*giải|Sơ\\s*đồ\\s*giải|Căn\\s*cứ|Biểu\\s*điểm|Thang\\s*điểm|Explanation|Rationale|Rubric|Marking\\s*Scheme|Solution|Model\\s*Answer|Detailed\\s*Solution)[\\.\\:\\s\\-]*",
+      "(?i)^(?:Phương\\s*pháp\\s*giải|Các\\s*bước\\s*giải|Cách\\s*(?:1|2|3|một|hai|ba))[\\.\\:\\s\\-]*",
+      "(?i)^(?:Chọn|Đáp\\s*án|Đáp\\s*số)\\s+[A-D0-9,\\.\\-]+"
     ],
     "examBoundaryMarkers": [
       "^(?:ĐỀ\\s*(?:THI)?\\s*(?:SỐ|KIỂM\\s*TRA\\s*SỐ|MT)?|BỘ\\s*ĐỀ\\s*SỐ)\\s*(\\d+)",
       "^MÃ\\s*ĐỀ\\s*[:\\-]?\\s*(\\d+)"
+    ],
+    "passageStartPatterns": [
+      "(?i)(?:đọc\\s+(?:đoạn|bài)\\s*văn|đọc\\s+thông\\s*tin|read\\s+the\\s+following\\s+(?:passage|text|advertisement|announcement)|read\\s+the\\s+passage).*?(?:trả\\s*lời|answer)",
+      "(?i)(?:sử\\s*dụng|dựa\\s*vào|dựa\\s*trên|cho|dùng)\\s+thông\\s*tin.*?(?:để\\s*trả\\s*lời|trả\\s*lời\\s*(?:các\\s*)?câu)",
+      "(?i)(?:thông\\s*tin|dữ\\s*liệu|tình\\s*huống)\\s+(?:dưới\\s*đây|sau)\\s+để\\s*trả\\s*lời",
+      "(?i)^bài\\s*đọc\\s*hiểu"
+    ],
+    "passageRangePatterns": [
+      "(?i)(?:từ\\s+(?:các\\s+)?câu(?:\\s+số)?|ở\\s+mỗi\\s+câu(?:\\s+hỏi)?\\s*(?:từ)?|(?:các\\s+)?câu(?:\\s+số|\\s+hỏi)?)\\s*(\\d+)\\s*(?:đến\\s*(?:các\\s+)?câu(?:\\s+số)?|đến|[-–—])\\s*(\\d+)",
+      "(?i)(?:questions?|items?|from\\s+question|for\\s+questions?|in\\s+questions?)\\s*(\\d+)\\s*(?:to|through|[-–—])\\s*(?:questions?\\s*)?(\\d+)",
+      "(?i)(?:questions?|items?)\\s+from\\s*(\\d+)\\s*to\\s*(\\d+)",
+      "(?i)(?:từ\\s+câu|từ)\\s*(\\d+)\\s*(?:đến\\s*hết|trở\\s*đi)"
+    ],
+    "inlineAnswerSpecs": {
+      "singleChoiceExtractionPatterns": [
+        "(?:^|[\\.\\;\\,\\!\\s]+)(?:Do\\s*đó|Suy\\s*ra|Vậy|Hence|Therefore|Par\\s*conséquent|Folglich)?\\s*(?:ta\\s*)?(?:Chọn|Ch[oọ\\?]n|Choose|Option|Select|Choisir)\\s*(?:câu\\s*|đáp\\s*án\\s*|phương\\s*án\\s*)?([A-G])\\b",
+        "(?:^|[\\.\\;\\,\\!\\s]+)(?:Do\\s*đó|Suy\\s*ra|Vậy|Hence|Therefore)?\\s*(?:ta\\s*có\\s*)?(?:đáp\\s*án|dap\\s*an|phương\\s*án|answer|key|réponse)(?:\\s*(?:đúng\\s*)?là|\\s*is|\\s*=)?[\\:\\s]+([A-G])\\b",
+        "\\blà\\s+đáp\\s*án\\s+([A-G])\\b",
+        "\\b([A-G])\\s*(?:là\\s*đáp\\s*án|đúng|is\\s+the\\s+(?:correct\\s+)?answer|is\\s+correct|est\\s+la\\s+bonne\\s+réponse)\\b",
+        "(?:故选|答案为|正确答案是|正确选项是)[\\:\\s]*([A-G])\\b"
+      ],
+      "numericValueExtractionPatterns": [
+        "(?:^|[\\.\\;\\,\\!\\s]+)(?:Do\\s*đó|Suy\\s*ra|Vậy|Hence|Therefore)?\\s*(?:Đáp\\s*số|Đáp\\s*án|Dap\\s*so|Dap\\s*an|Kết\\s*quả|Giá\\s*trị\\s*cần\\s*tìm|Result|Answer|Value|Valeur)(?:\\s*(?:đúng\\s*)?(?:là|bằng|\\s*is|\\s*=))?[\\.\\:\\s\\=]+\\$?([0-9\\,\\.\\-\\+\\/]+)\\$?",
+        "(?:计算结果为|答案为|最终结果|结果是)[\\.\\:\\s\\=]+([0-9\\,\\.\\-\\+\\/]+)"
+      ],
+      "trueFalseExtractionPatterns": [
+        "(?:^|[\\(\\s\\[])([a-d1-4])[\\)\\.\\:\\]]\\s*.*?\\b(?:chọn\\s+)?(đúng|sai|d|s|true|false|t|f|vrai|faux|richtig|falsch)\\b",
+        "\\b(?:ý|mệnh\\s*đề|khẳng\\s*định|statement|proposition|assertion)\\s+([a-d1-4])\\b.*?\\b(?:chọn\\s+)?(đúng|sai|d|s|true|false|t|f|vrai|faux|richtig|falsch)\\b",
+        "(?:^|[\\(\\s\\[])([a-d1-4])[\\)\\.\\:\\]]\\s*.*?\\b(正确|错误|对|错)\\b"
+      ],
+      "subItemMarkerPatterns": [
+        "^(?:(?:ý|mệnh\\s*đề|khẳng\\s*định|bước|phần|statement|proposition|item|option|step|part)\\s*)?[\\(\\[]?([a-d1-4])[\\)\\]\\.\\:]\\s*(?:[\\-\\:\\.]\\s*)?(.*)",
+        "^(?:第)?\\s*([1-4a-dA-D])\\s*[小题项点\\.\\:\\)\\-]\\s*(.*)"
+      ],
+      "explanationStartPatterns": [
+        "^(?:(?:Lời\\s*giải|L[.\\?\\s]*i\\s*gi[.\\?\\s]*i|Hướng\\s*dẫn\\s*(?:giải|chấm|ý\\s*giải)|Hu?ng\\s*d?n\\s*(?:gi?i|ch?m)|HƯỚNG\\s*DẪN|LỜI\\s*GIẢI|HD|Giải\\s*thích|Gợi\\s*ý(?:\\s*làm\\s*bài|\\s*giải)?|Ý\\s*tưởng\\s*giải|Sơ\\s*đồ\\s*giải|Biểu\\s*điểm|Thang\\s*điểm|Explanation|Rationale|Rubric|Marking\\s*Scheme|Solution|Model\\s*Answer|Detailed\\s*Solution|Explication|Lösung)[\\.\\:\\s\\-]+|Chọn\\s+[A-D0-9,\\.\\-]+\\s*[\\.\\:\\s\\-]+)(.*)",
+        "^(?:参考答案|试题解析|详细解析|解答|解析)[\\.\\:\\s\\-]+(.*)"
+      ],
+      "questionNumberPatterns": [
+        "^(?:Câu|Bài|Question|Item|Aufgabe|Exercice|CÂU|BÀI|Problem|Task|Frage|Domanda|Pregunta|第)?\\s*(\\d+)",
+        "^(\\d+)\\s*[\\.\\:\\)\\-]"
+      ]
+    },
+    "topicTaxonomyEntries": [
+      {
+        "topicCode": "TIENG_ANH",
+        "topicName": "Tiếng Anh",
+        "domainCode": "EDUCATION",
+        "keywords": [
+          "tiếng anh",
+          "english",
+          "ngoại ngữ",
+          "foreign language",
+          "reading comprehension",
+          "pronunciation",
+          "grammar"
+        ]
+      },
+      {
+        "topicCode": "MATH",
+        "topicName": "Toán học",
+        "domainCode": "EDUCATION",
+        "keywords": [
+          "toán",
+          "toán học",
+          "math",
+          "mathematics",
+          "đạo hàm",
+          "tích phân",
+          "hình học",
+          "đại số",
+          "giải tích"
+        ]
+      },
+      {
+        "topicCode": "HOA_HOC",
+        "topicName": "Hóa học",
+        "domainCode": "EDUCATION",
+        "keywords": [
+          "hóa học",
+          "hóa",
+          "chemistry",
+          "phản ứng",
+          "dung dịch",
+          "mol",
+          "axit",
+          "bazo"
+        ]
+      },
+      {
+        "topicCode": "SINH_HOC",
+        "topicName": "Sinh học",
+        "domainCode": "EDUCATION",
+        "keywords": [
+          "sinh học",
+          "sinh",
+          "biology",
+          "di truyền",
+          "nhiễm sắc thể",
+          "tế bào",
+          "gen",
+          "adn"
+        ]
+      },
+      {
+        "topicCode": "VAT_LY",
+        "topicName": "Vật lý",
+        "domainCode": "EDUCATION",
+        "keywords": [
+          "vật lý",
+          "vật lí",
+          "physics",
+          "dao động",
+          "sóng",
+          "điện xoay chiều",
+          "quang học",
+          "cơ học"
+        ]
+      },
+      {
+        "topicCode": "LICH_SU",
+        "topicName": "Lịch sử",
+        "domainCode": "EDUCATION",
+        "keywords": [
+          "lịch sử",
+          "sử",
+          "history",
+          "cách mạng",
+          "chiến dịch",
+          "kháng chiến",
+          "hiệp định"
+        ]
+      },
+      {
+        "topicCode": "DIA_LY",
+        "topicName": "Địa lý",
+        "domainCode": "EDUCATION",
+        "keywords": [
+          "địa lý",
+          "địa lí",
+          "geography",
+          "khí hậu",
+          "địa hình",
+          "kinh tế vùng",
+          "biển đảo"
+        ]
+      },
+      {
+        "topicCode": "NGU_VAN",
+        "topicName": "Ngữ văn",
+        "domainCode": "EDUCATION",
+        "keywords": [
+          "ngữ văn",
+          "văn học",
+          "văn",
+          "literature",
+          "tác phẩm",
+          "thơ",
+          "truyện ngắn",
+          "nghị luận"
+        ]
+      },
+      {
+        "topicCode": "CNTT",
+        "topicName": "Tin học",
+        "domainCode": "EDUCATION",
+        "keywords": [
+          "tin học",
+          "công nghệ thông tin",
+          "cntt",
+          "informatics",
+          "computer science",
+          "lập trình",
+          "thuật toán"
+        ]
+      },
+      {
+        "topicCode": "GDKT_PL",
+        "topicName": "Giáo dục Kinh tế & Pháp luật",
+        "domainCode": "EDUCATION",
+        "keywords": [
+          "giáo dục kinh tế và pháp luật",
+          "gdkt&pl",
+          "kinh tế pháp luật",
+          "pháp luật",
+          "kinh tế"
+        ]
+      }
+    ],
+    "domainTaxonomyEntries": [
+      {
+        "domainCode": "BANKING",
+        "domainName": "Tài chính - Ngân hàng",
+        "weight": 2,
+        "keywords": [
+          "tín dụng",
+          "khdn",
+          "khcn",
+          "tiền gửi",
+          "ngân hàng",
+          "chi nhánh",
+          "rửa tiền",
+          "aml",
+          "thế chấp",
+          "tài sản bảo đảm",
+          "e-banking",
+          "ebanking",
+          "agribank",
+          "vietcombank",
+          "bidv",
+          "vietinbank",
+          "cic",
+          "kho tiền",
+          "ngân quỹ",
+          "thẩm định",
+          "cho vay",
+          "bảo lãnh",
+          "lãi suất",
+          "sổ tiết kiệm",
+          "thẻ tín dụng",
+          "quy định số 1686",
+          "nhno",
+          "hạn mức"
+        ]
+      },
+      {
+        "domainCode": "EDUCATION",
+        "domainName": "Giáo dục phổ thông & Đại học",
+        "weight": 2,
+        "keywords": [
+          "toán",
+          "đạo hàm",
+          "tích phân",
+          "hàm số",
+          "ngữ văn",
+          "tiếng anh",
+          "vật lý",
+          "hóa học",
+          "gdpt",
+          "thpt",
+          "lớp 12",
+          "lớp 11",
+          "lớp 10",
+          "k-12",
+          "reading passage",
+          "pronunciation",
+          "chuyên amsterdam"
+        ]
+      },
+      {
+        "domainCode": "GOV_DRIVING",
+        "domainName": "Giao thông - Sát hạch lái xe",
+        "weight": 3,
+        "keywords": [
+          "gplx",
+          "sa hình",
+          "biển báo",
+          "lái xe",
+          "vượt ẩu",
+          "xe cơ giới",
+          "tốc độ tối đa",
+          "điểm liệt",
+          "cục đường bộ"
+        ]
+      },
+      {
+        "domainCode": "HEALTHCARE",
+        "domainName": "Y tế & Chăm sóc sức khỏe",
+        "weight": 3,
+        "keywords": [
+          "bác sĩ",
+          "dược lâm sàng",
+          "phác đồ",
+          "điều trị",
+          "bệnh nhân",
+          "bệnh viện",
+          "bộ y tế",
+          "y khoa"
+        ]
+      },
+      {
+        "domainCode": "HSE",
+        "domainName": "An toàn - Sức khỏe - Môi trường",
+        "weight": 3,
+        "keywords": [
+          "an toàn lao động",
+          "bảo hộ lao động",
+          "pccc",
+          "phòng cháy chữa cháy",
+          "vslđ",
+          "iso 45001",
+          "hóa chất",
+          "an toàn điện"
+        ]
+      },
+      {
+        "domainCode": "IT_SECURITY",
+        "domainName": "Công nghệ thông tin & An ninh mạng",
+        "weight": 3,
+        "keywords": [
+          "an toàn thông tin",
+          "iso 27001",
+          "owasp",
+          "an ninh mạng",
+          "phishing",
+          "mật khẩu",
+          "cybersecurity",
+          "devsecops"
+        ]
+      }
     ],
     "answerTableSpecs": {
       "questionHeaderPattern": "^(?:Câu|C[\\.\\?\\s]*u|CÂU|TT|Q|Question)$",
@@ -53,6 +375,36 @@
       "^(?:BẢNG\\s*)?(?:ĐÁP\\s*ÁN|D[\\.\\?\\s]*P\\s*[\\.\\?\\s]*N|ANSWER\\s*KEY|KEY|ANSWERS?)\\s*(?:THAM\\s*KHẢO|CHI\\s*TIẾT|TRẮC\\s*NGHIỆM)?[\\.\\:\\s\\-]*$",
       "^(?:答案|参考答案)[\\.\\:\\s\\-]*$"
     ],
+    "scopeRangePatterns": [
+      "(?i)(?:từ\\s+(?:các\\s+)?câu(?:\\s+số)?|ở\\s+mỗi\\s+câu(?:\\s+hỏi)?\\s*(?:từ)?|(?:các\\s+)?câu(?:\\s+số|\\s+hỏi)?)\\s*(\\d+)\\s*(?:đến\\s*(?:các\\s+)?câu(?:\\s+số)?|đến|[-–—])\\s*(\\d+)",
+      "(?i)(?:questions?|items?|from\\s+question|for\\s+questions?|in\\s+questions?)\\s*(\\d+)\\s*(?:to|through|[-–—])\\s*(?:questions?\\s*)?(\\d+)",
+      "(?i)(?:questions?|items?)\\s+from\\s*(\\d+)\\s*to\\s*(\\d+)",
+      "(?i)(?:từ\\s+câu|từ)\\s*(\\d+)\\s*(?:đến\\s*hết|trở\\s*đi)"
+    ],
+    "scopeDirectiveMarkers": {
+      "MULTI_TRUE_FALSE": [
+        "(?i)(?:mỗi\\s+ý\\s+[a-d]|các\\s+mệnh\\s+đề|mỗi\\s+câu\\s+có\\s+4\\s+ý).*?(?:chọn\\s+đúng\\s+(?:hoặc|hay)\\s+sai|đúng\\s*[-–\\/\\s]*sai|true\\s*[-–\\/\\s]*false)",
+        "(?i)(?:chọn\\s+đúng\\s+(?:hoặc|hay)\\s+sai|thí\\s*sinh\\s*chọn\\s*đúng\\s*hoặc\\s*sai|mệnh\\s+đề\\s+đúng\\s+hay\\s+sai|indicate\\s+whether\\s+each\\s+statement\\s+is\\s+true\\s+or\\s+false)"
+      ],
+      "SHORT_ANSWER": [
+        "(?i)(?:(?:phần\\s+iii|part\\s+iii|section\\s+iii).*?trả\\s*lời|trả\\s*lời\\s*ngắn|yêu\\s*cầu\\s*trả\\s*lời\\s*ngắn|điền\\s*(?:đáp\\s*số|vào\\s*chỗ\\s*trống)|viết\\s*câu\\s*trả\\s*lời|kết\\s*quả\\s*làm\\s*tròn|fill\\s*in\\s*the\\s*blank|short\\s*answer|write\\s*your\\s*answer)"
+      ],
+      "ORDERING": [
+        "(?i)(?:sắp\\s*xếp\\s*(?:các\\s*(?:bước|câu|đoạn|ý))?|thứ\\s*tự\\s*(?:thực\\s*hiện|đúng)|arrange\\s+the\\s+(?:utterances|sentences|steps)|chronological\\s+order)"
+      ],
+      "MATCHING": [
+        "(?i)(?:ghép\\s*(?:nội\\s*dung|thông\\s*tin)?\\s*(?:ở\\s*)?cột\\s+[a-b1-2]|nối\\s*(?:mệnh\\s*đề|cột)|match\\s*(?:each\\s*item|the\\s*items)?\\s*in\\s*column)"
+      ],
+      "MULTI": [
+        "(?i)(?:chọn\\s+(?:tất\\s*cả|các)\\s+phương\\s*án\\s+đúng|có\\s+thể\\s+chọn\\s+nhiều\\s+đáp\\s+án|choose\\s+all\\s+that\\s+apply|select\\s+all\\s+correct)"
+      ],
+      "SINGLE": [
+        "(?i)(?:chỉ\\s*chọn\\s*(?:một|01|1)\\s*phương\\s*án|(?:mỗi\\s+câu(?:\\s+hỏi)?(?:\\s+thí\\s+sinh)?\\s+)?chọn\\s+(?:một|01|1)\\s+phương\\s*án|chọn\\s*(?:một|01|1)\\s*phương\\s*án\\s*đúng|chọn\\s+phương\\s*án\\s*(?:đúng\\s*nhất|chính\\s*xác\\s*nhất)|mark\\s+the\\s+letter\\s+[a-d]|choose\\s+the\\s+(?:best|correct)\\s+answer|select\\s+one\\s+answer|chọn\\s+câu\\s+trả\\s+lời\\s+đúng)"
+      ],
+      "ESSAY": [
+        "(?i)(?:tự\\s*luận|thí\\s*sinh\\s*giải\\s*(?:các\\s*)?bài\\s*toán|trình\\s*bày\\s*(?:chi\\s*tiết\\s*)?lời\\s*giải|thang\\s*điểm.*?điểm|solve\\s+the\\s+following|show\\s+your\\s+work)"
+      ]
+    },
     "languageSignatures": {
       "vi": {
         "name": "Vietnamese (GDPT 2018 / THPT / GPLX)",
@@ -73,7 +425,8 @@
           "Đúng",
           "Sai"
         ],
-        "requireEvidenceForAnchor": false
+        "requireEvidenceForAnchor": false,
+        "nlpConfidenceThreshold": 0.85
       },
       "en": {
         "name": "English (SAT / IELTS / Cambridge)",
@@ -129,7 +482,8 @@
           "by",
           "about"
         ],
-        "requireEvidenceForAnchor": true
+        "requireEvidenceForAnchor": true,
+        "nlpConfidenceThreshold": 0.85
       },
       "zh": {
         "name": "Chinese (Gaokao)",
@@ -148,7 +502,8 @@
           "考试",
           "答案"
         ],
-        "requireEvidenceForAnchor": true
+        "requireEvidenceForAnchor": true,
+        "nlpConfidenceThreshold": 0.85
       },
       "ko": {
         "name": "Korean (Suneung)",
@@ -167,7 +522,8 @@
           "시험",
           "영역"
         ],
-        "requireEvidenceForAnchor": true
+        "requireEvidenceForAnchor": true,
+        "nlpConfidenceThreshold": 0.85
       },
       "ja": {
         "name": "Japanese (JCEE)",
@@ -183,7 +539,8 @@
           "次の文章",
           "問題"
         ],
-        "requireEvidenceForAnchor": true
+        "requireEvidenceForAnchor": true,
+        "nlpConfidenceThreshold": 0.85
       },
       "fr": {
         "name": "French (Baccalauréat)",
@@ -199,7 +556,8 @@
           "Problème",
           "Calculer"
         ],
-        "requireEvidenceForAnchor": true
+        "requireEvidenceForAnchor": true,
+        "nlpConfidenceThreshold": 0.85
       },
       "de": {
         "name": "German (Abitur)",
@@ -214,7 +572,8 @@
           "Frage",
           "Lösung"
         ],
-        "requireEvidenceForAnchor": true
+        "requireEvidenceForAnchor": true,
+        "nlpConfidenceThreshold": 0.85
       }
     },
     "fastClassificationSpec": {
@@ -318,68 +677,114 @@
   },
   "rules": [
     {
-      "ruleCode": "VN_STANDARD_MULTIPLE_CHOICE",
-      "ruleName": "Trắc Nghiệm Đơn Tiêu Chuẩn (A/B/C/D)",
-      "targetExamType": "GENERAL",
+      "ruleCode": "VN_GDPT_2025_SINGLE_CHOICE",
+      "ruleName": "Trắc Nghiệm Đơn Tiêu Chuẩn (Phần I - GDPT 2025 / THPT / THCS)",
+      "targetExamType": "GDPT_2025",
       "language": "vi",
       "priority": 10,
       "isActive": true,
-      "description": "Nhận diện câu hỏi trắc nghiệm truyền thống 4 phương án A, B, C, D.",
+      "description": "Nhận diện Phần I: Câu hỏi trắc nghiệm nhiều lựa chọn 4 phương án A, B, C, D chuẩn GDPT 2018 áp dụng từ 2025 cho toàn bộ các môn (Toán, Vật lý, Hóa học, Sinh học, Lịch sử, Địa lý, GDKT&PL, Tin học, Công nghệ).",
       "anchorSpec": {
-        "regexPattern": "^(?:Câu|Question|Item|Bài|Q)\\s*(\\d+)[\\.\\:\\s\\-]+",
+        "regexPattern": "^(?:Câu|Question|Item|Bài|Task|Exercise|Q)\\s*(\\d+)(?:\\s*\\([^)]*\\))?(?:[\\.\\:\\-–—\\)]|\\s*[\\.\\:\\-–—\\)]|\\s*$)",
         "questionNumberGroupIndex": 1,
         "sectionMarkers": [
           "PHẦN I",
           "PART I",
-          "PHẦN 1"
+          "PHẦN 1",
+          "TRẮC NGHIỆM NHIỀU LỰA CHỌN",
+          "TRẮC NGHIỆM",
+          "ĐƠN LỰA CHỌN"
         ]
       },
       "stimulusSpec": {
         "supportMathTypeWmf": true,
         "supportVectorSvg": true,
         "extractInlineImages": true,
+        "autoTerminateOnNextSection": true,
         "readingPassageStartRegex": "^(?:Read\\s+(?:the\\s+)?(?:following\\s+)?passage|Đọc\\s+đoạn\\s+văn\\s+sau)",
         "readingPassageRangeRegex": "\\b(?:from|từ)\\s*(\\d+)\\s*(?:to|đến)\\s*(\\d+)\\b"
       },
       "interactionSpec": {
         "defaultQuestionType": "SINGLE",
-        "optionRegexPattern": "^(?:([A-D])|[(]([A-D])[)])[\\.\\:\\s\\-]+(.*)$",
+        "optionRegexPattern": "^(?:([A-G])|[(]([A-G])[)])[\\.\\:\\s\\-]+(.*)$",
         "optionLabelGroupIndex": 1,
         "optionContentGroupIndex": 3
       },
       "evaluationSpec": {
-        "answerRegexPattern": "^(?:ĐÁP\\s*ÁN|ANSWER|KEY|CHỌN)[\\.\\:\\s\\-]+([A-D0-9a-d\\,\\s]+)",
+        "answerRegexPattern": "^(?:ĐÁP\\s*ÁN|ANSWER|KEY|CHỌN)[\\.\\:\\s\\-]+([A-G0-9a-g\\,\\s]+)",
         "answerGroupIndex": 1,
-        "explanationRegexPattern": "^(?:Lời\\s*giải|Hướng\\s*dẫn|HD|Giải\\s*thích|Explanation|Căn\\s*cứ)\\b",
+        "explanationRegexPattern": "^(?:Lời\\s*giải|Hướng\\s*dẫn\\s*(?:giải|chấm)?|HD|Giải\\s*thích|Explanation|Căn\\s*cứ)\\b",
+        "explanationLinePrefixPatterns": [
+          "^(?:Lời\\s*giải|L[\\.\\?\\s]*i\\s*gi[\\.\\?\\s]*i|Hướng\\s*dẫn\\s*giải|Hu?ng\\s*d?n\\s*gi?i|HƯỚNG\\s*DẪN|LỜI\\s*GIẢI|HD)[\\.\\:\\s\\-]+(.*)",
+          "^(?:Giải\\s*thích|Căn\\s*cứ|Ghi\\s*chú|Explanation|Rationale|Solution|Feedback)[\\.\\:\\s]+(.*)",
+          "^(?:试题解析|详细解析|解析)[\\.\\:\\s]+(.*)"
+        ],
         "criticalQuestionMarkerRegex": "(?:\\[\\s*ĐIỂM\\s*LIỆT\\s*\\]|⚠️|TỬ\\s*THẦN)",
+        "criticalMarkers": [
+          "(?:\\bDIEM[_\\s]*LIET\\b|\\bĐIỂM[_\\s]*LIỆT\\b|mất\\s*an\\s*toàn\\s*giao\\s*thông\\s*nghiêm\\s*trọng|bị\\s*nghiêm\\s*cấm|\\bnghiêm\\s*cấm\\b|nồng\\s*độ\\s*cồn|sử\\s*dụng\\s*ma\\s*túy|đua\\s*xe\\s*trái\\s*phép)",
+          "(?:\\bFATAL\\b|\\bCRITICAL\\b|\\bMANDATORY\\b|\\bEMERGENCY\\b)"
+        ],
+        "inlineExtraction": {
+          "singleChoiceExtractionPatterns": [
+            "(?:^|[\\.\\;\\,\\!\\s]+)(?:Do\\s*đó|Suy\\s*ra|Vậy|Hence|Therefore|Par\\s*conséquent|Folglich)?\\s*(?:ta\\s*)?(?:Chọn|Ch[oọ\\?]n|Choose|Option|Select|Choisir)\\s*(?:câu\\s*|đáp\\s*án\\s*|phương\\s*án\\s*)?([A-G])\\b",
+            "(?:^|[\\.\\;\\,\\!\\s]+)(?:Do\\s*đó|Suy\\s*ra|Vậy|Hence|Therefore)?\\s*(?:ta\\s*có\\s*)?(?:đáp\\s*án|dap\\s*an|phương\\s*án|answer|key|réponse)(?:\\s*(?:đúng\\s*)?là|\\s*is|\\s*=)?[\\:\\s]+([A-G])\\b",
+            "\\blà\\s+đáp\\s*án\\s+([A-G])\\b",
+            "\\b([A-G])\\s*(?:là\\s*đáp\\s*án|đúng|is\\s+the\\s+(?:correct\\s+)?answer|is\\s+correct|est\\s+la\\s+bonne\\s+réponse)\\b",
+            "(?:故选|答案为|正确答案是|正确选项是)[\\:\\s]*([A-G])\\b"
+          ],
+          "numericValueExtractionPatterns": [
+            "(?:^|[\\.\\;\\,\\!\\s]+)(?:Do\\s*đó|Suy\\s*ra|Vậy|Hence|Therefore)?\\s*(?:Đáp\\s*số|Đáp\\s*án|Dap\\s*so|Dap\\s*an|Kết\\s*quả|Giá\\s*trị\\s*cần\\s*tìm|Result|Answer|Value|Valeur)(?:\\s*(?:đúng\\s*)?(?:là|bằng|\\s*is|\\s*=))?[\\.\\:\\s\\=]+\\$?([0-9\\,\\.\\-\\+\\/]+)\\$?",
+            "(?:计算结果为|答案为|最终结果|结果是)[\\.\\:\\s\\=]+([0-9\\,\\.\\-\\+\\/]+)"
+          ],
+          "trueFalseExtractionPatterns": [
+            "(?:^|[\\(\\s\\[])([a-d1-4])[\\)\\.\\:\\]]\\s*.*?\\b(?:chọn\\s+)?(đúng|sai|d|s|true|false|t|f|vrai|faux|richtig|falsch)\\b",
+            "\\b(?:ý|mệnh\\s*đề|khẳng\\s*định|statement|proposition|assertion)\\s+([a-d1-4])\\b.*?\\b(?:chọn\\s+)?(đúng|sai|d|s|true|false|t|f|vrai|faux|richtig|falsch)\\b",
+            "(?:^|[\\(\\s\\[])([a-d1-4])[\\)\\.\\:\\]]\\s*.*?\\b(正确|错误|对|错)\\b"
+          ],
+          "subItemMarkerPatterns": [
+            "^(?:(?:ý|mệnh\\s*đề|khẳng\\s*định|bước|phần|statement|proposition|item|option|step|part)\\s*)?[\\(\\[]?([a-d1-4])[\\)\\]\\.\\:]\\s*(?:[\\-\\:\\.]\\s*)?(.*)",
+            "^(?:第)?\\s*([1-4a-dA-D])\\s*[小题项点\\.\\:\\)\\-]\\s*(.*)"
+          ],
+          "explanationStartPatterns": [
+            "^(?:(?:Lời\\s*giải|L[.\\?\\s]*i\\s*gi[.\\?\\s]*i|Hướng\\s*dẫn\\s*(?:giải|chấm|ý\\s*giải)|Hu?ng\\s*d?n\\s*(?:gi?i|ch?m)|HƯỚNG\\s*DẪN|LỜI\\s*GIẢI|HD|Giải\\s*thích|Gợi\\s*ý(?:\\s*làm\\s*bài|\\s*giải)?|Ý\\s*tưởng\\s*giải|Sơ\\s*đồ\\s*giải|Biểu\\s*điểm|Thang\\s*điểm|Explanation|Rationale|Rubric|Marking\\s*Scheme|Solution|Model\\s*Answer|Detailed\\s*Solution|Explication|Lösung)[\\.\\:\\s\\-]+|Chọn\\s+[A-D0-9,\\.\\-]+\\s*[\\.\\:\\s\\-]+)(.*)",
+            "^(?:参考答案|试题解析|详细解析|解答|解析)[\\.\\:\\s\\-]+(.*)"
+          ],
+          "questionNumberPatterns": [
+            "^(?:Câu|Bài|Question|Item|Aufgabe|Exercice|CÂU|BÀI|Problem|Task|Frage|Domanda|Pregunta|第)?\\s*(\\d+)",
+            "^(\\d+)\\s*[\\.\\:\\)\\-]"
+          ]
+        },
         "scoreStrategy": "ALL_OR_NOTHING"
       }
     },
     {
-      "ruleCode": "VN_GDPT_2025_TRUE_FALSE_MATRIX",
-      "ruleName": "Trắc Nghiệm Đúng / Sai Đa Mệnh Đề (GDPT 2025)",
+      "ruleCode": "VN_GDPT_2025_TRUE_FALSE",
+      "ruleName": "Trắc Nghiệm Đúng / Sai Đa Mệnh Đề (Phần II - GDPT 2025)",
       "targetExamType": "GDPT_2025",
       "language": "vi",
       "priority": 20,
       "isActive": true,
-      "description": "Nhận diện Phần II đề thi tốt nghiệp THPT mới với 4 ý a, b, c, d Đúng/Sai.",
+      "description": "Nhận diện Phần II: Câu hỏi trắc nghiệm Đúng / Sai với 4 ý độc lập a, b, c, d chuẩn GDPT 2018 áp dụng từ 2025 cho Toán, Vật lý, Hóa học, Sinh học, Lịch sử, Địa lý, GDKT&PL.",
       "anchorSpec": {
-        "regexPattern": "^(?:Câu|Question)\\s*(\\d+)[\\.\\:\\s\\-]+",
+        "regexPattern": "^(?:Câu|Question|Bài|Task|Item)\\s*(\\d+)(?:\\s*\\([^)]*\\))?(?:[\\.\\:\\-–—\\)]|\\s*[\\.\\:\\-–—\\)]|\\s*$)",
         "questionNumberGroupIndex": 1,
         "sectionMarkers": [
           "PHẦN II",
           "PART II",
           "PHẦN 2",
-          "TRẮC NGHIỆM ĐÚNG SAI"
+          "TRẮC NGHIỆM ĐÚNG SAI",
+          "ĐÚNG SAI",
+          "ĐÚNG - SAI"
         ]
       },
       "stimulusSpec": {
         "supportMathTypeWmf": true,
         "supportVectorSvg": true,
-        "extractInlineImages": true
+        "extractInlineImages": true,
+        "autoTerminateOnNextSection": true
       },
       "interactionSpec": {
-        "defaultQuestionType": "TRUE_FALSE",
+        "defaultQuestionType": "MULTI_TRUE_FALSE",
         "optionRegexPattern": "^(?:([a-d])|[(]([a-d])[)])[\\.\\:\\)\\s\\-]+(.*)$",
         "optionLabelGroupIndex": 1,
         "optionContentGroupIndex": 3,
@@ -389,41 +794,372 @@
         "answerRegexPattern": "^(?:ĐÁP\\s*ÁN|ANSWER|KEY)[\\.\\:\\s\\-]+([a-d\\:\\sĐSđsTFtf\\,\\;]+)",
         "answerGroupIndex": 1,
         "explanationRegexPattern": "^(?:Lời\\s*giải|Hướng\\s*dẫn|HD|Giải\\s*thích)\\b",
+        "explanationLinePrefixPatterns": [
+          "^(?:Lời\\s*giải|L[\\.\\?\\s]*i\\s*gi[\\.\\?\\s]*i|Hướng\\s*dẫn\\s*giải|Hu?ng\\s*d?n\\s*gi?i|HƯỚNG\\s*DẪN|LỜI\\s*GIẢI|HD)[\\.\\:\\s\\-]+(.*)",
+          "^(?:Giải\\s*thích|Căn\\s*cứ|Ghi\\s*chú|Explanation|Rationale)[\\.\\:\\s]+(.*)"
+        ],
+        "inlineExtraction": {
+          "singleChoiceExtractionPatterns": [
+            "(?:^|[\\.\\;\\,\\!\\s]+)(?:Do\\s*đó|Suy\\s*ra|Vậy|Hence|Therefore|Par\\s*conséquent|Folglich)?\\s*(?:ta\\s*)?(?:Chọn|Ch[oọ\\?]n|Choose|Option|Select|Choisir)\\s*(?:câu\\s*|đáp\\s*án\\s*|phương\\s*án\\s*)?([A-G])\\b",
+            "(?:^|[\\.\\;\\,\\!\\s]+)(?:Do\\s*đó|Suy\\s*ra|Vậy|Hence|Therefore)?\\s*(?:ta\\s*có\\s*)?(?:đáp\\s*án|dap\\s*an|phương\\s*án|answer|key|réponse)(?:\\s*(?:đúng\\s*)?là|\\s*is|\\s*=)?[\\:\\s]+([A-G])\\b",
+            "\\blà\\s+đáp\\s*án\\s+([A-G])\\b",
+            "\\b([A-G])\\s*(?:là\\s*đáp\\s*án|đúng|is\\s+the\\s+(?:correct\\s+)?answer|is\\s+correct|est\\s+la\\s+bonne\\s+réponse)\\b",
+            "(?:故选|答案为|正确答案是|正确选项是)[\\:\\s]*([A-G])\\b"
+          ],
+          "numericValueExtractionPatterns": [
+            "(?:^|[\\.\\;\\,\\!\\s]+)(?:Do\\s*đó|Suy\\s*ra|Vậy|Hence|Therefore)?\\s*(?:Đáp\\s*số|Đáp\\s*án|Dap\\s*so|Dap\\s*an|Kết\\s*quả|Giá\\s*trị\\s*cần\\s*tìm|Result|Answer|Value|Valeur)(?:\\s*(?:đúng\\s*)?(?:là|bằng|\\s*is|\\s*=))?[\\.\\:\\s\\=]+\\$?([0-9\\,\\.\\-\\+\\/]+)\\$?",
+            "(?:计算结果为|答案为|最终结果|结果是)[\\.\\:\\s\\=]+([0-9\\,\\.\\-\\+\\/]+)"
+          ],
+          "trueFalseExtractionPatterns": [
+            "(?:^|[\\(\\s\\[])([a-d1-4])[\\)\\.\\:\\]]\\s*.*?\\b(?:chọn\\s+)?(đúng|sai|d|s|true|false|t|f|vrai|faux|richtig|falsch)\\b",
+            "\\b(?:ý|mệnh\\s*đề|khẳng\\s*định|statement|proposition|assertion)\\s+([a-d1-4])\\b.*?\\b(?:chọn\\s+)?(đúng|sai|d|s|true|false|t|f|vrai|faux|richtig|falsch)\\b",
+            "(?:^|[\\(\\s\\[])([a-d1-4])[\\)\\.\\:\\]]\\s*.*?\\b(正确|错误|对|错)\\b"
+          ],
+          "subItemMarkerPatterns": [
+            "^(?:(?:ý|mệnh\\s*đề|khẳng\\s*định|bước|phần|statement|proposition|item|option|step|part)\\s*)?[\\(\\[]?([a-d1-4])[\\)\\]\\.\\:]\\s*(?:[\\-\\:\\.]\\s*)?(.*)",
+            "^(?:第)?\\s*([1-4a-dA-D])\\s*[小题项点\\.\\:\\)\\-]\\s*(.*)"
+          ],
+          "explanationStartPatterns": [
+            "^(?:(?:Lời\\s*giải|L[.\\?\\s]*i\\s*gi[.\\?\\s]*i|Hướng\\s*dẫn\\s*(?:giải|chấm|ý\\s*giải)|Hu?ng\\s*d?n\\s*(?:gi?i|ch?m)|HƯỚNG\\s*DẪN|LỜI\\s*GIẢI|HD|Giải\\s*thích|Gợi\\s*ý(?:\\s*làm\\s*bài|\\s*giải)?|Ý\\s*tưởng\\s*giải|Sơ\\s*đồ\\s*giải|Biểu\\s*điểm|Thang\\s*điểm|Explanation|Rationale|Rubric|Marking\\s*Scheme|Solution|Model\\s*Answer|Detailed\\s*Solution|Explication|Lösung)[\\.\\:\\s\\-]+|Chọn\\s+[A-D0-9,\\.\\-]+\\s*[\\.\\:\\s\\-]+)(.*)",
+            "^(?:参考答案|试题解析|详细解析|解答|解析)[\\.\\:\\s\\-]+(.*)"
+          ],
+          "questionNumberPatterns": [
+            "^(?:Câu|Bài|Question|Item|Aufgabe|Exercice|CÂU|BÀI|Problem|Task|Frage|Domanda|Pregunta|第)?\\s*(\\d+)",
+            "^(\\d+)\\s*[\\.\\:\\)\\-]"
+          ]
+        },
         "scoreStrategy": "PARTIAL_CREDIT"
       }
     },
     {
       "ruleCode": "VN_GDPT_2025_SHORT_ANSWER",
-      "ruleName": "Trắc Nghiệm Trả Lời Ngắn / Điền Số (GDPT 2025)",
+      "ruleName": "Trắc Nghiệm Trả Lời Ngắn / Điền Số (Phần III - GDPT 2025)",
       "targetExamType": "GDPT_2025",
       "language": "vi",
       "priority": 30,
       "isActive": true,
-      "description": "Nhận diện Phần III đề thi tốt nghiệp THPT: thí sinh tự điền kết quả số học.",
+      "description": "Nhận diện Phần III: Câu hỏi trắc nghiệm trả lời ngắn, thí sinh tự điền đáp số số học (Toán, Vật lý, Hóa học, Sinh học, Tin học, Địa lý).",
       "anchorSpec": {
-        "regexPattern": "^(?:Câu|Question)\\s*(\\d+)[\\.\\:\\s\\-]+",
+        "regexPattern": "^(?:Câu|Question|Bài|Task|Item)\\s*(\\d+)(?:\\s*\\([^)]*\\))?(?:[\\.\\:\\-–—\\)]|\\s*[\\.\\:\\-–—\\)]|\\s*$)",
         "questionNumberGroupIndex": 1,
         "sectionMarkers": [
           "PHẦN III",
           "PART III",
           "PHẦN 3",
-          "TRẢ LỜI NGẮN"
+          "TRẢ LỜI NGẮN",
+          "ĐIỀN ĐÁP SỐ"
         ]
       },
       "stimulusSpec": {
         "supportMathTypeWmf": true,
         "supportVectorSvg": true,
-        "extractInlineImages": true
+        "extractInlineImages": true,
+        "autoTerminateOnNextSection": true
       },
       "interactionSpec": {
         "defaultQuestionType": "SHORT_ANSWER",
         "optionRegexPattern": "^(?:([A-D])|[(]([A-D])[)])[\\.\\:\\s\\-]+(.*)$",
-        "shortAnswerPromptRegex": "^(?:Trả\\s*lời|Kết\\s*quả|Đáp\\s*số)[\\.\\:\\s\\-]+"
+        "shortAnswerPromptRegex": "^(?:Trả\\s*lời|Kết\\s*quả|Đáp\\s*số|Đáp\\s*án)[\\.\\:\\s\\-]+"
       },
       "evaluationSpec": {
-        "answerRegexPattern": "^(?:ĐÁP\\s*ÁN|ANSWER|KEY|KẾT\\s*QUẢ)[\\.\\:\\s\\-]+([\\-\\+]?\\d+[\\,\\.]?\\d*)",
+        "answerRegexPattern": "^(?:ĐÁP\\s*ÁN|ANSWER|KEY|KẾT\\s*QUẢ|ĐÁP\\s*SỐ)[\\.\\:\\s\\-]+([\\-\\+]?\\d+[\\,\\.]?\\d*)",
         "answerGroupIndex": 1,
         "explanationRegexPattern": "^(?:Lời\\s*giải|Hướng\\s*dẫn|HD|Giải\\s*thích)\\b",
+        "explanationLinePrefixPatterns": [
+          "^(?:Lời\\s*giải|L[\\.\\?\\s]*i\\s*gi[\\.\\?\\s]*i|Hướng\\s*dẫn\\s*giải|HƯỚNG\\s*DẪN|LỜI\\s*GIẢI|HD)[\\.\\:\\s\\-]+(.*)",
+          "^(?:Giải\\s*thích|Căn\\s*cứ|Ghi\\s*chú)[\\.\\:\\s]+(.*)"
+        ],
+        "inlineExtraction": {
+          "singleChoiceExtractionPatterns": [
+            "(?:^|[\\.\\;\\,\\!\\s]+)(?:Do\\s*đó|Suy\\s*ra|Vậy|Hence|Therefore|Par\\s*conséquent|Folglich)?\\s*(?:ta\\s*)?(?:Chọn|Ch[oọ\\?]n|Choose|Option|Select|Choisir)\\s*(?:câu\\s*|đáp\\s*án\\s*|phương\\s*án\\s*)?([A-G])\\b",
+            "(?:^|[\\.\\;\\,\\!\\s]+)(?:Do\\s*đó|Suy\\s*ra|Vậy|Hence|Therefore)?\\s*(?:ta\\s*có\\s*)?(?:đáp\\s*án|dap\\s*an|phương\\s*án|answer|key|réponse)(?:\\s*(?:đúng\\s*)?là|\\s*is|\\s*=)?[\\:\\s]+([A-G])\\b",
+            "\\blà\\s+đáp\\s*án\\s+([A-G])\\b",
+            "\\b([A-G])\\s*(?:là\\s*đáp\\s*án|đúng|is\\s+the\\s+(?:correct\\s+)?answer|is\\s+correct|est\\s+la\\s+bonne\\s+réponse)\\b",
+            "(?:故选|答案为|正确答案是|正确选项是)[\\:\\s]*([A-G])\\b"
+          ],
+          "numericValueExtractionPatterns": [
+            "(?:^|[\\.\\;\\,\\!\\s]+)(?:Do\\s*đó|Suy\\s*ra|Vậy|Hence|Therefore)?\\s*(?:Đáp\\s*số|Đáp\\s*án|Dap\\s*so|Dap\\s*an|Kết\\s*quả|Giá\\s*trị\\s*cần\\s*tìm|Result|Answer|Value|Valeur)(?:\\s*(?:đúng\\s*)?(?:là|bằng|\\s*is|\\s*=))?[\\.\\:\\s\\=]+\\$?([0-9\\,\\.\\-\\+\\/]+)\\$?",
+            "(?:计算结果为|答案为|最终结果|结果是)[\\.\\:\\s\\=]+([0-9\\,\\.\\-\\+\\/]+)"
+          ],
+          "trueFalseExtractionPatterns": [
+            "(?:^|[\\(\\s\\[])([a-d1-4])[\\)\\.\\:\\]]\\s*.*?\\b(?:chọn\\s+)?(đúng|sai|d|s|true|false|t|f|vrai|faux|richtig|falsch)\\b",
+            "\\b(?:ý|mệnh\\s*đề|khẳng\\s*định|statement|proposition|assertion)\\s+([a-d1-4])\\b.*?\\b(?:chọn\\s+)?(đúng|sai|d|s|true|false|t|f|vrai|faux|richtig|falsch)\\b",
+            "(?:^|[\\(\\s\\[])([a-d1-4])[\\)\\.\\:\\]]\\s*.*?\\b(正确|错误|对|错)\\b"
+          ],
+          "subItemMarkerPatterns": [
+            "^(?:(?:ý|mệnh\\s*đề|khẳng\\s*định|bước|phần|statement|proposition|item|option|step|part)\\s*)?[\\(\\[]?([a-d1-4])[\\)\\]\\.\\:]\\s*(?:[\\-\\:\\.]\\s*)?(.*)",
+            "^(?:第)?\\s*([1-4a-dA-D])\\s*[小题项点\\.\\:\\)\\-]\\s*(.*)"
+          ],
+          "explanationStartPatterns": [
+            "^(?:(?:Lời\\s*giải|L[.\\?\\s]*i\\s*gi[.\\?\\s]*i|Hướng\\s*dẫn\\s*(?:giải|chấm|ý\\s*giải)|Hu?ng\\s*d?n\\s*(?:gi?i|ch?m)|HƯỚNG\\s*DẪN|LỜI\\s*GIẢI|HD|Giải\\s*thích|Gợi\\s*ý(?:\\s*làm\\s*bài|\\s*giải)?|Ý\\s*tưởng\\s*giải|Sơ\\s*đồ\\s*giải|Biểu\\s*điểm|Thang\\s*điểm|Explanation|Rationale|Rubric|Marking\\s*Scheme|Solution|Model\\s*Answer|Detailed\\s*Solution|Explication|Lösung)[\\.\\:\\s\\-]+|Chọn\\s+[A-D0-9,\\.\\-]+\\s*[\\.\\:\\s\\-]+)(.*)",
+            "^(?:参考答案|试题解析|详细解析|解答|解析)[\\.\\:\\s\\-]+(.*)"
+          ],
+          "questionNumberPatterns": [
+            "^(?:Câu|Bài|Question|Item|Aufgabe|Exercice|CÂU|BÀI|Problem|Task|Frage|Domanda|Pregunta|第)?\\s*(\\d+)",
+            "^(\\d+)\\s*[\\.\\:\\)\\-]"
+          ]
+        },
+        "scoreStrategy": "ALL_OR_NOTHING"
+      }
+    },
+    {
+      "ruleCode": "VN_HIERARCHICAL_STEPPED_ESSAY",
+      "ruleName": "Tự Luận & Barem Điểm Đa Bước (THCS / THPT / Tuyển Sinh 10)",
+      "targetExamType": "ESSAY",
+      "language": "vi",
+      "priority": 90,
+      "isActive": true,
+      "description": "Nhận diện câu hỏi Tự luận có barem điểm chia nhỏ từng bước (0.25đ, 0.5đ, 1.0đ) cho môn Toán, Vật lý, Hóa học, Tin học, Ngữ văn.",
+      "anchorSpec": {
+        "regexPattern": "^(?:Câu|Bài|Problem|Exercise|Aufgabe|Exercice)\\s*(\\d+)(?:\\s*\\([^)]*\\))?(?:[\\.\\:\\-–—\\)]|\\s*[\\.\\:\\-–—\\)]|\\s*$)",
+        "questionNumberGroupIndex": 1,
+        "sectionMarkers": [
+          "TỰ LUẬN",
+          "PHẦN TỰ LUẬN",
+          "BÀI TẬP TỰ LUẬN",
+          "ESSAY",
+          "PHẦN IV",
+          "PART IV"
+        ]
+      },
+      "stimulusSpec": {
+        "supportMathTypeWmf": true,
+        "supportVectorSvg": true,
+        "extractInlineImages": true,
+        "autoTerminateOnNextSection": true
+      },
+      "interactionSpec": {
+        "defaultQuestionType": "ESSAY",
+        "optionRegexPattern": "^(?:([a-d1-4])|[(]([a-d1-4])[)])[\\.\\:\\)\\s\\-]+(.*)$",
+        "optionLabelGroupIndex": 1,
+        "optionContentGroupIndex": 3,
+        "essayScoreMarkerPatterns": [
+          "^[\\(\\[\\s]*([\\d\\.\\,]+)\\s*(?:điểm|đ|marks?|points?)[\\)\\]\\s]*",
+          "\\b(?:thang\\s*điểm|biểu\\s*điểm)\\s*[:\\-]?\\s*([\\d\\.\\,]+)"
+        ],
+        "essayKeywordPatterns": [
+          "^(?:Chứng\\s*minh|Giải\\s*phương\\s*trình|Giải\\s*hệ|Rút\\s*gọn|Lập\\s*công\\s*thức|Biện\\s*luận|Tính\\s+(?:giá\\s+trị|diện\\s+tích|thể\\s+tích)|Vẽ\\s+đồ\\s+thị)",
+          "^(?:Phân\\s*tích|Cảm\\s*nghĩ|Bình\\s*luận|Nghị\\s*luận\\s*văn\\s*học|Viết\\s*đoạn\\s*văn)"
+        ],
+        "essaySafeguardEnabled": true
+      },
+      "evaluationSpec": {
+        "answerRegexPattern": "^(?:ĐÁP\\s*ÁN|ANSWER|KEY|CHỌN)[\\.\\:\\s\\-]+([A-D0-9a-d\\,\\s]+)",
+        "answerGroupIndex": 1,
+        "explanationRegexPattern": "^(?:Lời\\s*giải|Hướng\\s*dẫn\\s*chấm|Biểu\\s*điểm|Đáp\\s*án|HD)\\b",
+        "explanationLinePrefixPatterns": [
+          "^(?:Lời\\s*giải|L[\\.\\?\\s]*i\\s*gi[\\.\\?\\s]*i|Hướng\\s*dẫn\\s*giải|HƯỚNG\\s*DẪN|LỜI\\s*GIẢI|HD)[\\.\\:\\s\\-]+(.*)",
+          "^(?:Giải\\s*thích|Căn\\s*cứ|Ghi\\s*chú)[\\.\\:\\s]+(.*)"
+        ],
+        "rubricStepRegexPattern": "^(?:Bước\\s*(\\d+)|\\+)[\\.\\:\\s\\-]+(?:([0-9\\,\\.]+)\\s*đ)?(.*)$",
+        "inlineExtraction": {
+          "singleChoiceExtractionPatterns": [
+            "(?:^|[\\.\\;\\,\\!\\s]+)(?:Do\\s*đó|Suy\\s*ra|Vậy|Hence|Therefore|Par\\s*conséquent|Folglich)?\\s*(?:ta\\s*)?(?:Chọn|Ch[oọ\\?]n|Choose|Option|Select|Choisir)\\s*(?:câu\\s*|đáp\\s*án\\s*|phương\\s*án\\s*)?([A-G])\\b",
+            "(?:^|[\\.\\;\\,\\!\\s]+)(?:Do\\s*đó|Suy\\s*ra|Vậy|Hence|Therefore)?\\s*(?:ta\\s*có\\s*)?(?:đáp\\s*án|dap\\s*an|phương\\s*án|answer|key|réponse)(?:\\s*(?:đúng\\s*)?là|\\s*is|\\s*=)?[\\:\\s]+([A-G])\\b",
+            "\\blà\\s+đáp\\s*án\\s+([A-G])\\b",
+            "\\b([A-G])\\s*(?:là\\s*đáp\\s*án|đúng|is\\s+the\\s+(?:correct\\s+)?answer|is\\s+correct|est\\s+la\\s+bonne\\s+réponse)\\b",
+            "(?:故选|答案为|正确答案是|正确选项是)[\\:\\s]*([A-G])\\b"
+          ],
+          "numericValueExtractionPatterns": [
+            "(?:^|[\\.\\;\\,\\!\\s]+)(?:Do\\s*đó|Suy\\s*ra|Vậy|Hence|Therefore)?\\s*(?:Đáp\\s*số|Đáp\\s*án|Dap\\s*so|Dap\\s*an|Kết\\s*quả|Giá\\s*trị\\s*cần\\s*tìm|Result|Answer|Value|Valeur)(?:\\s*(?:đúng\\s*)?(?:là|bằng|\\s*is|\\s*=))?[\\.\\:\\s\\=]+\\$?([0-9\\,\\.\\-\\+\\/]+)\\$?",
+            "(?:计算结果为|答案为|最终结果|结果是)[\\.\\:\\s\\=]+([0-9\\,\\.\\-\\+\\/]+)"
+          ],
+          "trueFalseExtractionPatterns": [
+            "(?:^|[\\(\\s\\[])([a-d1-4])[\\)\\.\\:\\]]\\s*.*?\\b(?:chọn\\s+)?(đúng|sai|d|s|true|false|t|f|vrai|faux|richtig|falsch)\\b",
+            "\\b(?:ý|mệnh\\s*đề|khẳng\\s*định|statement|proposition|assertion)\\s+([a-d1-4])\\b.*?\\b(?:chọn\\s+)?(đúng|sai|d|s|true|false|t|f|vrai|faux|richtig|falsch)\\b",
+            "(?:^|[\\(\\s\\[])([a-d1-4])[\\)\\.\\:\\]]\\s*.*?\\b(正确|错误|对|错)\\b"
+          ],
+          "subItemMarkerPatterns": [
+            "^(?:(?:ý|mệnh\\s*đề|khẳng\\s*định|bước|phần|statement|proposition|item|option|step|part)\\s*)?[\\(\\[]?([a-d1-4])[\\)\\]\\.\\:]\\s*(?:[\\-\\:\\.]\\s*)?(.*)",
+            "^(?:第)?\\s*([1-4a-dA-D])\\s*[小题项点\\.\\:\\)\\-]\\s*(.*)"
+          ],
+          "explanationStartPatterns": [
+            "^(?:(?:Lời\\s*giải|L[.\\?\\s]*i\\s*gi[.\\?\\s]*i|Hướng\\s*dẫn\\s*(?:giải|chấm|ý\\s*giải)|Hu?ng\\s*d?n\\s*(?:gi?i|ch?m)|HƯỚNG\\s*DẪN|LỜI\\s*GIẢI|HD|Giải\\s*thích|Gợi\\s*ý(?:\\s*làm\\s*bài|\\s*giải)?|Ý\\s*tưởng\\s*giải|Sơ\\s*đồ\\s*giải|Biểu\\s*điểm|Thang\\s*điểm|Explanation|Rationale|Rubric|Marking\\s*Scheme|Solution|Model\\s*Answer|Detailed\\s*Solution|Explication|Lösung)[\\.\\:\\s\\-]+|Chọn\\s+[A-D0-9,\\.\\-]+\\s*[\\.\\:\\s\\-]+)(.*)",
+            "^(?:参考答案|试题解析|详细解析|解答|解析)[\\.\\:\\s\\-]+(.*)"
+          ],
+          "questionNumberPatterns": [
+            "^(?:Câu|Bài|Question|Item|Aufgabe|Exercice|CÂU|BÀI|Problem|Task|Frage|Domanda|Pregunta|第)?\\s*(\\d+)",
+            "^(\\d+)\\s*[\\.\\:\\)\\-]"
+          ]
+        },
+        "scoreStrategy": "RUBRIC_STEPPED"
+      }
+    },
+    {
+      "ruleCode": "VN_READING_COMPREHENSION_ENGLISH",
+      "ruleName": "Đọc Hiểu & Điền Khuyết Tiếng Anh (THPT / THCS / VSTEP / IELTS)",
+      "targetExamType": "ENGLISH",
+      "language": "en",
+      "priority": 15,
+      "isActive": true,
+      "description": "Nhận diện các dạng bài đọc hiểu, trắc nghiệm phát âm, trọng âm, điền khuyết (Cloze Test) môn Tiếng Anh trong đề thi GDPT và khảo thí Ngoại ngữ.",
+      "anchorSpec": {
+        "regexPattern": "^(?:Question|Item|Câu|Task)\\s*(\\d+)(?:[\\.\\:\\-–—\\)]|\\s*[\\.\\:\\-–—\\)]|\\s*$)",
+        "questionNumberGroupIndex": 1,
+        "sectionMarkers": [
+          "READING",
+          "LISTENING",
+          "LANGUAGE",
+          "PRONUNCIATION",
+          "STRESS",
+          "CLOZE TEST",
+          "PHẦN I"
+        ]
+      },
+      "stimulusSpec": {
+        "supportMathTypeWmf": false,
+        "supportVectorSvg": true,
+        "extractInlineImages": true,
+        "autoTerminateOnNextSection": true,
+        "readingPassageStartRegex": "^(?:Read\\s+(?:the\\s+)?(?:following\\s+)?passage|Read\\s+the\\s+following\\s+text|Read\\s+the\\s+announcement|Đọc\\s+đoạn\\s+văn\\s+sau)",
+        "readingPassageRangeRegex": "\\b(?:questions?|from)\\s*(\\d+)\\s*(?:to|through)\\s*(\\d+)\\b",
+        "instructionDirectivePatterns": [
+          "^(?:Mark\\s+the\\s+letter|Choose\\s+the\\s+letter|Choose\\s+the\\s+word|Read\\s+the\\s+following\\s+(?:passage|text|announcement|advertisement|leaflet)|Đọc\\s+(?:đoạn\\s+văn|bài\\s+đọc))\\b"
+        ]
+      },
+      "interactionSpec": {
+        "defaultQuestionType": "SINGLE",
+        "optionRegexPattern": "^(?:([A-D])|[(]([A-D])[)])[\\.\\:\\s\\-]+(.*)$",
+        "optionLabelGroupIndex": 1,
+        "optionContentGroupIndex": 3
+      },
+      "evaluationSpec": {
+        "answerRegexPattern": "^(?:KEY|ANSWER|ĐÁP\\s*ÁN|CHỌN)[\\.\\:\\s\\-]+([A-D]+)",
+        "answerGroupIndex": 1,
+        "explanationRegexPattern": "^(?:Explanation|Rationale|Hướng\\s*dẫn|Lời\\s*giải)\\b",
+        "explanationLinePrefixPatterns": [
+          "^(?:Explanation|Rationale|Giải\\s*thích|Căn\\s*cứ|Lời\\s*giải)[\\.\\:\\s]+(.*)"
+        ],
+        "inlineExtraction": {
+          "singleChoiceExtractionPatterns": [
+            "(?:^|[\\.\\;\\,\\!\\s]+)(?:Do\\s*đó|Suy\\s*ra|Vậy|Hence|Therefore|Par\\s*conséquent|Folglich)?\\s*(?:ta\\s*)?(?:Chọn|Ch[oọ\\?]n|Choose|Option|Select|Choisir)\\s*(?:câu\\s*|đáp\\s*án\\s*|phương\\s*án\\s*)?([A-G])\\b",
+            "(?:^|[\\.\\;\\,\\!\\s]+)(?:Do\\s*đó|Suy\\s*ra|Vậy|Hence|Therefore)?\\s*(?:ta\\s*có\\s*)?(?:đáp\\s*án|dap\\s*an|phương\\s*án|answer|key|réponse)(?:\\s*(?:đúng\\s*)?là|\\s*is|\\s*=)?[\\:\\s]+([A-G])\\b",
+            "\\blà\\s+đáp\\s*án\\s+([A-G])\\b",
+            "\\b([A-G])\\s*(?:là\\s*đáp\\s*án|đúng|is\\s+the\\s+(?:correct\\s+)?answer|is\\s+correct|est\\s+la\\s+bonne\\s+réponse)\\b",
+            "(?:故选|答案为|正确答案是|正确选项是)[\\:\\s]*([A-G])\\b"
+          ],
+          "numericValueExtractionPatterns": [
+            "(?:^|[\\.\\;\\,\\!\\s]+)(?:Do\\s*đó|Suy\\s*ra|Vậy|Hence|Therefore)?\\s*(?:Đáp\\s*số|Đáp\\s*án|Dap\\s*so|Dap\\s*an|Kết\\s*quả|Giá\\s*trị\\s*cần\\s*tìm|Result|Answer|Value|Valeur)(?:\\s*(?:đúng\\s*)?(?:là|bằng|\\s*is|\\s*=))?[\\.\\:\\s\\=]+\\$?([0-9\\,\\.\\-\\+\\/]+)\\$?",
+            "(?:计算结果为|答案为|最终结果|结果是)[\\.\\:\\s\\=]+([0-9\\,\\.\\-\\+\\/]+)"
+          ],
+          "trueFalseExtractionPatterns": [
+            "(?:^|[\\(\\s\\[])([a-d1-4])[\\)\\.\\:\\]]\\s*.*?\\b(?:chọn\\s+)?(đúng|sai|d|s|true|false|t|f|vrai|faux|richtig|falsch)\\b",
+            "\\b(?:ý|mệnh\\s*đề|khẳng\\s*định|statement|proposition|assertion)\\s+([a-d1-4])\\b.*?\\b(?:chọn\\s+)?(đúng|sai|d|s|true|false|t|f|vrai|faux|richtig|falsch)\\b",
+            "(?:^|[\\(\\s\\[])([a-d1-4])[\\)\\.\\:\\]]\\s*.*?\\b(正确|错误|对|错)\\b"
+          ],
+          "subItemMarkerPatterns": [
+            "^(?:(?:ý|mệnh\\s*đề|khẳng\\s*định|bước|phần|statement|proposition|item|option|step|part)\\s*)?[\\(\\[]?([a-d1-4])[\\)\\]\\.\\:]\\s*(?:[\\-\\:\\.]\\s*)?(.*)",
+            "^(?:第)?\\s*([1-4a-dA-D])\\s*[小题项点\\.\\:\\)\\-]\\s*(.*)"
+          ],
+          "explanationStartPatterns": [
+            "^(?:(?:Lời\\s*giải|L[.\\?\\s]*i\\s*gi[.\\?\\s]*i|Hướng\\s*dẫn\\s*(?:giải|chấm|ý\\s*giải)|Hu?ng\\s*d?n\\s*(?:gi?i|ch?m)|HƯỚNG\\s*DẪN|LỜI\\s*GIẢI|HD|Giải\\s*thích|Gợi\\s*ý(?:\\s*làm\\s*bài|\\s*giải)?|Ý\\s*tưởng\\s*giải|Sơ\\s*đồ\\s*giải|Biểu\\s*điểm|Thang\\s*điểm|Explanation|Rationale|Rubric|Marking\\s*Scheme|Solution|Model\\s*Answer|Detailed\\s*Solution|Explication|Lösung)[\\.\\:\\s\\-]+|Chọn\\s+[A-D0-9,\\.\\-]+\\s*[\\.\\:\\s\\-]+)(.*)",
+            "^(?:参考答案|试题解析|详细解析|解答|解析)[\\.\\:\\s\\-]+(.*)"
+          ],
+          "questionNumberPatterns": [
+            "^(?:Câu|Bài|Question|Item|Aufgabe|Exercice|CÂU|BÀI|Problem|Task|Frage|Domanda|Pregunta|第)?\\s*(\\d+)",
+            "^(\\d+)\\s*[\\.\\:\\)\\-]"
+          ]
+        },
+        "scoreStrategy": "ALL_OR_NOTHING"
+      }
+    },
+    {
+      "ruleCode": "UNIVERSAL_DETACHED_ANSWER_MATRIX",
+      "ruleName": "Trích Xuất Ma Trận Bảng Đáp Án Tách Rời Cuối Đề",
+      "targetExamType": "TABLE_MATRIX",
+      "language": "vi",
+      "priority": 5,
+      "isActive": true,
+      "description": "Nhận diện và trích xuất đáp án từ bảng ma trận ở cuối tài liệu đề thi (hỗ trợ bảng ngang, bảng dọc nhiều cột, bảng đa mã đề và ô tổ hợp).",
+      "anchorSpec": {
+        "regexPattern": "^(?:BẢNG\\s*)?(?:ĐÁP\\s*ÁN|ANSWER\\s*KEY|KEY|D[\\.\\?\\s]*P\\s*[\\.\\?\\s]*N)\\s*(?:THAM\\s*KHẢO|CHI\\s*TIẾT|TRẮC\\s*NGHIỆM)?",
+        "questionNumberGroupIndex": 0,
+        "sectionMarkers": [
+          "BẢNG ĐÁP ÁN",
+          "ĐÁP ÁN",
+          "ANSWER KEY",
+          "KEY"
+        ]
+      },
+      "stimulusSpec": {
+        "supportMathTypeWmf": false,
+        "supportVectorSvg": false,
+        "extractInlineImages": false
+      },
+      "interactionSpec": {
+        "defaultQuestionType": "SINGLE",
+        "optionRegexPattern": "^(?:([A-D])|[(]([A-D])[)])[\\.\\:\\s\\-]+(.*)$"
+      },
+      "evaluationSpec": {
+        "answerRegexPattern": "^(?:ĐÁP\\s*ÁN|ANSWER|KEY)[\\.\\:\\s\\-]+(.*)",
+        "answerGroupIndex": 1,
+        "scoreStrategy": "ALL_OR_NOTHING"
+      }
+    },
+    {
+      "ruleCode": "VN_THCS_INTEGRATED_SEMESTER",
+      "ruleName": "Đề Kiểm Tra Định Kỳ THCS (KNTT / Cánh Diều / CTM)",
+      "targetExamType": "THCS",
+      "language": "vi",
+      "priority": 25,
+      "isActive": true,
+      "description": "Nhận diện đề thi kiểm tra định kỳ, giữa kỳ và cuối kỳ THCS các môn Toán, KHTN, Lịch sử - Địa lý, GDCD.",
+      "anchorSpec": {
+        "regexPattern": "^(?:Câu|Bài)\\s*(\\d+)(?:\\s*\\([^)]*\\))?(?:[\\.\\:\\-–—\\)]|\\s*[\\.\\:\\-–—\\)]|\\s*$)",
+        "questionNumberGroupIndex": 1,
+        "sectionMarkers": [
+          "PHẦN I. TRẮC NGHIỆM",
+          "PHẦN II. TỰ LUẬN",
+          "I. TRẮC NGHIỆM",
+          "II. TỰ LUẬN"
+        ]
+      },
+      "stimulusSpec": {
+        "supportMathTypeWmf": true,
+        "supportVectorSvg": true,
+        "extractInlineImages": true,
+        "autoTerminateOnNextSection": true
+      },
+      "interactionSpec": {
+        "defaultQuestionType": "SINGLE",
+        "optionRegexPattern": "^(?:([A-D])|[(]([A-D])[)])[\\.\\:\\s\\-]+(.*)$",
+        "optionLabelGroupIndex": 1,
+        "optionContentGroupIndex": 3
+      },
+      "evaluationSpec": {
+        "answerRegexPattern": "^(?:ĐÁP\\s*ÁN|CHỌN)[\\.\\:\\s\\-]+([A-D0-9a-d\\,\\s]+)",
+        "answerGroupIndex": 1,
+        "explanationRegexPattern": "^(?:Lời\\s*giải|Hướng\\s*dẫn|HD)\\b",
+        "inlineExtraction": {
+          "singleChoiceExtractionPatterns": [
+            "(?:^|[\\.\\;\\,\\!\\s]+)(?:Do\\s*đó|Suy\\s*ra|Vậy|Hence|Therefore|Par\\s*conséquent|Folglich)?\\s*(?:ta\\s*)?(?:Chọn|Ch[oọ\\?]n|Choose|Option|Select|Choisir)\\s*(?:câu\\s*|đáp\\s*án\\s*|phương\\s*án\\s*)?([A-G])\\b",
+            "(?:^|[\\.\\;\\,\\!\\s]+)(?:Do\\s*đó|Suy\\s*ra|Vậy|Hence|Therefore)?\\s*(?:ta\\s*có\\s*)?(?:đáp\\s*án|dap\\s*an|phương\\s*án|answer|key|réponse)(?:\\s*(?:đúng\\s*)?là|\\s*is|\\s*=)?[\\:\\s]+([A-G])\\b",
+            "\\blà\\s+đáp\\s*án\\s+([A-G])\\b",
+            "\\b([A-G])\\s*(?:là\\s*đáp\\s*án|đúng|is\\s+the\\s+(?:correct\\s+)?answer|is\\s+correct|est\\s+la\\s+bonne\\s+réponse)\\b",
+            "(?:故选|答案为|正确答案是|正确选项是)[\\:\\s]*([A-G])\\b"
+          ],
+          "numericValueExtractionPatterns": [
+            "(?:^|[\\.\\;\\,\\!\\s]+)(?:Do\\s*đó|Suy\\s*ra|Vậy|Hence|Therefore)?\\s*(?:Đáp\\s*số|Đáp\\s*án|Dap\\s*so|Dap\\s*an|Kết\\s*quả|Giá\\s*trị\\s*cần\\s*tìm|Result|Answer|Value|Valeur)(?:\\s*(?:đúng\\s*)?(?:là|bằng|\\s*is|\\s*=))?[\\.\\:\\s\\=]+\\$?([0-9\\,\\.\\-\\+\\/]+)\\$?",
+            "(?:计算结果为|答案为|最终结果|结果是)[\\.\\:\\s\\=]+([0-9\\,\\.\\-\\+\\/]+)"
+          ],
+          "trueFalseExtractionPatterns": [
+            "(?:^|[\\(\\s\\[])([a-d1-4])[\\)\\.\\:\\]]\\s*.*?\\b(?:chọn\\s+)?(đúng|sai|d|s|true|false|t|f|vrai|faux|richtig|falsch)\\b",
+            "\\b(?:ý|mệnh\\s*đề|khẳng\\s*định|statement|proposition|assertion)\\s+([a-d1-4])\\b.*?\\b(?:chọn\\s+)?(đúng|sai|d|s|true|false|t|f|vrai|faux|richtig|falsch)\\b",
+            "(?:^|[\\(\\s\\[])([a-d1-4])[\\)\\.\\:\\]]\\s*.*?\\b(正确|错误|对|错)\\b"
+          ],
+          "subItemMarkerPatterns": [
+            "^(?:(?:ý|mệnh\\s*đề|khẳng\\s*định|bước|phần|statement|proposition|item|option|step|part)\\s*)?[\\(\\[]?([a-d1-4])[\\)\\]\\.\\:]\\s*(?:[\\-\\:\\.]\\s*)?(.*)",
+            "^(?:第)?\\s*([1-4a-dA-D])\\s*[小题项点\\.\\:\\)\\-]\\s*(.*)"
+          ],
+          "explanationStartPatterns": [
+            "^(?:(?:Lời\\s*giải|L[.\\?\\s]*i\\s*gi[.\\?\\s]*i|Hướng\\s*dẫn\\s*(?:giải|chấm|ý\\s*giải)|Hu?ng\\s*d?n\\s*(?:gi?i|ch?m)|HƯỚNG\\s*DẪN|LỜI\\s*GIẢI|HD|Giải\\s*thích|Gợi\\s*ý(?:\\s*làm\\s*bài|\\s*giải)?|Ý\\s*tưởng\\s*giải|Sơ\\s*đồ\\s*giải|Biểu\\s*điểm|Thang\\s*điểm|Explanation|Rationale|Rubric|Marking\\s*Scheme|Solution|Model\\s*Answer|Detailed\\s*Solution|Explication|Lösung)[\\.\\:\\s\\-]+|Chọn\\s+[A-D0-9,\\.\\-]+\\s*[\\.\\:\\s\\-]+)(.*)",
+            "^(?:参考答案|试题解析|详细解析|解答|解析)[\\.\\:\\s\\-]+(.*)"
+          ],
+          "questionNumberPatterns": [
+            "^(?:Câu|Bài|Question|Item|Aufgabe|Exercice|CÂU|BÀI|Problem|Task|Frage|Domanda|Pregunta|第)?\\s*(\\d+)",
+            "^(\\d+)\\s*[\\.\\:\\)\\-]"
+          ]
+        },
         "scoreStrategy": "ALL_OR_NOTHING"
       }
     },
@@ -432,29 +1168,12 @@
       "ruleName": "Sát Hạch Lái Xe Quốc Gia (GPLX 600 Câu & Điểm Liệt)",
       "targetExamType": "GPLX",
       "language": "vi",
-      "priority": 15,
+      "priority": 40,
       "isActive": true,
-      "description": "Nhận diện đề thi giấy phép lái xe, tự động phát hiện câu điểm liệt tử thần.",
+      "description": "Nhận diện câu hỏi sát hạch lý thuyết lái xe mô tô, ô tô B1, B2, C, D, E và nhận diện câu điểm liệt bắt buộc đúng.",
       "anchorSpec": {
-        "regexPattern": "^(?:Câu|Question)\\s*(\\d+)[\\.\\:\\s\\-]+",
-        "questionNumberGroupIndex": 1,
-        "sectionMarkers": [
-          "SÁT HẠCH LÁI XE",
-          "GPLX",
-          "600 CÂU HỎI",
-          "CHƯƠNG I",
-          "CHƯƠNG II",
-          "CHƯƠNG III",
-          "CHƯƠNG IV",
-          "CHƯƠNG V",
-          "CHƯƠNG VI",
-          "CHUONG I",
-          "CHUONG II",
-          "CHUONG III",
-          "CHUONG IV",
-          "CHUONG V",
-          "CHUONG VI"
-        ]
+        "regexPattern": "^(?:Câu|Question)\\s*(\\d+)(?:[\\.\\:\\-–—\\)]|\\s*[\\.\\:\\-–—\\)]|\\s*$)",
+        "questionNumberGroupIndex": 1
       },
       "stimulusSpec": {
         "supportMathTypeWmf": false,
@@ -470,25 +1189,62 @@
       "evaluationSpec": {
         "answerRegexPattern": "^(?:ĐÁP\\s*ÁN|CHỌN)[\\.\\:\\s\\-]+([1-4A-D])",
         "answerGroupIndex": 1,
-        "explanationRegexPattern": "^(?:Giải\\s*thích|Khẩu\\s*quyết|Căn\\s*cứ|Mẹo)\\b",
-        "criticalQuestionMarkerRegex": "(?:\\[\\s*(?:ĐIỂM\\s*LIỆT|CÂU\\s*LIỆT)\\s*\\]|⚠️|\\*\\s*LIỆT\\s*\\*)",
-        "scoreStrategy": "FATAL_LOCK"
+        "criticalQuestionMarkerRegex": "(?:\\[\\s*ĐIỂM\\s*LIỆT\\s*\\]|⚠️|TỬ\\s*THẦN|\\bĐIỂM[_s]*LIỆT\\b|mất\\s*an\\s*toàn\\s*giao\\s*thông)",
+        "criticalMarkers": [
+          "(?:\\bDIEM[_\\s]*LIET\\b|\\bĐIỂM[_\\s]*LIỆT\\b|mất\\s*an\\s*toàn\\s*giao\\s*thông\\s*nghiêm\\s*trọng|bị\\s*nghiêm\\s*cấm|\\bnghiêm\\s*cấm\\b|nồng\\s*độ\\s*cồn|sử\\s*dụng\\s*ma\\s*túy|đua\\s*xe\\s*trái\\s*phép)",
+          "(?:\\bFATAL\\b|\\bCRITICAL\\b|\\bMANDATORY\\b)"
+        ],
+        "inlineExtraction": {
+          "singleChoiceExtractionPatterns": [
+            "(?:^|[\\.\\;\\,\\!\\s]+)(?:Do\\s*đó|Suy\\s*ra|Vậy|Hence|Therefore|Par\\s*conséquent|Folglich)?\\s*(?:ta\\s*)?(?:Chọn|Ch[oọ\\?]n|Choose|Option|Select|Choisir)\\s*(?:câu\\s*|đáp\\s*án\\s*|phương\\s*án\\s*)?([A-G])\\b",
+            "(?:^|[\\.\\;\\,\\!\\s]+)(?:Do\\s*đó|Suy\\s*ra|Vậy|Hence|Therefore)?\\s*(?:ta\\s*có\\s*)?(?:đáp\\s*án|dap\\s*an|phương\\s*án|answer|key|réponse)(?:\\s*(?:đúng\\s*)?là|\\s*is|\\s*=)?[\\:\\s]+([A-G])\\b",
+            "\\blà\\s+đáp\\s*án\\s+([A-G])\\b",
+            "\\b([A-G])\\s*(?:là\\s*đáp\\s*án|đúng|is\\s+the\\s+(?:correct\\s+)?answer|is\\s+correct|est\\s+la\\s+bonne\\s+réponse)\\b",
+            "(?:故选|答案为|正确答案是|正确选项是)[\\:\\s]*([A-G])\\b"
+          ],
+          "numericValueExtractionPatterns": [
+            "(?:^|[\\.\\;\\,\\!\\s]+)(?:Do\\s*đó|Suy\\s*ra|Vậy|Hence|Therefore)?\\s*(?:Đáp\\s*số|Đáp\\s*án|Dap\\s*so|Dap\\s*an|Kết\\s*quả|Giá\\s*trị\\s*cần\\s*tìm|Result|Answer|Value|Valeur)(?:\\s*(?:đúng\\s*)?(?:là|bằng|\\s*is|\\s*=))?[\\.\\:\\s\\=]+\\$?([0-9\\,\\.\\-\\+\\/]+)\\$?",
+            "(?:计算结果为|答案为|最终结果|结果是)[\\.\\:\\s\\=]+([0-9\\,\\.\\-\\+\\/]+)"
+          ],
+          "trueFalseExtractionPatterns": [
+            "(?:^|[\\(\\s\\[])([a-d1-4])[\\)\\.\\:\\]]\\s*.*?\\b(?:chọn\\s+)?(đúng|sai|d|s|true|false|t|f|vrai|faux|richtig|falsch)\\b",
+            "\\b(?:ý|mệnh\\s*đề|khẳng\\s*định|statement|proposition|assertion)\\s+([a-d1-4])\\b.*?\\b(?:chọn\\s+)?(đúng|sai|d|s|true|false|t|f|vrai|faux|richtig|falsch)\\b",
+            "(?:^|[\\(\\s\\[])([a-d1-4])[\\)\\.\\:\\]]\\s*.*?\\b(正确|错误|对|错)\\b"
+          ],
+          "subItemMarkerPatterns": [
+            "^(?:(?:ý|mệnh\\s*đề|khẳng\\s*định|bước|phần|statement|proposition|item|option|step|part)\\s*)?[\\(\\[]?([a-d1-4])[\\)\\]\\.\\:]\\s*(?:[\\-\\:\\.]\\s*)?(.*)",
+            "^(?:第)?\\s*([1-4a-dA-D])\\s*[小题项点\\.\\:\\)\\-]\\s*(.*)"
+          ],
+          "explanationStartPatterns": [
+            "^(?:(?:Lời\\s*giải|L[.\\?\\s]*i\\s*gi[.\\?\\s]*i|Hướng\\s*dẫn\\s*(?:giải|chấm|ý\\s*giải)|Hu?ng\\s*d?n\\s*(?:gi?i|ch?m)|HƯỚNG\\s*DẪN|LỜI\\s*GIẢI|HD|Giải\\s*thích|Gợi\\s*ý(?:\\s*làm\\s*bài|\\s*giải)?|Ý\\s*tưởng\\s*giải|Sơ\\s*đồ\\s*giải|Biểu\\s*điểm|Thang\\s*điểm|Explanation|Rationale|Rubric|Marking\\s*Scheme|Solution|Model\\s*Answer|Detailed\\s*Solution|Explication|Lösung)[\\.\\:\\s\\-]+|Chọn\\s+[A-D0-9,\\.\\-]+\\s*[\\.\\:\\s\\-]+)(.*)",
+            "^(?:参考答案|试题解析|详细解析|解答|解析)[\\.\\:\\s\\-]+(.*)"
+          ],
+          "questionNumberPatterns": [
+            "^(?:Câu|Bài|Question|Item|Aufgabe|Exercice|CÂU|BÀI|Problem|Task|Frage|Domanda|Pregunta|第)?\\s*(\\d+)",
+            "^(\\d+)\\s*[\\.\\:\\)\\-]"
+          ]
+        },
+        "scoreStrategy": "ALL_OR_NOTHING"
       }
     },
     {
-      "ruleCode": "INTERNATIONAL_SAT_LOGIC",
-      "ruleName": "Khảo Thí Quốc Tế SAT / GRE Logic (Format Không Dấu Chấm)",
+      "ruleCode": "INTERNATIONAL_SAT_ACT",
+      "ruleName": "Khảo Thí Chuẩn Hóa Quốc Tế SAT / ACT / GRE Logic",
       "targetExamType": "SAT",
       "language": "en",
-      "priority": 5,
+      "priority": 50,
       "isActive": true,
-      "description": "Nhận diện đề thi quốc tế định dạng Task #[0-9] và [Option] không cần sửa code.",
+      "description": "Nhận diện format câu hỏi khảo thí chuẩn hóa quốc tế College Board SAT, ACT, GRE (nhãn dạng không dấu chấm [A] hoặc A., B., C., D.).",
       "anchorSpec": {
-        "regexPattern": "^(?:Task|Problem)\\s*#?(\\d+)[\\:\\s\\-]+",
+        "regexPattern": "^(?:Question|Task|Problem|Item)\\s*#?(\\d+)",
         "questionNumberGroupIndex": 1,
         "sectionMarkers": [
-          "SECTION SAT",
-          "MODULE LOGIC"
+          "MODULE 1",
+          "MODULE 2",
+          "SECTION 1",
+          "SECTION 2",
+          "MATH",
+          "READING AND WRITING"
         ]
       },
       "stimulusSpec": {
@@ -498,225 +1254,134 @@
       },
       "interactionSpec": {
         "defaultQuestionType": "SINGLE",
-        "optionRegexPattern": "^\\[([A-D])\\]\\s*(.*)$",
+        "optionRegexPattern": "^(?:([A-D])|\\[([A-D])\\]|[(]([A-D])[)])[\\.\\:\\s\\-]+(.*)$",
         "optionLabelGroupIndex": 1,
-        "optionContentGroupIndex": 2
+        "optionContentGroupIndex": 4
       },
       "evaluationSpec": {
-        "answerRegexPattern": "^\\[(?:Key|Truth|Answer)\\s*\\:\\s*([A-D])\\]",
+        "answerRegexPattern": "^(?:\\[(?:Key|Truth|Answer)\\]|Answer|Key)[\\.\\:\\s\\-]+([A-D])",
         "answerGroupIndex": 1,
-        "explanationRegexPattern": "^\\[(?:Rationale|Explanation)\\]",
-        "scoreStrategy": "ALL_OR_NOTHING"
-      }
-    },
-    {
-      "ruleCode": "CHINA_GAOKAO_STANDARD",
-      "ruleName": "Cao Khảo Trung Quốc (高考 Gaokao — Tiêu Chuẩn Toàn Quốc)",
-      "targetExamType": "GAOKAO",
-      "language": "zh",
-      "priority": 4,
-      "isActive": true,
-      "description": "Nhận diện đề thi cao khảo Trung Quốc, format số thứ tự đề bằng số Trung văn hoặc số Ả Rập, phương án ABCD không có dấu ngoặc.",
-      "anchorSpec": {
-        "regexPattern": "^(?:第|题目)\\s*(\\d+)[．。\\.\\s]+",
-        "questionNumberGroupIndex": 1,
-        "sectionMarkers": [
-          "第一部分",
-          "第二部分",
-          "阅读理解",
-          "选择题"
-        ]
-      },
-      "stimulusSpec": {
-        "supportMathTypeWmf": true,
-        "supportVectorSvg": true,
-        "extractInlineImages": true,
-        "readingPassageStartRegex": "^(?:阅读下面|请阅读|Read the following)",
-        "readingPassageRangeRegex": "\\b(\\d+)[-–](\\d+)\\b"
-      },
-      "interactionSpec": {
-        "defaultQuestionType": "SINGLE",
-        "optionRegexPattern": "^([ABCD])[．。\\.\\s]+(.+)$",
-        "optionLabelGroupIndex": 1,
-        "optionContentGroupIndex": 2
-      },
-      "evaluationSpec": {
-        "answerRegexPattern": "^(?:答案|正确答案|Answer)[：:]\\s*([ABCD])",
-        "answerGroupIndex": 1,
-        "explanationRegexPattern": "^(?:解析|解题过程|Explanation)[：:]",
-        "scoreStrategy": "ALL_OR_NOTHING"
-      }
-    },
-    {
-      "ruleCode": "KOREA_SUNEUNG_STANDARD",
-      "ruleName": "Đại Học Tu Học Năng Lực Hàn Quốc (수능 — CSAT Suneung)",
-      "targetExamType": "SUNEUNG",
-      "language": "ko",
-      "priority": 4,
-      "isActive": true,
-      "description": "Nhận diện đề thi Suneung Hàn Quốc — kỳ thi đại học quốc gia chuẩn với phương án ①②③④⑤ dùng số vòng tròn đặc trưng.",
-      "anchorSpec": {
-        "regexPattern": "^(\\d+)[\\. ]+",
-        "questionNumberGroupIndex": 1,
-        "sectionMarkers": [
-          "듣기",
-          "읽기",
-          "쓰기",
-          "문법",
-          "SECTION"
-        ]
-      },
-      "stimulusSpec": {
-        "supportMathTypeWmf": true,
-        "supportVectorSvg": true,
-        "extractInlineImages": true,
-        "readingPassageStartRegex": "^(?:다음\\s*글|다음\\s*을\\s*읽고|Read the following)",
-        "readingPassageRangeRegex": "\\b(\\d+)번[-–~](\\d+)번\\b"
-      },
-      "interactionSpec": {
-        "defaultQuestionType": "SINGLE",
-        "optionRegexPattern": "^([①②③④⑤]|[1-5][\\.\\)]?)\\s*(.+)$",
-        "optionLabelGroupIndex": 1,
-        "optionContentGroupIndex": 2
-      },
-      "evaluationSpec": {
-        "answerRegexPattern": "^(?:정답|Answer|正解)[：:\\s]*([①②③④⑤1-5])",
-        "answerGroupIndex": 1,
-        "explanationRegexPattern": "^(?:해설|풀이|解説|Explanation)[：:]",
-        "scoreStrategy": "ALL_OR_NOTHING"
-      }
-    },
-    {
-      "ruleCode": "JAPAN_JCEE_STANDARD",
-      "ruleName": "Kỳ Thi Tuyển Sinh Đại Học Nhật Bản (大学入学共通テスト — JCEE)",
-      "targetExamType": "JCEE",
-      "language": "ja",
-      "priority": 4,
-      "isActive": true,
-      "description": "Nhận diện đề thi JCEE (kế thừa Center Test) Nhật Bản. Phương án dùng số vòng tròn ①②③④ hoặc chữ số katakana ア・イ・ウ・エ.",
-      "anchorSpec": {
-        "regexPattern": "^(?:問|もん|No\\.?)\\s*(\\d+)[\\. 　]+",
-        "questionNumberGroupIndex": 1,
-        "sectionMarkers": [
-          "第１問",
-          "第２問",
-          "第３問",
-          "SECTION",
-          "問題"
-        ]
-      },
-      "stimulusSpec": {
-        "supportMathTypeWmf": true,
-        "supportVectorSvg": true,
-        "extractInlineImages": true,
-        "readingPassageStartRegex": "^(?:次の文章|次の英文|以下の文)",
-        "readingPassageRangeRegex": "\\b(\\d+)[-–](\\d+)\\b"
-      },
-      "interactionSpec": {
-        "defaultQuestionType": "SINGLE",
-        "optionRegexPattern": "^([①②③④⑤⑥]|[ア-エ])[\\s　]*(.+)$",
-        "optionLabelGroupIndex": 1,
-        "optionContentGroupIndex": 2
-      },
-      "evaluationSpec": {
-        "answerRegexPattern": "^(?:正解|答え|Answer)[：:\\s]*([①②③④⑤⑥ア-エ])",
-        "answerGroupIndex": 1,
-        "explanationRegexPattern": "^(?:解説|説明|Explanation)[：:]",
-        "scoreStrategy": "ALL_OR_NOTHING"
-      }
-    },
-    {
-      "ruleCode": "FRANCE_BACCALAUREAT_STANDARD",
-      "ruleName": "Kỳ Thi Tú Tài Pháp (Baccalauréat — BAC)",
-      "targetExamType": "BACCALAUREAT",
-      "language": "fr",
-      "priority": 4,
-      "isActive": true,
-      "description": "Nhận diện đề thi Baccalauréat Pháp — kỳ thi tú tài quốc gia chuẩn. Phương án dùng A., B., C., D. hoặc a), b), c), d). Có mệnh đề Vrai/Faux (Đúng/Sai).",
-      "anchorSpec": {
-        "regexPattern": "^(?:Question|Exercice|Partie)\\s*(\\d+)[\\.\\.\\s—–-]+",
-        "questionNumberGroupIndex": 1,
-        "sectionMarkers": [
-          "EXERCICE",
-          "PARTIE",
-          "PROBLÈME",
-          "SECTION"
-        ]
-      },
-      "stimulusSpec": {
-        "supportMathTypeWmf": true,
-        "supportVectorSvg": true,
-        "extractInlineImages": true,
-        "readingPassageStartRegex": "^(?:Lisez le texte|Lire le passage|Read the following)",
-        "readingPassageRangeRegex": "\\b(?:lignes?|questions?)\\s*(\\d+)\\s*[àa]\\s*(\\d+)\\b"
-      },
-      "interactionSpec": {
-        "defaultQuestionType": "SINGLE",
-        "optionRegexPattern": "^([A-Da-d])[\\.\\)\\s]+(.+)$",
-        "optionLabelGroupIndex": 1,
-        "optionContentGroupIndex": 2
-      },
-      "evaluationSpec": {
-        "answerRegexPattern": "^(?:Réponse|Réponse correcte|Answer)[\\s:]+([A-Da-d])",
-        "answerGroupIndex": 1,
-        "explanationRegexPattern": "^(?:Explication|Justification|Correction)[\\s:]",
+        "explanationRegexPattern": "^(?:\\[(?:Rationale|Explanation)\\]|Explanation|Rationale)",
+        "inlineExtraction": {
+          "singleChoiceExtractionPatterns": [
+            "(?:^|[\\.\\;\\,\\!\\s]+)(?:Do\\s*đó|Suy\\s*ra|Vậy|Hence|Therefore|Par\\s*conséquent|Folglich)?\\s*(?:ta\\s*)?(?:Chọn|Ch[oọ\\?]n|Choose|Option|Select|Choisir)\\s*(?:câu\\s*|đáp\\s*án\\s*|phương\\s*án\\s*)?([A-G])\\b",
+            "(?:^|[\\.\\;\\,\\!\\s]+)(?:Do\\s*đó|Suy\\s*ra|Vậy|Hence|Therefore)?\\s*(?:ta\\s*có\\s*)?(?:đáp\\s*án|dap\\s*an|phương\\s*án|answer|key|réponse)(?:\\s*(?:đúng\\s*)?là|\\s*is|\\s*=)?[\\:\\s]+([A-G])\\b",
+            "\\blà\\s+đáp\\s*án\\s+([A-G])\\b",
+            "\\b([A-G])\\s*(?:là\\s*đáp\\s*án|đúng|is\\s+the\\s+(?:correct\\s+)?answer|is\\s+correct|est\\s+la\\s+bonne\\s+réponse)\\b",
+            "(?:故选|答案为|正确答案是|正确选项是)[\\:\\s]*([A-G])\\b"
+          ],
+          "numericValueExtractionPatterns": [
+            "(?:^|[\\.\\;\\,\\!\\s]+)(?:Do\\s*đó|Suy\\s*ra|Vậy|Hence|Therefore)?\\s*(?:Đáp\\s*số|Đáp\\s*án|Dap\\s*so|Dap\\s*an|Kết\\s*quả|Giá\\s*trị\\s*cần\\s*tìm|Result|Answer|Value|Valeur)(?:\\s*(?:đúng\\s*)?(?:là|bằng|\\s*is|\\s*=))?[\\.\\:\\s\\=]+\\$?([0-9\\,\\.\\-\\+\\/]+)\\$?",
+            "(?:计算结果为|答案为|最终结果|结果是)[\\.\\:\\s\\=]+([0-9\\,\\.\\-\\+\\/]+)"
+          ],
+          "trueFalseExtractionPatterns": [
+            "(?:^|[\\(\\s\\[])([a-d1-4])[\\)\\.\\:\\]]\\s*.*?\\b(?:chọn\\s+)?(đúng|sai|d|s|true|false|t|f|vrai|faux|richtig|falsch)\\b",
+            "\\b(?:ý|mệnh\\s*đề|khẳng\\s*định|statement|proposition|assertion)\\s+([a-d1-4])\\b.*?\\b(?:chọn\\s+)?(đúng|sai|d|s|true|false|t|f|vrai|faux|richtig|falsch)\\b",
+            "(?:^|[\\(\\s\\[])([a-d1-4])[\\)\\.\\:\\]]\\s*.*?\\b(正确|错误|对|错)\\b"
+          ],
+          "subItemMarkerPatterns": [
+            "^(?:(?:ý|mệnh\\s*đề|khẳng\\s*định|bước|phần|statement|proposition|item|option|step|part)\\s*)?[\\(\\[]?([a-d1-4])[\\)\\]\\.\\:]\\s*(?:[\\-\\:\\.]\\s*)?(.*)",
+            "^(?:第)?\\s*([1-4a-dA-D])\\s*[小题项点\\.\\:\\)\\-]\\s*(.*)"
+          ],
+          "explanationStartPatterns": [
+            "^(?:(?:Lời\\s*giải|L[.\\?\\s]*i\\s*gi[.\\?\\s]*i|Hướng\\s*dẫn\\s*(?:giải|chấm|ý\\s*giải)|Hu?ng\\s*d?n\\s*(?:gi?i|ch?m)|HƯỚNG\\s*DẪN|LỜI\\s*GIẢI|HD|Giải\\s*thích|Gợi\\s*ý(?:\\s*làm\\s*bài|\\s*giải)?|Ý\\s*tưởng\\s*giải|Sơ\\s*đồ\\s*giải|Biểu\\s*điểm|Thang\\s*điểm|Explanation|Rationale|Rubric|Marking\\s*Scheme|Solution|Model\\s*Answer|Detailed\\s*Solution|Explication|Lösung)[\\.\\:\\s\\-]+|Chọn\\s+[A-D0-9,\\.\\-]+\\s*[\\.\\:\\s\\-]+)(.*)",
+            "^(?:参考答案|试题解析|详细解析|解答|解析)[\\.\\:\\s\\-]+(.*)"
+          ],
+          "questionNumberPatterns": [
+            "^(?:Câu|Bài|Question|Item|Aufgabe|Exercice|CÂU|BÀI|Problem|Task|Frage|Domanda|Pregunta|第)?\\s*(\\d+)",
+            "^(\\d+)\\s*[\\.\\:\\)\\-]"
+          ]
+        },
         "scoreStrategy": "ALL_OR_NOTHING"
       }
     },
     {
       "ruleCode": "INTERNATIONAL_IELTS_TOEFL",
-      "ruleName": "Luyện Thi Quốc Tế IELTS / TOEFL Academic (Reading & Listening)",
-      "targetExamType": "IELTS_TOEFL",
+      "ruleName": "Khảo Thí IELTS / TOEFL Academic (Reading & Listening)",
+      "targetExamType": "IELTS",
       "language": "en",
-      "priority": 4,
+      "priority": 55,
       "isActive": true,
-      "description": "Nhận diện cấu trúc đề thi IELTS và TOEFL với các dạng: Multiple Choice, True/False/Not Given, Matching Headings, Fill-in-the-blank.",
+      "description": "Nhận diện đề thi IELTS Reading / Listening với các dạng Multiple Choice, Matching Headings, True/False/Not Given, Summary Completion.",
       "anchorSpec": {
-        "regexPattern": "^(?:Question|Q\\.?|Item)\\s+(\\d+)[-\\.:\\s]+",
+        "regexPattern": "^(?:Questions?|Items?)\\s*(\\d+)",
         "questionNumberGroupIndex": 1,
         "sectionMarkers": [
-          "READING PASSAGE",
-          "SECTION",
-          "PART",
-          "LISTENING SECTION"
+          "READING PASSAGE 1",
+          "READING PASSAGE 2",
+          "READING PASSAGE 3",
+          "SECTION 1",
+          "SECTION 2",
+          "SECTION 3",
+          "SECTION 4"
         ]
       },
       "stimulusSpec": {
         "supportMathTypeWmf": false,
         "supportVectorSvg": true,
         "extractInlineImages": true,
-        "readingPassageStartRegex": "^(?:Read(?:ing)?\\s+Passage|The following passage)",
-        "readingPassageRangeRegex": "\\bquestions\\s+(\\d+)[-–](\\d+)\\b"
+        "readingPassageStartRegex": "^(?:READING\\s+PASSAGE\\s+\\d+|Read\\s+the\\s+following\\s+passage)"
       },
       "interactionSpec": {
         "defaultQuestionType": "SINGLE",
-        "optionRegexPattern": "^([A-Da-d])[\\.\\)\\s]+(.+)$",
+        "optionRegexPattern": "^(?:([A-H])|[(]([A-H])[)])[\\.\\:\\s\\-]+(.*)$",
         "optionLabelGroupIndex": 1,
-        "optionContentGroupIndex": 2
+        "optionContentGroupIndex": 3
       },
       "evaluationSpec": {
-        "answerRegexPattern": "^(?:Answer|Key|Correct Answer)[:\\s]+([A-Da-dTFNG]+)",
+        "answerRegexPattern": "^(?:Answers?|Keys?)[\\.\\:\\s\\-]+([A-H0-9\\,\\s]+)",
         "answerGroupIndex": 1,
-        "explanationRegexPattern": "^(?:Explanation|Rationale|Script)[:\\s]",
+        "explanationRegexPattern": "^(?:Explanation|Analysis)",
+        "inlineExtraction": {
+          "singleChoiceExtractionPatterns": [
+            "(?:^|[\\.\\;\\,\\!\\s]+)(?:Do\\s*đó|Suy\\s*ra|Vậy|Hence|Therefore|Par\\s*conséquent|Folglich)?\\s*(?:ta\\s*)?(?:Chọn|Ch[oọ\\?]n|Choose|Option|Select|Choisir)\\s*(?:câu\\s*|đáp\\s*án\\s*|phương\\s*án\\s*)?([A-G])\\b",
+            "(?:^|[\\.\\;\\,\\!\\s]+)(?:Do\\s*đó|Suy\\s*ra|Vậy|Hence|Therefore)?\\s*(?:ta\\s*có\\s*)?(?:đáp\\s*án|dap\\s*an|phương\\s*án|answer|key|réponse)(?:\\s*(?:đúng\\s*)?là|\\s*is|\\s*=)?[\\:\\s]+([A-G])\\b",
+            "\\blà\\s+đáp\\s*án\\s+([A-G])\\b",
+            "\\b([A-G])\\s*(?:là\\s*đáp\\s*án|đúng|is\\s+the\\s+(?:correct\\s+)?answer|is\\s+correct|est\\s+la\\s+bonne\\s+réponse)\\b",
+            "(?:故选|答案为|正确答案是|正确选项是)[\\:\\s]*([A-G])\\b"
+          ],
+          "numericValueExtractionPatterns": [
+            "(?:^|[\\.\\;\\,\\!\\s]+)(?:Do\\s*đó|Suy\\s*ra|Vậy|Hence|Therefore)?\\s*(?:Đáp\\s*số|Đáp\\s*án|Dap\\s*so|Dap\\s*an|Kết\\s*quả|Giá\\s*trị\\s*cần\\s*tìm|Result|Answer|Value|Valeur)(?:\\s*(?:đúng\\s*)?(?:là|bằng|\\s*is|\\s*=))?[\\.\\:\\s\\=]+\\$?([0-9\\,\\.\\-\\+\\/]+)\\$?",
+            "(?:计算结果为|答案为|最终结果|结果是)[\\.\\:\\s\\=]+([0-9\\,\\.\\-\\+\\/]+)"
+          ],
+          "trueFalseExtractionPatterns": [
+            "(?:^|[\\(\\s\\[])([a-d1-4])[\\)\\.\\:\\]]\\s*.*?\\b(?:chọn\\s+)?(đúng|sai|d|s|true|false|t|f|vrai|faux|richtig|falsch)\\b",
+            "\\b(?:ý|mệnh\\s*đề|khẳng\\s*định|statement|proposition|assertion)\\s+([a-d1-4])\\b.*?\\b(?:chọn\\s+)?(đúng|sai|d|s|true|false|t|f|vrai|faux|richtig|falsch)\\b",
+            "(?:^|[\\(\\s\\[])([a-d1-4])[\\)\\.\\:\\]]\\s*.*?\\b(正确|错误|对|错)\\b"
+          ],
+          "subItemMarkerPatterns": [
+            "^(?:(?:ý|mệnh\\s*đề|khẳng\\s*định|bước|phần|statement|proposition|item|option|step|part)\\s*)?[\\(\\[]?([a-d1-4])[\\)\\]\\.\\:]\\s*(?:[\\-\\:\\.]\\s*)?(.*)",
+            "^(?:第)?\\s*([1-4a-dA-D])\\s*[小题项点\\.\\:\\)\\-]\\s*(.*)"
+          ],
+          "explanationStartPatterns": [
+            "^(?:(?:Lời\\s*giải|L[.\\?\\s]*i\\s*gi[.\\?\\s]*i|Hướng\\s*dẫn\\s*(?:giải|chấm|ý\\s*giải)|Hu?ng\\s*d?n\\s*(?:gi?i|ch?m)|HƯỚNG\\s*DẪN|LỜI\\s*GIẢI|HD|Giải\\s*thích|Gợi\\s*ý(?:\\s*làm\\s*bài|\\s*giải)?|Ý\\s*tưởng\\s*giải|Sơ\\s*đồ\\s*giải|Biểu\\s*điểm|Thang\\s*điểm|Explanation|Rationale|Rubric|Marking\\s*Scheme|Solution|Model\\s*Answer|Detailed\\s*Solution|Explication|Lösung)[\\.\\:\\s\\-]+|Chọn\\s+[A-D0-9,\\.\\-]+\\s*[\\.\\:\\s\\-]+)(.*)",
+            "^(?:参考答案|试题解析|详细解析|解答|解析)[\\.\\:\\s\\-]+(.*)"
+          ],
+          "questionNumberPatterns": [
+            "^(?:Câu|Bài|Question|Item|Aufgabe|Exercice|CÂU|BÀI|Problem|Task|Frage|Domanda|Pregunta|第)?\\s*(\\d+)",
+            "^(\\d+)\\s*[\\.\\:\\)\\-]"
+          ]
+        },
         "scoreStrategy": "ALL_OR_NOTHING"
       }
     },
     {
-      "ruleCode": "GERMANY_ABITUR_STANDARD",
-      "ruleName": "Kỳ Thi Tú Tài Quốc Gia Đức (Abitur Prüfungen)",
-      "targetExamType": "ABITUR",
-      "language": "de",
-      "priority": 4,
+      "ruleCode": "INTERNATIONAL_IB_AP_STEM",
+      "ruleName": "Tú Tài Quốc Tế IB Diploma & Advanced Placement STEM",
+      "targetExamType": "IB_AP",
+      "language": "en",
+      "priority": 60,
       "isActive": true,
-      "description": "Nhận diện đề thi tốt nghiệp trung học Đức (Abitur) với cấu trúc Aufgabe / Frage và Lösung / Erklärung.",
+      "description": "Nhận diện đề thi IB DP (Mathematics, Physics, Chemistry) và AP (Calculus, Physics C) kết hợp trắc nghiệm nhiều phương án và câu hỏi Free Response đa bước.",
       "anchorSpec": {
-        "regexPattern": "^(?:Aufgabe|Frage)\\s+(\\d+)[\\.\\:\\s\\-]+",
+        "regexPattern": "^(?:Question|Aufgabe|Exercice|Pregunta)\\s*(\\d+)(?:[\\.\\:\\-–—\\)]|\\s*[\\.\\:\\-–—\\)]|\\s*$)",
         "questionNumberGroupIndex": 1,
         "sectionMarkers": [
-          "TEIL A",
-          "TEIL B",
-          "PFLICHTTEIL",
-          "WAHLTEIL"
+          "SECTION A",
+          "SECTION B",
+          "PART A",
+          "PART B",
+          "FREE RESPONSE"
         ]
       },
       "stimulusSpec": {
@@ -726,31 +1391,63 @@
       },
       "interactionSpec": {
         "defaultQuestionType": "SINGLE",
-        "optionRegexPattern": "^([A-Da-d])[\\.\\)\\s]+(.+)$",
+        "optionRegexPattern": "^(?:([A-E])|[(]([A-E])[)])[\\.\\:\\s\\-]+(.*)$",
         "optionLabelGroupIndex": 1,
-        "optionContentGroupIndex": 2
+        "optionContentGroupIndex": 3
       },
       "evaluationSpec": {
-        "answerRegexPattern": "^(?:Lösung|Antwort|Richtige\\s+Antwort)[\\s:]+([A-Da-d])",
+        "answerRegexPattern": "^(?:Marking\\s*Scheme|Solution|Answer)[\\.\\:\\s\\-]+(.*)",
         "answerGroupIndex": 1,
-        "explanationRegexPattern": "^(?:Erklärung|Lösungsweg|Begründung)[\\s:]",
-        "scoreStrategy": "ALL_OR_NOTHING"
+        "explanationRegexPattern": "^(?:Marking\\s*Scheme|Solution|Model\\s*Answer)",
+        "inlineExtraction": {
+          "singleChoiceExtractionPatterns": [
+            "(?:^|[\\.\\;\\,\\!\\s]+)(?:Do\\s*đó|Suy\\s*ra|Vậy|Hence|Therefore|Par\\s*conséquent|Folglich)?\\s*(?:ta\\s*)?(?:Chọn|Ch[oọ\\?]n|Choose|Option|Select|Choisir)\\s*(?:câu\\s*|đáp\\s*án\\s*|phương\\s*án\\s*)?([A-G])\\b",
+            "(?:^|[\\.\\;\\,\\!\\s]+)(?:Do\\s*đó|Suy\\s*ra|Vậy|Hence|Therefore)?\\s*(?:ta\\s*có\\s*)?(?:đáp\\s*án|dap\\s*an|phương\\s*án|answer|key|réponse)(?:\\s*(?:đúng\\s*)?là|\\s*is|\\s*=)?[\\:\\s]+([A-G])\\b",
+            "\\blà\\s+đáp\\s*án\\s+([A-G])\\b",
+            "\\b([A-G])\\s*(?:là\\s*đáp\\s*án|đúng|is\\s+the\\s+(?:correct\\s+)?answer|is\\s+correct|est\\s+la\\s+bonne\\s+réponse)\\b",
+            "(?:故选|答案为|正确答案是|正确选项是)[\\:\\s]*([A-G])\\b"
+          ],
+          "numericValueExtractionPatterns": [
+            "(?:^|[\\.\\;\\,\\!\\s]+)(?:Do\\s*đó|Suy\\s*ra|Vậy|Hence|Therefore)?\\s*(?:Đáp\\s*số|Đáp\\s*án|Dap\\s*so|Dap\\s*an|Kết\\s*quả|Giá\\s*trị\\s*cần\\s*tìm|Result|Answer|Value|Valeur)(?:\\s*(?:đúng\\s*)?(?:là|bằng|\\s*is|\\s*=))?[\\.\\:\\s\\=]+\\$?([0-9\\,\\.\\-\\+\\/]+)\\$?",
+            "(?:计算结果为|答案为|最终结果|结果是)[\\.\\:\\s\\=]+([0-9\\,\\.\\-\\+\\/]+)"
+          ],
+          "trueFalseExtractionPatterns": [
+            "(?:^|[\\(\\s\\[])([a-d1-4])[\\)\\.\\:\\]]\\s*.*?\\b(?:chọn\\s+)?(đúng|sai|d|s|true|false|t|f|vrai|faux|richtig|falsch)\\b",
+            "\\b(?:ý|mệnh\\s*đề|khẳng\\s*định|statement|proposition|assertion)\\s+([a-d1-4])\\b.*?\\b(?:chọn\\s+)?(đúng|sai|d|s|true|false|t|f|vrai|faux|richtig|falsch)\\b",
+            "(?:^|[\\(\\s\\[])([a-d1-4])[\\)\\.\\:\\]]\\s*.*?\\b(正确|错误|对|错)\\b"
+          ],
+          "subItemMarkerPatterns": [
+            "^(?:(?:ý|mệnh\\s*đề|khẳng\\s*định|bước|phần|statement|proposition|item|option|step|part)\\s*)?[\\(\\[]?([a-d1-4])[\\)\\]\\.\\:]\\s*(?:[\\-\\:\\.]\\s*)?(.*)",
+            "^(?:第)?\\s*([1-4a-dA-D])\\s*[小题项点\\.\\:\\)\\-]\\s*(.*)"
+          ],
+          "explanationStartPatterns": [
+            "^(?:(?:Lời\\s*giải|L[.\\?\\s]*i\\s*gi[.\\?\\s]*i|Hướng\\s*dẫn\\s*(?:giải|chấm|ý\\s*giải)|Hu?ng\\s*d?n\\s*(?:gi?i|ch?m)|HƯỚNG\\s*DẪN|LỜI\\s*GIẢI|HD|Giải\\s*thích|Gợi\\s*ý(?:\\s*làm\\s*bài|\\s*giải)?|Ý\\s*tưởng\\s*giải|Sơ\\s*đồ\\s*giải|Biểu\\s*điểm|Thang\\s*điểm|Explanation|Rationale|Rubric|Marking\\s*Scheme|Solution|Model\\s*Answer|Detailed\\s*Solution|Explication|Lösung)[\\.\\:\\s\\-]+|Chọn\\s+[A-D0-9,\\.\\-]+\\s*[\\.\\:\\s\\-]+)(.*)",
+            "^(?:参考答案|试题解析|详细解析|解答|解析)[\\.\\:\\s\\-]+(.*)"
+          ],
+          "questionNumberPatterns": [
+            "^(?:Câu|Bài|Question|Item|Aufgabe|Exercice|CÂU|BÀI|Problem|Task|Frage|Domanda|Pregunta|第)?\\s*(\\d+)",
+            "^(\\d+)\\s*[\\.\\:\\)\\-]"
+          ]
+        },
+        "scoreStrategy": "RUBRIC_STEPPED"
       }
     },
     {
-      "ruleCode": "CAMBRIDGE_A_LEVELS_STANDARD",
-      "ruleName": "Khảo Thí Cambridge Quốc Tế (Cambridge A/AS Levels & IGCSE)",
+      "ruleCode": "INTERNATIONAL_CAMBRIDGE_A_LEVELS",
+      "ruleName": "Khảo Thí Cambridge Quốc Tế (A/AS Levels & IGCSE)",
       "targetExamType": "CAMBRIDGE",
       "language": "en",
-      "priority": 4,
+      "priority": 65,
       "isActive": true,
-      "description": "Nhận diện chuẩn đề thi Cambridge International Examinations với cấu trúc Question X và Mark scheme / Guidance.",
+      "description": "Nhận diện cấu trúc khảo thí Cambridge Assessment International Education (CIE / CAIE) với mã đề Paper 1, Paper 2, Paper 3.",
       "anchorSpec": {
-        "regexPattern": "^(?:Question|Problem)\\s*(\\d+)[\\.\\:\\s\\-]+",
+        "regexPattern": "^(?:(?:Question|Item)\\s*)?(\\d+)[\\.\\:\\)]\\s*",
         "questionNumberGroupIndex": 1,
         "sectionMarkers": [
           "PAPER 1",
           "PAPER 2",
+          "PAPER 3",
+          "PAPER 4",
           "SECTION A",
           "SECTION B"
         ]
@@ -762,247 +1459,114 @@
       },
       "interactionSpec": {
         "defaultQuestionType": "SINGLE",
-        "optionRegexPattern": "^[(]?([a-d]|[A-D])[)][\\.\\s]+(.+)$",
-        "optionLabelGroupIndex": 1,
-        "optionContentGroupIndex": 2
-      },
-      "evaluationSpec": {
-        "answerRegexPattern": "^(?:Answer|Mark scheme|Key)[\\s:]+[(]?([a-d]|[A-D])[)]?",
-        "answerGroupIndex": 1,
-        "explanationRegexPattern": "^(?:Guidance|Examiner(?:'s)? Report|Note)[\\s:]",
-        "scoreStrategy": "ALL_OR_NOTHING"
-      }
-    },
-    {
-      "ruleCode": "VN_THCS_MATH_SEMESTER",
-      "ruleName": "Đề Kiểm Tra / Ôn Tập Môn Toán THCS (KNTT / CTM / Cánh Diều)",
-      "targetExamType": "THCS_MATH",
-      "language": "vi",
-      "priority": 12,
-      "isActive": true,
-      "description": "Nhận diện đề thi kiểm tra định kỳ và ôn tập môn Toán THCS lớp 6, 7, 8, 9 kết hợp trắc nghiệm khách quan và bài tập tự luận có MathType/OMML.",
-      "anchorSpec": {
-        "regexPattern": "^(?:Câu|Bài|Q)\\s*(\\d+)[\\.\\:\\s\\-]+",
-        "questionNumberGroupIndex": 1,
-        "sectionMarkers": [
-          "PHẦN I. TRẮC NGHIỆM",
-          "PHẦN II. TỰ LUẬN",
-          "I. TRẮC NGHIỆM",
-          "II. TỰ LUẬN",
-          "PHẦN TRẮC NGHIỆM",
-          "PHẦN TỰ LUẬN",
-          "A. TRẮC NGHIỆM",
-          "B. TỰ LUẬN"
-        ]
-      },
-      "stimulusSpec": {
-        "supportMathTypeWmf": true,
-        "supportVectorSvg": true,
-        "extractInlineImages": true
-      },
-      "interactionSpec": {
-        "defaultQuestionType": "SINGLE",
         "optionRegexPattern": "^(?:([A-D])|[(]([A-D])[)])[\\.\\:\\s\\-]+(.*)$",
         "optionLabelGroupIndex": 1,
         "optionContentGroupIndex": 3
       },
       "evaluationSpec": {
-        "answerRegexPattern": "^(?:ĐÁP\\s*ÁN|HƯỚNG\\s*DẪN\\s*CHẤM|LỜI\\s*GIẢI|BẢNG\\s*ĐÁP\\s*ÁN)[\\.\\:\\s\\-]+([A-D0-9a-d\\,\\s]+)",
+        "answerRegexPattern": "^(?:Mark\\s*Scheme|Key|Answer)[\\.\\:\\s\\-]+(.*)",
         "answerGroupIndex": 1,
-        "explanationRegexPattern": "^(?:Lời\\s*giải|Hướng\\s*dẫn|HD|Giải\\s*thích|Gợi\\s*ý)\\b",
+        "explanationRegexPattern": "^(?:Mark\\s*Scheme|Examiner\\s*Report)",
+        "inlineExtraction": {
+          "singleChoiceExtractionPatterns": [
+            "(?:^|[\\.\\;\\,\\!\\s]+)(?:Do\\s*đó|Suy\\s*ra|Vậy|Hence|Therefore|Par\\s*conséquent|Folglich)?\\s*(?:ta\\s*)?(?:Chọn|Ch[oọ\\?]n|Choose|Option|Select|Choisir)\\s*(?:câu\\s*|đáp\\s*án\\s*|phương\\s*án\\s*)?([A-G])\\b",
+            "(?:^|[\\.\\;\\,\\!\\s]+)(?:Do\\s*đó|Suy\\s*ra|Vậy|Hence|Therefore)?\\s*(?:ta\\s*có\\s*)?(?:đáp\\s*án|dap\\s*an|phương\\s*án|answer|key|réponse)(?:\\s*(?:đúng\\s*)?là|\\s*is|\\s*=)?[\\:\\s]+([A-G])\\b",
+            "\\blà\\s+đáp\\s*án\\s+([A-G])\\b",
+            "\\b([A-G])\\s*(?:là\\s*đáp\\s*án|đúng|is\\s+the\\s+(?:correct\\s+)?answer|is\\s+correct|est\\s+la\\s+bonne\\s+réponse)\\b",
+            "(?:故选|答案为|正确答案是|正确选项是)[\\:\\s]*([A-G])\\b"
+          ],
+          "numericValueExtractionPatterns": [
+            "(?:^|[\\.\\;\\,\\!\\s]+)(?:Do\\s*đó|Suy\\s*ra|Vậy|Hence|Therefore)?\\s*(?:Đáp\\s*số|Đáp\\s*án|Dap\\s*so|Dap\\s*an|Kết\\s*quả|Giá\\s*trị\\s*cần\\s*tìm|Result|Answer|Value|Valeur)(?:\\s*(?:đúng\\s*)?(?:là|bằng|\\s*is|\\s*=))?[\\.\\:\\s\\=]+\\$?([0-9\\,\\.\\-\\+\\/]+)\\$?",
+            "(?:计算结果为|答案为|最终结果|结果是)[\\.\\:\\s\\=]+([0-9\\,\\.\\-\\+\\/]+)"
+          ],
+          "trueFalseExtractionPatterns": [
+            "(?:^|[\\(\\s\\[])([a-d1-4])[\\)\\.\\:\\]]\\s*.*?\\b(?:chọn\\s+)?(đúng|sai|d|s|true|false|t|f|vrai|faux|richtig|falsch)\\b",
+            "\\b(?:ý|mệnh\\s*đề|khẳng\\s*định|statement|proposition|assertion)\\s+([a-d1-4])\\b.*?\\b(?:chọn\\s+)?(đúng|sai|d|s|true|false|t|f|vrai|faux|richtig|falsch)\\b",
+            "(?:^|[\\(\\s\\[])([a-d1-4])[\\)\\.\\:\\]]\\s*.*?\\b(正确|错误|对|错)\\b"
+          ],
+          "subItemMarkerPatterns": [
+            "^(?:(?:ý|mệnh\\s*đề|khẳng\\s*định|bước|phần|statement|proposition|item|option|step|part)\\s*)?[\\(\\[]?([a-d1-4])[\\)\\]\\.\\:]\\s*(?:[\\-\\:\\.]\\s*)?(.*)",
+            "^(?:第)?\\s*([1-4a-dA-D])\\s*[小题项点\\.\\:\\)\\-]\\s*(.*)"
+          ],
+          "explanationStartPatterns": [
+            "^(?:(?:Lời\\s*giải|L[.\\?\\s]*i\\s*gi[.\\?\\s]*i|Hướng\\s*dẫn\\s*(?:giải|chấm|ý\\s*giải)|Hu?ng\\s*d?n\\s*(?:gi?i|ch?m)|HƯỚNG\\s*DẪN|LỜI\\s*GIẢI|HD|Giải\\s*thích|Gợi\\s*ý(?:\\s*làm\\s*bài|\\s*giải)?|Ý\\s*tưởng\\s*giải|Sơ\\s*đồ\\s*giải|Biểu\\s*điểm|Thang\\s*điểm|Explanation|Rationale|Rubric|Marking\\s*Scheme|Solution|Model\\s*Answer|Detailed\\s*Solution|Explication|Lösung)[\\.\\:\\s\\-]+|Chọn\\s+[A-D0-9,\\.\\-]+\\s*[\\.\\:\\s\\-]+)(.*)",
+            "^(?:参考答案|试题解析|详细解析|解答|解析)[\\.\\:\\s\\-]+(.*)"
+          ],
+          "questionNumberPatterns": [
+            "^(?:Câu|Bài|Question|Item|Aufgabe|Exercice|CÂU|BÀI|Problem|Task|Frage|Domanda|Pregunta|第)?\\s*(\\d+)",
+            "^(\\d+)\\s*[\\.\\:\\)\\-]"
+          ]
+        },
         "scoreStrategy": "ALL_OR_NOTHING"
       }
     },
     {
-      "ruleCode": "VN_THCS_ENGLISH_GLOBAL",
-      "ruleName": "Đề Kiểm Tra Tiếng Anh THCS (Global Success / Friends Plus)",
-      "targetExamType": "THCS_ENGLISH",
-      "language": "en",
-      "priority": 11,
+      "ruleCode": "ASIAN_GAOKAO_SUNEUNG",
+      "ruleName": "Cao Khảo Trung Quốc (高考) & Suneung Hàn Quốc (수능)",
+      "targetExamType": "ASIAN",
+      "language": "zh",
+      "priority": 70,
       "isActive": true,
-      "description": "Nhận diện đề thi khảo sát chất lượng và học kỳ môn Tiếng Anh THCS theo cấu trúc 4 phần Listening, Language Focus, Reading, Writing. Hỗ trợ điểm neo số trần (1. / 2) / 3.A.) khi dòng có bằng chứng tiếng Anh.",
+      "description": "Nhận diện đề thi tuyển sinh đại học quốc gia Trung Quốc (Gaokao) và Hàn Quốc (CSAT Suneung).",
       "anchorSpec": {
-        "regexPattern": "^(?:(?:Question|Câu|Q\\.?)\\s*)?(\\d{1,3})\\s*[\\.\\:\\)\\-]?\\s*(?=[A-Za-z_“\"\\'(…\\.])",
+        "regexPattern": "^(?:第)?\\s*(\\d+)\\s*(?:题|小题|问|번|문|제)?[\\.\\:\\、\\) ]+",
         "questionNumberGroupIndex": 1,
         "sectionMarkers": [
-          "PART A: LISTENING",
-          "PART B: LANGUAGE FOCUS",
-          "PART C: READING",
-          "PART D: WRITING",
-          "SECTION A",
-          "SECTION B",
-          "PHẦN A",
-          "PHẦN B"
+          "选择题",
+          "单项选择题",
+          "多项选择题",
+          "填空题",
+          "解答题",
+          "제1교시",
+          "제2교시"
         ]
       },
       "stimulusSpec": {
-        "supportMathTypeWmf": false,
+        "supportMathTypeWmf": true,
         "supportVectorSvg": true,
-        "extractInlineImages": true,
-        "readingPassageStartRegex": "^(?:Read\\s+(?:the\\s+)?(?:following\\s+)?(?:passage|text)|Choose\\s+the\\s+word)",
-        "readingPassageRangeRegex": "\\b(?:questions|từ|from)\\s*(\\d+)\\s*(?:to|đến|-|–)\\s*(\\d+)\\b"
+        "extractInlineImages": true
       },
       "interactionSpec": {
         "defaultQuestionType": "SINGLE",
-        "optionRegexPattern": "^(?:([A-D])|[(]([A-D])[)])[\\.\\:\\s\\-]+(.*)$",
+        "optionRegexPattern": "^(?:([A-D])|[【（(]([A-D])[】）)])[\\.\\:\\、\\s\\-]+(.*)$",
         "optionLabelGroupIndex": 1,
         "optionContentGroupIndex": 3
       },
       "evaluationSpec": {
-        "answerRegexPattern": "^(?:ĐÁP\\s*ÁN|ANSWER|KEY)[\\.\\:\\s\\-]+([A-D0-9a-d\\,\\s]+)",
+        "answerRegexPattern": "^(?:答案|参考答案|试题解析)[\\.\\:\\s\\-]+([A-D0-9\\,\\s]+)",
         "answerGroupIndex": 1,
-        "explanationRegexPattern": "^(?:Explanation|Lời\\s*giải|Hướng\\s*dẫn)\\b",
+        "explanationRegexPattern": "^(?:试题解析|详细解析|解答|解析)\\b",
+        "inlineExtraction": {
+          "singleChoiceExtractionPatterns": [
+            "(?:^|[\\.\\;\\,\\!\\s]+)(?:Do\\s*đó|Suy\\s*ra|Vậy|Hence|Therefore|Par\\s*conséquent|Folglich)?\\s*(?:ta\\s*)?(?:Chọn|Ch[oọ\\?]n|Choose|Option|Select|Choisir)\\s*(?:câu\\s*|đáp\\s*án\\s*|phương\\s*án\\s*)?([A-G])\\b",
+            "(?:^|[\\.\\;\\,\\!\\s]+)(?:Do\\s*đó|Suy\\s*ra|Vậy|Hence|Therefore)?\\s*(?:ta\\s*có\\s*)?(?:đáp\\s*án|dap\\s*an|phương\\s*án|answer|key|réponse)(?:\\s*(?:đúng\\s*)?là|\\s*is|\\s*=)?[\\:\\s]+([A-G])\\b",
+            "\\blà\\s+đáp\\s*án\\s+([A-G])\\b",
+            "\\b([A-G])\\s*(?:là\\s*đáp\\s*án|đúng|is\\s+the\\s+(?:correct\\s+)?answer|is\\s+correct|est\\s+la\\s+bonne\\s+réponse)\\b",
+            "(?:故选|答案为|正确答案是|正确选项是)[\\:\\s]*([A-G])\\b"
+          ],
+          "numericValueExtractionPatterns": [
+            "(?:^|[\\.\\;\\,\\!\\s]+)(?:Do\\s*đó|Suy\\s*ra|Vậy|Hence|Therefore)?\\s*(?:Đáp\\s*số|Đáp\\s*án|Dap\\s*so|Dap\\s*an|Kết\\s*quả|Giá\\s*trị\\s*cần\\s*tìm|Result|Answer|Value|Valeur)(?:\\s*(?:đúng\\s*)?(?:là|bằng|\\s*is|\\s*=))?[\\.\\:\\s\\=]+\\$?([0-9\\,\\.\\-\\+\\/]+)\\$?",
+            "(?:计算结果为|答案为|最终结果|结果是)[\\.\\:\\s\\=]+([0-9\\,\\.\\-\\+\\/]+)"
+          ],
+          "trueFalseExtractionPatterns": [
+            "(?:^|[\\(\\s\\[])([a-d1-4])[\\)\\.\\:\\]]\\s*.*?\\b(?:chọn\\s+)?(đúng|sai|d|s|true|false|t|f|vrai|faux|richtig|falsch)\\b",
+            "\\b(?:ý|mệnh\\s*đề|khẳng\\s*định|statement|proposition|assertion)\\s+([a-d1-4])\\b.*?\\b(?:chọn\\s+)?(đúng|sai|d|s|true|false|t|f|vrai|faux|richtig|falsch)\\b",
+            "(?:^|[\\(\\s\\[])([a-d1-4])[\\)\\.\\:\\]]\\s*.*?\\b(正确|错误|对|错)\\b"
+          ],
+          "subItemMarkerPatterns": [
+            "^(?:(?:ý|mệnh\\s*đề|khẳng\\s*định|bước|phần|statement|proposition|item|option|step|part)\\s*)?[\\(\\[]?([a-d1-4])[\\)\\]\\.\\:]\\s*(?:[\\-\\:\\.]\\s*)?(.*)",
+            "^(?:第)?\\s*([1-4a-dA-D])\\s*[小题项点\\.\\:\\)\\-]\\s*(.*)"
+          ],
+          "explanationStartPatterns": [
+            "^(?:(?:Lời\\s*giải|L[.\\?\\s]*i\\s*gi[.\\?\\s]*i|Hướng\\s*dẫn\\s*(?:giải|chấm|ý\\s*giải)|Hu?ng\\s*d?n\\s*(?:gi?i|ch?m)|HƯỚNG\\s*DẪN|LỜI\\s*GIẢI|HD|Giải\\s*thích|Gợi\\s*ý(?:\\s*làm\\s*bài|\\s*giải)?|Ý\\s*tưởng\\s*giải|Sơ\\s*đồ\\s*giải|Biểu\\s*điểm|Thang\\s*điểm|Explanation|Rationale|Rubric|Marking\\s*Scheme|Solution|Model\\s*Answer|Detailed\\s*Solution|Explication|Lösung)[\\.\\:\\s\\-]+|Chọn\\s+[A-D0-9,\\.\\-]+\\s*[\\.\\:\\s\\-]+)(.*)",
+            "^(?:参考答案|试题解析|详细解析|解答|解析)[\\.\\:\\s\\-]+(.*)"
+          ],
+          "questionNumberPatterns": [
+            "^(?:Câu|Bài|Question|Item|Aufgabe|Exercice|CÂU|BÀI|Problem|Task|Frage|Domanda|Pregunta|第)?\\s*(\\d+)",
+            "^(\\d+)\\s*[\\.\\:\\)\\-]"
+          ]
+        },
         "scoreStrategy": "ALL_OR_NOTHING"
-      }
-    },
-    {
-      "ruleCode": "VN_THCS_MATH_ESSAY",
-      "ruleName": "Tự Luận & Biểu Điểm Môn Toán THCS (Lớp 6, 7, 8, 9)",
-      "targetExamType": "THCS_MATH",
-      "language": "vi",
-      "priority": 12,
-      "isActive": false,
-      "description": "Nhận diện phần Tự luận đề thi Toán THCS theo các bài tập Bài 1, Bài 2... kèm thang điểm và hướng dẫn chấm từng bước.",
-      "anchorSpec": {
-        "regexPattern": "^(?:Bài|Bai|Câu|Item)\\s*(\\d+)[\\.\\:\\s\\-]*(?:[\\(\\[]([\\d\\,\\.]+)\\s*(?:điểm|đ)[\\)\\]])?",
-        "questionNumberGroupIndex": 1,
-        "sectionMarkers": [
-          "PHẦN II. TỰ LUẬN",
-          "II. TỰ LUẬN",
-          "PHẦN TỰ LUẬN",
-          "B. TỰ LUẬN",
-          "TỰ LUẬN:"
-        ]
-      },
-      "stimulusSpec": {
-        "supportMathTypeWmf": true,
-        "supportVectorSvg": true,
-        "extractInlineImages": true
-      },
-      "interactionSpec": {
-        "defaultQuestionType": "SHORT_ANSWER",
-        "optionRegexPattern": "^(?:([a-d])|[(]([a-d])[)])[\\.\\:\\)\\s\\-]+(.*)$"
-      },
-      "evaluationSpec": {
-        "answerRegexPattern": "^(?:ĐÁP\\s*ÁN|KẾT\\s*QUẢ|ĐÁP\\s*SỐ|HƯỚNG\\s*DẪN\\s*CHẤM|LỜI\\s*GIẢI)[\\.\\:\\s\\-]+(.*)",
-        "answerGroupIndex": 1,
-        "explanationRegexPattern": "^(?:Lời\\s*giải|Hướng\\s*dẫn|HD|Biểu\\s*điểm|Thang\\s*điểm|Nội\\s*dung\\s*đáp\\s*án)\\b",
-        "scoreStrategy": "PARTIAL_CREDIT"
-      }
-    },
-    {
-      "ruleCode": "VN_THCS_INLINE_KEY",
-      "ruleName": "Bảng Chuỗi Đáp Án Trắc Nghiệm Liền Mạch THCS",
-      "targetExamType": "THCS_MATH",
-      "language": "vi",
-      "priority": 13,
-      "isActive": false,
-      "description": "Bóc tách chuỗi đáp án trắc nghiệm viết liền trong đoạn văn dạng 1.A 2.B 3.C hoặc Câu 1: A Câu 2: B.",
-      "anchorSpec": {
-        "regexPattern": "^(?:(?:Câu|C[\\.\\?\\s]*u)\\s*)?\\b([1-9]\\d?)\\b\\s*[\\.\\:\\-\\)]\\s*([A-D])\\b",
-        "questionNumberGroupIndex": 1,
-        "sectionMarkers": [
-          "BẢNG ĐÁP ÁN",
-          "ĐÁP ÁN TRẮC NGHIỆM",
-          "HƯỚNG DẪN CHẤM",
-          "ĐÁP ÁN:"
-        ]
-      },
-      "stimulusSpec": {
-        "supportMathTypeWmf": false,
-        "supportVectorSvg": false,
-        "extractInlineImages": false
-      },
-      "interactionSpec": {
-        "defaultQuestionType": "SINGLE",
-        "optionRegexPattern": "^(?:([A-D])|[(]([A-D])[)])[\\.\\:\\s\\-]+(.*)$"
-      },
-      "evaluationSpec": {
-        "answerRegexPattern": "^(?:ĐÁP\\s*ÁN|ANSWER|KEY)[\\.\\:\\s\\-]+([A-D])",
-        "answerGroupIndex": 1,
-        "explanationRegexPattern": "^(?:Lời\\s*giải|Hướng\\s*dẫn)\\b",
-        "scoreStrategy": "ALL_OR_NOTHING"
-      }
-    },
-    {
-      "ruleCode": "VN_HIERARCHICAL_STEPPED_ESSAY",
-      "ruleName": "Tự Luận Đa Bước Phân Cấp & Thang Điểm (THCS / THPT)",
-      "targetExamType": "ESSAY",
-      "language": "vi",
-      "priority": 11,
-      "isActive": false,
-      "description": "Bóc tách bài thi tự luận đa tầng dạng Bài 1: a), b) kèm barem điểm từng bước (0.25đ, 0.5đ).",
-      "anchorSpec": {
-        "regexPattern": "^(?:Bài|Câu)\\s*(\\d+)(?:\\s*[\\(\\[]([0-9\\,\\.]+)\\s*(?:điểm|đ)[\\)\\]])?[\\.\\:\\s\\-]+",
-        "questionNumberGroupIndex": 1,
-        "maxScoreGroupIndex": 2,
-        "sectionMarkers": [
-          "PHẦN II. TỰ LUẬN",
-          "B. TỰ LUẬN",
-          "TỰ LUẬN",
-          "ESSAY"
-        ]
-      },
-      "stimulusSpec": {
-        "supportMathTypeWmf": true,
-        "supportVectorSvg": true,
-        "extractInlineImages": true
-      },
-      "interactionSpec": {
-        "defaultQuestionType": "ESSAY",
-        "subItemRegexPattern": "^(?:([a-d])|([1-4]))[\\.\\)\\s\\-]+(?:[\\(\\[]([0-9\\,\\.]+)\\s*(?:điểm|đ)[\\)\\]])?(.*)$",
-        "subItemLabelGroupIndex": 1,
-        "subItemScoreGroupIndex": 3,
-        "subItemContentGroupIndex": 4
-      },
-      "evaluationSpec": {
-        "rubricStepRegexPattern": "^(?:Bước\\s*(\\d+)|\\+)[\\.\\:\\s\\-]+(?:([0-9\\,\\.]+)\\s*đ)?(.*)$",
-        "explanationRegexPattern": "^(?:Lời\\s*giải|Hướng\\s*dẫn\\s*chấm|Biểu\\s*điểm|Đáp\\s*án)\\b",
-        "scoreStrategy": "RUBRIC_STEPPED"
-      }
-    },
-    {
-      "ruleCode": "UNIVERSAL_DETACHED_ANSWER_MATRIX",
-      "ruleName": "Trích Xuất Ma Trận Bảng Đáp Án Tách Rời Cuối Đề",
-      "targetExamType": "TABLE_MATRIX",
-      "language": "vi",
-      "priority": 5,
-      "isActive": false,
-      "description": "Bóc tách bảng đáp án ma trận tách rời ở cuối đề thi hoặc trang riêng và map ngược vào câu hỏi.",
-      "anchorSpec": {
-        "regexPattern": "^(?:BẢNG\\s*ĐÁP\\s*ÁN|ĐÁP\\s*ÁN|HƯỚNG\\s*DẪN\\s*CHẤM)",
-        "questionNumberGroupIndex": 1,
-        "sectionMarkers": [
-          "BẢNG ĐÁP ÁN",
-          "ĐÁP ÁN",
-          "HƯỚNG DẪN CHẤM"
-        ]
-      },
-      "stimulusSpec": {
-        "supportMathTypeWmf": false,
-        "supportVectorSvg": false,
-        "extractInlineImages": false
-      },
-      "interactionSpec": {
-        "defaultQuestionType": "SINGLE",
-        "optionRegexPattern": "^(?:([A-D])|[(]([A-D])[)])[\\.\\:\\s\\-]+(.*)$"
-      },
-      "evaluationSpec": {
-        "answerRegexPattern": "^(?:ĐÁP\\s*ÁN|ANSWER|KEY)[\\.\\:\\s\\-]+([A-D])",
-        "answerGroupIndex": 1,
-        "scoreStrategy": "ALL_OR_NOTHING"
-      },
-      "tableMatrixSpec": {
-        "headerPatterns": [
-          "Câu",
-          "Đ/A",
-          "Đáp án",
-          "Phần I",
-          "Phần II",
-          "Phần III"
-        ],
-        "orientation": "AUTO_DETECT",
-        "cellPattern": "^(?:(\\d+)[\\.\\-\\s\\:]+([A-D]|Đ|S|[\\-\\+]?\\d+[\\,\\.]?\\d*))$"
       }
     }
   ]
