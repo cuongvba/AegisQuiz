@@ -531,6 +531,22 @@ using (var scope = app.Services.CreateScope())
                     ALTER TABLE IF EXISTS ""Questions"" ADD COLUMN IF NOT EXISTS ""CreatedBy"" text NULL;
                     ALTER TABLE IF EXISTS ""Questions"" ADD COLUMN IF NOT EXISTS ""IsPublic"" boolean NOT NULL DEFAULT false;
 
+                    -- 2a. BẢNG QuestionContexts: Ngữ cảnh bài đọc hiểu dùng chung
+                    CREATE TABLE IF NOT EXISTS ""QuestionContexts"" (
+                        ""Id"" uuid NOT NULL PRIMARY KEY,
+                        ""Title"" text NOT NULL DEFAULT '',
+                        ""Content"" text NOT NULL DEFAULT '',
+                        ""ContentType"" text NOT NULL DEFAULT 'text',
+                        ""MediaUrl"" text NULL,
+                        ""ContentHash"" text NULL,
+                        ""TenantId"" uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
+                        ""CreatedAt"" timestamp with time zone NOT NULL DEFAULT now(),
+                        ""UpdatedAt"" timestamp with time zone NULL
+                    );
+                    CREATE INDEX IF NOT EXISTS ""IX_QuestionContexts_ContentHash"" ON ""QuestionContexts"" (""ContentHash"");
+                    CREATE INDEX IF NOT EXISTS ""IX_QuestionContexts_TenantId"" ON ""QuestionContexts"" (""TenantId"");
+                    CREATE INDEX IF NOT EXISTS ""IX_Questions_ContextId"" ON ""Questions"" (""ContextId"");
+
                     -- 2b. BẢNG Notebooks & NotebookChapters (AegisNotebook Sovereign 2026)
                     CREATE TABLE IF NOT EXISTS ""Notebooks"" (
                         ""Id"" uuid NOT NULL PRIMARY KEY,
@@ -810,6 +826,8 @@ using (var scope = app.Services.CreateScope())
                       ('c0000001-0000-0000-0000-000000000004', 'AGI_CYBERNETICS', 'Viện Siêu Trí Tuệ & Điều Khiển Học', 'Kiến trúc AGI & Căn chỉnh nhân loại', '/AI/SUPERINTELLIGENCE/ALIGNMENT', 'Sự xuất hiện của Siêu trí tuệ là bước tiến hóa tất yếu của thông tin vũ trụ.', 2990, true, now()),
                       ('c0000001-0000-0000-0000-000000000005', 'ECONOMICS', 'Viện Kinh Tế Chính Trị & Địa Chiến Lược', 'Kinh tế vĩ mô & Lý thuyết trò chơi', '/SOCIETY/ECONOMICS/GEOPOLITICS', 'Dòng chảy giá trị và phân bổ tài nguyên quyết định sự hưng thịnh của nền văn minh.', 2850, true, now()),
                       ('c0000001-0000-0000-0000-000000000006', 'LIFE_SCIENCES', 'Viện Khoa Học Sự Sống & Sinh Quyển', 'Sinh học phân tử & Sinh thái học', '/NATURE/BIOLOGY/EVOLUTION', 'Sự sống là cấu trúc tiêu tán vi mô chống lại entropy nhiệt động lực học.', 2880, true, now())
+                    ON CONFLICT (""CouncilCode"") DO NOTHING;
+
                     -- 11. BẢNG PaymentTransactions (Hạ tầng thanh toán đa cổng và Quỹ tài trợ tri ân)
                     CREATE TABLE IF NOT EXISTS ""PaymentTransactions"" (
                         ""TransactionId"" uuid NOT NULL PRIMARY KEY,
@@ -842,6 +860,24 @@ using (var scope = app.Services.CreateScope())
                     ALTER TABLE ""PaymentTransactions"" ADD COLUMN IF NOT EXISTS ""CompletedAt"" timestamp with time zone;
                     CREATE INDEX IF NOT EXISTS ""IX_PaymentTransactions_OrderCode"" ON ""PaymentTransactions"" (""OrderCode"");
                     CREATE INDEX IF NOT EXISTS ""IX_PaymentTransactions_Provider"" ON ""PaymentTransactions"" (""Provider"");
+
+                    -- 12. BẢNG QuestionParsingRules (CIG Ingestion Grammar Engine 2026)
+                    CREATE TABLE IF NOT EXISTS ""QuestionParsingRules"" (
+                        ""Id"" uuid NOT NULL PRIMARY KEY,
+                        ""RuleCode"" text NOT NULL,
+                        ""RuleName"" text NOT NULL,
+                        ""Description"" text NULL,
+                        ""Scope"" text NOT NULL DEFAULT 'GLOBAL',
+                        ""Priority"" integer NOT NULL DEFAULT 100,
+                        ""IsActive"" boolean NOT NULL DEFAULT true,
+                        ""SpecJson"" text NOT NULL DEFAULT '{}',
+                        ""TenantId"" uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
+                        ""CreatedAt"" timestamp with time zone NOT NULL DEFAULT now(),
+                        ""UpdatedAt"" timestamp with time zone NULL
+                    );
+                    CREATE INDEX IF NOT EXISTS ""IX_QuestionParsingRules_IsActive"" ON ""QuestionParsingRules"" (""IsActive"");
+                    CREATE INDEX IF NOT EXISTS ""IX_QuestionParsingRules_Priority"" ON ""QuestionParsingRules"" (""Priority"");
+                    CREATE UNIQUE INDEX IF NOT EXISTS ""IX_QuestionParsingRules_TenantId_RuleCode"" ON ""QuestionParsingRules"" (""TenantId"", ""RuleCode"");
                 ");
                 log.LogInformation("[AegisQuiz] Auto-healing DDL executed successfully. All columns and tables guaranteed.");
             }
