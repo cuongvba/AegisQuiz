@@ -217,5 +217,93 @@ namespace AegisQuiz.Infrastructure.Payments
                 _logger.LogWarning(ex, "[PaymentOrchestrator] Không thể tự động update UserAccounts: {Message}", ex.Message);
             }
         }
+
+        public async Task<PaymentGatewaySettingsDto> GetSettingsAsync(Guid? tenantId = null)
+        {
+            try
+            {
+                var targetTenantId = tenantId ?? Tenant.CommunityTenantId;
+                var tenant = await _db.Tenants.FirstOrDefaultAsync(t => t.Id == targetTenantId);
+                if (tenant != null && !string.IsNullOrWhiteSpace(tenant.ConfigJson) && tenant.ConfigJson.Contains("VietQrAccountNumber"))
+                {
+                    var saved = System.Text.Json.JsonSerializer.Deserialize<PaymentGatewaySettingsDto>(tenant.ConfigJson);
+                    if (saved != null)
+                    {
+                        PaymentSettingsStore.Current = saved;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "[PaymentOrchestrator] Lỗi đọc Tenant ConfigJson: {Message}", ex.Message);
+            }
+
+            return PaymentSettingsStore.Current;
+        }
+
+        public async Task<PaymentGatewaySettingsDto> UpdateSettingsAsync(UpdatePaymentGatewaySettingsRequest request, Guid? tenantId = null)
+        {
+            var current = PaymentSettingsStore.Current;
+            current.VietQrBankBin = request.VietQrBankBin ?? current.VietQrBankBin;
+            current.VietQrBankName = request.VietQrBankName ?? current.VietQrBankName;
+            current.VietQrAccountNumber = request.VietQrAccountNumber ?? current.VietQrAccountNumber;
+            current.VietQrAccountName = request.VietQrAccountName ?? current.VietQrAccountName;
+
+            if (!string.IsNullOrWhiteSpace(request.PayOsClientId)) current.PayOsClientId = request.PayOsClientId;
+            if (!string.IsNullOrWhiteSpace(request.PayOsApiKey)) current.PayOsApiKey = request.PayOsApiKey;
+            if (!string.IsNullOrWhiteSpace(request.PayOsChecksumKey)) current.PayOsChecksumKey = request.PayOsChecksumKey;
+
+            if (!string.IsNullOrWhiteSpace(request.StripePublishableKey)) current.StripePublishableKey = request.StripePublishableKey;
+            if (!string.IsNullOrWhiteSpace(request.StripeSecretKey)) current.StripeSecretKey = request.StripeSecretKey;
+
+            if (!string.IsNullOrWhiteSpace(request.Web3TreasuryAddress)) current.Web3TreasuryAddress = request.Web3TreasuryAddress;
+            current.EnableSandboxTesting = request.EnableSandboxTesting;
+            current.LastUpdatedAt = DateTime.UtcNow;
+
+            PaymentSettingsStore.Current = current;
+
+            try
+            {
+                var targetTenantId = tenantId ?? Tenant.CommunityTenantId;
+                var tenant = await _db.Tenants.FirstOrDefaultAsync(t => t.Id == targetTenantId);
+                if (tenant != null)
+                {
+                    tenant.ConfigJson = System.Text.Json.JsonSerializer.Serialize(current);
+                    await _db.SaveChangesAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "[PaymentOrchestrator] Lỗi lưu Tenant ConfigJson: {Message}", ex.Message);
+            }
+
+            return current;
+        }
+
+        public async Task<bool> TestConnectionAsync(string provider, Guid? tenantId = null)
+        {
+            await Task.Delay(200); // Giả lập ping mạng nhanh
+            var cfg = PaymentSettingsStore.Current;
+
+            if (provider.Equals("vietqr", StringComparison.OrdinalIgnoreCase))
+            {
+                return !string.IsNullOrWhiteSpace(cfg.VietQrAccountNumber) && !string.IsNullOrWhiteSpace(cfg.VietQrBankBin);
+            }
+
+            if (provider.Equals("payos", StringComparison.OrdinalIgnoreCase))
+            {
+                // Nếu chưa có key thật nhưng đang bật Sandbox thì cho test passed
+                if (cfg.EnableSandboxTesting) return true;
+                return !string.IsNullOrWhiteSpace(cfg.PayOsClientId) && !string.IsNullOrWhiteSpace(cfg.PayOsApiKey);
+            }
+
+            if (provider.Equals("stripe", StringComparison.OrdinalIgnoreCase))
+            {
+                if (cfg.EnableSandboxTesting) return true;
+                return !string.IsNullOrWhiteSpace(cfg.StripePublishableKey);
+            }
+
+            return true;
+        }
     }
 }

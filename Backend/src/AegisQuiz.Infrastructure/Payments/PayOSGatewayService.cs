@@ -13,6 +13,19 @@ using AegisQuiz.Domain.Entities;
 
 namespace AegisQuiz.Infrastructure.Payments
 {
+    // Singleton In-Memory Store hỗ trợ 0ms Hot-Reload cho Payment Settings
+    public static class PaymentSettingsStore
+    {
+        private static PaymentGatewaySettingsDto _settings = new();
+        private static readonly object _lock = new();
+
+        public static PaymentGatewaySettingsDto Current
+        {
+            get { lock (_lock) { return _settings; } }
+            set { lock (_lock) { _settings = value; } }
+        }
+    }
+
     public class PayOSGatewayService : IPaymentGatewayStrategy
     {
         private readonly HttpClient _httpClient;
@@ -30,12 +43,31 @@ namespace AegisQuiz.Infrastructure.Payments
 
         public async Task<PaymentOrderResponseDto> CreatePaymentAsync(PaymentTransaction transaction, CreatePaymentOrderRequest request)
         {
-            var clientId = _config["PayOS:ClientId"] ?? Environment.GetEnvironmentVariable("PAYOS_CLIENT_ID") ?? "";
-            var apiKey = _config["PayOS:ApiKey"] ?? Environment.GetEnvironmentVariable("PAYOS_API_KEY") ?? "";
-            var checksumKey = _config["PayOS:ChecksumKey"] ?? Environment.GetEnvironmentVariable("PAYOS_CHECKSUM_KEY") ?? "";
-            var bankBin = _config["PayOS:BankBin"] ?? "970422"; // Mặc định MBBank
-            var accountNo = _config["PayOS:AccountNumber"] ?? "0868888888";
-            var accountName = _config["PayOS:AccountName"] ?? "AEGISQUIZ ENTERPRISE";
+            var dynamicCfg = PaymentSettingsStore.Current;
+
+            var clientId = !string.IsNullOrWhiteSpace(dynamicCfg.PayOsClientId) 
+                ? dynamicCfg.PayOsClientId 
+                : (_config["PayOS:ClientId"] ?? Environment.GetEnvironmentVariable("PAYOS_CLIENT_ID") ?? "");
+
+            var apiKey = !string.IsNullOrWhiteSpace(dynamicCfg.PayOsApiKey) 
+                ? dynamicCfg.PayOsApiKey 
+                : (_config["PayOS:ApiKey"] ?? Environment.GetEnvironmentVariable("PAYOS_API_KEY") ?? "");
+
+            var checksumKey = !string.IsNullOrWhiteSpace(dynamicCfg.PayOsChecksumKey) 
+                ? dynamicCfg.PayOsChecksumKey 
+                : (_config["PayOS:ChecksumKey"] ?? Environment.GetEnvironmentVariable("PAYOS_CHECKSUM_KEY") ?? "");
+
+            var bankBin = !string.IsNullOrWhiteSpace(dynamicCfg.VietQrBankBin) 
+                ? dynamicCfg.VietQrBankBin 
+                : (_config["PayOS:BankBin"] ?? "970422");
+
+            var accountNo = !string.IsNullOrWhiteSpace(dynamicCfg.VietQrAccountNumber) 
+                ? dynamicCfg.VietQrAccountNumber 
+                : (_config["PayOS:AccountNumber"] ?? "0868888888");
+
+            var accountName = !string.IsNullOrWhiteSpace(dynamicCfg.VietQrAccountName) 
+                ? dynamicCfg.VietQrAccountName 
+                : (_config["PayOS:AccountName"] ?? "AEGISQUIZ ENTERPRISE");
 
             var amountInt = (int)Math.Round(transaction.AmountRequired);
             var description = string.IsNullOrWhiteSpace(request.Description)

@@ -19,5 +19,8 @@ namespace AegisQuiz.Application.Payments
         Task<bool> HandlePayOSWebhookAsync(PayOSWebhookRequest webhook);
         Task<bool> HandleWeb3PaymentAsync(string paymentCode, decimal maticAmount, string txHash);
         Task<PaymentAnalyticsSummaryDto> GetPaymentAnalyticsAsync(Guid? tenantId = null);
+        Task<PaymentGatewaySettingsDto> GetSettingsAsync(Guid? tenantId = null);
+        Task<PaymentGatewaySettingsDto> UpdateSettingsAsync(UpdatePaymentGatewaySettingsRequest request, Guid? tenantId = null);
+        Task<bool> TestConnectionAsync(string provider, Guid? tenantId = null);
     }
 }

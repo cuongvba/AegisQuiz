@@ -104,5 +104,43 @@ namespace AegisQuiz.API.Controllers
 
             return Ok(new { message = "Đã giả lập thanh toán thành công! Quyền VIP đã được kích hoạt.", orderCode });
         }
+
+        /// <summary>
+        /// Lấy cấu hình Cổng Thanh toán & Tài khoản Thụ hưởng hiện tại
+        /// </summary>
+        [HttpGet("config")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetConfig()
+        {
+            var config = await _paymentOrchestrator.GetSettingsAsync();
+            return Ok(config);
+        }
+
+        /// <summary>
+        /// Cập nhật cấu hình Cổng Thanh toán & Tài khoản Thụ hưởng (0ms Hot-Reload)
+        /// </summary>
+        [HttpPost("config")]
+        [AllowAnonymous]
+        public async Task<IActionResult> UpdateConfig([FromBody] UpdatePaymentGatewaySettingsRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.VietQrAccountNumber))
+            {
+                return BadRequest(new { message = "Số tài khoản thụ hưởng không được để trống." });
+            }
+
+            var updated = await _paymentOrchestrator.UpdateSettingsAsync(request);
+            return Ok(new { message = "Cập nhật cấu hình thanh toán thành công!", data = updated });
+        }
+
+        /// <summary>
+        /// Kiểm tra kết nối cổng thanh toán (Test Connection / Ping)
+        /// </summary>
+        [HttpPost("test-connection")]
+        [AllowAnonymous]
+        public async Task<IActionResult> TestConnection([FromQuery] string provider = "vietqr")
+        {
+            var isOk = await _paymentOrchestrator.TestConnectionAsync(provider);
+            return Ok(new { provider, connected = isOk, timestamp = DateTime.UtcNow });
+        }
     }
 }

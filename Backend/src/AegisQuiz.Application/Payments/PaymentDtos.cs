@@ -97,4 +97,46 @@ namespace AegisQuiz.Application.Payments
         public string Code { get; set; } = string.Empty;
         public string Desc { get; set; } = string.Empty;
     }
+
+    // DTO Cấu hình Cổng Thanh toán & Tài khoản Thụ hưởng
+    public class PaymentGatewaySettingsDto
+    {
+        // 1. VietQR Napas Direct
+        public string VietQrBankBin { get; set; } = "970422"; // MB Bank default
+        public string VietQrBankName { get; set; } = "MB Bank (Ngân hàng Quân Đội)";
+        public string VietQrAccountNumber { get; set; } = "0987654321";
+        public string VietQrAccountName { get; set; } = "AEGISQUIZ CORP";
+
+        // 2. PayOS API v2
+        public string PayOsClientId { get; set; } = "";
+        public string PayOsApiKey { get; set; } = "";
+        public string PayOsChecksumKey { get; set; } = "";
+        public string PayOsWebhookUrl { get; set; } = "https://aegisquiz.com/api/webhook/payos";
+
+        // 3. Stripe & Global Card
+        public string StripePublishableKey { get; set; } = "";
+        public string StripeSecretKey { get; set; } = "";
+
+        // 4. Web3 Crypto Treasury
+        public string Web3TreasuryAddress { get; set; } = "0x16b607ED8d8a7c2937DF0EAc2Cd0B47a759600eE";
+
+        // 5. System Mode
+        public bool EnableSandboxTesting { get; set; } = true;
+        public DateTime LastUpdatedAt { get; set; } = DateTime.UtcNow;
+    }
+
+    public class UpdatePaymentGatewaySettingsRequest
+    {
+        public string VietQrBankBin { get; set; } = "970422";
+        public string VietQrBankName { get; set; } = "MB Bank";
+        public string VietQrAccountNumber { get; set; } = "";
+        public string VietQrAccountName { get; set; } = "";
+        public string? PayOsClientId { get; set; }
+        public string? PayOsApiKey { get; set; }
+        public string? PayOsChecksumKey { get; set; }
+        public string? StripePublishableKey { get; set; }
+        public string? StripeSecretKey { get; set; }
+        public string? Web3TreasuryAddress { get; set; }
+        public bool EnableSandboxTesting { get; set; } = true;
+    }
 }
