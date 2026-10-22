@@ -1,0 +1,45 @@
+{
+  "common": {
+    "loading": "Carregando...",
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "delete": "Excluir",
+    "edit": "Editar",
+    "create": "Criar",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "export": "Exportar",
+    "import": "Importar",
+    "submit": "Enviar",
+    "next": "Próximo",
+    "previous": "Anterior",
+    "finish": "Concluir",
+    "back": "Voltar",
+    "close": "Fechar",
+    "confirm": "Confirmar",
+    "yes": "Sim",
+    "no": "Não",
+    "error": "Ocorreu um erro",
+    "success": "Sucesso",
+    "noData": "Sem dados"
+  },
+  "nav": {
+    "dashboard": "Painel de Controle",
+    "workspace": "Espaço de Trabalho",
+    "practice": "Prática",
+    "team": "Equipe",
+    "arena": "Arena de Provas",
+    "admin": "Administração",
+    "profile": "Perfil",
+    "logout": "Sair"
+  },
+  "userMenu": {
+    "defaultName": "Usuário",
+    "accountOf": "Conta de {{name}}",
+    "menuLabel": "Menu da conta",
+    "systemAdminPortal": "Painel de Administração",
+    "teamLeaderArea": "Área do Líder da Equipe",
+    "learningDashboard": "Área de Aprendizado",
+    "profileAndSecurity": "Perfil e Segurança"
+  }
+}

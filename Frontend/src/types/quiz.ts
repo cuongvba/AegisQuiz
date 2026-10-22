@@ -99,7 +99,7 @@ export interface PracticeTopicConfig {
 }
 
 export type PracticeMode = 'study' | 'exam' | 'kids' | 'paper';
-export type LearnerLanguage = 'vi' | 'en' | 'ja' | 'ko' | 'ar';
+export type LearnerLanguage = 'vi' | 'en' | 'zh' | 'es' | 'fr' | 'ru' | 'hi' | 'pt' | 'id' | 'lo' | 'ja' | 'ko' | 'ar';
 
 export interface PracticeConfig {
   mode: PracticeMode;

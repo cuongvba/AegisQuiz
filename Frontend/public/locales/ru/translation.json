@@ -1,0 +1,45 @@
+{
+  "common": {
+    "loading": "Загрузка...",
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "delete": "Удалить",
+    "edit": "Редактировать",
+    "create": "Создать",
+    "search": "Поиск",
+    "filter": "Фильтр",
+    "export": "Экспорт",
+    "import": "Импорт",
+    "submit": "Отправить",
+    "next": "Далее",
+    "previous": "Назад",
+    "finish": "Завершить",
+    "back": "Назад",
+    "close": "Закрыть",
+    "confirm": "Подтвердить",
+    "yes": "Да",
+    "no": "Нет",
+    "error": "Произошла ошибка",
+    "success": "Успешно",
+    "noData": "Нет данных"
+  },
+  "nav": {
+    "dashboard": "Панель управления",
+    "workspace": "Рабочее пространство",
+    "practice": "Тренировка",
+    "team": "Команда",
+    "arena": "Арена тестирования",
+    "admin": "Администрирование",
+    "profile": "Профиль",
+    "logout": "Выйти"
+  },
+  "userMenu": {
+    "defaultName": "Пользователь",
+    "accountOf": "Аккаунт {{name}}",
+    "menuLabel": "Меню аккаунта",
+    "systemAdminPortal": "Панель администратора",
+    "teamLeaderArea": "Зона руководителя",
+    "learningDashboard": "Обучающий портал",
+    "profileAndSecurity": "Профиль и безопасность"
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "common": {
+    "loading": "Memuat...",
+    "save": "Simpan",
+    "cancel": "Batal",
+    "delete": "Hapus",
+    "edit": "Ubah",
+    "create": "Buat",
+    "search": "Cari",
+    "filter": "Filter",
+    "export": "Ekspor",
+    "import": "Impor",
+    "submit": "Kirim",
+    "next": "Berikutnya",
+    "previous": "Sebelumnya",
+    "finish": "Selesai",
+    "back": "Kembali",
+    "close": "Tutup",
+    "confirm": "Konfirmasi",
+    "yes": "Ya",
+    "no": "Tidak",
+    "error": "Terjadi kesalahan",
+    "success": "Berhasil",
+    "noData": "Tidak ada data"
+  },
+  "nav": {
+    "dashboard": "Dasbor Utama",
+    "workspace": "Ruang Kerja",
+    "practice": "Latihan",
+    "team": "Tim",
+    "arena": "Arena Ujian",
+    "admin": "Administrasi",
+    "profile": "Profil",
+    "logout": "Keluar"
+  },
+  "userMenu": {
+    "defaultName": "Pengguna",
+    "accountOf": "Akun {{name}}",
+    "menuLabel": "Menu akun",
+    "systemAdminPortal": "Portal Admin Sistem",
+    "teamLeaderArea": "Area Ketua Tim",
+    "learningDashboard": "Area Pembelajaran",
+    "profileAndSecurity": "Profil & Keamanan"
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "common": {
+    "loading": "加载中...",
+    "save": "保存",
+    "cancel": "取消",
+    "delete": "删除",
+    "edit": "编辑",
+    "create": "新建",
+    "search": "搜索",
+    "filter": "筛选",
+    "export": "导出",
+    "import": "导入",
+    "submit": "提交",
+    "next": "下一项",
+    "previous": "上一项",
+    "finish": "完成",
+    "back": "返回",
+    "close": "关闭",
+    "confirm": "确认",
+    "yes": "是",
+    "no": "否",
+    "error": "发生错误",
+    "success": "操作成功",
+    "noData": "暂无数据"
+  },
+  "nav": {
+    "dashboard": "控制台概览",
+    "workspace": "工作空间",
+    "practice": "智能考场",
+    "team": "团队协同",
+    "arena": "竞赛大厅",
+    "admin": "系统管理",
+    "profile": "个人中心",
+    "logout": "退出登录"
+  },
+  "userMenu": {
+    "defaultName": "学员用户",
+    "accountOf": "{{name}} 的账号",
+    "menuLabel": "账户设置",
+    "systemAdminPortal": "系统控制台",
+    "teamLeaderArea": "团队管理区",
+    "learningDashboard": "学习中心",
+    "profileAndSecurity": "个人资料与安全"
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "common": {
+    "loading": "लोड हो रहा है...",
+    "save": "सहेजें",
+    "cancel": "रद्द करें",
+    "delete": "हटाएं",
+    "edit": "संपादित करें",
+    "create": "नया बनाएं",
+    "search": "खोजें",
+    "filter": "फ़िल्टर",
+    "export": "निर्यात करें",
+    "import": "आयात करें",
+    "submit": "जमा करें",
+    "next": "अगला",
+    "previous": "पिछला",
+    "finish": "समाप्त करें",
+    "back": "वापस",
+    "close": "बंद करें",
+    "confirm": "पुष्टि करें",
+    "yes": "हाँ",
+    "no": "नहीं",
+    "error": "त्रुटि हुई",
+    "success": "सफल",
+    "noData": "कोई डेटा नहीं"
+  },
+  "nav": {
+    "dashboard": "डैशबोर्ड",
+    "workspace": "कार्यक्षेत्र",
+    "practice": "अभ्यास",
+    "team": "टीम",
+    "arena": "प्रतियोगिता अखाड़ा",
+    "admin": "प्रशासन",
+    "profile": "प्रोफ़ाइल",
+    "logout": "लॉग आउट"
+  },
+  "userMenu": {
+    "defaultName": "उपयोगकर्ता",
+    "accountOf": "{{name}} का खाता",
+    "menuLabel": "खाता मेनू",
+    "systemAdminPortal": "सिस्टम प्रशासन",
+    "teamLeaderArea": "टीम लीडर क्षेत्र",
+    "learningDashboard": "अध्ययन क्षेत्र",
+    "profileAndSecurity": "प्रोफ़ाइल और सुरक्षा"
+  }
+}

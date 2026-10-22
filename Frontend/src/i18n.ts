@@ -25,8 +25,8 @@ i18n
   .use(initReactI18next)
 
   .init({
-    // Supported languages worldwide
-    supportedLngs : ['vi', 'en', 'ja', 'ko', 'ar'],
+    // Supported languages worldwide (Global 13 Strategic Languages)
+    supportedLngs : ['vi', 'en', 'zh', 'es', 'fr', 'ru', 'hi', 'pt', 'id', 'lo', 'ja', 'ko', 'ar'],
     fallbackLng   : 'vi',
 
     // Load path with cache-busting
@@ -59,11 +59,19 @@ export default i18n;
 
 // ── Language Switcher Helper ───────────────────────────────────────────────
 export const SUPPORTED_LANGUAGES = [
-  { code: 'vi', name: 'Tiếng Việt', flag: '🇻🇳', dir: 'ltr' },
-  { code: 'en', name: 'English',    flag: '🇬🇧', dir: 'ltr' },
-  { code: 'ja', name: '日本語',     flag: '🇯🇵', dir: 'ltr' },
-  { code: 'ko', name: '한국어',     flag: '🇰🇷', dir: 'ltr' },
-  { code: 'ar', name: 'العربية',    flag: '🇸🇦', dir: 'rtl' },
+  { code: 'vi', name: 'Tiếng Việt',        flag: '🇻🇳', dir: 'ltr' },
+  { code: 'en', name: 'English',           flag: '🇬🇧', dir: 'ltr' },
+  { code: 'zh', name: '中文 (Mandarin)',   flag: '🇨🇳', dir: 'ltr' },
+  { code: 'es', name: 'Español',           flag: '🇪🇸', dir: 'ltr' },
+  { code: 'fr', name: 'Français',          flag: '🇫🇷', dir: 'ltr' },
+  { code: 'ru', name: 'Русский',           flag: '🇷🇺', dir: 'ltr' },
+  { code: 'hi', name: 'हिन्दी (Hindi)',     flag: '🇮🇳', dir: 'ltr' },
+  { code: 'pt', name: 'Português',         flag: '🇧🇷', dir: 'ltr' },
+  { code: 'id', name: 'Bahasa Indonesia',  flag: '🇮🇩', dir: 'ltr' },
+  { code: 'lo', name: 'ພາສາລາວ (Lao)',      flag: '🇱🇦', dir: 'ltr' },
+  { code: 'ja', name: '日本語',            flag: '🇯🇵', dir: 'ltr' },
+  { code: 'ko', name: '한국어',            flag: '🇰🇷', dir: 'ltr' },
+  { code: 'ar', name: 'العربية',           flag: '🇸🇦', dir: 'rtl' },
 ] as const;
 
 export type SupportedLanguage = typeof SUPPORTED_LANGUAGES[number]['code'];

@@ -46,18 +46,27 @@ export function LanguageSwitcher() {
 
       {/* Controlled Dropdown Menu */}
       {isOpen && (
-        <ul
-          role="listbox"
-          aria-label="Danh sách ngôn ngữ"
-          className="absolute end-0 top-full mt-2 w-44 bg-slate-900/95 backdrop-blur-xl
+        <div
+          className="absolute end-0 top-full mt-2 w-52 bg-slate-900/95 backdrop-blur-xl
                      rounded-2xl shadow-2xl border border-slate-700/80 p-1.5
                      z-50 animate-in fade-in zoom-in-95 duration-150 origin-top-right
                      ring-1 ring-white/10"
         >
-          <div className="px-2.5 py-1.5 text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center gap-1.5 border-b border-slate-800/80 mb-1">
-            <Globe size={11} className="text-cyan-400" />
-            <span>Ngôn ngữ • Language</span>
+          <div className="px-2.5 py-1.5 text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-between border-b border-slate-800/80 mb-1">
+            <span className="flex items-center gap-1.5">
+              <Globe size={11} className="text-cyan-400" />
+              <span>Language • Ngôn ngữ</span>
+            </span>
+            <span className="text-[9px] font-mono text-cyan-400 font-bold bg-cyan-500/10 px-1.5 py-0.5 rounded-full border border-cyan-500/20">
+              13 Global
+            </span>
           </div>
+
+          <ul
+            role="listbox"
+            aria-label="Danh sách ngôn ngữ"
+            className="max-h-72 overflow-y-auto space-y-0.5 pr-0.5 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent"
+          >
 
           {SUPPORTED_LANGUAGES.map((l) => {
             const isSelected = lang === l.code;
@@ -91,7 +100,8 @@ export function LanguageSwitcher() {
               </li>
             );
           })}
-        </ul>
+          </ul>
+        </div>
       )}
     </div>
   );

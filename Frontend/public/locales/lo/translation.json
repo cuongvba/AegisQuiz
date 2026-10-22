@@ -1,0 +1,45 @@
+{
+  "common": {
+    "loading": "ກຳລັງໂຫຼດ...",
+    "save": "ບັນທຶກ",
+    "cancel": "ຍົກເລີກ",
+    "delete": "ລຶບ",
+    "edit": "ແກ້ໄຂ",
+    "create": "ສ້າງໃໝ່",
+    "search": "ຄົ້ນຫາ",
+    "filter": "ກັ່ນຕອງ",
+    "export": "ສົ່ງອອກ",
+    "import": "ນຳເຂົ້າ",
+    "submit": "ສົ່ງ",
+    "next": "ຕໍ່ໄປ",
+    "previous": "ກ່ອນໜ້າ",
+    "finish": "ສຳເລັດ",
+    "back": "ກັບຄືນ",
+    "close": "ປິດ",
+    "confirm": "ຢືນຢັນ",
+    "yes": "ແມ່ນ",
+    "no": "ບໍ່ແມ່ນ",
+    "error": "ເກີດຂໍ້ຜິດພາດ",
+    "success": "ສຳເລັດ",
+    "noData": "ບໍ່ມີຂໍ້ມູນ"
+  },
+  "nav": {
+    "dashboard": "ໜ້າຫຼັກ (Dashboard)",
+    "workspace": "ພື້ນທີ່ເຮັດວຽກ",
+    "practice": "ຝຶກຊ້ອມ",
+    "team": "ທີມງານ",
+    "arena": "ສະໜາມສອບເສັງ",
+    "admin": "ຈັດການລະບົບ",
+    "profile": "ໂປຣໄຟລ໌",
+    "logout": "ອອກຈາກລະບົບ"
+  },
+  "userMenu": {
+    "defaultName": "ຜູ້ໃຊ້",
+    "accountOf": "ບັນຊີຂອງ {{name}}",
+    "menuLabel": "ເມນູບັນຊີ",
+    "systemAdminPortal": "ລະບົບຈັດການ",
+    "teamLeaderArea": "ເຂດຫົວໜ້າທີມ",
+    "learningDashboard": "ເຂດການຮຽນຮູ້",
+    "profileAndSecurity": "ໂປຣໄຟລ໌ & ຄວາມປອດໄພ"
+  }
+}
