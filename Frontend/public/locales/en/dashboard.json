@@ -10,7 +10,16 @@
     "badgeTeamLeader": "Assessment Team Leader",
     "badgeAdmin": "System Administrator",
     "badgeLearner": "Top Learner",
-    "subheadline": "Today is the perfect time to push your cognitive limits. The IRT engine has personalized your latest question matrix!"
+    "subheadline": "Today is the perfect time to push your cognitive limits. The IRT engine has personalized your latest question matrix!",
+    "mission": {
+      "tag": "1-Click AI Daily Mission",
+      "title": "Close the gap: 10 focus questions on Process & Regulations",
+      "desc": "The IRT 3-PL engine detected this as your lowest cognitive certainty area this week.",
+      "cta": "Start Training Now",
+      "estTime": "Est: ~6 mins",
+      "progressLabel": "Daily Goal Progress:",
+      "progressValue": "3/5 modules (60%)"
+    }
   },
   "radarPanel": {
     "title": "360° Cognitive Competence Map",
@@ -26,6 +35,13 @@
     "adaptive": { "title": "Assessment Exam", "desc": "IRT Competence Standard" }
   },
   "metrics": {
+    "streak": {
+      "label": "Training Streak",
+      "badge": "On Fire 🔥",
+      "value": "5",
+      "unit": "consecutive days",
+      "footer": "Complete 1 exam to keep streak"
+    },
     "weeklyGoal": {
       "label": "Weekly Goal",
       "badge": "71% Reached",
@@ -49,6 +65,7 @@
       "badge": "Rank #3",
       "value": "1,850",
       "tier": "Diamond III",
+      "nextTier": "Master Tier",
       "footer": "150 more LP to reach Master Tier"
     }
   },
@@ -58,8 +75,9 @@
     "strengthLabel": "Strength:",
     "strengthValue": "Technology & IT (92%)",
     "weaknessLabel": "Needs attention:",
-    "weaknessValue": "Math & Logic (68%)",
+    "weaknessValue": "Process & Regulations (64%)",
     "openPractice": "Open detailed practice room",
+    "interactiveHint": "💡 Tip: Click any topic on the radar to launch targeted adaptive remediation.",
     "topics": {
       "math": "Math & Logic",
       "tech": "Technology & IT",
@@ -71,13 +89,15 @@
   "focusAreas": {
     "title": "Areas That Need Improvement",
     "priority": "High priority",
-    "cta": "Review Your Weak Points Now!"
+    "cta": "Review Your Weak Points Now!",
+    "quickPractice": "Practice now",
+    "unmastered": "questions to improve"
   },
   "aiMentor": {
     "title": "AI Mentor • Gemini Coach",
     "subtitle": "Personalized learning path guidance",
     "loading": "Compiling your optimal study plan...",
-    "fallbackPlan": "💡 Today's tip: You've mastered 92% of IT and 88% of Management Skills. Spend 15 minutes reviewing 20 Math & Logic questions to balance your 360° competence profile.",
+    "fallbackPlan": "💡 Today's tip: You've mastered 92% of IT and 88% of Management Skills. Spend 15 minutes reviewing 10 Process & Regulations questions to balance your 360° competence profile.",
     "cta": "Explore Full Learning Path →"
   }
 }

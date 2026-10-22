@@ -10,7 +10,16 @@
     "badgeTeamLeader": "Trưởng Nhóm Khảo Thí",
     "badgeAdmin": "Quản Trị Hệ Thống",
     "badgeLearner": "Học Viên Ưu Tú",
-    "subheadline": "Hôm nay là thời điểm lý tưởng để bứt phá năng lực nhận thức. Động cơ IRT đã cá nhân hóa ma trận câu hỏi mới nhất cho bạn!"
+    "subheadline": "Hôm nay là thời điểm lý tưởng để bứt phá năng lực nhận thức. Động cơ IRT đã cá nhân hóa ma trận câu hỏi mới nhất cho bạn!",
+    "mission": {
+      "tag": "Đề xuất thông minh 1-chạm",
+      "title": "Bứt phá lỗ hổng: 10 câu trọng tâm Quy trình & Luật",
+      "desc": "Thuật toán IRT 3-PL nhận diện đây là chuyên đề có độ tin cậy thấp nhất tuần này của bạn.",
+      "cta": "Bắt Đầu Rèn Luyện Ngay",
+      "estTime": "Ước tính: ~6 phút",
+      "progressLabel": "Tiến độ mục tiêu ngày:",
+      "progressValue": "3/5 bài (60%)"
+    }
   },
   "radarPanel": {
     "title": "Bản Đồ Năng Lực Nhận Thức 360°",
@@ -26,6 +35,13 @@
     "adaptive": { "title": "Thi Đánh Giá", "desc": "Chuẩn Năng Lực IRT" }
   },
   "metrics": {
+    "streak": {
+      "label": "Chuỗi rèn luyện",
+      "badge": "Đang cháy 🔥",
+      "value": "5",
+      "unit": "ngày liên tiếp",
+      "footer": "Luyện thêm 1 bài để giữ chuỗi"
+    },
     "weeklyGoal": {
       "label": "Mục tiêu tuần",
       "badge": "71% Đạt",
@@ -49,6 +65,7 @@
       "badge": "Hạng #3",
       "value": "1,850",
       "tier": "Kim Cương III",
+      "nextTier": "Bậc Cao Thủ",
       "footer": "Còn 150 LP để lên Bậc Cao Thủ"
     }
   },
@@ -58,8 +75,9 @@
     "strengthLabel": "Thế mạnh:",
     "strengthValue": "Công nghệ & IT (92%)",
     "weaknessLabel": "Cần chú ý:",
-    "weaknessValue": "Toán & Logic (68%)",
+    "weaknessValue": "Quy trình & Luật (64%)",
     "openPractice": "Mở phòng luyện tập chi tiết",
+    "interactiveHint": "💡 Mẹo: Nhấp vào chuyên đề bất kỳ để mở bài thi thích ứng khắc phục điểm yếu.",
     "topics": {
       "math": "Toán học & Logic",
       "tech": "Công nghệ & IT",
@@ -71,13 +89,15 @@
   "focusAreas": {
     "title": "Khu Vực Cần Cải Thiện",
     "priority": "Ưu tiên cao",
-    "cta": "Ôn Luyện Điểm Yếu Ngay!"
+    "cta": "Ôn Luyện Điểm Yếu Ngay!",
+    "quickPractice": "Ôn tập ngay",
+    "unmastered": "câu chưa vững"
   },
   "aiMentor": {
     "title": "AI Mentor • Gemini Coach",
     "subtitle": "Tư vấn lộ trình học tập cá nhân hóa",
     "loading": "Đang tổng hợp lộ trình tối ưu...",
-    "fallbackPlan": "💡 Lời khuyên hôm nay: Bạn đã làm chủ 92% mảng IT và 88% Kỹ năng quản trị. Hãy dành 15 phút ôn tập 20 câu hỏi Toán & Logic để cân bằng hồ sơ năng lực 360°.",
+    "fallbackPlan": "💡 Lời khuyên hôm nay: Bạn đã làm chủ 92% mảng IT và 88% Kỹ năng quản trị. Hãy dành 15 phút ôn tập 10 câu hỏi Quy trình & Luật để cân bằng hồ sơ năng lực 360°.",
     "cta": "Khám phá Lộ trình Đầy đủ →"
   }
 }

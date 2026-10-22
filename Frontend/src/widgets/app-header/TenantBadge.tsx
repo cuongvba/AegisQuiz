@@ -15,21 +15,9 @@ export function TenantBadge() {
 
   if (!user) return null;
 
+  // Quản trị viên đã có lối vào tập trung trong WorkspaceDropdown ('Không gian làm việc')
   if (isAdmin) {
-    return (
-      <button
-        onClick={() => navigate('/admin')}
-        aria-label="Vào trang Quản trị"
-        className="hidden sm:flex items-center gap-1.5
-                   bg-gradient-to-r from-purple-600 to-indigo-600 text-white
-                   text-xs font-black px-3.5 py-1.5 rounded-xl
-                   shadow-md shadow-purple-500/20
-                   transition-transform active:scale-95 cursor-pointer
-                   hover:brightness-110"
-      >
-        Quản lý 📊
-      </button>
-    );
+    return null;
   }
 
   if (user.role === 'TeamLeader') {
