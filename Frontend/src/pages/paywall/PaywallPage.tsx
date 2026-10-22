@@ -7,10 +7,12 @@ import { VietQRPayOSSection } from './components/VietQRPayOSSection';
 import { ChinaWalletSection } from './components/ChinaWalletSection';
 import { InternationalCardSection } from './components/InternationalCardSection';
 import { Web3CryptoSection } from './components/Web3CryptoSection';
+import { BuyMeCoffeeModal } from '@/features/coffee/BuyMeCoffeeModal';
 
 export function PaywallPage() {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation('paywall');
+  const [isCoffeeOpen, setIsCoffeeOpen] = useState(false);
 
   // Đọc user từ localStorage
   const userRaw = localStorage.getItem('user');
@@ -182,9 +184,32 @@ export function PaywallPage() {
                 <span>{t('features.f3')}</span>
               </div>
             </div>
+
+            {/* Banner Mời Cafe / Tài trợ cộng đồng */}
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-transparent border border-amber-500/20 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/30">
+                  <span className="text-xl">☕</span>
+                </div>
+                <div>
+                  <h4 className="text-xs md:text-sm font-bold text-amber-300">Phục Vụ Cộng Đồng & Tài Trợ Tùy Tâm</h4>
+                  <p className="text-[11px] text-slate-400">AegisQuiz luôn mở cửa miễn phí cho giáo dục — Bạn có thể mời team 1 ly cafe để tiếp sức!</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsCoffeeOpen(true)}
+                className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs whitespace-nowrap shadow-md shadow-amber-500/20 transition flex items-center gap-1.5"
+              >
+                <span>☕ Mời Cafe Ngay</span>
+              </button>
+            </div>
           </>
         )}
       </main>
+
+      {/* Modal Mời Cafe */}
+      <BuyMeCoffeeModal isOpen={isCoffeeOpen} onClose={() => setIsCoffeeOpen(false)} />
 
       {/* Footer */}
       <footer className="text-center py-6 text-xs text-slate-500 border-t border-slate-900">
