@@ -248,6 +248,13 @@ builder.Services.AddHttpClient("LtiAgsClient");
 // [World-Class Upgrade] Server-authoritative exam timer (học từ quiz-service)
 builder.Services.AddHostedService<ExamTimerService>();
 
+// [Enterprise Omni-Channel Payment Sovereignty & OCP Gateway Strategies]
+builder.Services.AddHttpClient<AegisQuiz.Infrastructure.Payments.PayOSGatewayService>();
+builder.Services.AddHttpClient<AegisQuiz.Infrastructure.Payments.StripeInternationalGatewayService>();
+builder.Services.AddScoped<AegisQuiz.Application.Payments.IPaymentGatewayStrategy, AegisQuiz.Infrastructure.Payments.PayOSGatewayService>();
+builder.Services.AddScoped<AegisQuiz.Application.Payments.IPaymentGatewayStrategy, AegisQuiz.Infrastructure.Payments.StripeInternationalGatewayService>();
+builder.Services.AddScoped<AegisQuiz.Application.Payments.IPaymentOrchestratorService, AegisQuiz.Infrastructure.Payments.PaymentOrchestratorService>();
+
 // Controllers + Swagger
 builder.Services.AddControllers()
     .AddJsonOptions(options =>

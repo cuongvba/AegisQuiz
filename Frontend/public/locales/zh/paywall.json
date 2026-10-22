@@ -1,0 +1,68 @@
+{
+  "title": "升级 Aegis VIP — 解锁全能智能考评中枢",
+  "subtitle": "全面开启 AI 试题引擎、认知辩证议会 (Epistemic Council) 与无限次 Arena 竞赛竞技场。",
+  "back_dashboard": "返回工作台",
+  "active_vip_badge": "VIP 会员已生效",
+  "vip_activated_title": "恭喜！您已成为 Aegis VIP 会员",
+  "vip_activated_desc": "AegisQuiz AI 终极算力、无限制试题库与全球在线竞技场已全部就绪。",
+  "choose_plan": "选择订阅计划",
+  "plan_pro": "Aegis 专业版",
+  "plan_pro_desc": "专为教师与独立命题专家打造",
+  "plan_enterprise": "Aegis 企业版",
+  "plan_enterprise_desc": "面向高等院校、金融机构与大型跨国集团",
+  "tabs": {
+    "vietqr": "VietQR PayOS (越南结算)",
+    "intl_card": "国际信用卡 (Visa / 万事达)",
+    "china_wallet": "支付宝 / 微信支付 (中国大陆)",
+    "crypto": "Web3 加密货币 (Polygon)"
+  },
+  "vietqr": {
+    "title": "越南银行 Napas 24/7 极速转账",
+    "desc": "支持全越各大手机银行扫码，3秒内到账并自动激活。",
+    "account_number": "收款账号",
+    "account_name": "户名",
+    "bank_name": "开户银行",
+    "amount": "结算金额",
+    "transfer_content": "转账附言 (必填)",
+    "scan_hint": "请打开任意越南手机银行 App 扫码支付",
+    "checking_status": "系统正在监听实时转账通知...",
+    "btn_open_app": "打开 PayOS 网关",
+    "btn_simulate": "模拟沙箱支付成功",
+    "time_remaining": "二维码有效剩余时间:"
+  },
+  "intl": {
+    "title": "国际银行卡与 Apple Pay 结算",
+    "desc": "全面支持全球 190+ 国家和地区的 Visa、MasterCard、JCB 与运通卡。",
+    "card_number": "卡号",
+    "expiry": "有效期 (月/年)",
+    "cvc": "安全码 (CVC)",
+    "cardholder": "持卡人姓名",
+    "btn_pay": "通过 Stripe 安全支付",
+    "secured_by": "符合 PCI-DSS Level 1 最高金融级安全标准"
+  },
+  "china": {
+    "title": "跨境人民币实时结算 (支付宝 / 微信)",
+    "desc": "支持支付宝 (Alipay)、微信支付 (WeChat Pay) 扫码极速结算，零外汇繁琐手续。",
+    "select_method": "选择支付方式",
+    "alipay": "支付宝 (Alipay)",
+    "wechat": "微信支付 (WeChat Pay)",
+    "rate_hint": "汇率参考: 1 元人民币 ≈ 3,500 越南盾。实时极速入账。",
+    "btn_open_wallet": "立即使用 支付宝 / 微信 扫码",
+    "waiting_scan": "请打开手机支付宝或微信客户端，扫描二维码完成即时结算..."
+  },
+  "crypto": {
+    "title": "Web3 去中心化链上结算 (Polygon)",
+    "desc": "使用 MetaMask、OKX、Phantom 钱包直接链上转账，享受 Polygon 网络的极低 Gas 费。",
+    "connect_wallet": "连接 Web3 钱包",
+    "switch_network": "切换至 Polygon 网络",
+    "send_payment": "确认转账 2.0 MATIC",
+    "tx_completed": "链上交易已确认并激活！"
+  },
+  "features": {
+    "f1": "无限制 Word/PDF 智能解析并提取复杂公式",
+    "f2": "多智能体认知辩证委员会 (Epistemic Council)",
+    "f3": "万人同屏 60fps 实时在线竞技场",
+    "f4": "支持全球 13 种主流语言与 RTL 智能自适应",
+    "f5": "银行级安全风控与 99.99% 企业级高可用保障"
+  }
+}

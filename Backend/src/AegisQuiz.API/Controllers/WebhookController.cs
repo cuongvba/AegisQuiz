@@ -8,6 +8,8 @@ using AegisQuiz.API.Security;
 using AegisQuiz.Infrastructure.Data;
 using AegisQuiz.Domain.Entities;
 
+using AegisQuiz.Application.Payments;
+
 namespace AegisQuiz.API.Controllers
 {
     [ApiController]
@@ -15,10 +17,34 @@ namespace AegisQuiz.API.Controllers
     public class WebhookController : ControllerBase
     {
         private readonly AegisQuizDbContext _dbContext;
+        private readonly IPaymentOrchestratorService _paymentOrchestrator;
 
-        public WebhookController(AegisQuizDbContext dbContext)
+        public WebhookController(AegisQuizDbContext dbContext, IPaymentOrchestratorService paymentOrchestrator)
         {
             _dbContext = dbContext;
+            _paymentOrchestrator = paymentOrchestrator;
+        }
+
+        /// <summary>
+        /// [LUỒNG PAYOS CHÍNH THỨC]: Nhận thông báo thanh toán tức thì từ cổng PayOS (VietQR 24/7)
+        /// </summary>
+        [AllowAnonymous]
+        [HttpPost("payos")]
+        public async Task<IActionResult> ReceivePayOSWebhook([FromBody] PayOSWebhookRequest webhook)
+        {
+            try
+            {
+                var success = await _paymentOrchestrator.HandlePayOSWebhookAsync(webhook);
+                if (success)
+                {
+                    return Ok(new { error = 0, message = "Webhook processed successfully" });
+                }
+                return BadRequest(new { error = -1, message = "Không tìm thấy đơn hàng tương ứng hoặc đơn đã xử lý." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = -1, message = ex.Message });
+            }
         }
 
         // [LUỒNG 1: Ngân hàng Việt Nam (Casso/SePay)]

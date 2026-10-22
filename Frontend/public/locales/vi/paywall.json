@@ -1,0 +1,68 @@
+{
+  "title": "Nâng cấp Aegis VIP — Mở khóa Sức mạnh Khảo thí Toàn năng",
+  "subtitle": "Khai phóng toàn bộ tính năng Khảo thí AI, Phản biện Epistemic Council, Arena Gameshow không giới hạn.",
+  "back_dashboard": "Quay lại Bảng điều khiển",
+  "active_vip_badge": "Tài khoản VIP Đang Hoạt Động",
+  "vip_activated_title": "Chúc mừng! Bạn đã là Thành viên VIP",
+  "vip_activated_desc": "Toàn bộ đặc quyền AegisQuiz AI, Ngân hàng câu hỏi không giới hạn và Đấu trường trực tuyến đã sẵn sàng.",
+  "choose_plan": "Chọn gói đăng ký",
+  "plan_pro": "Aegis Pro",
+  "plan_pro_desc": "Dành cho Giáo viên & Chuyên gia khảo thí cá nhân",
+  "plan_enterprise": "Aegis Enterprise",
+  "plan_enterprise_desc": "Dành cho Trường học, Ngân hàng & Doanh nghiệp lớn",
+  "tabs": {
+    "vietqr": "VietQR PayOS (Việt Nam)",
+    "intl_card": "Thẻ Quốc Tế (Visa / MC)",
+    "china_wallet": "Alipay / WeChat (中国支付)",
+    "crypto": "Web3 Crypto (Polygon)"
+  },
+  "vietqr": {
+    "title": "Thanh toán tự động qua VietQR Napas 24/7",
+    "desc": "Quét mã QR bằng bất kỳ ứng dụng Ngân hàng nào tại Việt Nam. Kích hoạt VIP tức thì trong 3 giây.",
+    "account_number": "Số tài khoản nhận",
+    "account_name": "Chủ tài khoản",
+    "bank_name": "Ngân hàng thụ hưởng",
+    "amount": "Số tiền",
+    "transfer_content": "Nội dung chuyển khoản (Bắt buộc)",
+    "scan_hint": "Mở App Ngân hàng bất kỳ (Vietcombank, MB, Techcombank...) quét mã để thanh toán",
+    "checking_status": "Hệ thống đang tự động lắng nghe giao dịch chuyển khoản...",
+    "btn_open_app": "Mở cổng thanh toán VietQR PayOS",
+    "btn_simulate": "Giả lập Thanh toán Thành công (Sandbox)",
+    "time_remaining": "Thời gian giữ mã QR còn:"
+  },
+  "intl": {
+    "title": "Thanh toán Thẻ Quốc Tế & Apple Pay",
+    "desc": "Chấp nhận tất cả các loại thẻ Visa, MasterCard, JCB, American Express trên 190 quốc gia.",
+    "card_number": "Số thẻ",
+    "expiry": "Ngày hết hạn (MM/YY)",
+    "cvc": "Mã bảo mật CVC",
+    "cardholder": "Tên in trên thẻ",
+    "btn_pay": "Thanh toán An toàn qua Stripe",
+    "secured_by": "Mã hóa 256-bit chuẩn PCI-DSS cấp độ 1"
+  },
+  "china": {
+    "title": "跨境人民币支付 (Alipay & WeChat Pay)",
+    "desc": "支持支付宝 (Alipay)、微信支付 (WeChat Pay) 扫码极速结算，专为大中华区客户定制。",
+    "select_method": "选择支付方式",
+    "alipay": "支付宝 (Alipay)",
+    "wechat": "微信支付 (WeChat Pay)",
+    "rate_hint": "汇率换算: 1 CNY ≈ 3,500 VND. 费用即时结算。",
+    "btn_open_wallet": "打开支付宝 / 微信扫码支付",
+    "waiting_scan": "请打开手机支付宝/微信扫描二维码完成支付..."
+  },
+  "crypto": {
+    "title": "Thanh toán Phi tập trung Web3 (Polygon)",
+    "desc": "Thanh toán trực tiếp bằng ví Web3 (MetaMask, OKX, Phantom). Gas fee siêu rẻ qua mạng Polygon.",
+    "connect_wallet": "Kết nối Ví Web3",
+    "switch_network": "Chuyển sang mạng Polygon",
+    "send_payment": "Xác nhận gửi 2.0 MATIC",
+    "tx_completed": "Giao dịch On-chain hoàn tất!"
+  },
+  "features": {
+    "f1": "Bóc tách đề thi Word/PDF không giới hạn dung lượng",
+    "f2": "Hội đồng AI Epistemic Council phản biện đa góc nhìn",
+    "f3": "Đấu trường Arena 10.000 thí sinh đồng thời 60fps",
+    "f4": "Hỗ trợ 13 ngôn ngữ toàn cầu & Chuẩn hóa công thức Toán LaTeX",
+    "f5": "Chứng chỉ bảo mật cấp Ngân hàng & SLA 99.99%"
+  }
+}

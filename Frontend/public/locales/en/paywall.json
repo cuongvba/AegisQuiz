@@ -1,0 +1,68 @@
+{
+  "title": "Upgrade to Aegis VIP — Unlock Omnipotent Assessment Power",
+  "subtitle": "Unleash all AI Examination engines, Epistemic Council debate, and unlimited Arena Gameshows.",
+  "back_dashboard": "Back to Dashboard",
+  "active_vip_badge": "VIP Membership Active",
+  "vip_activated_title": "Congratulations! You are now a VIP Member",
+  "vip_activated_desc": "All AegisQuiz AI superpowers, unlimited question banks, and live arena features are fully unlocked.",
+  "choose_plan": "Choose your plan",
+  "plan_pro": "Aegis Pro",
+  "plan_pro_desc": "Ideal for Teachers & Individual Assessment Specialists",
+  "plan_enterprise": "Aegis Enterprise",
+  "plan_enterprise_desc": "Tailored for Universities, Banks & Multinational Enterprises",
+  "tabs": {
+    "vietqr": "VietQR PayOS (Vietnam)",
+    "intl_card": "Credit / Debit Card (Global)",
+    "china_wallet": "Alipay / WeChat (China)",
+    "crypto": "Web3 Crypto (Polygon)"
+  },
+  "vietqr": {
+    "title": "Instant Bank Transfer via VietQR Napas 24/7",
+    "desc": "Scan QR with any Vietnam banking app. Instant automatic VIP activation in 3 seconds.",
+    "account_number": "Account Number",
+    "account_name": "Account Holder",
+    "bank_name": "Beneficiary Bank",
+    "amount": "Amount",
+    "transfer_content": "Transfer Memo (Required)",
+    "scan_hint": "Open any banking app to scan and settle payment",
+    "checking_status": "Listening for real-time bank settlement webhook...",
+    "btn_open_app": "Open PayOS Gateway",
+    "btn_simulate": "Simulate Successful Settlement (Sandbox)",
+    "time_remaining": "QR Code validity remaining:"
+  },
+  "intl": {
+    "title": "Global Cards & Apple Pay Settlement",
+    "desc": "Accepting Visa, MasterCard, JCB, and American Express across 190+ countries worldwide.",
+    "card_number": "Card Number",
+    "expiry": "Expiry Date (MM/YY)",
+    "cvc": "Security Code (CVC)",
+    "cardholder": "Cardholder Name",
+    "btn_pay": "Secure Checkout with Stripe",
+    "secured_by": "PCI-DSS Level 1 Compliant 256-bit Encryption"
+  },
+  "china": {
+    "title": "Cross-Border Settlement (Alipay & WeChat Pay)",
+    "desc": "Instant settlement via Alipay and WeChat Pay QR codes, customized for Greater China clients.",
+    "select_method": "Payment Method",
+    "alipay": "Alipay (支付宝)",
+    "wechat": "WeChat Pay (微信支付)",
+    "rate_hint": "Exchange rate: 1 CNY ≈ 3,500 VND. Instant settlement.",
+    "btn_open_wallet": "Open Alipay / WeChat Pay",
+    "waiting_scan": "Please scan the QR code with your Alipay or WeChat app..."
+  },
+  "crypto": {
+    "title": "Decentralized Web3 Payment (Polygon)",
+    "desc": "Direct non-custodial crypto payment with MetaMask, OKX, Phantom. Ultra-low gas on Polygon.",
+    "connect_wallet": "Connect Web3 Wallet",
+    "switch_network": "Switch to Polygon Network",
+    "send_payment": "Confirm 2.0 MATIC Transfer",
+    "tx_completed": "On-chain Settlement Completed!"
+  },
+  "features": {
+    "f1": "Unlimited Word/PDF Parsing & Ingestion with MathType/LaTeX",
+    "f2": "Epistemic AI Multi-Agent Council dialectic debate",
+    "f3": "10,000 Concurrent Live Contestants at 60fps Arena",
+    "f4": "13 Strategic Languages support & Full RTL layout",
+    "f5": "Banking-grade Security & 99.99% Enterprise SLA"
+  }
+}
