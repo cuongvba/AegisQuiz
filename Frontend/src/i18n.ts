@@ -43,7 +43,7 @@ i18n
     },
 
     // Namespaces
-    ns           : ['translation', 'ai_settings', 'symposium', 'landing', 'dashboard', 'profile', 'creator', 'admin_questions', 'split_studio', 'white_label'],
+    ns           : ['translation', 'auth', 'ai_settings', 'symposium', 'landing', 'dashboard', 'profile', 'creator', 'admin_questions', 'split_studio', 'white_label'],
     defaultNS    : 'translation',
 
     interpolation: {

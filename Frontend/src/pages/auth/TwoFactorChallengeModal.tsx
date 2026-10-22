@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ShieldCheck, KeyRound, ArrowLeft, Loader2, AlertCircle, Smartphone } from 'lucide-react';
 import api from '../../services/api';
 
@@ -17,6 +18,7 @@ export const TwoFactorChallengeModal: React.FC<TwoFactorChallengeModalProps> = (
   userEmail,
   onSuccess,
 }) => {
+  const { t } = useTranslation('auth');
   const [digits, setDigits] = useState<string[]>(['', '', '', '', '', '']);
   const [useBackupCode, setUseBackupCode] = useState(false);
   const [backupCode, setBackupCode] = useState('');
@@ -151,12 +153,12 @@ export const TwoFactorChallengeModal: React.FC<TwoFactorChallengeModalProps> = (
             {useBackupCode ? <KeyRound className="w-7 h-7" /> : <Smartphone className="w-7 h-7" />}
           </div>
           <h3 className="text-xl font-bold tracking-tight text-white">
-            {useBackupCode ? 'Nhập mã khôi phục dự phòng' : 'Xác thực 2 bước (2FA)'}
+            {useBackupCode ? 'Mã dự phòng (Backup Code)' : t('mfa.title', 'Xác thực 2 Bước (Google Authenticator)')}
           </h3>
           <p className="text-xs text-slate-400 mt-1 max-w-xs">
             {useBackupCode
-              ? 'Sử dụng một trong 8 mã dự phòng khẩn cấp được cấp khi bật 2FA.'
-              : `Nhập mã 6 chữ số từ ứng dụng Google Authenticator liên kết với tài khoản ${userEmail}.`}
+              ? 'Nhập mã dự phòng 8 chữ số được cấp khi bật 2FA.'
+              : t('mfa.subtitle', 'Nhập mã 6 chữ số từ ứng dụng Google Authenticator trên thiết bị của bạn.')}
           </p>
         </div>
 
@@ -189,7 +191,7 @@ export const TwoFactorChallengeModal: React.FC<TwoFactorChallengeModalProps> = (
                 ))}
               </div>
               <p className="text-[11px] text-slate-500 text-center mt-3">
-                Mã TOTP tự động làm mới sau mỗi 30 giây trong ứng dụng.
+                {t('mfa.codeLabel', 'Mã bảo mật 6 chữ số (TOTP)')}
               </p>
             </div>
           ) : (
@@ -206,9 +208,6 @@ export const TwoFactorChallengeModal: React.FC<TwoFactorChallengeModalProps> = (
                 autoFocus
                 className="w-full px-4 py-3 rounded-xl bg-slate-950/80 border border-slate-700/80 text-white font-mono tracking-widest text-center text-lg focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
               />
-              <p className="text-[11px] text-slate-500 mt-2 text-center">
-                Mỗi mã dự phòng chỉ có thể sử dụng đúng một lần duy nhất.
-              </p>
             </div>
           )}
 
@@ -222,12 +221,12 @@ export const TwoFactorChallengeModal: React.FC<TwoFactorChallengeModalProps> = (
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Đang xác thực bảo mật...</span>
+                  <span>{t('mfa.verifying', 'Đang kiểm tra mã...')}</span>
                 </>
               ) : (
                 <>
                   <ShieldCheck className="w-4 h-4" />
-                  <span>Xác nhận & Đăng nhập</span>
+                  <span>{t('mfa.verify', 'Xác nhận & Vào hệ thống')}</span>
                 </>
               )}
             </button>
@@ -242,7 +241,7 @@ export const TwoFactorChallengeModal: React.FC<TwoFactorChallengeModalProps> = (
                 }}
                 className="text-indigo-400 hover:text-indigo-300 font-medium transition-colors"
               >
-                {useBackupCode ? 'Quay lại nhập mã 6 số (TOTP)' : 'Mất điện thoại? Dùng mã dự phòng'}
+                {useBackupCode ? 'TOTP App' : 'Backup Code'}
               </button>
 
               <button
@@ -251,7 +250,7 @@ export const TwoFactorChallengeModal: React.FC<TwoFactorChallengeModalProps> = (
                 className="text-slate-400 hover:text-white transition-colors flex items-center gap-1"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Hủy bỏ</span>
+                <span>Cancel</span>
               </button>
             </div>
           </div>

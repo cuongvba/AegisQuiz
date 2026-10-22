@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ShieldCheck, ShieldAlert, Lock, Mail, LogIn, KeyRound, Loader2, ArrowRight, X, Sparkles, Building2, UserCheck, Smartphone, QrCode } from 'lucide-react';
 import { useAgribankPKI } from '../../hooks/useAgribankPKI';
 import api from '../../services/api';
@@ -11,6 +12,7 @@ import { QrLoginCard } from './QrLoginCard';
 import { LanguageSwitcher } from '@/widgets/app-header/LanguageSwitcher';
 
 export function LoginPage() {
+  const { t } = useTranslation('auth');
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const returnTo = searchParams.get('returnTo');
@@ -98,7 +100,7 @@ export function LoginPage() {
       handle2FASuccess(token, user);
     } catch (err: any) {
       console.error('[Google Auth Error]', err);
-      setError(err.response?.data?.message || 'Đăng nhập bằng tài khoản Google thất bại.');
+      setError(err.response?.data?.message || t('googleFailed', 'Đăng nhập bằng tài khoản Google thất bại.'));
     } finally {
       setLoading(false);
     }
@@ -108,7 +110,7 @@ export function LoginPage() {
     if ((window as any).google?.accounts?.id) {
       (window as any).google.accounts.id.prompt();
     } else {
-      setError('Đang kết nối dịch vụ Google Identity... Vui lòng thử lại sau giây lát.');
+      setError(t('googleConnecting', 'Đang kết nối dịch vụ Google Identity... Vui lòng thử lại sau giây lát.'));
     }
   };
 
@@ -162,7 +164,7 @@ export function LoginPage() {
 
       const { token, user } = response.data;
       if (!token || !user) {
-        throw new Error('Dữ liệu xác thực từ máy chủ không hợp lệ.');
+        throw new Error(t('invalidServerData', 'Dữ liệu xác thực từ máy chủ không hợp lệ.'));
       }
 
       const normalizedProfile: UserProfile = {
@@ -188,9 +190,9 @@ export function LoginPage() {
 
     } catch (err: any) {
       console.error('[Login Error]', err);
-      let serverMsg = 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.';
+      let serverMsg = t('loginFailedDefault', 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.');
       if (err.response?.status === 503 || err.response?.status === 502) {
-        serverMsg = 'Dịch vụ máy chủ đang khởi động hoặc nâng cấp. Vui lòng thử lại sau 10-15 giây.';
+        serverMsg = t('serverUpgrading', 'Dịch vụ máy chủ đang khởi động hoặc nâng cấp. Vui lòng thử lại sau 10-15 giây.');
       } else if (err.response?.data?.message) {
         serverMsg = err.response.data.message;
       } else if (typeof err.response?.data === 'string' && err.response.data.length < 150) {
@@ -296,13 +298,13 @@ export function LoginPage() {
         {/* Brand Header */}
         <div className="text-center space-y-2">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-full text-[11px] font-bold tracking-wide">
-            <ShieldCheck size={14} className="text-blue-400" /> Nền tảng Khảo thí & Đào tạo Doanh nghiệp
+            <ShieldCheck size={14} className="text-blue-400" /> {t('badge', 'Nền tảng Khảo thí & Đào tạo Doanh nghiệp')}
           </div>
           <h1 className="text-3xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-purple-400">
-            ĐĂNG NHẬP
+            {t('title', 'ĐĂNG NHẬP')}
           </h1>
           <p className="text-xs text-slate-400">
-            Truy cập phân hệ đào tạo, ngân hàng tri thức và đấu trường khảo thí AI.
+            {t('subtitle', 'Truy cập phân hệ đào tạo, ngân hàng tri thức và đấu trường khảo thí AI.')}
           </p>
         </div>
 
@@ -317,7 +319,7 @@ export function LoginPage() {
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            <Lock size={14} /> Mật khẩu & Google
+            <Lock size={14} /> {t('tabCredentials', 'Mật khẩu & Google')}
           </button>
           <button
             type="button"
@@ -328,7 +330,7 @@ export function LoginPage() {
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            <QrCode size={14} /> Quét mã QR 1-giây
+            <QrCode size={14} /> {t('tabQr', 'Quét mã QR 1-giây')}
           </button>
         </div>
 
@@ -341,7 +343,7 @@ export function LoginPage() {
             <form onSubmit={handleCredentialsLogin} className="space-y-4">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">
-                  Email tài khoản
+                  {t('emailLabel', 'Email tài khoản')}
                 </label>
                 <div className="relative">
                   <span className="absolute left-3.5 top-3.5 text-slate-500">
@@ -351,7 +353,7 @@ export function LoginPage() {
                     type="email"
                     required
                     autoComplete="email"
-                    placeholder="name@dehoc.vn hoặc email cá nhân"
+                    placeholder={t('emailPlaceholder', 'name@dehoc.vn hoặc email cá nhân')}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full bg-slate-950/80 border border-slate-800 rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 transition-colors shadow-inner"
@@ -362,14 +364,14 @@ export function LoginPage() {
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">
-                    Mật khẩu
+                    {t('passwordLabel', 'Mật khẩu')}
                   </label>
                   <button
                     type="button"
                     onClick={() => setIsForgotOpen(true)}
                     className="text-[11px] font-medium text-blue-400 hover:text-blue-300 transition-colors cursor-pointer"
                   >
-                    Quên mật khẩu?
+                    {t('forgotPassword', 'Quên mật khẩu?')}
                   </button>
                 </div>
                 <div className="relative">
@@ -402,11 +404,11 @@ export function LoginPage() {
               >
                 {loading ? (
                   <>
-                    <Loader2 size={16} className="animate-spin" /> Đang xác thực thông tin...
+                    <Loader2 size={16} className="animate-spin" /> {t('authenticating', 'Đang xác thực thông tin...')}
                   </>
                 ) : (
                   <>
-                    <LogIn size={16} /> Đăng nhập hệ thống <ArrowRight size={14} />
+                    <LogIn size={16} /> {t('loginButton', 'Đăng nhập hệ thống')} <ArrowRight size={14} />
                   </>
                 )}
               </button>
@@ -416,7 +418,7 @@ export function LoginPage() {
             <div className="relative flex items-center justify-center my-4">
               <div className="absolute w-full border-t border-slate-800"></div>
               <span className="relative px-3 bg-slate-900 text-[10px] text-slate-500 font-bold uppercase tracking-widest">
-                Hoặc phương thức bảo mật khác
+                {t('orOtherMethods', 'Hoặc phương thức bảo mật khác')}
               </span>
             </div>
 
@@ -440,7 +442,7 @@ export function LoginPage() {
                     <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
                     <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
                   </svg>
-                  <span>Tiếp tục với tài khoản Google</span>
+                  <span>{t('continueWithGoogle', 'Tiếp tục với tài khoản Google')}</span>
                 </button>
               )}
 
@@ -449,17 +451,17 @@ export function LoginPage() {
                 onClick={handleKeycloakOidcLogin}
                 className="w-full py-2.5 bg-slate-950 hover:bg-slate-800/80 border border-slate-800 text-slate-300 font-bold rounded-xl transition-all active:scale-[0.98] text-xs flex items-center justify-center gap-2 cursor-pointer"
               >
-                <KeyRound size={15} className="text-blue-400" /> Đăng nhập qua SSO Doanh nghiệp (Keycloak OIDC)
+                <KeyRound size={15} className="text-blue-400" /> {t('enterpriseSso', 'Đăng nhập qua SSO Doanh nghiệp (Keycloak OIDC)')}
               </button>
 
               {/* Badge Xác Thực 2 Bước Google Authenticator */}
               <div className="p-2.5 rounded-xl bg-indigo-950/40 border border-indigo-500/25 flex items-center justify-between text-xs text-indigo-300">
                 <span className="flex items-center gap-1.5 font-semibold text-[11px]">
                   <Smartphone size={14} className="text-indigo-400" />
-                  Bảo vệ 2 lớp Google Authenticator (TOTP)
+                  {t('totpBadge', 'Bảo vệ 2 lớp Google Authenticator (TOTP)')}
                 </span>
                 <span className="text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-md font-bold">
-                  Đang hoạt động
+                  {t('active', 'Đang hoạt động')}
                 </span>
               </div>
             </div>
@@ -469,9 +471,9 @@ export function LoginPage() {
         {/* Registration Link */}
         <div className="text-center pt-2 border-t border-slate-800/60">
           <p className="text-xs text-slate-400">
-            Chưa có tài khoản học viên?{' '}
+            {t('noAccount', 'Chưa có tài khoản học viên?')}{' '}
             <Link to="/register" className="text-blue-400 hover:text-blue-300 font-bold transition-colors">
-              Đăng ký ngay
+              {t('registerNow', 'Đăng ký ngay')}
             </Link>
           </p>
         </div>
@@ -492,20 +494,20 @@ export function LoginPage() {
             {/* Header */}
             <div className="space-y-1.5">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-500/15 border border-purple-500/30 text-purple-300 rounded-full text-[11px] font-bold">
-                <Building2 size={13} /> Cổng Định Danh Doanh Nghiệp (SSO / IAM)
+                <Building2 size={13} /> {t('sso.gatewayBadge', 'Cổng Định Danh Doanh Nghiệp (SSO / IAM)')}
               </div>
               <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
-                Liên kết Định danh Hệ sinh thái dehoc.vn
+                {t('sso.gatewayTitle', 'Liên kết Định danh Hệ sinh thái dehoc.vn')}
               </h2>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Hạ tầng Đăng nhập Một lần (OpenID Connect / SAML 2.0 / Keycloak) đang trong lộ trình tích hợp đồng bộ bảo mật với Cổng thông tin tập trung <strong className="text-slate-200">dehoc.vn</strong>.
+                {t('sso.gatewayDesc', 'Hạ tầng Đăng nhập Một lần (OpenID Connect / SAML 2.0 / Keycloak) đang trong lộ trình tích hợp đồng bộ bảo mật với Cổng thông tin tập trung dehoc.vn.')}
               </p>
             </div>
 
             {/* Official Authentication Options */}
             <div className="space-y-3 pt-1">
               <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                Phương thức xác thực chính thức:
+                {t('sso.officialMethods', 'Phương thức xác thực chính thức:')}
               </div>
 
               {/* Option 1: Standard Credentials */}
@@ -516,40 +518,20 @@ export function LoginPage() {
               >
                 <div className="space-y-0.5">
                   <div className="text-xs font-bold text-blue-300 flex items-center gap-1.5">
-                    <Mail size={14} className="text-blue-400" /> Đăng nhập bằng Email & Mật khẩu
+                    <Mail size={14} className="text-blue-400" /> {t('sso.credentialsTitle', 'Đăng nhập bằng Email & Mật khẩu')}
                   </div>
                   <div className="text-[11px] text-slate-400">
-                    Sử dụng tài khoản Quản trị, Giảng viên hoặc Học viên đã được cấp phát.
+                    {t('sso.credentialsDesc', 'Sử dụng tài khoản Quản trị, Giảng viên hoặc Học viên đã được cấp phát.')}
                   </div>
                 </div>
                 <ArrowRight size={16} className="text-blue-400 group-hover:translate-x-0.5 transition-transform" />
-              </button>
-
-              {/* Option 2: Hardware PKI */}
-              <button
-                type="button"
-                onClick={() => {
-                  setShowSsoModal(false);
-                  handlePkiLogin();
-                }}
-                className="w-full p-3.5 bg-slate-800/80 hover:bg-slate-750 border border-slate-700/80 hover:border-emerald-500/50 rounded-2xl flex items-center justify-between text-left transition-all group active:scale-[0.99]"
-              >
-                <div className="space-y-0.5">
-                  <div className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
-                    <Lock size={14} className="text-emerald-400" /> Xác thực Chữ ký số USB Token PKI
-                  </div>
-                  <div className="text-[11px] text-slate-400">
-                    Tiêu chuẩn bảo mật phần cứng cấp cao nhất cho Cán bộ & Trưởng ban khảo thí.
-                  </div>
-                </div>
-                <ArrowRight size={16} className="text-emerald-400 group-hover:translate-x-0.5 transition-transform" />
               </button>
             </div>
 
             {/* Bottom info & Keycloak experimental redirect */}
             <div className="pt-2 border-t border-slate-800 flex items-center justify-between gap-3">
               <span className="text-[11px] text-slate-500">
-                Cần cấp tài khoản? Liên hệ quản trị viên cơ quan.
+                {t('sso.needAccountHelp', 'Cần cấp tài khoản? Liên hệ quản trị viên cơ quan.')}
               </span>
 
               <button
@@ -559,7 +541,7 @@ export function LoginPage() {
                 }}
                 className="text-[11px] text-slate-500 hover:text-purple-300 transition-colors underline"
               >
-                Kết nối Keycloak IdP &rarr;
+                {t('sso.connectKeycloak', 'Kết nối Keycloak IdP →')}
               </button>
             </div>
           </div>

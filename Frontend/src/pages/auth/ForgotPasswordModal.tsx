@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Mail, CheckCircle2, AlertCircle, X, RefreshCw, Copy, Check, ArrowRight } from 'lucide-react';
 import api from '@/services/api';
 
@@ -8,6 +9,8 @@ interface ForgotPasswordModalProps {
 }
 
 export function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordModalProps) {
+  const { t } = useTranslation('auth');
+  const { t: tc } = useTranslation('translation');
   if (!isOpen) return null;
 
   const [email, setEmail] = useState('');
@@ -57,10 +60,10 @@ export function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordModalProp
           <div>
             <div className="flex items-center gap-2">
               <Mail size={20} className="text-blue-400" />
-              <h3 className="text-lg font-black text-white">Quên Mật Khẩu?</h3>
+              <h3 className="text-lg font-black text-white">{t('forgot.title', 'Khôi phục Mật khẩu')}</h3>
             </div>
             <p className="text-xs text-slate-400 mt-1">
-              Nhập email đăng ký để nhận link đặt lại mật khẩu bảo mật (One-Time Token).
+              {t('forgot.subtitle', 'Nhập địa chỉ email tài khoản của bạn để nhận liên kết khôi phục an toàn.')}
             </p>
           </div>
           <button
@@ -83,14 +86,14 @@ export function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordModalProp
             <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 space-y-2">
               <div className="flex items-center gap-2 font-bold text-sm text-emerald-400">
                 <CheckCircle2 size={18} />
-                Yêu cầu đã được tiếp nhận!
+                {t('forgot.success', 'Đã gửi liên kết khôi phục tới email của bạn. Vui lòng kiểm tra hộp thư.')}
               </div>
               <p className="text-xs text-emerald-400/80">{successMessage}</p>
             </div>
 
             {resetLink && (
               <div className="p-4 rounded-2xl bg-slate-950 border border-blue-500/30 space-y-2">
-                <span className="text-[11px] font-bold text-blue-400 block">Đường link kích hoạt / đổi mật khẩu:</span>
+                <span className="text-[11px] font-bold text-blue-400 block">Link:</span>
                 <div className="p-2.5 bg-slate-900 rounded-xl border border-slate-800 text-[11px] font-mono text-slate-300 break-all select-all">
                   {resetLink}
                 </div>
@@ -101,14 +104,14 @@ export function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordModalProp
                     className="px-3 py-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
                   >
                     {copied ? <Check size={14} /> : <Copy size={14} />}
-                    {copied ? 'Đã sao chép!' : 'Sao chép link'}
+                    {copied ? 'Copied!' : 'Copy'}
                   </button>
 
                   <a
                     href={resetLink}
                     className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-blue-500/20 transition-all"
                   >
-                    <span>Mở link ngay</span>
+                    <span>Open &rarr;</span>
                     <ArrowRight size={14} />
                   </a>
                 </div>
@@ -119,21 +122,21 @@ export function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordModalProp
               onClick={onClose}
               className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold cursor-pointer"
             >
-              Đóng
+              {tc('common.close', 'Đóng')}
             </button>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                Email Đăng Nhập Của Bạn
+                {t('emailLabel', 'Email tài khoản')}
               </label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                placeholder="name@dehoc.vn hoặc email cá nhân"
+                placeholder={t('emailPlaceholder', 'name@dehoc.vn hoặc email cá nhân')}
                 className="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 rounded-xl px-4 py-3 text-white text-xs focus:outline-none transition-all font-mono"
               />
             </div>
@@ -144,7 +147,7 @@ export function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordModalProp
                 onClick={onClose}
                 className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs cursor-pointer"
               >
-                Hủy
+                {tc('common.cancel', 'Hủy')}
               </button>
               <button
                 type="submit"
@@ -152,7 +155,7 @@ export function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordModalProp
                 className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-blue-500/25 transition-all cursor-pointer disabled:opacity-50"
               >
                 {isSubmitting ? <RefreshCw size={14} className="animate-spin" /> : <Mail size={14} />}
-                {isSubmitting ? 'Đang gửi...' : 'Gửi Link Đặt Lại'}
+                {isSubmitting ? t('authenticating', 'Đang gửi...') : t('forgot.submit', 'Gửi yêu cầu khôi phục')}
               </button>
             </div>
           </form>

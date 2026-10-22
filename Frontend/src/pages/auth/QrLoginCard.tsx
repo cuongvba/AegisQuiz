@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
+import { useTranslation } from 'react-i18next';
 import { QrCode, RefreshCw, Smartphone, CheckCircle2, ShieldCheck, Zap, AlertCircle, ArrowRight, Sparkles } from 'lucide-react';
 import api from '../../services/api';
 
@@ -8,6 +9,7 @@ interface QrLoginCardProps {
 }
 
 export const QrLoginCard: React.FC<QrLoginCardProps> = ({ onSuccess }) => {
+  const { t } = useTranslation('auth');
   const [ticket, setTicket] = useState<string | null>(null);
   const [qrUrl, setQrUrl] = useState<string>('');
   const [expiresIn, setExpiresIn] = useState<number>(120);
@@ -78,7 +80,7 @@ export const QrLoginCard: React.FC<QrLoginCardProps> = ({ onSuccess }) => {
       }, 2000);
     } catch (err: any) {
       console.error('[QR Init Error]', err);
-      setError('Không thể khởi tạo mã QR đăng nhập. Vui lòng thử lại.');
+      setError(t('qr.initError', 'Không thể khởi tạo mã QR đăng nhập. Vui lòng thử lại.'));
       setStatus('expired');
     }
   };
@@ -123,7 +125,7 @@ export const QrLoginCard: React.FC<QrLoginCardProps> = ({ onSuccess }) => {
         {status === 'loading' && (
           <div className="w-52 h-52 flex flex-col items-center justify-center gap-3">
             <RefreshCw className="w-8 h-8 text-indigo-400 animate-spin" />
-            <span className="text-xs text-slate-400 font-medium">Đang tạo mã QR bảo mật...</span>
+            <span className="text-xs text-slate-400 font-medium">{t('authenticating', 'Đang tạo mã QR bảo mật...')}</span>
           </div>
         )}
 
@@ -145,8 +147,7 @@ export const QrLoginCard: React.FC<QrLoginCardProps> = ({ onSuccess }) => {
           <div className="w-52 h-52 flex flex-col items-center justify-center p-4 text-center gap-3 bg-indigo-950/40 rounded-2xl border border-indigo-500/30 animate-pulse">
             <Smartphone className="w-12 h-12 text-indigo-400 animate-bounce" />
             <div>
-              <p className="text-xs font-bold text-white">Đã nhận diện thiết bị!</p>
-              <p className="text-[11px] text-slate-300 mt-1 leading-snug">Vui lòng bấm "Xác nhận" trên màn hình điện thoại của bạn.</p>
+              <p className="text-xs font-bold text-white">{t('qr.scanned', 'Đã quét thành công! Đang chờ bạn xác nhận trên điện thoại...')}</p>
             </div>
           </div>
         )}
@@ -155,8 +156,7 @@ export const QrLoginCard: React.FC<QrLoginCardProps> = ({ onSuccess }) => {
           <div className="w-52 h-52 flex flex-col items-center justify-center p-4 text-center gap-3 bg-emerald-950/40 rounded-2xl border border-emerald-500/40 animate-scaleUp">
             <CheckCircle2 className="w-14 h-14 text-emerald-400" />
             <div>
-              <p className="text-sm font-bold text-emerald-300">Xác thực thành công!</p>
-              <p className="text-xs text-slate-300 mt-1">Đang chuyển hướng vào hệ thống...</p>
+              <p className="text-sm font-bold text-emerald-300">{t('qr.confirmed', 'Đăng nhập thành công! Đang chuyển hướng...')}</p>
             </div>
           </div>
         )}
@@ -165,15 +165,14 @@ export const QrLoginCard: React.FC<QrLoginCardProps> = ({ onSuccess }) => {
           <div className="w-52 h-52 flex flex-col items-center justify-center p-4 text-center gap-3 bg-slate-900/90 rounded-2xl border border-slate-700">
             <AlertCircle className="w-10 h-10 text-amber-400" />
             <div>
-              <p className="text-xs font-bold text-slate-200">Mã QR đã hết hạn</p>
-              <p className="text-[10px] text-slate-400 mt-0.5">Vì lý do an toàn, mã chỉ tồn tại 2 phút.</p>
+              <p className="text-xs font-bold text-slate-200">{t('qr.expired', 'Mã QR đã hết hiệu lực. Nhấn để tạo mã mới.')}</p>
             </div>
             <button
               type="button"
               onClick={initQr}
               className="mt-1 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 flex items-center gap-1.5 transition-transform active:scale-95 cursor-pointer"
             >
-              <RefreshCw size={13} /> Làm mới mã QR
+              <RefreshCw size={13} /> {t('qr.refresh', 'Lấy mã mới')}
             </button>
           </div>
         )}
@@ -184,11 +183,11 @@ export const QrLoginCard: React.FC<QrLoginCardProps> = ({ onSuccess }) => {
         <div className="mt-4 text-center space-y-2 max-w-xs">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800/80 border border-slate-700 text-xs font-mono font-bold text-indigo-300">
             <RefreshCw size={12} className="animate-spin text-indigo-400" />
-            <span>Mã hết hạn sau: {formatTime(expiresIn)}</span>
+            <span>{t('qr.expiresIn', 'Mã hết hạn sau:')} {formatTime(expiresIn)}</span>
           </div>
 
           <p className="text-xs text-slate-400 leading-relaxed">
-            Mở <strong className="text-slate-200">Camera điện thoại</strong> hoặc ứng dụng AegisQuiz/Dehoc quét mã QR phía trên để đăng nhập tức thì.
+            {t('qr.subtitle', 'Mở ứng dụng hoặc máy ảnh quét mã QR để đăng nhập ngay mà không cần nhập mật khẩu.')}
           </p>
         </div>
       )}
@@ -203,11 +202,8 @@ export const QrLoginCard: React.FC<QrLoginCardProps> = ({ onSuccess }) => {
           title="Bấm để trải nghiệm tính năng Quét QR ngay trên máy tính mà không cần điện thoại"
         >
           {isDemoLoading ? <RefreshCw size={12} className="animate-spin" /> : <Sparkles size={12} className="text-amber-400" />}
-          <span>{isDemoLoading ? 'Đang mô phỏng quét...' : 'Thử nghiệm quét QR nhanh (Demo Scan)'}</span>
+          <span>{isDemoLoading ? '...' : t('qr.demoScan', 'Mô phỏng Quét mã 1-Chạm (Dành cho Demo)')}</span>
         </button>
-        <span className="text-[10px] text-slate-500 text-center">
-          Chuẩn an toàn Zero-Trust RFC 6749 • Tự động hủy sau 1 lần quét
-        </span>
       </div>
     </div>
   );
