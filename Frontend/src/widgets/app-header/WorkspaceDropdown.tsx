@@ -85,14 +85,30 @@ export function WorkspaceDropdown() {
             </div>
           </button>
 
-          {/* 2. Đấu trường & Luyện thi */}
+          {/* 2. Không Gian Đội Nhóm */}
+          <button
+            type="button"
+            onClick={() => handleNavigate('/team')}
+            className="w-full text-start px-3 py-2 text-xs rounded-xl font-bold transition-all
+                       flex items-center gap-2.5 text-slate-200 hover:bg-slate-800 hover:text-white group"
+          >
+            <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 group-hover:scale-105 transition-transform">
+              <Users size={14} />
+            </div>
+            <div>
+              <div className="text-white font-bold">{t('nav.teamWorkspace', 'Không Gian Đội Nhóm')}</div>
+              <div className="text-[10px] text-slate-400 font-normal">Tiến độ, thảo luận & đề thi giao theo nhóm</div>
+            </div>
+          </button>
+
+          {/* 3. Đấu trường & Luyện thi */}
           <button
             type="button"
             onClick={() => handleNavigate('/practice')}
             className="w-full text-start px-3 py-2 text-xs rounded-xl font-bold transition-all
                        flex items-center gap-2.5 text-slate-200 hover:bg-slate-800 hover:text-white group"
           >
-            <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 group-hover:scale-105 transition-transform">
+            <div className="w-7 h-7 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 group-hover:scale-105 transition-transform">
               <BookOpen size={14} />
             </div>
             <div>
@@ -101,7 +117,7 @@ export function WorkspaceDropdown() {
             </div>
           </button>
 
-          {/* 3. Khu Quản trị Hệ thống */}
+          {/* 4. Khu Quản trị Hệ thống */}
           {canAccessAdmin && (
             <button
               type="button"
@@ -115,24 +131,6 @@ export function WorkspaceDropdown() {
               <div>
                 <div className="text-purple-300 font-bold">{t('nav.adminPortal', 'Khu Quản trị Hệ thống')}</div>
                 <div className="text-[10px] text-purple-400/80 font-normal">Quản lý tổ chức, ngân hàng câu hỏi & nhân sự</div>
-              </div>
-            </button>
-          )}
-
-          {/* 4. Trưởng nhóm Khảo thí */}
-          {(isTeamLeader || canAccessAdmin) && (
-            <button
-              type="button"
-              onClick={() => handleNavigate('/team')}
-              className="w-full text-start px-3 py-2 text-xs rounded-xl font-bold transition-all
-                         flex items-center gap-2.5 text-slate-200 hover:bg-slate-800 hover:text-white group"
-            >
-              <div className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 group-hover:scale-105 transition-transform">
-                <Users size={14} />
-              </div>
-              <div>
-                <div className="text-white font-bold">Không Gian Đội Nhóm</div>
-                <div className="text-[10px] text-slate-400 font-normal">Giám sát khảo thí theo phòng ban/lớp</div>
               </div>
             </button>
           )}
