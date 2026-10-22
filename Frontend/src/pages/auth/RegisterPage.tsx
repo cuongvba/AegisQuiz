@@ -94,7 +94,7 @@ export function RegisterPage() {
 
         <div className="text-center space-y-2">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-950/50 border border-purple-500/30 text-purple-300 rounded-full text-xs font-bold tracking-wide uppercase">
-            Khảo Thí & Đào Tạo AegisQuiz
+            Khảo Thí & Đào Tạo Aegis
           </div>
           <h1 className="text-3xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
             TẠO TÀI KHOẢN

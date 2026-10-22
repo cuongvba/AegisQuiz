@@ -24,8 +24,8 @@ namespace AegisQuiz.Infrastructure.Excel.Strategies
     public class NativeIsomorphicExportStrategy : IExcelExportStrategy
     {
         public string TemplateCode => "NATIVE_AEGIS";
-        public string DisplayName => "AegisQuiz Native Isomorphic (Chuẩn Toàn Năng)";
-        public string Description => "Mẫu Excel chuẩn mực tương thích 100% với AegisQuiz, bảo toàn đẳng cấu 9 dạng câu hỏi, LaTeX, hình ảnh và 5 trục tọa độ tri thức.";
+        public string DisplayName => "Aegis Native Isomorphic (Chuẩn Toàn Năng)";
+        public string Description => "Mẫu Excel chuẩn mực tương thích 100% với Aegis, bảo toàn đẳng cấu 9 dạng câu hỏi, LaTeX, hình ảnh và 5 trục tọa độ tri thức.";
         public bool SupportsMultiSheet => false;
         public bool IsNativeIsomorphic => true;
 
@@ -264,8 +264,8 @@ namespace AegisQuiz.Infrastructure.Excel.Strategies
         private static void RenderCognitiveBanner(ISheet sheet, IReadOnlyList<DocxImportPreviewDto> questions, ExcelExportOptionsDto options, StylePalette styles)
         {
             var first = questions.FirstOrDefault();
-            string examTitle = options.ExamTitle ?? "TÀI LIỆU KHẢO THÍ CHUẨN HÓA AEGISQUIZ";
-            string issuingOrg = options.IssuingOrg ?? first?.IssuingOrg ?? "AegisQuiz System";
+            string examTitle = options.ExamTitle ?? "TÀI LIỆU KHẢO THÍ CHUẨN HÓA AEGIS";
+            string issuingOrg = options.IssuingOrg ?? first?.IssuingOrg ?? "Aegis System";
             int benchmarkYear = options.BenchmarkYear ?? first?.BenchmarkYear ?? DateTime.Now.Year;
             string standard = options.BenchmarkStandard ?? first?.BenchmarkStandard ?? "Chuẩn Quốc Gia GDPT 2025 / B2B Assessment";
             string targetLevel = options.TargetLevel ?? first?.TargetLevel ?? "Toàn diện";

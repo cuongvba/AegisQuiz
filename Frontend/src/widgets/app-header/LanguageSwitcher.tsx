@@ -77,12 +77,17 @@ export function LanguageSwitcher() {
                 <li key={l.code} role="option" aria-selected={isSelected}>
                   <button
                     type="button"
-                    onClick={() => {
-                      setLang(l.code as any);
-                      i18n.changeLanguage(l.code);
-                      const rtl = isRTL(l.code);
+                    onClick={async () => {
+                      const code = l.code;
+                      setLang(code as any);
+                      try {
+                        await i18n.changeLanguage(code);
+                      } catch (err) {
+                        console.warn('[LanguageSwitcher] changeLanguage failed:', err);
+                      }
+                      const rtl = isRTL(code);
                       document.documentElement.dir = rtl ? 'rtl' : 'ltr';
-                      document.documentElement.lang = l.code;
+                      document.documentElement.lang = code;
                       setIsOpen(false);
                     }}
                     className={`w-full text-start px-2.5 py-2 text-xs rounded-xl font-medium transition-all

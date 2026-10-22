@@ -108,8 +108,8 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             Hệ thống gặp sự cố. Vui lòng thử lại hoặc tải lại trang.
           </p>
 
-          {/* Error detail — only in dev */}
-          {import.meta.env.DEV && this.state.error && (
+          {/* Error detail */}
+          {this.state.error && (
             <details
               style={{
                 marginBottom: '1.5rem',

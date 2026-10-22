@@ -60,7 +60,7 @@ namespace AegisQuiz.Infrastructure.Transpiler
                 // 1. Thẻ thiết lập Category (Danh mục câu hỏi trong Moodle)
                 string categoryName = !string.IsNullOrWhiteSpace(options.CategoryName) 
                     ? options.CategoryName 
-                    : (!string.IsNullOrWhiteSpace(options.ExamTitle) ? options.ExamTitle : "AegisQuiz Transpiled Category");
+                    : (!string.IsNullOrWhiteSpace(options.ExamTitle) ? options.ExamTitle : "Aegis Transpiled Category");
                 
                 WriteCategoryElement(writer, categoryName);
 

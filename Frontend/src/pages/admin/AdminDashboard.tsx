@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Users, CreditCard, FileQuestion, BookOpen, Clock, TrendingUp, Loader2, RefreshCw } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import api from '@/services/api';
 
 interface DashboardStats {
@@ -11,8 +12,10 @@ interface DashboardStats {
 
 interface RecentActivity {
   user: string;
-  action: string;
-  time: string;
+  actionKey: string;
+  fallbackAction: string;
+  timeKey: string;
+  fallbackTime: string;
   amount: string;
 }
 
@@ -30,6 +33,7 @@ function StatSkeleton() {
 }
 
 export function AdminDashboard() {
+  const { t, i18n } = useTranslation('admin');
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -39,21 +43,19 @@ export function AdminDashboard() {
     setLoading(true);
     setError(null);
     try {
-      // Gọi API lấy tổng số câu hỏi (pageSize=1 để tiết kiệm bandwidth)
       const qRes = await api.get('/api/quiz/questions?page=1&pageSize=1');
       const questionCount: number = qRes.data?.total ?? qRes.data?.Total ?? 0;
 
       setStats({
         questionCount,
-        userCount: 2847,        // TODO: kết nối UserController khi có endpoint
-        monthlyRevenue: '45.2M', // TODO: kết nối PaymentController
-        notebookCount: 18,       // TODO: kết nối NotebookController
+        userCount: 2847,
+        monthlyRevenue: '45.2M',
+        notebookCount: 18,
       });
     } catch (err: unknown) {
       console.warn('[AdminDashboard] API unavailable, using fallback stats:', err);
-      // Graceful fallback khi backend chưa chạy
       setStats({ questionCount: 0, userCount: 2847, monthlyRevenue: '45.2M', notebookCount: 18 });
-      setError('Backend API chưa sẵn sàng. Đang hiển thị dữ liệu mẫu.');
+      setError(t('dashboard.apiFallback', 'Backend API chưa sẵn sàng. Đang hiển thị dữ liệu mẫu.'));
     } finally {
       setLoading(false);
       setLastRefresh(new Date());
@@ -65,17 +67,17 @@ export function AdminDashboard() {
   }, []);
 
   const recentActivities: RecentActivity[] = [
-    { user: 'Nguyễn Văn A', action: 'Nạp VIP (Stripe)', time: '2 phút trước', amount: '₫99,000' },
-    { user: 'Trần Thị B', action: 'Hoàn thành đề thi Toán', time: '5 phút trước', amount: '92/100' },
-    { user: 'Admin', action: 'Upload giáo trình PDF mới', time: '1 giờ trước', amount: '156 trang' },
-    { user: 'Lê Văn C', action: 'Nạp VIP (Polygon)', time: '3 giờ trước', amount: '2 MATIC' },
+    { user: 'Nguyễn Văn A', actionKey: 'dashboard.recentActivity.actions.vipStripe', fallbackAction: 'Nạp VIP (Stripe)', timeKey: 'dashboard.recentActivity.time.2m', fallbackTime: '2 phút trước', amount: '₫99,000' },
+    { user: 'Trần Thị B', actionKey: 'dashboard.recentActivity.actions.completedExam', fallbackAction: 'Hoàn thành đề thi Toán', timeKey: 'dashboard.recentActivity.time.5m', fallbackTime: '5 phút trước', amount: '92/100' },
+    { user: 'Admin', actionKey: 'dashboard.recentActivity.actions.uploadedPdf', fallbackAction: 'Upload giáo trình PDF mới', timeKey: 'dashboard.recentActivity.time.1h', fallbackTime: '1 giờ trước', amount: '156 trang' },
+    { user: 'Lê Văn C', actionKey: 'dashboard.recentActivity.actions.vipPolygon', fallbackAction: 'Nạp VIP (Polygon)', timeKey: 'dashboard.recentActivity.time.3h', fallbackTime: '3 giờ trước', amount: '2 MATIC' },
   ];
 
   const statCards = stats ? [
-    { label: 'Tổng Học sinh',     value: stats.userCount.toLocaleString('vi-VN'), change: '+12%', color: 'text-blue-400',   bg: 'bg-blue-500/5 border-blue-500/10',   icon: <Users className="text-blue-400" /> },
-    { label: 'Doanh thu Tháng',   value: `₫${stats.monthlyRevenue}`,             change: '+28%', color: 'text-emerald-400', bg: 'bg-emerald-500/5 border-emerald-500/10', icon: <CreditCard className="text-emerald-400" /> },
-    { label: 'Câu hỏi trong Kho', value: stats.questionCount.toLocaleString('vi-VN') || '0', change: 'Cập nhật thực', color: 'text-purple-400', bg: 'bg-purple-500/5 border-purple-500/10', icon: <FileQuestion className="text-purple-400" /> },
-    { label: 'Giáo trình PDF',    value: String(stats.notebookCount),            change: '+3', color: 'text-amber-400',   bg: 'bg-amber-500/5 border-amber-500/10',   icon: <BookOpen className="text-amber-400" /> },
+    { label: t('dashboard.stats.totalUsers', 'Tổng Học sinh'), value: stats.userCount.toLocaleString(i18n.language || 'vi-VN'), change: '+12%', color: 'text-blue-400', bg: 'bg-blue-500/5 border-blue-500/10', icon: <Users className="text-blue-400" /> },
+    { label: t('dashboard.stats.monthlyRevenue', 'Doanh thu Tháng'), value: `₫${stats.monthlyRevenue}`, change: '+28%', color: 'text-emerald-400', bg: 'bg-emerald-500/5 border-emerald-500/10', icon: <CreditCard className="text-emerald-400" /> },
+    { label: t('dashboard.stats.totalQuestions', 'Câu hỏi trong Kho'), value: stats.questionCount.toLocaleString(i18n.language || 'vi-VN') || '0', change: t('dashboard.stats.realtime', 'Cập nhật thực'), color: 'text-purple-400', bg: 'bg-purple-500/5 border-purple-500/10', icon: <FileQuestion className="text-purple-400" /> },
+    { label: t('dashboard.stats.notebooks', 'Giáo trình PDF'), value: String(stats.notebookCount), change: '+3', color: 'text-amber-400', bg: 'bg-amber-500/5 border-amber-500/10', icon: <BookOpen className="text-amber-400" /> },
   ] : [];
 
   return (
@@ -83,13 +85,13 @@ export function AdminDashboard() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400 tracking-tight">
-            Tổng quan Hệ thống
+            {t('dashboard.title', 'Tổng quan Hệ thống')}
           </h1>
           <p className="text-sm text-slate-400 mt-1 font-medium">
-            Báo cáo tổng quát và lịch sử vận hành của hệ thống AegisQuiz.
+            {t('dashboard.subtitle', 'Báo cáo tổng quát và lịch sử vận hành của hệ thống Aegis Global.')}
             {stats && (
-              <span className="ml-2 text-slate-600 text-[10px] font-mono">
-                Cập nhật: {lastRefresh.toLocaleTimeString('vi-VN')}
+              <span className="ms-2 text-slate-500 text-[10px] font-mono">
+                {t('dashboard.updatedAt', 'Cập nhật:')} {lastRefresh.toLocaleTimeString(i18n.language || 'vi-VN')}
               </span>
             )}
           </p>
@@ -100,7 +102,7 @@ export function AdminDashboard() {
           className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-400 hover:text-white bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl transition-all disabled:opacity-50 cursor-pointer"
         >
           {loading ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-          Làm mới
+          {t('dashboard.refresh', 'Làm mới')}
         </button>
       </div>
 
@@ -125,7 +127,7 @@ export function AdminDashboard() {
               </div>
               <p className={`text-3xl font-black ${stat.color}`}>{stat.value}</p>
               <p className="text-xs text-emerald-500 font-bold mt-2 flex items-center gap-1">
-                ▲ {stat.change} <span className="text-slate-500 font-medium">so với tháng trước</span>
+                ▲ {stat.change} <span className="text-slate-500 font-medium">{t('dashboard.stats.comparedToLastMonth', 'so với tháng trước')}</span>
               </p>
             </div>
           ))
@@ -135,18 +137,18 @@ export function AdminDashboard() {
       {/* RECENT ACTIVITIES */}
       <div className="bg-slate-900/60 rounded-3xl border border-slate-800 p-6 md:p-8 backdrop-blur-xl">
         <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-          <Clock size={20} className="text-blue-400" /> Hoạt động Gần đây
+          <Clock size={20} className="text-blue-400" /> {t('dashboard.recentActivity.title', 'Hoạt động Gần đây')}
         </h2>
         <div className="space-y-4">
           {recentActivities.map((activity, i) => (
             <div key={i} className="flex items-center justify-between py-4 border-b border-slate-800 last:border-0">
               <div className="space-y-1">
                 <p className="font-bold text-gray-200">{activity.user}</p>
-                <p className="text-xs text-gray-400 font-medium">{activity.action}</p>
+                <p className="text-xs text-gray-400 font-medium">{t(activity.actionKey, activity.fallbackAction)}</p>
               </div>
               <div className="text-right space-y-1">
                 <p className="font-black text-blue-400 text-sm">{activity.amount}</p>
-                <p className="text-[10px] text-gray-500 font-mono">{activity.time}</p>
+                <p className="text-[10px] text-gray-500 font-mono">{t(activity.timeKey, activity.fallbackTime)}</p>
               </div>
             </div>
           ))}
@@ -155,4 +157,5 @@ export function AdminDashboard() {
     </div>
   );
 }
+
 export default AdminDashboard;

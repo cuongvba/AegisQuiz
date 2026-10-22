@@ -1,0 +1,60 @@
+{
+  "nav": {
+    "brandSubtitle": "البنية التحتية المعرفية ومعيار التحقق",
+    "portal": "البوابة",
+    "leader": "القائد",
+    "overview": "نظرة عامة",
+    "questionBank": "بنك الأسئلة",
+    "exams": "الامتحانات والتقييمات",
+    "tenants": "المستأجرون والعلامات البيضاء",
+    "whiteLabel": "تخصيص الهوية البصرية",
+    "orgUnits": "شجرة الهيكل التنظيمي O(1)",
+    "notebooks": "المناهج الدراسية (PDF)",
+    "symposium": "ندوة الذكاء الاصطناعي",
+    "aiSettings": "قطيع الذكاء الاصطناعي و FinOps",
+    "promptForge": "مسبك الأوامر التأسيسي",
+    "users": "إدارة المستخدمين",
+    "payments": "الإيرادات والمدفوعات",
+    "learningArea": "منطقة التعلم",
+    "homepage": "الصفحة الرئيسية",
+    "closeNav": "إغلاق شريط التنقل",
+    "openNav": "فتح شريط التنقل"
+  },
+  "header": {
+    "systemAdmin": "مدير النظام",
+    "teamLeader": "قائد الفريق",
+    "admin": "Admin",
+    "internalUnit": "الوحدة الداخلية",
+    "systemTitle": "مركز العمليات العالمية"
+  },
+  "dashboard": {
+    "title": "نظرة عامة على النظام",
+    "subtitle": "المؤشرات التشغيلية والقياسات الحية لنظام Aegis Global.",
+    "updatedAt": "آخر تحديث:",
+    "refresh": "تحديث",
+    "apiFallback": "واجهة برمجة التطبيقات قيد التهيئة. يتم عرض بيانات افتراضية.",
+    "stats": {
+      "totalUsers": "إجمالي الطلاب",
+      "monthlyRevenue": "الإيرادات الشهرية",
+      "totalQuestions": "الأسئلة النشطة",
+      "notebooks": "مناهج PDF",
+      "comparedToLastMonth": "مقارنة بالشهر السابق",
+      "realtime": "تحديث لحظي"
+    },
+    "recentActivity": {
+      "title": "النشاط الأخير",
+      "actions": {
+        "vipStripe": "ترقية VIP (Stripe)",
+        "completedExam": "إتمام اختبار الرياضيات",
+        "uploadedPdf": "رفع منهج PDF جديد",
+        "vipPolygon": "شحن VIP (Polygon)"
+      },
+      "time": {
+        "2m": "منذ دقيقتين",
+        "5m": "منذ 5 دقائق",
+        "1h": "منذ ساعة",
+        "3h": "منذ 3 ساعات"
+      }
+    }
+  }
+}

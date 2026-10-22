@@ -39,7 +39,7 @@ export const env = {
   APP_VERSION: getEnv('VITE_APP_VERSION', '1.0.0'),
 
   /** Tên app có thể được override bởi tenant */
-  APP_NAME: getEnv('VITE_APP_NAME', 'AegisQuiz'),
+  APP_NAME: getEnv('VITE_APP_NAME', 'Aegis Global'),
 } as const;
 
 export type EnvConfig = typeof env;

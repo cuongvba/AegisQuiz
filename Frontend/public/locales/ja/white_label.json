@@ -22,7 +22,7 @@
   "savedSuccess": "ブランドトークンが全システムに正常に保存・適用されました！",
   "paywall": {
     "title": "ホワイトレーベル機能はEnterpriseおよびGlobalプラン限定です",
-    "description": "独自ドメインの設定、AegisQuizロゴの削除、カスタムテーマの適用を行うには、Enterpriseへのアップグレードをご検討ください。",
+    "description": "独自ドメインの設定、Aegisロゴの削除、カスタムテーマの適用を行うには、Enterpriseへのアップグレードをご検討ください。",
     "upgradeNow": "Enterpriseへアップグレード",
     "contactSales": "営業担当にお問い合わせ"
   }

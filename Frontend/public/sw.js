@@ -1,9 +1,9 @@
 /**
- * AegisQuiz Service Worker — High-Performance Offline-First Engine (PWA 2026)
+ * Aegis Service Worker — High-Performance Offline-First Engine (PWA 2026)
  * Quản lý bộ đệm App Shell, font KaTeX và điều hướng ngoại tuyến khi mất sóng Internet.
  */
 
-const CACHE_NAME = 'aegisquiz-app-shell-v1';
+const CACHE_NAME = 'aegis-app-shell-v1';
 const STATIC_ASSETS = [
   '/',
   '/index.html',

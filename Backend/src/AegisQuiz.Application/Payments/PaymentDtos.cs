@@ -138,5 +138,64 @@ namespace AegisQuiz.Application.Payments
         public string? StripeSecretKey { get; set; }
         public string? Web3TreasuryAddress { get; set; }
         public bool EnableSandboxTesting { get; set; } = true;
+
+        // [Enterprise Security] Cơ chế xác thực đa yếu tố Step-up / Sudo Mode bắt buộc của SysAdmin
+        public string? SudoPassword { get; set; }
+        public string? MfaVerificationCode { get; set; }
+    }
+
+    // ── Tra Cứu & Xác Thực Danh Tính Tài Khoản Ngân Hàng Thời Gian Thực ───────────
+    public class BankAccountLookupRequest
+    {
+        public string BankBin { get; set; } = string.Empty;
+        public string AccountNumber { get; set; } = string.Empty;
+    }
+
+    public class BankAccountLookupResponseDto
+    {
+        public bool IsValid { get; set; }
+        public string AccountName { get; set; } = string.Empty;
+        public string BankName { get; set; } = string.Empty;
+        public string Message { get; set; } = string.Empty;
+        public bool IsVerifiedByNapas { get; set; }
+    }
+
+    // ── Community Coffee Donation & Supporter Gratitude DTOs ───────────────────
+    public class CreateCoffeeDonationRequest
+    {
+        public string DonorName { get; set; } = "Ẩn danh";
+        public string DonorEmail { get; set; } = string.Empty; // Dùng để gửi tri ân / quà tặng
+        public string? DonorPhone { get; set; }
+        public decimal Amount { get; set; } = 25000;
+        public string Message { get; set; } = "Mời team ly cafe & chúc dự án phát triển!";
+    }
+
+    public class CoffeeDonationResponseDto
+    {
+        public long OrderCode { get; set; }
+        public decimal Amount { get; set; }
+        public string EmvCoPayload { get; set; } = string.Empty; // Chuỗi chuẩn EMVCo Napas
+        public string QrImageUrl { get; set; } = string.Empty;   // URL ảnh fallback
+        public string BankBin { get; set; } = string.Empty;
+        public string BankName { get; set; } = string.Empty;
+        public string AccountNumber { get; set; } = string.Empty;
+        public string AccountName { get; set; } = string.Empty;
+        public string TransferContent { get; set; } = string.Empty;
+        public string RewardVoucherCode { get; set; } = string.Empty; // Mã voucher tri ân
+        public string RewardTier { get; set; } = "Nhà Đồng Hành";
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    }
+
+    public class CoffeeDonationItemDto
+    {
+        public long OrderCode { get; set; }
+        public string DonorName { get; set; } = string.Empty;
+        public string DonorEmail { get; set; } = string.Empty;
+        public decimal Amount { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public string RewardVoucherCode { get; set; } = string.Empty;
+        public string RewardTier { get; set; } = string.Empty;
+        public string Status { get; set; } = "Pending";
+        public DateTime CreatedAt { get; set; }
     }
 }

@@ -1,0 +1,60 @@
+{
+  "nav": {
+    "brandSubtitle": "संज्ञानात्मक अवसंरचना और सत्यापन मानक",
+    "portal": "पोर्टल",
+    "leader": "लीडर",
+    "overview": "सिस्टम अवलोकन",
+    "questionBank": "प्रश्न बैंक",
+    "exams": "परीक्षाएं और मूल्यांकन",
+    "tenants": "किरायेदार और व्हाइट-लेबल",
+    "whiteLabel": "ब्रांड थीमिंग",
+    "orgUnits": "O(1) संगठनात्मक पदानुक्रम",
+    "notebooks": "पाठ्यचर्या (PDF)",
+    "symposium": "एआई संगोष्ठी",
+    "aiSettings": "एआई भेड़िया झुंड और फिनऑप्स",
+    "promptForge": "टियर-0 प्रॉम्प्ट फोर्ज",
+    "users": "उपयोगकर्ता प्रबंधन",
+    "payments": "राजस्व और भुगतान",
+    "learningArea": "शिक्षार्थी क्षेत्र",
+    "homepage": "होम पोर्टल",
+    "closeNav": "नेविगेशन बंद करें",
+    "openNav": "नेविगेशन खोलें"
+  },
+  "header": {
+    "systemAdmin": "सिस्टम व्यवस्थापक",
+    "teamLeader": "टीम लीडर",
+    "admin": "Admin",
+    "internalUnit": "आंतरिक इकाई",
+    "systemTitle": "वैश्विक संचालन केंद्र"
+  },
+  "dashboard": {
+    "title": "सिस्टम अवलोकन",
+    "subtitle": "Aegis Global के वैश्विक परिचालन मेट्रिक्स और लाइव टेलीमेट्री।",
+    "updatedAt": "अद्यतन:",
+    "refresh": "ताज़ा करें",
+    "apiFallback": "बैकएंड एपीआई प्रारंभ हो रहा है। नमूना डेटा प्रदर्शित किया जा रहा है।",
+    "stats": {
+      "totalUsers": "कुल शिक्षार्थी",
+      "monthlyRevenue": "मासिक राजस्व",
+      "totalQuestions": "सक्रिय प्रश्न",
+      "notebooks": "पीडीएफ पाठ्यचर्या",
+      "comparedToLastMonth": "पिछले महीने की तुलना में",
+      "realtime": "वास्तविक समय"
+    },
+    "recentActivity": {
+      "title": "हाल की गतिविधि",
+      "actions": {
+        "vipStripe": "वीआईपी अपग्रेड (Stripe)",
+        "completedExam": "गणित परीक्षा पूरी की",
+        "uploadedPdf": "नया पीडीएफ पाठ्यक्रम अपलोड किया",
+        "vipPolygon": "वीआईपी रिचार्ज (Polygon)"
+      },
+      "time": {
+        "2m": "2 मिनट पहले",
+        "5m": "5 मिनट पहले",
+        "1h": "1 घंटा पहले",
+        "3h": "3 घंटे पहले"
+      }
+    }
+  }
+}

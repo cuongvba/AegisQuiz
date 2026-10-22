@@ -810,7 +810,38 @@ using (var scope = app.Services.CreateScope())
                       ('c0000001-0000-0000-0000-000000000004', 'AGI_CYBERNETICS', 'Viện Siêu Trí Tuệ & Điều Khiển Học', 'Kiến trúc AGI & Căn chỉnh nhân loại', '/AI/SUPERINTELLIGENCE/ALIGNMENT', 'Sự xuất hiện của Siêu trí tuệ là bước tiến hóa tất yếu của thông tin vũ trụ.', 2990, true, now()),
                       ('c0000001-0000-0000-0000-000000000005', 'ECONOMICS', 'Viện Kinh Tế Chính Trị & Địa Chiến Lược', 'Kinh tế vĩ mô & Lý thuyết trò chơi', '/SOCIETY/ECONOMICS/GEOPOLITICS', 'Dòng chảy giá trị và phân bổ tài nguyên quyết định sự hưng thịnh của nền văn minh.', 2850, true, now()),
                       ('c0000001-0000-0000-0000-000000000006', 'LIFE_SCIENCES', 'Viện Khoa Học Sự Sống & Sinh Quyển', 'Sinh học phân tử & Sinh thái học', '/NATURE/BIOLOGY/EVOLUTION', 'Sự sống là cấu trúc tiêu tán vi mô chống lại entropy nhiệt động lực học.', 2880, true, now())
-                    ON CONFLICT (""CouncilCode"") DO NOTHING;
+                    -- 11. BẢNG PaymentTransactions (Hạ tầng thanh toán đa cổng và Quỹ tài trợ tri ân)
+                    CREATE TABLE IF NOT EXISTS ""PaymentTransactions"" (
+                        ""TransactionId"" uuid NOT NULL PRIMARY KEY,
+                        ""UserId"" uuid NOT NULL,
+                        ""TenantId"" uuid NULL,
+                        ""OrderCode"" bigint NOT NULL DEFAULT 0,
+                        ""PaymentCode"" text NOT NULL DEFAULT '',
+                        ""AmountRequired"" numeric(18,2) NOT NULL DEFAULT 0,
+                        ""Currency"" text NOT NULL DEFAULT 'VND',
+                        ""Provider"" text NOT NULL DEFAULT 'PayOS',
+                        ""Description"" text NOT NULL DEFAULT '',
+                        ""CheckoutUrl"" text NOT NULL DEFAULT '',
+                        ""QrCode"" text NOT NULL DEFAULT '',
+                        ""PaymentLinkId"" text NOT NULL DEFAULT '',
+                        ""TransactionHash"" text NOT NULL DEFAULT '',
+                        ""MetadataJson"" text NOT NULL DEFAULT '{}',
+                        ""Status"" integer NOT NULL DEFAULT 0,
+                        ""CreatedAt"" timestamp with time zone NOT NULL DEFAULT now(),
+                        ""CompletedAt"" timestamp with time zone NULL
+                    );
+                    ALTER TABLE ""PaymentTransactions"" ADD COLUMN IF NOT EXISTS ""CheckoutUrl"" text DEFAULT '';
+                    ALTER TABLE ""PaymentTransactions"" ADD COLUMN IF NOT EXISTS ""TenantId"" uuid;
+                    ALTER TABLE ""PaymentTransactions"" ADD COLUMN IF NOT EXISTS ""OrderCode"" bigint DEFAULT 0;
+                    ALTER TABLE ""PaymentTransactions"" ADD COLUMN IF NOT EXISTS ""Provider"" text DEFAULT 'PayOS';
+                    ALTER TABLE ""PaymentTransactions"" ADD COLUMN IF NOT EXISTS ""Description"" text DEFAULT '';
+                    ALTER TABLE ""PaymentTransactions"" ADD COLUMN IF NOT EXISTS ""QrCode"" text DEFAULT '';
+                    ALTER TABLE ""PaymentTransactions"" ADD COLUMN IF NOT EXISTS ""PaymentLinkId"" text DEFAULT '';
+                    ALTER TABLE ""PaymentTransactions"" ADD COLUMN IF NOT EXISTS ""TransactionHash"" text DEFAULT '';
+                    ALTER TABLE ""PaymentTransactions"" ADD COLUMN IF NOT EXISTS ""MetadataJson"" text DEFAULT '{}';
+                    ALTER TABLE ""PaymentTransactions"" ADD COLUMN IF NOT EXISTS ""CompletedAt"" timestamp with time zone;
+                    CREATE INDEX IF NOT EXISTS ""IX_PaymentTransactions_OrderCode"" ON ""PaymentTransactions"" (""OrderCode"");
+                    CREATE INDEX IF NOT EXISTS ""IX_PaymentTransactions_Provider"" ON ""PaymentTransactions"" (""Provider"");
                 ");
                 log.LogInformation("[AegisQuiz] Auto-healing DDL executed successfully. All columns and tables guaranteed.");
             }

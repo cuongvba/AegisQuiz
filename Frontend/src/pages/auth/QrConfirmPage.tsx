@@ -36,7 +36,7 @@ export const QrConfirmPage: React.FC = () => {
                 }
             } catch (err: any) {
                 setStatus('failed');
-                setErrorMessage('Không thể kết nối đến máy chủ AegisQuiz: ' + err.message);
+                setErrorMessage('Không thể kết nối đến máy chủ Aegis: ' + err.message);
             }
         };
 
@@ -55,8 +55,8 @@ export const QrConfirmPage: React.FC = () => {
             role: user.role || 'SuperAdmin'
         } : {
             id: 'usr-scan-mobile',
-            email: 'admin@aegisquiz.internal',
-            fullName: 'Quản trị viên AegisQuiz (Mobile)',
+            email: 'admin@aegis.internal',
+            fullName: 'Quản trị viên Aegis (Mobile)',
             role: 'SuperAdmin'
         };
 
@@ -101,7 +101,7 @@ export const QrConfirmPage: React.FC = () => {
                         </div>
                     </div>
                     <h1 className="text-xl font-bold bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
-                        AegisQuiz Security
+                        Aegis Security
                     </h1>
                     <p className="text-xs text-slate-400 mt-1">Xác thực đăng nhập máy tính bằng thiết bị di động</p>
                 </div>
@@ -120,7 +120,7 @@ export const QrConfirmPage: React.FC = () => {
                             <Smartphone className="w-6 h-6 text-indigo-400 shrink-0 mt-0.5" />
                             <div className="text-xs text-slate-300">
                                 <span className="font-semibold text-white block mb-0.5">Yêu cầu đăng nhập mới</span>
-                                Bạn đang thực hiện quét mã QR để đăng nhập vào AegisQuiz Web trên màn hình máy tính.
+                                Bạn đang thực hiện quét mã QR để đăng nhập vào Aegis Web trên màn hình máy tính.
                             </div>
                         </div>
 

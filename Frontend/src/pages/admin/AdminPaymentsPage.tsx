@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Landmark, Coins, TrendingUp, RefreshCw, ShieldCheck, Settings, BarChart3 } from 'lucide-react';
+import { Landmark, Coins, TrendingUp, RefreshCw, ShieldCheck, Settings, BarChart3, Heart } from 'lucide-react';
 import api from '@/services/api';
 import { PaymentSettingsSection } from './components/PaymentSettingsSection';
+import { DonorsManagementSection } from './components/DonorsManagementSection';
 
 interface PaymentAnalytics {
   totalRevenueVnd: number;
@@ -21,7 +22,7 @@ interface PaymentAnalytics {
 }
 
 export function AdminPaymentsPage() {
-  const [activeTab, setActiveTab] = useState<'analytics' | 'settings'>('analytics');
+  const [activeTab, setActiveTab] = useState<'analytics' | 'settings' | 'donors'>('analytics');
   const [loading, setLoading] = useState(false);
   const [analytics, setAnalytics] = useState<PaymentAnalytics | null>(null);
 
@@ -64,10 +65,10 @@ export function AdminPaymentsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-cyan-400 to-purple-400 tracking-tight">
-            Quản trị & Cấu hình Doanh thu Đa Kênh
+            Quản trị Doanh thu & Quỹ Tài Trợ Cộng Đồng
           </h1>
           <p className="text-sm text-slate-400 mt-1 font-medium">
-            Trung tâm điều phối thanh toán VietQR PayOS, Thẻ Quốc Tế, Alipay/WeChat Pay và Polygon Web3.
+            Trung tâm điều phối thanh toán VietQR PayOS, Quỹ Mời Cafe & Tri Ân, Thẻ Quốc Tế và Web3.
           </p>
         </div>
 
@@ -75,7 +76,7 @@ export function AdminPaymentsPage() {
         <div className="flex items-center gap-1.5 p-1 bg-slate-900/80 rounded-2xl border border-slate-800 self-start">
           <button
             onClick={() => setActiveTab('analytics')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition ${
+            className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition ${
               activeTab === 'analytics'
                 ? 'bg-cyan-500 text-slate-950 shadow-md font-bold'
                 : 'text-slate-400 hover:text-slate-200'
@@ -85,15 +86,26 @@ export function AdminPaymentsPage() {
             Báo cáo Doanh thu
           </button>
           <button
+            onClick={() => setActiveTab('donors')}
+            className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition ${
+              activeTab === 'donors'
+                ? 'bg-amber-500 text-slate-950 shadow-md font-bold'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Heart className="w-3.5 h-3.5" />
+            Nhà Tài Trợ & Tri Ân
+          </button>
+          <button
             onClick={() => setActiveTab('settings')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition ${
+            className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition ${
               activeTab === 'settings'
                 ? 'bg-cyan-500 text-slate-950 shadow-md font-bold'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             <Settings className="w-3.5 h-3.5" />
-            Cấu hình Thụ hưởng & Gateway
+            Cấu hình Thụ hưởng
           </button>
         </div>
       </div>
@@ -178,7 +190,10 @@ export function AdminPaymentsPage() {
         </div>
       )}
 
-      {/* TAB 2: CẤU HÌNH TÀI KHOẢN THỤ HƯỞNG & GATEWAY KEYS */}
+      {/* TAB 2: QUẢN LÝ NHÀ TÀI TRỢ & TRI ÂN */}
+      {activeTab === 'donors' && <DonorsManagementSection />}
+
+      {/* TAB 3: CẤU HÌNH TÀI KHOẢN THỤ HƯỞNG & GATEWAY KEYS */}
       {activeTab === 'settings' && <PaymentSettingsSection />}
     </div>
   );

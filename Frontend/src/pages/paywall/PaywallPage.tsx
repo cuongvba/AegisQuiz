@@ -193,7 +193,7 @@ export function PaywallPage() {
                 </div>
                 <div>
                   <h4 className="text-xs md:text-sm font-bold text-amber-300">Phục Vụ Cộng Đồng & Tài Trợ Tùy Tâm</h4>
-                  <p className="text-[11px] text-slate-400">AegisQuiz luôn mở cửa miễn phí cho giáo dục — Bạn có thể mời team 1 ly cafe để tiếp sức!</p>
+                  <p className="text-[11px] text-slate-400">Aegis luôn mở cửa miễn phí cho giáo dục — Bạn có thể mời team 1 ly cafe để tiếp sức!</p>
                 </div>
               </div>
               <button
@@ -213,7 +213,7 @@ export function PaywallPage() {
 
       {/* Footer */}
       <footer className="text-center py-6 text-xs text-slate-500 border-t border-slate-900">
-        AegisQuiz Global Payment Sovereign Architecture &copy; 2026. All Rights Reserved.
+        Aegis Global Payment Sovereign Architecture &copy; 2026. All Rights Reserved.
       </footer>
     </div>
   );

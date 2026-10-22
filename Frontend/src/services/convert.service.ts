@@ -75,8 +75,8 @@ export const convertService = {
       return [
         {
           templateCode: 'NATIVE_AEGIS',
-          displayName: 'AegisQuiz Native Isomorphic (Chuẩn Toàn Năng)',
-          description: 'Mẫu Excel chuẩn mực tương thích 100% với AegisQuiz, bảo toàn đẳng cấu 9 dạng câu hỏi, LaTeX, hình ảnh và 5 trục tọa độ tri thức.',
+          displayName: 'Aegis Native Isomorphic (Chuẩn Toàn Năng)',
+          description: 'Mẫu Excel chuẩn mực tương thích 100% với Aegis, bảo toàn đẳng cấu 9 dạng câu hỏi, LaTeX, hình ảnh và 5 trục tọa độ tri thức.',
           supportsMultiSheet: false,
           isNativeIsomorphic: true,
         },

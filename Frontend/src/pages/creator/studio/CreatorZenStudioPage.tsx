@@ -30,7 +30,7 @@ export const CreatorZenStudioPage: React.FC = () => {
         <div className="text-center space-y-3">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-semibold">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>AegisQuiz Creator Ecosystem</span>
+            <span>Aegis Creator Ecosystem</span>
           </div>
           <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-white">
             {t('title')}

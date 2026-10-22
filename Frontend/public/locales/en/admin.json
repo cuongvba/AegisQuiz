@@ -1,0 +1,60 @@
+{
+  "nav": {
+    "brandSubtitle": "Cognitive Infrastructure",
+    "portal": "Portal",
+    "leader": "Leader",
+    "overview": "Overview",
+    "questionBank": "Question Bank",
+    "exams": "Assessments",
+    "tenants": "Tenants & White-Label",
+    "whiteLabel": "Brand Theming",
+    "orgUnits": "O(1) Org Hierarchy",
+    "notebooks": "Curriculum (PDF)",
+    "symposium": "AI Symposium",
+    "aiSettings": "AI Wolves & FinOps",
+    "promptForge": "Tier-0 Prompt Forge",
+    "users": "User Directory",
+    "payments": "Revenue & Billings",
+    "learningArea": "Learner Workspace",
+    "homepage": "Home Portal",
+    "closeNav": "Close navigation sidebar",
+    "openNav": "Open navigation sidebar"
+  },
+  "header": {
+    "systemAdmin": "System Admin",
+    "teamLeader": "Team Leader",
+    "admin": "Admin",
+    "internalUnit": "Internal Unit",
+    "systemTitle": "Global Operations Center"
+  },
+  "dashboard": {
+    "title": "System Overview",
+    "subtitle": "Global operational metrics and live telemetry of Aegis Global.",
+    "updatedAt": "Updated at:",
+    "refresh": "Refresh",
+    "apiFallback": "Backend API is warming up. Showing sample metrics.",
+    "stats": {
+      "totalUsers": "Total Learners",
+      "monthlyRevenue": "Monthly Revenue",
+      "totalQuestions": "Active Questions",
+      "notebooks": "PDF Curricula",
+      "comparedToLastMonth": "vs previous month",
+      "realtime": "Live telemetry"
+    },
+    "recentActivity": {
+      "title": "Recent Activity",
+      "actions": {
+        "vipStripe": "VIP Upgrade (Stripe)",
+        "completedExam": "Completed Mathematics Exam",
+        "uploadedPdf": "Uploaded new PDF curriculum",
+        "vipPolygon": "VIP Top-up (Polygon)"
+      },
+      "time": {
+        "2m": "2 mins ago",
+        "5m": "5 mins ago",
+        "1h": "1 hour ago",
+        "3h": "3 hours ago"
+      }
+    }
+  }
+}

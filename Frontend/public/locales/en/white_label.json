@@ -22,7 +22,7 @@
   "savedSuccess": "Brand tokens successfully applied and saved system-wide!",
   "paywall": {
     "title": "White-Labeling Feature is Exclusive to Enterprise & Global Tiers",
-    "description": "To configure custom domain, remove AegisQuiz branding, and apply bespoke company theme tokens, please upgrade to Enterprise.",
+    "description": "To configure custom domain, remove Aegis branding, and apply bespoke company theme tokens, please upgrade to Enterprise.",
     "upgradeNow": "Upgrade to Enterprise",
     "contactSales": "Contact Enterprise Sales"
   }

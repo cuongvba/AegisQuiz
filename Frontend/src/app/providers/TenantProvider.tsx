@@ -122,7 +122,7 @@ const DEFAULT_THEME: TenantThemeConfig = {
 
 const DEFAULT_CONFIG: TenantConfig = {
   tenantId:   'default',
-  tenantName: 'AegisQuiz',
+  tenantName: 'Aegis Global',
   scaleType:  'enterprise',
   theme:      DEFAULT_THEME,
   domains:    DEFAULT_DOMAINS,

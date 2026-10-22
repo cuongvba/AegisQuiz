@@ -1,0 +1,60 @@
+{
+  "nav": {
+    "brandSubtitle": "Hạ tầng Khảo thí & Nhận thức",
+    "portal": "Portal",
+    "leader": "Leader",
+    "overview": "Tổng quan",
+    "questionBank": "Ngân hàng Câu hỏi",
+    "exams": "Đề thi",
+    "tenants": "Khách thuê & Nhãn trắng",
+    "whiteLabel": "Bản sắc Thương hiệu (Theming)",
+    "orgUnits": "Cây Tổ chức O(1)",
+    "notebooks": "Giáo trình (PDF)",
+    "symposium": "Đại Hội Thảo AI",
+    "aiSettings": "Bầy Sói AI & FinOps",
+    "promptForge": "Xưởng Prompt Tầng 0",
+    "users": "Người dùng",
+    "payments": "Doanh thu",
+    "learningArea": "Khu vực Học tập",
+    "homepage": "Trang chủ",
+    "closeNav": "Đóng thanh điều hướng",
+    "openNav": "Mở danh mục quản trị"
+  },
+  "header": {
+    "systemAdmin": "Quản trị hệ thống",
+    "teamLeader": "Team Leader",
+    "admin": "Admin",
+    "internalUnit": "Đơn vị nội bộ",
+    "systemTitle": "Trung tâm Điều hành Toàn cầu"
+  },
+  "dashboard": {
+    "title": "Tổng quan Hệ thống",
+    "subtitle": "Báo cáo tổng quát và lịch sử vận hành của hệ thống Aegis Global.",
+    "updatedAt": "Cập nhật:",
+    "refresh": "Làm mới",
+    "apiFallback": "Backend API chưa sẵn sàng. Đang hiển thị dữ liệu mẫu.",
+    "stats": {
+      "totalUsers": "Tổng Học sinh",
+      "monthlyRevenue": "Doanh thu Tháng",
+      "totalQuestions": "Câu hỏi trong Kho",
+      "notebooks": "Giáo trình PDF",
+      "comparedToLastMonth": "so với tháng trước",
+      "realtime": "Cập nhật thực"
+    },
+    "recentActivity": {
+      "title": "Hoạt động Gần đây",
+      "actions": {
+        "vipStripe": "Nạp VIP (Stripe)",
+        "completedExam": "Hoàn thành đề thi Toán",
+        "uploadedPdf": "Upload giáo trình PDF mới",
+        "vipPolygon": "Nạp VIP (Polygon)"
+      },
+      "time": {
+        "2m": "2 phút trước",
+        "5m": "5 phút trước",
+        "1h": "1 giờ trước",
+        "3h": "3 giờ trước"
+      }
+    }
+  }
+}

@@ -1,19 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Landmark, Key, ShieldCheck, RefreshCw, Check, Copy, Save, AlertCircle, Eye, EyeOff, Zap } from 'lucide-react';
+import { Key, ShieldCheck, RefreshCw, Check, Copy, Save, AlertCircle, Eye, EyeOff, Zap, ShieldAlert } from 'lucide-react';
 import api from '@/services/api';
-
-const VIETNAM_BANKS = [
-  { bin: '970422', code: 'MB', name: 'MB Bank (Ngân hàng Quân Đội)' },
-  { bin: '970436', code: 'VCB', name: 'Vietcombank (Ngoại Thương Việt Nam)' },
-  { bin: '970407', code: 'TCB', name: 'Techcombank (Kỹ Thương Việt Nam)' },
-  { bin: '970418', code: 'BIDV', name: 'BIDV (Đầu Tư và Phát Triển)' },
-  { bin: '970415', code: 'CTG', name: 'VietinBank (Công Thương Việt Nam)' },
-  { bin: '970416', code: 'ACB', name: 'ACB (Á Châu)' },
-  { bin: '970423', code: 'TPB', name: 'TPBank (Tiên Phong)' },
-  { bin: '970432', code: 'VPB', name: 'VPBank (Việt Nam Thịnh Vượng)' },
-  { bin: '970403', code: 'STB', name: 'Sacombank (Sài Gòn Thương Tín)' },
-  { bin: '970405', code: 'VBA', name: 'Agribank (Nông Nghiệp & PTNT)' },
-];
+import { BankAccountVerifierBox } from './BankAccountVerifierBox';
+import { MfaStepUpModal } from './MfaStepUpModal';
 
 export const PaymentSettingsSection: React.FC = () => {
   const [loading, setLoading] = useState(false);
@@ -22,12 +11,16 @@ export const PaymentSettingsSection: React.FC = () => {
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [showKeys, setShowKeys] = useState(false);
   const [copiedWebhook, setCopiedWebhook] = useState(false);
+  const [isMfaModalOpen, setIsMfaModalOpen] = useState(false);
+
+  // Kiểm tra quyền SysAdmin từ LocalStorage Auth State
+  const [isSysAdmin, setIsSysAdmin] = useState(true);
 
   const [form, setForm] = useState({
-    vietQrBankBin: '970422',
-    vietQrBankName: 'MB Bank (Ngân hàng Quân Đội)',
-    vietQrAccountNumber: '0987654321',
-    vietQrAccountName: 'AEGISQUIZ CORP',
+    vietQrBankBin: '970405',
+    vietQrBankName: 'Agribank (Nông Nghiệp & PTNT Việt Nam)',
+    vietQrAccountNumber: '8888912600688',
+    vietQrAccountName: 'NGUYEN VIET CUONG',
     payOsClientId: '',
     payOsApiKey: '',
     payOsChecksumKey: '',
@@ -39,6 +32,16 @@ export const PaymentSettingsSection: React.FC = () => {
   });
 
   useEffect(() => {
+    try {
+      const userRaw = localStorage.getItem('user');
+      if (userRaw) {
+        const u = JSON.parse(userRaw);
+        const role = (u.role || u.Role || '').toLowerCase();
+        setIsSysAdmin(role.includes('systemadmin') || role.includes('sysadmin'));
+      }
+    } catch {
+      setIsSysAdmin(true);
+    }
     fetchConfig();
   }, []);
 
@@ -60,24 +63,19 @@ export const PaymentSettingsSection: React.FC = () => {
     }
   };
 
-  const handleBankChange = (bin: string) => {
-    const bank = VIETNAM_BANKS.find((b) => b.bin === bin);
-    setForm((prev) => ({
-      ...prev,
-      vietQrBankBin: bin,
-      vietQrBankName: bank ? bank.name : prev.vietQrBankName,
-    }));
-  };
-
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleMfaConfirmed = async (authData: { sudoPassword?: string; mfaVerificationCode?: string }) => {
     setSaving(true);
     setStatusMsg(null);
     try {
-      await api.post('/api/payment/config', form);
-      setStatusMsg({ type: 'success', text: 'Đã lưu cấu hình tài khoản thụ hưởng! Cập nhật 0ms Hot-Reload thành công.' });
+      const payload = {
+        ...form,
+        ...authData,
+      };
+      await api.post('/api/payment/config', payload);
+      setStatusMsg({ type: 'success', text: 'Đã xác thực MFA & lưu cấu hình tài khoản thụ hưởng thành công! 0ms Hot-Reload kích hoạt.' });
+      setIsMfaModalOpen(false);
     } catch (err: any) {
-      setStatusMsg({ type: 'error', text: err.response?.data?.message || 'Lỗi lưu cấu hình.' });
+      setStatusMsg({ type: 'error', text: err.response?.data?.message || 'Lỗi lưu cấu hình hoặc xác thực thất bại.' });
     } finally {
       setSaving(false);
     }
@@ -89,7 +87,7 @@ export const PaymentSettingsSection: React.FC = () => {
     try {
       const res = await api.post('/api/payment/test-connection?provider=vietqr');
       if (res.data?.connected) {
-        setStatusMsg({ type: 'success', text: 'Kết nối tài khoản thụ hưởng VietQR & Gateway hoạt động hoàn hảo!' });
+        setStatusMsg({ type: 'success', text: 'Kết nối mạng lưới Napas & Cổng thanh toán hoạt động hoàn hảo!' });
       }
     } catch {
       setStatusMsg({ type: 'error', text: 'Kiểm tra kết nối thất bại.' });
@@ -108,7 +106,17 @@ export const PaymentSettingsSection: React.FC = () => {
   }
 
   return (
-    <form onSubmit={handleSave} className="space-y-6">
+    <div className="space-y-6">
+      {!isSysAdmin && (
+        <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-center gap-3">
+          <ShieldAlert className="w-5 h-5 shrink-0 text-amber-400" />
+          <div>
+            <p className="font-bold">Chế độ Chỉ Xem (SysAdmin Sovereignty Protocol)</p>
+            <p className="text-amber-400/80">Bạn đang xem với tư cách Quản trị viên Tenant. Thẩm quyền cấu hình tài khoản thụ hưởng tài chính thuộc về Quản trị viên Tối cao (SysAdmin).</p>
+          </div>
+        </div>
+      )}
+
       {statusMsg && (
         <div
           className={`p-4 rounded-2xl flex items-center gap-3 text-xs font-semibold ${
@@ -122,57 +130,16 @@ export const PaymentSettingsSection: React.FC = () => {
         </div>
       )}
 
-      {/* 1. VietQR Napas Direct */}
-      <div className="bg-slate-900/60 p-6 rounded-3xl border border-slate-800 space-y-4 backdrop-blur-xl">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-          <div className="flex items-center gap-2">
-            <Landmark className="w-5 h-5 text-emerald-400" />
-            <h3 className="font-bold text-slate-100 text-sm md:text-base">1. Tài Khoản Ngân Hàng Thụ Hưởng (VietQR Napas 24/7)</h3>
-          </div>
-          <span className="text-[10px] text-emerald-400 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 font-bold uppercase">
-            Active Receiver
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-          <div>
-            <label className="block text-slate-300 font-semibold mb-1">Ngân hàng thụ hưởng</label>
-            <select
-              value={form.vietQrBankBin}
-              onChange={(e) => handleBankChange(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-slate-200 focus:border-cyan-500 focus:outline-none"
-            >
-              {VIETNAM_BANKS.map((b) => (
-                <option key={b.bin} value={b.bin}>
-                  {b.name} ({b.code})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-slate-300 font-semibold mb-1">Số tài khoản nhận tiền</label>
-            <input
-              type="text"
-              required
-              value={form.vietQrAccountNumber}
-              onChange={(e) => setForm({ ...form, vietQrAccountNumber: e.target.value })}
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-cyan-400 font-mono font-bold focus:border-cyan-500 focus:outline-none"
-            />
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="block text-slate-300 font-semibold mb-1">Tên chủ tài khoản (in hoa không dấu)</label>
-            <input
-              type="text"
-              required
-              value={form.vietQrAccountName}
-              onChange={(e) => setForm({ ...form, vietQrAccountName: e.target.value.toUpperCase() })}
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-slate-200 font-bold uppercase focus:border-cyan-500 focus:outline-none"
-            />
-          </div>
-        </div>
-      </div>
+      {/* 1. VietQR Napas Direct với Real-Time Verifier Sub-component */}
+      <BankAccountVerifierBox
+        bankBin={form.vietQrBankBin}
+        accountNumber={form.vietQrAccountNumber}
+        accountName={form.vietQrAccountName}
+        readOnly={!isSysAdmin}
+        onBankChange={(bin, bankName) => setForm((p) => ({ ...p, vietQrBankBin: bin, vietQrBankName: bankName }))}
+        onAccountNumberChange={(acc) => setForm((p) => ({ ...p, vietQrAccountNumber: acc }))}
+        onAccountNameChange={(name) => setForm((p) => ({ ...p, vietQrAccountName: name }))}
+      />
 
       {/* 2. PayOS API Credentials */}
       <div className="bg-slate-900/60 p-6 rounded-3xl border border-slate-800 space-y-4 backdrop-blur-xl">
@@ -196,30 +163,33 @@ export const PaymentSettingsSection: React.FC = () => {
             <label className="block text-slate-300 font-medium mb-1">Client ID</label>
             <input
               type={showKeys ? 'text' : 'password'}
+              disabled={!isSysAdmin}
               placeholder="••••••••••••••••••••••••••••••••"
               value={form.payOsClientId}
               onChange={(e) => setForm({ ...form, payOsClientId: e.target.value })}
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 font-mono text-slate-300 focus:border-cyan-500 focus:outline-none"
+              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 font-mono text-slate-300 focus:border-cyan-500 focus:outline-none disabled:opacity-60"
             />
           </div>
           <div>
             <label className="block text-slate-300 font-medium mb-1">API Key</label>
             <input
               type={showKeys ? 'text' : 'password'}
+              disabled={!isSysAdmin}
               placeholder="••••••••••••••••••••••••••••••••"
               value={form.payOsApiKey}
               onChange={(e) => setForm({ ...form, payOsApiKey: e.target.value })}
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 font-mono text-slate-300 focus:border-cyan-500 focus:outline-none"
+              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 font-mono text-slate-300 focus:border-cyan-500 focus:outline-none disabled:opacity-60"
             />
           </div>
           <div>
             <label className="block text-slate-300 font-medium mb-1">Checksum Key (HMAC-SHA256)</label>
             <input
               type={showKeys ? 'text' : 'password'}
+              disabled={!isSysAdmin}
               placeholder="••••••••••••••••••••••••••••••••"
               value={form.payOsChecksumKey}
               onChange={(e) => setForm({ ...form, payOsChecksumKey: e.target.value })}
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 font-mono text-slate-300 focus:border-cyan-500 focus:outline-none"
+              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 font-mono text-slate-300 focus:border-cyan-500 focus:outline-none disabled:opacity-60"
             />
           </div>
         </div>
@@ -245,7 +215,6 @@ export const PaymentSettingsSection: React.FC = () => {
 
       {/* 3. Global Stripe & Web3 Treasury */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Stripe */}
         <div className="bg-slate-900/60 p-5 rounded-3xl border border-slate-800 space-y-3 backdrop-blur-xl">
           <h4 className="font-bold text-slate-100 text-sm flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-blue-400" /> 3. Stripe & Global Card
@@ -255,26 +224,27 @@ export const PaymentSettingsSection: React.FC = () => {
               <label className="block text-slate-400 mb-1">Publishable Key</label>
               <input
                 type="text"
+                disabled={!isSysAdmin}
                 placeholder="pk_live_..."
                 value={form.stripePublishableKey}
                 onChange={(e) => setForm({ ...form, stripePublishableKey: e.target.value })}
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 font-mono text-slate-300 focus:border-blue-500 focus:outline-none"
+                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 font-mono text-slate-300 focus:border-blue-500 focus:outline-none disabled:opacity-60"
               />
             </div>
             <div>
               <label className="block text-slate-400 mb-1">Secret Key</label>
               <input
                 type={showKeys ? 'text' : 'password'}
+                disabled={!isSysAdmin}
                 placeholder="sk_live_..."
                 value={form.stripeSecretKey}
                 onChange={(e) => setForm({ ...form, stripeSecretKey: e.target.value })}
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 font-mono text-slate-300 focus:border-blue-500 focus:outline-none"
+                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 font-mono text-slate-300 focus:border-blue-500 focus:outline-none disabled:opacity-60"
               />
             </div>
           </div>
         </div>
 
-        {/* Web3 Treasury */}
         <div className="bg-slate-900/60 p-5 rounded-3xl border border-slate-800 space-y-3 backdrop-blur-xl">
           <h4 className="font-bold text-slate-100 text-sm flex items-center gap-2">
             <Zap className="w-4 h-4 text-purple-400" /> 4. Ví Nhận Web3 (Polygon Treasury)
@@ -284,14 +254,16 @@ export const PaymentSettingsSection: React.FC = () => {
               <label className="block text-slate-400 mb-1">Địa chỉ Ví nhận MATIC / USDT On-chain</label>
               <input
                 type="text"
+                disabled={!isSysAdmin}
                 value={form.web3TreasuryAddress}
                 onChange={(e) => setForm({ ...form, web3TreasuryAddress: e.target.value })}
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 font-mono text-purple-400 focus:border-purple-500 focus:outline-none"
+                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 font-mono text-purple-400 focus:border-purple-500 focus:outline-none disabled:opacity-60"
               />
             </div>
             <label className="flex items-center gap-2 pt-2 cursor-pointer">
               <input
                 type="checkbox"
+                disabled={!isSysAdmin}
                 checked={form.enableSandboxTesting}
                 onChange={(e) => setForm({ ...form, enableSandboxTesting: e.target.checked })}
                 className="w-4 h-4 rounded text-cyan-500 bg-slate-950 border-slate-700"
@@ -302,7 +274,7 @@ export const PaymentSettingsSection: React.FC = () => {
         </div>
       </div>
 
-      {/* Buttons */}
+      {/* Action Buttons */}
       <div className="flex flex-col sm:flex-row justify-end gap-3 pt-3">
         <button
           type="button"
@@ -313,15 +285,26 @@ export const PaymentSettingsSection: React.FC = () => {
           {testing ? <RefreshCw className="w-4 h-4 animate-spin text-cyan-400" /> : <ShieldCheck className="w-4 h-4 text-emerald-400" />}
           Kiểm tra Kết nối (Ping Test)
         </button>
-        <button
-          type="submit"
-          disabled={saving}
-          className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 via-cyan-500 to-emerald-500 hover:opacity-90 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20 transition disabled:opacity-50"
-        >
-          {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-          Lưu Cấu Hình (0ms Hot-Reload)
-        </button>
+        {isSysAdmin && (
+          <button
+            type="button"
+            onClick={() => setIsMfaModalOpen(true)}
+            disabled={saving}
+            className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 via-cyan-500 to-emerald-500 hover:opacity-90 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20 transition disabled:opacity-50"
+          >
+            {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            Lưu Cấu Hình (0ms Hot-Reload)
+          </button>
+        )}
       </div>
-    </form>
+
+      {/* Modal Xác Thực Sudo/MFA Cấp Độ 3 */}
+      <MfaStepUpModal
+        isOpen={isMfaModalOpen}
+        onClose={() => setIsMfaModalOpen(false)}
+        onConfirm={handleMfaConfirmed}
+        isLoading={saving}
+      />
+    </div>
   );
 };

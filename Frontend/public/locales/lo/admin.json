@@ -1,0 +1,60 @@
+{
+  "nav": {
+    "brandSubtitle": "ໂຄງສ້າງພື້ນຖານດ້ານການຮັບຮູ້ ແລະ ມາດຕະຖານການຢັ້ງຢືນ",
+    "portal": "ປະຕູລະບົບ",
+    "leader": "ຫົວໜ້າທີມ",
+    "overview": "ພາບລວມລະບົບ",
+    "questionBank": "ຄັງຂໍ້ສອບ",
+    "exams": "ການສອບເສັງ",
+    "tenants": "ຜູ້ເຊົ່າ & ປ້າຍຂາວ",
+    "whiteLabel": "ການປັບແຕ່ງຮູບແບບແບຣນ",
+    "orgUnits": "ໂຄງສ້າງອົງກອນ O(1)",
+    "notebooks": "ຫຼັກສູດ (PDF)",
+    "symposium": "ກອງປະຊຸມ AI",
+    "aiSettings": "ຝູງໝາປ່າ AI & FinOps",
+    "promptForge": "ໂຮງຫຼໍ່ Prompt ຊັ້ນ 0",
+    "users": "ຈັດການຜູ້ໃຊ້",
+    "payments": "ລາຍໄດ້ & ການຈ່າຍເງິນ",
+    "learningArea": "ພື້ນທີ່ການຮຽນຮູ້",
+    "homepage": "ໜ້າຫຼັກ",
+    "closeNav": "ປິດເມນູ",
+    "openNav": "ເປີດເມນູ"
+  },
+  "header": {
+    "systemAdmin": "ຜູ້ບໍລິຫານລະບົບ",
+    "teamLeader": "ຫົວໜ້າທີມ",
+    "admin": "Admin",
+    "internalUnit": "ໜ່ວຍງານພາຍໃນ",
+    "systemTitle": "ສູນປະຕິບັດການລະດັບໂລກ"
+  },
+  "dashboard": {
+    "title": "ພາບລວມລະບົບ",
+    "subtitle": "ຕົວຊີ້ວັດການດຳເນີນງານ ແລະ ລາຍງານສະຖານະຂອງ Aegis Global.",
+    "updatedAt": "ອັບເດດເມື່ອ:",
+    "refresh": "ໂຫຼດຄືນໃໝ່",
+    "apiFallback": "Backend API ກຳລັງເລີ່ມຕົ້ນ. ສະແດງຂໍ້ມູນຕົວຢ່າງ.",
+    "stats": {
+      "totalUsers": "ຈຳນວນນັກຮຽນທັງໝົດ",
+      "monthlyRevenue": "ລາຍໄດ້ປະຈຳເດືອນ",
+      "totalQuestions": "ຄຳຖາມໃນລະບົບ",
+      "notebooks": "ປຶ້ມແບບຮຽນ PDF",
+      "comparedToLastMonth": "ທຽບໃສ່ເດືອນກ່ອນ",
+      "realtime": "ອັບເດດສົດ"
+    },
+    "recentActivity": {
+      "title": "ກິດຈະກຳຫຼ້າສຸດ",
+      "actions": {
+        "vipStripe": "ອັບເກຣດ VIP (Stripe)",
+        "completedExam": "ສຳເລັດການສອບເສັງຄະນິດສາດ",
+        "uploadedPdf": "ອັບໂຫຼດຫຼັກສູດ PDF ໃໝ່",
+        "vipPolygon": "ຕື່ມເງິນ VIP (Polygon)"
+      },
+      "time": {
+        "2m": "2 ນາທີກ່ອນ",
+        "5m": "5 ນາທີກ່ອນ",
+        "1h": "1 ຊົ່ວໂມງກ່ອນ",
+        "3h": "3 ຊົ່ວໂມງກ່ອນ"
+      }
+    }
+  }
+}

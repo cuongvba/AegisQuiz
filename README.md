@@ -1,7 +1,9 @@
-# 🛡️ AegisQuiz — Nền Tảng Khảo Thí & Đấu Trường Gameshow Trí Tuệ Thế Hệ Mới
+# 🌐 AEGIS GLOBAL — COGNITIVE INFRASTRUCTURE & VERIFICATION STANDARD
+### Nền Tảng Hạ Tầng Nhận Thức & Chuẩn Mực Kiểm Chứng Tri Thức Toàn Cầu
 
-> **Hệ sinh thái khảo thí thông minh Enterprise AI kết hợp Đấu Trường Gameshow Học Thuật (Arena Gameshow Ecosystem)** chuẩn quốc tế, trang bị mô hình IRT thích ứng (Adaptive Testing), bộ bóc tách đề thi tài liệu thông minh (Docx/WMF Math Parser) và kiến trúc cắm rút Gameshow Plugin mở rộng không giới hạn.  
+> **The Cognitive Intelligence & Verification Standard**: Hệ sinh thái hạ tầng nhận thức Enterprise AI kết hợp Đấu Trường Khảo Thí & Gameshow Học Thuật quy mô lớn (**Aegis Arena**), Động cơ đo lường tâm trắc học quốc tế (**Aegis IRT Metrics 3-PL**), Trái tim bóc tách tài liệu thông minh (**Aegis Core CIG Engine**) và Chuẩn mực kiểm chứng tài liệu sống động (**Aegis ALDS Studio**).  
 > **Chủ nhiệm Kiến trúc & Trí tuệ Toàn cầu:** No.1 — Lead System Analyst, Master Living Documentarian, IT Architect, AI, Design, Education & Economic Specialist.
+> **Hiến chương Định vị Thương hiệu:** 📖 **[AEGIS_GLOBAL_BRAND_POSITIONING_CHARTER.md](docs/standards/AEGIS_GLOBAL_BRAND_POSITIONING_CHARTER.md)**
 
 ---
 

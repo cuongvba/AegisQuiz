@@ -62,7 +62,7 @@ export function SegmentsSection() {
             </div>
             <div className="sm:border-s sm:border-slate-800 sm:ps-6">
               <p className="text-[11px] font-black uppercase tracking-widest text-emerald-400 mb-2 flex items-center gap-1.5">
-                <ArrowRight size={12} aria-hidden="true" /> AegisQuiz Solution
+                <ArrowRight size={12} aria-hidden="true" /> Aegis Solution
               </p>
               <p className="text-sm text-slate-300 leading-relaxed">{active.solution}</p>
             </div>

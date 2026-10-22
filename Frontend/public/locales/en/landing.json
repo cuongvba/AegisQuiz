@@ -28,7 +28,7 @@
     "segments": ["Banking & Finance", "Multi-branch Enterprises", "Universities & Education", "Driving Test Centers"]
   },
   "features": {
-    "title": "6 Breakthrough Technologies, Only at AegisQuiz",
+    "title": "6 Breakthrough Technologies, Only at Aegis",
     "subtitle": "Not just a quiz tool — a next-generation competence assessment ecosystem.",
     "items": [
       { "title": "AI Brain-Adaptive Testing", "desc": "A CAT/IRT 3-PL engine that adjusts difficulty after every answer, measuring true competence instead of rote memorization." },
@@ -53,7 +53,7 @@
   },
   "segments": {
     "title": "Solutions Built for Every Industry",
-    "subtitle": "Every organization has a different challenge — AegisQuiz adapts to exactly what you need.",
+    "subtitle": "Every organization has a different challenge — Aegis adapts to exactly what you need.",
     "tabs": [
       { "id": "banking", "label": "Banking & Finance", "painPoint": "Standardizing recruitment exams, periodic professional certification, and AML compliance across tens of thousands of staff.", "solution": "Absolute multi-tenant data isolation per branch, tamper-proof SHA-256 audit logs, and legally valid PKI digital signatures." },
       { "id": "enterprise", "label": "Multi-branch Enterprises", "painPoint": "Internal training scattered across many locations, hard to measure consistently.", "solution": "Team leaders manage their own question banks with real-time progress reporting per unit." },
@@ -104,8 +104,8 @@
     ]
   },
   "finalCta": {
-    "title": "Ready to Accelerate Your Competence with AegisQuiz?",
-    "subtitle": "Join thousands of learners and dozens of organizations that trust AegisQuiz every day.",
+    "title": "Ready to Accelerate Your Competence with Aegis?",
+    "subtitle": "Join thousands of learners and dozens of organizations that trust Aegis every day.",
     "ctaPrimary": "Start for free now",
     "ctaSecondary": "Book an Enterprise demo"
   },

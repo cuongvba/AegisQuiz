@@ -41,7 +41,7 @@ namespace AegisQuiz.Infrastructure.Transpiler
             if (questions == null) questions = new List<DocxImportPreviewDto>();
 
             string examIdentifier = "aegis_exam_" + Guid.NewGuid().ToString("N").Substring(0, 8);
-            string examTitle = !string.IsNullOrWhiteSpace(options.ExamTitle) ? options.ExamTitle : "AegisQuiz QTI Assessment";
+            string examTitle = !string.IsNullOrWhiteSpace(options.ExamTitle) ? options.ExamTitle : "Aegis QTI Assessment";
 
             using var memoryStream = new MemoryStream();
             using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true, Encoding.UTF8))

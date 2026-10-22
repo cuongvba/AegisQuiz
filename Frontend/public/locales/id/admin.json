@@ -1,0 +1,60 @@
+{
+  "nav": {
+    "brandSubtitle": "Infrastruktur Kognitif & Standar Verifikasi",
+    "portal": "Portal",
+    "leader": "Pemimpin Tim",
+    "overview": "Ikhtisar Sistem",
+    "questionBank": "Bank Soal",
+    "exams": "Ujian & Evaluasi",
+    "tenants": "Penyewa & Label Putih",
+    "whiteLabel": "Kustomisasi Tema Merek",
+    "orgUnits": "Struktur Organisasi O(1)",
+    "notebooks": "Kurikulum (PDF)",
+    "symposium": "Simposium AI",
+    "aiSettings": "Kawanan AI & FinOps",
+    "promptForge": "Bengkel Prompt Tingkat 0",
+    "users": "Manajemen Pengguna",
+    "payments": "Pendapatan & Pembayaran",
+    "learningArea": "Area Pembelajaran",
+    "homepage": "Beranda",
+    "closeNav": "Tutup navigasi",
+    "openNav": "Buka navigasi"
+  },
+  "header": {
+    "systemAdmin": "Administrator Sistem",
+    "teamLeader": "Pemimpin Tim",
+    "admin": "Admin",
+    "internalUnit": "Unit Internal",
+    "systemTitle": "Pusat Operasi Global"
+  },
+  "dashboard": {
+    "title": "Ikhtisar Sistem",
+    "subtitle": "Metrik operasional global dan telemetri langsung Aegis Global.",
+    "updatedAt": "Diperbarui pada:",
+    "refresh": "Segarkan",
+    "apiFallback": "Backend API sedang dimulai. Menampilkan metrik sampel.",
+    "stats": {
+      "totalUsers": "Total Pelajar",
+      "monthlyRevenue": "Pendapatan Bulanan",
+      "totalQuestions": "Soal Tersedia",
+      "notebooks": "Kurikulum PDF",
+      "comparedToLastMonth": "dibanding bulan lalu",
+      "realtime": "Waktu nyata"
+    },
+    "recentActivity": {
+      "title": "Aktivitas Terkini",
+      "actions": {
+        "vipStripe": "Peningkatan VIP (Stripe)",
+        "completedExam": "Menyelesaikan Ujian Matematika",
+        "uploadedPdf": "Mengunggah kurikulum PDF baru",
+        "vipPolygon": "Isi Ulang VIP (Polygon)"
+      },
+      "time": {
+        "2m": "2 menit lalu",
+        "5m": "5 menit lalu",
+        "1h": "1 jam lalu",
+        "3h": "3 jam lalu"
+      }
+    }
+  }
+}

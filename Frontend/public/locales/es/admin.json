@@ -1,0 +1,60 @@
+{
+  "nav": {
+    "brandSubtitle": "Infraestructura Cognitiva y Estándar de Verificación",
+    "portal": "Portal",
+    "leader": "Líder",
+    "overview": "Visión General",
+    "questionBank": "Banco de Preguntas",
+    "exams": "Evaluaciones y Exámenes",
+    "tenants": "Inquilinos y Marca Blanca",
+    "whiteLabel": "Tematización de Marca",
+    "orgUnits": "Jerarquía Organizacional O(1)",
+    "notebooks": "Currículo (PDF)",
+    "symposium": "Simposio de IA",
+    "aiSettings": "Manada de IA & FinOps",
+    "promptForge": "Forja de Prompts Nivel 0",
+    "users": "Gestión de Usuarios",
+    "payments": "Ingresos y Facturación",
+    "learningArea": "Área de Aprendizaje",
+    "homepage": "Inicio",
+    "closeNav": "Cerrar barra lateral",
+    "openNav": "Abrir barra lateral"
+  },
+  "header": {
+    "systemAdmin": "Administrador del Sistema",
+    "teamLeader": "Líder de Equipo",
+    "admin": "Admin",
+    "internalUnit": "Unidad Interna",
+    "systemTitle": "Centro de Operaciones Globales"
+  },
+  "dashboard": {
+    "title": "Visión General del Sistema",
+    "subtitle": "Métricas operativas globales y telemetría en vivo de Aegis Global.",
+    "updatedAt": "Actualizado:",
+    "refresh": "Actualizar",
+    "apiFallback": "La API backend se está iniciando. Mostrando datos de muestra.",
+    "stats": {
+      "totalUsers": "Total de Estudiantes",
+      "monthlyRevenue": "Ingresos Mensuales",
+      "totalQuestions": "Preguntas Activas",
+      "notebooks": "Currículos PDF",
+      "comparedToLastMonth": "vs mes anterior",
+      "realtime": "En tiempo real"
+    },
+    "recentActivity": {
+      "title": "Actividad Reciente",
+      "actions": {
+        "vipStripe": "Suscripción VIP (Stripe)",
+        "completedExam": "Examen de Matemáticas completado",
+        "uploadedPdf": "Nuevo currículo PDF subido",
+        "vipPolygon": "Recarga VIP (Polygon)"
+      },
+      "time": {
+        "2m": "hace 2 min",
+        "5m": "hace 5 min",
+        "1h": "hace 1 hora",
+        "3h": "hace 3 horas"
+      }
+    }
+  }
+}

@@ -48,7 +48,7 @@ namespace AegisQuiz.Infrastructure.Transpiler
 
             string categoryName = !string.IsNullOrWhiteSpace(options.CategoryName) 
                 ? options.CategoryName 
-                : (!string.IsNullOrWhiteSpace(options.ExamTitle) ? options.ExamTitle : "AegisQuiz Transpiled");
+                : (!string.IsNullOrWhiteSpace(options.ExamTitle) ? options.ExamTitle : "Aegis Transpiled");
             sb.AppendLine($"$CATEGORY: $course$/{EscapeGift(categoryName)}\n");
 
             int index = 1;

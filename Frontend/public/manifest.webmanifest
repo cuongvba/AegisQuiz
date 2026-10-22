@@ -1,7 +1,7 @@
 {
-  "name": "AegisQuiz — Đấu Trường Khảo Thí & Giáo Dục AI",
-  "short_name": "AegisQuiz",
-  "description": "Nền tảng Khảo thí & Luyện thi Thích ứng Toàn năng với Động cơ IRT 3-PL và Trí tuệ Nhân tạo Đa Agent",
+  "name": "Aegis Global — The Cognitive Intelligence & Verification Standard",
+  "short_name": "Aegis Global",
+  "description": "Hạ tầng Nhận thức & Chuẩn mực Kiểm chứng Toàn cầu (Global Cognitive Infrastructure & Verification Standard) với Động cơ IRT 3-PL và CIG Parsing Engine",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

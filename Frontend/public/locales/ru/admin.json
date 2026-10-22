@@ -1,0 +1,60 @@
+{
+  "nav": {
+    "brandSubtitle": "Когнитивная инфраструктура и стандарт верификации",
+    "portal": "Портал",
+    "leader": "Лидер",
+    "overview": "Обзор системы",
+    "questionBank": "Банк вопросов",
+    "exams": "Экзамены и аттестация",
+    "tenants": "Тенанты и White-Label",
+    "whiteLabel": "Брендинг и темы",
+    "orgUnits": "Оргструктура O(1)",
+    "notebooks": "Учебные программы (PDF)",
+    "symposium": "Симпозиум ИИ",
+    "aiSettings": "Стая ИИ & FinOps",
+    "promptForge": "Кузница промптов Уровня 0",
+    "users": "Управление пользователями",
+    "payments": "Выручка и биллинг",
+    "learningArea": "Зона обучения",
+    "homepage": "Главная",
+    "closeNav": "Закрыть меню навигации",
+    "openNav": "Открыть меню навигации"
+  },
+  "header": {
+    "systemAdmin": "Системный администратор",
+    "teamLeader": "Руководитель группы",
+    "admin": "Admin",
+    "internalUnit": "Внутреннее подразделение",
+    "systemTitle": "Глобальный операционный центр"
+  },
+  "dashboard": {
+    "title": "Обзор системы",
+    "subtitle": "Глобальные операционные показатели и телеметрия Aegis Global в реальном времени.",
+    "updatedAt": "Обновлено:",
+    "refresh": "Обновить",
+    "apiFallback": "Бэкенд API запускается. Отображаются тестовые данные.",
+    "stats": {
+      "totalUsers": "Всего учащихся",
+      "monthlyRevenue": "Месячная выручка",
+      "totalQuestions": "Вопросов в базе",
+      "notebooks": "Программ PDF",
+      "comparedToLastMonth": "по сравнению с прошлым месяцем",
+      "realtime": "В реальном времени"
+    },
+    "recentActivity": {
+      "title": "Последняя активность",
+      "actions": {
+        "vipStripe": "Оплата VIP (Stripe)",
+        "completedExam": "Завершен экзамен по математике",
+        "uploadedPdf": "Загружена новая программа PDF",
+        "vipPolygon": "Пополнение VIP (Polygon)"
+      },
+      "time": {
+        "2m": "2 мин назад",
+        "5m": "5 мин назад",
+        "1h": "1 час назад",
+        "3h": "3 часа назад"
+      }
+    }
+  }
+}

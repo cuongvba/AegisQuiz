@@ -1,0 +1,60 @@
+{
+  "nav": {
+    "brandSubtitle": "인지 인프라 및 검증 표준",
+    "portal": "포털",
+    "leader": "리더",
+    "overview": "시스템 개요",
+    "questionBank": "문제 은행",
+    "exams": "시험 관리",
+    "tenants": "테넌트 & 화이트라벨",
+    "whiteLabel": "브랜드 테마 커스텀",
+    "orgUnits": "O(1) 조직 계층도",
+    "notebooks": "교재 커리큘럼 (PDF)",
+    "symposium": "AI 심포지엄",
+    "aiSettings": "AI 늑대 무리 & FinOps",
+    "promptForge": "Tier-0 프롬프트 포지",
+    "users": "사용자 관리",
+    "payments": "매출 및 결제",
+    "learningArea": "학습자 공간",
+    "homepage": "홈 포털",
+    "closeNav": "탐색 닫기",
+    "openNav": "탐색 열기"
+  },
+  "header": {
+    "systemAdmin": "시스템 관리자",
+    "teamLeader": "팀 리더",
+    "admin": "Admin",
+    "internalUnit": "내부 부서",
+    "systemTitle": "글로벌 통합 운영 센터"
+  },
+  "dashboard": {
+    "title": "시스템 종합 현황",
+    "subtitle": "Aegis Global의 실시간 운영 지표 및 이력 보고서.",
+    "updatedAt": "업데이트:",
+    "refresh": "새로고침",
+    "apiFallback": "백엔드 API 연결 대기 중. 샘플 데이터를 표시합니다.",
+    "stats": {
+      "totalUsers": "총 학습자 수",
+      "monthlyRevenue": "월간 매출",
+      "totalQuestions": "보유 문제 수",
+      "notebooks": "PDF 교재 수",
+      "comparedToLastMonth": "전월 대비",
+      "realtime": "실시간 반영"
+    },
+    "recentActivity": {
+      "title": "최근 활동 내역",
+      "actions": {
+        "vipStripe": "VIP 업그레이드 (Stripe)",
+        "completedExam": "수학 평가 시험 완료",
+        "uploadedPdf": "신규 PDF 교재 업로드",
+        "vipPolygon": "VIP 결제 (Polygon)"
+      },
+      "time": {
+        "2m": "2분 전",
+        "5m": "5분 전",
+        "1h": "1시간 전",
+        "3h": "3시간 전"
+      }
+    }
+  }
+}

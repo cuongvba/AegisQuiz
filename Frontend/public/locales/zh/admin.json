@@ -1,0 +1,60 @@
+{
+  "nav": {
+    "brandSubtitle": "认知基础设施与验证基准",
+    "portal": "管理门户",
+    "leader": "团队主管",
+    "overview": "系统总览",
+    "questionBank": "题库管理",
+    "exams": "考务测评",
+    "tenants": "租户与白标定制",
+    "whiteLabel": "品牌主题定制",
+    "orgUnits": "O(1) 组织架构树",
+    "notebooks": "教材讲义 (PDF)",
+    "symposium": "AI 大研讨会",
+    "aiSettings": "AI 狼群与 FinOps",
+    "promptForge": "0层 Prompt 工坊",
+    "users": "用户管理",
+    "payments": "营收与财务",
+    "learningArea": "学习空间",
+    "homepage": "首页",
+    "closeNav": "收起侧边导航",
+    "openNav": "展开侧边导航"
+  },
+  "header": {
+    "systemAdmin": "系统超级管理员",
+    "teamLeader": "团队主管",
+    "admin": "Admin",
+    "internalUnit": "内部组织机构",
+    "systemTitle": "全球综合指挥调度中心"
+  },
+  "dashboard": {
+    "title": "系统运行总览",
+    "subtitle": "Aegis Global 全球运营指标与实时监控报表。",
+    "updatedAt": "最后更新：",
+    "refresh": "刷新数据",
+    "apiFallback": "后端 API 正在准备中。当前展示模拟监控指标。",
+    "stats": {
+      "totalUsers": "学员与成员总数",
+      "monthlyRevenue": "本月营收",
+      "totalQuestions": "题库题目总数",
+      "notebooks": "PDF 教学大纲",
+      "comparedToLastMonth": "较上月同期",
+      "realtime": "实时同步"
+    },
+    "recentActivity": {
+      "title": "最新活动记录",
+      "actions": {
+        "vipStripe": "充值 VIP 会员 (Stripe)",
+        "completedExam": "完成数学科目考试",
+        "uploadedPdf": "上传最新 PDF 课程大纲",
+        "vipPolygon": "充值 VIP (Polygon)"
+      },
+      "time": {
+        "2m": "2分钟前",
+        "5m": "5分钟前",
+        "1h": "1小时前",
+        "3h": "3小时前"
+      }
+    }
+  }
+}

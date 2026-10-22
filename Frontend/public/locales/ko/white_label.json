@@ -22,7 +22,7 @@
   "savedSuccess": "브랜드 토큰이 시스템 전체에 성공적으로 적용 및 저장되었습니다!",
   "paywall": {
     "title": "화이트라벨링 기능은 Enterprise 및 Global 플랜 전용입니다",
-    "description": "전용 도메인 설정, AegisQuiz 로고 제거 및 맞춤형 테마 토큰 적용을 위해 Enterprise 플랜으로 업그레이드하세요.",
+    "description": "전용 도메인 설정, Aegis 로고 제거 및 맞춤형 테마 토큰 적용을 위해 Enterprise 플랜으로 업그레이드하세요.",
     "upgradeNow": "Enterprise로 업그레이드",
     "contactSales": "엔터프라이즈 문의"
   }

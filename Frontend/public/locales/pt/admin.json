@@ -1,0 +1,60 @@
+{
+  "nav": {
+    "brandSubtitle": "Infraestrutura Cognitiva & Padrão de Verificação",
+    "portal": "Portal",
+    "leader": "Líder",
+    "overview": "Visão Geral",
+    "questionBank": "Banco de Questões",
+    "exams": "Avaliações & Exames",
+    "tenants": "Inquilinos & Marca Branca",
+    "whiteLabel": "Tematização de Marca",
+    "orgUnits": "Hierarquia O(1)",
+    "notebooks": "Currículo (PDF)",
+    "symposium": "Simpósio de IA",
+    "aiSettings": "Matilha de IA & FinOps",
+    "promptForge": "Forja de Prompts Nível 0",
+    "users": "Gestão de Usuários",
+    "payments": "Receita & Faturamento",
+    "learningArea": "Área do Aluno",
+    "homepage": "Início",
+    "closeNav": "Fechar navegação",
+    "openNav": "Abrir navegação"
+  },
+  "header": {
+    "systemAdmin": "Administrador do Sistema",
+    "teamLeader": "Líder de Equipe",
+    "admin": "Admin",
+    "internalUnit": "Unidade Interna",
+    "systemTitle": "Centro de Operações Globais"
+  },
+  "dashboard": {
+    "title": "Visão Geral do Sistema",
+    "subtitle": "Métricas operacionais globais e telemetria em tempo real do Aegis Global.",
+    "updatedAt": "Atualizado em:",
+    "refresh": "Atualizar",
+    "apiFallback": "A API de back-end está inicializando. Exibindo dados de exemplo.",
+    "stats": {
+      "totalUsers": "Total de Alunos",
+      "monthlyRevenue": "Receita Mensal",
+      "totalQuestions": "Questões Ativas",
+      "notebooks": "Currículos PDF",
+      "comparedToLastMonth": "em relação ao mês anterior",
+      "realtime": "Tempo real"
+    },
+    "recentActivity": {
+      "title": "Atividade Recente",
+      "actions": {
+        "vipStripe": "Upgrade VIP (Stripe)",
+        "completedExam": "Exame de Matemática concluído",
+        "uploadedPdf": "Novo currículo PDF enviado",
+        "vipPolygon": "Recarga VIP (Polygon)"
+      },
+      "time": {
+        "2m": "há 2 min",
+        "5m": "há 5 min",
+        "1h": "há 1 hora",
+        "3h": "há 3 horas"
+      }
+    }
+  }
+}

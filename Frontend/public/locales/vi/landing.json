@@ -28,7 +28,7 @@
     "segments": ["Ngân hàng & Tài chính", "Tập đoàn Đa chi nhánh", "Đại học & Giáo dục", "Trung tâm Sát hạch GPLX"]
   },
   "features": {
-    "title": "6 Đột phá công nghệ chỉ có tại AegisQuiz",
+    "title": "6 Đột phá công nghệ chỉ có tại Aegis",
     "subtitle": "Không chỉ là công cụ thi trắc nghiệm — đây là hệ sinh thái đánh giá năng lực thế hệ mới.",
     "items": [
       { "title": "Khảo thí Thích ứng Não bộ AI", "desc": "Động cơ CAT/IRT 3-PL tự động điều chỉnh độ khó theo từng câu trả lời, đo lường năng lực thực chất thay vì học vẹt." },
@@ -53,7 +53,7 @@
   },
   "segments": {
     "title": "Giải pháp theo từng ngành",
-    "subtitle": "Mỗi tổ chức có một bài toán riêng — AegisQuiz thích ứng theo đúng nhu cầu của bạn.",
+    "subtitle": "Mỗi tổ chức có một bài toán riêng — Aegis thích ứng theo đúng nhu cầu của bạn.",
     "tabs": [
       { "id": "banking", "label": "Ngân hàng & Tài chính", "painPoint": "Cần chuẩn hóa thi tuyển dụng, sát hạch nghiệp vụ định kỳ và tuân thủ AML trên quy mô hàng chục nghìn nhân sự.", "solution": "Multi-Tenant cách ly dữ liệu tuyệt đối theo chi nhánh, Audit Log SHA-256 không thể chỉnh sửa, PKI ký số hợp lệ." },
       { "id": "enterprise", "label": "Tập đoàn Đa chi nhánh", "painPoint": "Đào tạo nội bộ phân tán nhiều địa điểm, khó đo lường hiệu quả đồng nhất.", "solution": "Trưởng nhóm tự quản lý ngân hàng câu hỏi riêng, báo cáo tiến độ real-time theo từng đơn vị." },
@@ -104,8 +104,8 @@
     ]
   },
   "finalCta": {
-    "title": "Sẵn sàng bứt phá năng lực cùng AegisQuiz?",
-    "subtitle": "Tham gia cùng hàng nghìn học viên và hàng chục tổ chức đang tin dùng AegisQuiz mỗi ngày.",
+    "title": "Sẵn sàng bứt phá năng lực cùng Aegis?",
+    "subtitle": "Tham gia cùng hàng nghìn học viên và hàng chục tổ chức đang tin dùng Aegis mỗi ngày.",
     "ctaPrimary": "Bắt đầu miễn phí ngay",
     "ctaSecondary": "Đặt lịch Demo cho Doanh nghiệp"
   },

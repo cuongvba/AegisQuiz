@@ -1,0 +1,60 @@
+{
+  "nav": {
+    "brandSubtitle": "Infrastructure Cognitive & Norme de Vérification",
+    "portal": "Portail",
+    "leader": "Responsable",
+    "overview": "Vue d'ensemble",
+    "questionBank": "Banque de Questions",
+    "exams": "Évaluations & Examens",
+    "tenants": "Locataires & Marque Blanche",
+    "whiteLabel": "Personnalisation Thème",
+    "orgUnits": "Hiérarchie O(1)",
+    "notebooks": "Programme (PDF)",
+    "symposium": "Symposium IA",
+    "aiSettings": "Meute IA & FinOps",
+    "promptForge": "Forge de Prompts Niveau 0",
+    "users": "Gestion des Utilisateurs",
+    "payments": "Revenus & Facturation",
+    "learningArea": "Espace Apprenant",
+    "homepage": "Accueil",
+    "closeNav": "Fermer la navigation",
+    "openNav": "Ouvrir la navigation"
+  },
+  "header": {
+    "systemAdmin": "Administrateur Système",
+    "teamLeader": "Chef d'Équipe",
+    "admin": "Admin",
+    "internalUnit": "Unité Interne",
+    "systemTitle": "Centre d'Opérations Globales"
+  },
+  "dashboard": {
+    "title": "Vue d'ensemble du Système",
+    "subtitle": "Métriques opérationnelles et télémétrie en direct d'Aegis Global.",
+    "updatedAt": "Mis à jour à :",
+    "refresh": "Actualiser",
+    "apiFallback": "L'API backend démarre. Affichage des données simulées.",
+    "stats": {
+      "totalUsers": "Total Apprenants",
+      "monthlyRevenue": "Revenu Mensuel",
+      "totalQuestions": "Questions Actives",
+      "notebooks": "Programmes PDF",
+      "comparedToLastMonth": "par rapport au mois précédent",
+      "realtime": "En temps réel"
+    },
+    "recentActivity": {
+      "title": "Activité Récente",
+      "actions": {
+        "vipStripe": "Mise à niveau VIP (Stripe)",
+        "completedExam": "Examen de mathématiques terminé",
+        "uploadedPdf": "Nouveau programme PDF importé",
+        "vipPolygon": "Recharge VIP (Polygon)"
+      },
+      "time": {
+        "2m": "il y a 2 min",
+        "5m": "il y a 5 min",
+        "1h": "il y a 1 heure",
+        "3h": "il y a 3 heures"
+      }
+    }
+  }
+}

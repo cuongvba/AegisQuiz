@@ -76,7 +76,7 @@ export const PaywallModal: React.FC = () => {
           </div>
 
           <div className="pt-2 text-xs text-slate-500 dark:text-slate-400 bg-amber-500/5 border border-amber-500/20 p-3 rounded-lg">
-            Gói hiện tại của bạn: <span className="font-bold text-slate-800 dark:text-slate-200">{plan}</span>. Hãy nâng cấp để tận hưởng toàn bộ sức mạnh của AegisQuiz.
+            Gói hiện tại của bạn: <span className="font-bold text-slate-800 dark:text-slate-200">{plan}</span>. Hãy nâng cấp để tận hưởng toàn bộ sức mạnh của Aegis.
           </div>
         </div>
 
@@ -90,7 +90,7 @@ export const PaywallModal: React.FC = () => {
             Để sau
           </button>
           <a
-            href="mailto:sales@aegisquiz.com?subject=Đăng ký nâng cấp gói dịch vụ AegisQuiz"
+            href="mailto:sales@aegis.vn?subject=Đăng ký nâng cấp gói dịch vụ Aegis"
             target="_blank"
             rel="noopener noreferrer"
             className="px-5 py-2 text-sm font-bold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-lg shadow-md shadow-indigo-500/20 transition flex items-center gap-1.5"

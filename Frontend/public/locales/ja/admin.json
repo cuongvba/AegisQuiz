@@ -1,0 +1,60 @@
+{
+  "nav": {
+    "brandSubtitle": "認知基盤・検証基準",
+    "portal": "ポータル",
+    "leader": "リーダー",
+    "overview": "システム概要",
+    "questionBank": "問題バンク",
+    "exams": "試験管理",
+    "tenants": "テナント＆ホワイトレーベル",
+    "whiteLabel": "ブランドテーマ設定",
+    "orgUnits": "O(1) 組織階層ツリー",
+    "notebooks": "カリキュラム (PDF)",
+    "symposium": "AIシンポジウム",
+    "aiSettings": "AI狼群＆FinOps",
+    "promptForge": "Tier-0 プロンプト鍛冶場",
+    "users": "ユーザー管理",
+    "payments": "収益・決済",
+    "learningArea": "学習者エリア",
+    "homepage": "ホーム",
+    "closeNav": "ナビゲーションを閉じる",
+    "openNav": "ナビゲーションを開く"
+  },
+  "header": {
+    "systemAdmin": "システム管理者",
+    "teamLeader": "チームリーダー",
+    "admin": "Admin",
+    "internalUnit": "内部組織ユニット",
+    "systemTitle": "グローバルオペレーションセンター"
+  },
+  "dashboard": {
+    "title": "システム概要",
+    "subtitle": "Aegis Global の運用状況と統合メトリクスレポート。",
+    "updatedAt": "更新:",
+    "refresh": "更新する",
+    "apiFallback": "バックエンドAPI待機中。サンプルデータを表示しています。",
+    "stats": {
+      "totalUsers": "総学習者数",
+      "monthlyRevenue": "月間収益",
+      "totalQuestions": "収録問題数",
+      "notebooks": "PDF教材数",
+      "comparedToLastMonth": "先月比",
+      "realtime": "リアルタイム更新"
+    },
+    "recentActivity": {
+      "title": "最近のアクティビティ",
+      "actions": {
+        "vipStripe": "VIPアップグレード (Stripe)",
+        "completedExam": "数学試験を完了",
+        "uploadedPdf": "新規PDF教材をアップロード",
+        "vipPolygon": "VIPチャージ (Polygon)"
+      },
+      "time": {
+        "2m": "2分前",
+        "5m": "5分前",
+        "1h": "1時間前",
+        "3h": "3時間前"
+      }
+    }
+  }
+}

@@ -22,5 +22,8 @@ namespace AegisQuiz.Application.Payments
         Task<PaymentGatewaySettingsDto> GetSettingsAsync(Guid? tenantId = null);
         Task<PaymentGatewaySettingsDto> UpdateSettingsAsync(UpdatePaymentGatewaySettingsRequest request, Guid? tenantId = null);
         Task<bool> TestConnectionAsync(string provider, Guid? tenantId = null);
+        Task<CoffeeDonationResponseDto> ProcessCoffeeDonationAsync(CreateCoffeeDonationRequest request, Guid? userId = null);
+        Task<System.Collections.Generic.List<CoffeeDonationItemDto>> GetCoffeeDonationsAsync(int limit = 50);
+        Task<BankAccountLookupResponseDto> LookupBankAccountAsync(string bankBin, string accountNumber);
     }
 }

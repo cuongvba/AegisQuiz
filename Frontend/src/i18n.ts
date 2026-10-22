@@ -43,11 +43,17 @@ i18n
     },
 
     // Namespaces
-    ns           : ['translation', 'auth', 'ai_settings', 'symposium', 'landing', 'dashboard', 'profile', 'creator', 'admin_questions', 'split_studio', 'white_label', 'paywall', 'admin_payments'],
+    ns           : ['admin', 'translation', 'auth', 'ai_settings', 'symposium', 'landing', 'dashboard', 'profile', 'creator', 'admin_questions', 'split_studio', 'white_label', 'paywall', 'admin_payments'],
     defaultNS    : 'translation',
 
     interpolation: {
       escapeValue: false, // React handles XSS
+    },
+
+    react: {
+      useSuspense: false,
+      bindI18n: 'languageChanged loaded',
+      bindI18nStore: 'added removed',
     },
 
     preload: ['vi', 'en'],

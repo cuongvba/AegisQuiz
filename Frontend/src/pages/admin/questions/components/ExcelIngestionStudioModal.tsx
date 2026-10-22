@@ -1134,7 +1134,7 @@ export function ExcelIngestionStudioModal({
                   AI Self-Healing Copilot & Tự Động Khảo Thí
                 </h3>
                 <p className="text-xs text-gray-400 mt-1">
-                  Bộ công cụ trí tuệ nhân tạo độc quyền của AegisQuiz giúp tự động làm sạch lỗi bảng tính, sửa chính tả và giải tự động các câu hỏi bị khuyết đáp án.
+                  Bộ công cụ trí tuệ nhân tạo độc quyền của Aegis giúp tự động làm sạch lỗi bảng tính, sửa chính tả và giải tự động các câu hỏi bị khuyết đáp án.
                 </p>
               </div>
 

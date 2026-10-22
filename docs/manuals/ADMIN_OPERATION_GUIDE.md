@@ -38,10 +38,26 @@ Tài liệu này dành cho **Quản trị viên hệ thống (Admins), Trưởng
 
 ---
 
-## 4. Quản Lý Người Dùng & Giao Dịch Nạp Tiền (`/admin/users`, `/admin/payments`)
+## 4. Quản Lý Doanh Thu, Quỹ Tài Trợ & Tri Ân (`/admin/payments`)
 
-- **Quản lý người dùng**: Xem danh sách học sinh, phân quyền giáo viên, kích hoạt hoặc khóa tài khoản vi phạm quy chế thi.
-- **Quản lý thanh toán & gói hội viên**: Theo dõi lịch sử giao dịch nạp tiền qua cổng Webhook, nâng cấp gói học viên VIP / Premium.
+Hệ thống điều phối tài chính đa kênh toàn cầu được tổ chức thành 3 phân hệ trực quan:
+
+### 4.1. Tab 1: Báo Cáo Doanh Thu (Revenue Analytics)
+- Theo dõi tổng doanh thu thời gian thực từ các gói thuê bao (Pro, Enterprise, Trường học).
+- Phân tích tỷ trọng dòng tiền theo cổng thanh toán: **PayOS (VietQR nội địa)**, **Stripe (Thẻ quốc tế)**, **Alipay/WeChat (Đông Bắc Á)** và **Polygon Web3 (USDT/USDC)**.
+- Tra soát mã đơn hàng (`OrderCode`), mã định danh thanh toán và trạng thái thành công/chờ xử lý.
+
+### 4.2. Tab 2: Nhà Tài Trợ & Tri Ân (Community Donors & Gratitude CRM)
+- **Thống kê Quỹ Mời Cafe**: Tổng số tiền ủng hộ tự nguyện và tổng lượt mời cafe từ cộng đồng.
+- **Bảng Vinh Danh Nhà Hảo Tâm**: Hiển thị Mã đơn, Tên người ủng hộ, Email, Số tiền, Danh hiệu danh dự (`☕ Người Gieo Mầm Tri Thức`, `🍰 Người Tiếp Lửa Thầm Lặng`...) và Lời chúc gửi đến đội ngũ.
+- **Phát Hành Mã Tri Ân (Voucher)**: Quản lý mã quà tặng `AEGIS-THANKS-xxxx` được tự động cấp cho người đóng góp.
+- **1-Click Sao Chép Email**: Nhấp nút **"📋 Sao chép email gửi Tri ân"** để trích xuất nhanh toàn bộ danh bạ email nhà hảo tâm, phục vụ các chiến dịch gửi thư cảm ơn, tri ân ngày lễ hoặc tặng voucher khóa học độc quyền.
+
+### 4.3. Tab 3: Cấu Hình Tài Khoản Thụ Hưởng (Gateway Configuration)
+- Cấu hình thông tin thụ hưởng trực tiếp vào CSDL PostgreSQL (Zero Hardcode):
+  - **Ngân hàng Napas VietQR**: Mã BIN (VD: `970405` - Agribank), Tên ngân hàng, Số tài khoản (`8888912600688`), Tên chủ tài khoản (`NGUYEN VIET CUONG`).
+  - **Cổng PayOS**: Client ID, API Key, Checksum Key.
+  - **Cổng Quốc tế & Web3**: Stripe Secret Key, Alipay Partner ID, Địa chỉ Ví Web3 Polygon.
 
 ---
 

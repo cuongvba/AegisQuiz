@@ -52,7 +52,7 @@ export function useWhiteLabelTheme() {
 
   const resetDefaults = useCallback(() => {
     const next: WhiteLabelConfig = {
-      organizationName: 'AegisQuiz Enterprise',
+      organizationName: 'Aegis Enterprise',
       logoUrl: '',
       customDomain: '',
       ...DEFAULT_THEME_TOKENS,

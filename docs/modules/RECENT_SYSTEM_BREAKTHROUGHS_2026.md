@@ -287,8 +287,34 @@ Khảo thí trực tuyến truyền thống thường rơi vào 2 cực đoan:
 │ Khảo thí thích ứng động CAT/IRT 3-PL│ Hội tụ SE <= 0.35│ 10-15 câu thay vì 100 câu     │
 │ Phân quyền Scoped RBAC & Link OTT   │ NIST SP 800-63B  │ Token 256-bit, Auto-Activation│
 │ Chuyển hóa Toán học UPMP v2.0       │ KaTeX SGK & Q.tế │ 100% LaTeX chuẩn, CLS = 0     │
+│ Thanh toán & Quỹ Mời Cafe Tri Ân    │ Napas 24/7, PayOS│ Chuẩn EMVCo P2P, Ebanking 100%│
 └─────────────────────────────────────┴──────────────────┴───────────────────────────────┘
 ```
+
+---
+
+## 12. ĐỘT PHÁ CẢNH GIỚI 5: HỆ THỐNG ĐIỀU PHỐI THANH TOÁN ĐA CỔNG TOÀN CẦU, QUỸ MỜI CAFE & TRI ÂN DANH DỰ
+
+### 12.1. Thách Thức Nghiệp Vụ
+1. **Phân rã tiền tệ hóa theo địa lý**: Khách hàng nội địa cần PayOS và VietQR Napas 24/7; khách hàng quốc tế cần Stripe, Alipay, WeChatPay hoặc Web3 phi tập trung (Polygon USDT/USDC). Cần kiến trúc mở (OCP) cho phép nạp thêm cổng thanh toán mà không sửa đổi mã nguồn lõi.
+2. **Sự cố Ebanking quét mã VietQR**: Các mã QR thông thường nếu chèn Tag 59 (Merchant Name) và Tag 60 (Merchant City) sẽ bị các ứng dụng ngân hàng hiểu nhầm là cổng thanh toán hóa đơn Merchant POS, dẫn đến từ chối tài khoản cá nhân.
+3. **Ý nghĩa Văn hóa Mời Cafe & Tri Ân**: Nền tảng phục vụ cộng đồng giáo dục cần cơ chế tiếp nhận ủng hộ tự nguyện văn minh, đồng thời lưu trữ đầy đủ căn cứ thông tin (Tên, Email, SĐT, Lời chúc) để tự động cấp mã quà tặng (Voucher) và phục vụ các chiến dịch khen thưởng/khuyến mãi sau này.
+
+### 12.2. Giải Pháp Đột Phá Triển Khai
+1. **Kiến Trúc Thanh Toán Đa Cổng Strategy & Orchestrator**:
+   - `IPaymentGatewayStrategy`: Hỗ trợ PayOS, Stripe, Alipay, WeChatPay, Web3Polygon.
+   - `PaymentOrchestratorService`: Tự động nạp cấu hình tài khoản thụ hưởng từ CSDL PostgreSQL (Zero Hardcode).
+2. **Chuẩn Hóa Napas 24/7 P2P EMVCo (`VietQrEmvCoGenerator`)**:
+   - Tuân thủ nghiêm ngặt chuẩn dịch vụ Napas `QRIBFTTA`: Loại bỏ hoàn toàn Tag 59 và Tag 60, đảm bảo 100% app ngân hàng (Agribank, VCB, MB, Techcombank, BIDV...) quét nhận diện tự động và hiển thị đúng tên thụ hưởng `NGUYEN VIET CUONG`.
+   - Kết nối trực tiếp API VietQR chính thức (`https://api.vietqr.io/v2/generate`) kèm cơ chế tự phục hồi (Resilience Offline Fallback) tính toán CRC16-CCITT.
+   - Hiển thị song song **Mã QR Vector SVG 160px siêu nét** (quét tức thì trong 0.1s) và **Phiếu VietQR Napas chính thức**.
+3. **Động Cơ Tri Ân & Quản Trị Nhà Hảo Tâm (Gratitude CRM)**:
+   - Tự động vinh danh danh hiệu (`☕ Người Gieo Mầm Tri Thức`, `🍰 Người Tiếp Lửa Thầm Lặng`, `🌟 Nhà Bảo Trợ Vàng`).
+   - Cấp mã Voucher độc bản tự động (`AEGIS-THANKS-xxxx`).
+   - Giao diện Admin `/admin/payments` (Tab "Nhà Tài Trợ & Tri Ân") hiển thị thống kê tổng quỹ, danh sách nhà hảo tâm và 1-click **Sao chép email gửi Tri ân**.
+   - Chi tiết hồ sơ nghiệm thu thực chiến: [GLOBAL_PAYMENT_AND_COMMUNITY_GRATITUDE_ENGINE.md](file:///d:/Cuong/DuAn/mybank/AegisQuiz/docs/modules/GLOBAL_PAYMENT_AND_COMMUNITY_GRATITUDE_ENGINE.md).
+
+---
 
 > 🌟 **Lời kết:** Với những đột phá mang tính bản lề nói trên, AegisQuiz không chỉ hoàn thiện về mặt công nghệ mà còn nâng tầm trải nghiệm của người dùng lên mức vượt trội, thông minh và tinh tế nhất theo đúng triết lý của Nhà kiến tạo No.1 thế giới!
 
