@@ -11,8 +11,18 @@ import { TwoFactorChallengeModal } from './TwoFactorChallengeModal';
 import { QrLoginCard } from './QrLoginCard';
 import { LanguageSwitcher } from '@/widgets/app-header/LanguageSwitcher';
 
+// Helper chuyển mã ngôn ngữ của hệ thống sang mã chuẩn của Google GIS
+const getGoogleLocale = (langCode: string): string => {
+  const base = (langCode || 'vi').toLowerCase().split('-')[0];
+  switch (base) {
+    case 'zh': return 'zh-CN';
+    case 'pt': return 'pt-BR';
+    default: return base;
+  }
+};
+
 export function LoginPage() {
-  const { t } = useTranslation('auth');
+  const { t, i18n } = useTranslation('auth');
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const returnTo = searchParams.get('returnTo');
@@ -35,9 +45,32 @@ export function LoginPage() {
   const googleBtnRef = useRef<HTMLDivElement>(null);
   const [isGsiRendered, setIsGsiRendered] = useState(false);
 
-  // Tự động tải thư viện Google Identity Services (GIS)
+  // Tự động tải & render nút Google Identity Services (GIS) phản hồi tức thì theo ngôn ngữ
   useEffect(() => {
-    const scriptId = 'google-jssdk';
+    const currentLang = i18n.language || 'vi';
+    const googleLocale = getGoogleLocale(currentLang);
+
+    const renderGoogleBtn = () => {
+      if ((window as any).google?.accounts?.id && googleBtnRef.current) {
+        try {
+          // Xóa nút cũ để Google iframe vẽ lại hoàn toàn theo ngôn ngữ mới
+          googleBtnRef.current.innerHTML = '';
+          (window as any).google.accounts.id.renderButton(googleBtnRef.current, {
+            theme: 'filled_black',
+            size: 'large',
+            width: 380,
+            text: 'continue_with',
+            shape: 'rectangular',
+            logo_alignment: 'center',
+            locale: googleLocale,
+          });
+          setIsGsiRendered(true);
+        } catch (e) {
+          console.warn('Lỗi render nút Google Identity theo ngôn ngữ mới', e);
+        }
+      }
+    };
+
     const initGsi = () => {
       if ((window as any).google?.accounts?.id) {
         try {
@@ -46,37 +79,28 @@ export function LoginPage() {
             callback: handleGoogleCredentialResponse,
             auto_select: false,
           });
-
-          // Render nút Google chính hãng nếu có container
-          if (googleBtnRef.current) {
-            (window as any).google.accounts.id.renderButton(googleBtnRef.current, {
-              theme: 'filled_black',
-              size: 'large',
-              width: 380,
-              text: 'continue_with',
-              shape: 'rectangular',
-              logo_alignment: 'center'
-            });
-            setIsGsiRendered(true);
-          }
+          renderGoogleBtn();
         } catch (e) {
           console.warn('Lỗi khởi tạo Google Identity Services', e);
         }
       }
     };
 
-    if (!document.getElementById(scriptId)) {
-      const script = document.createElement('script');
-      script.id = scriptId;
-      script.src = 'https://accounts.google.com/gsi/client';
-      script.async = true;
-      script.defer = true;
-      script.onload = initGsi;
-      document.body.appendChild(script);
+    const scriptId = 'google-jssdk';
+    if (!(window as any).google?.accounts?.id) {
+      if (!document.getElementById(scriptId)) {
+        const script = document.createElement('script');
+        script.id = scriptId;
+        script.src = 'https://accounts.google.com/gsi/client';
+        script.async = true;
+        script.defer = true;
+        script.onload = initGsi;
+        document.body.appendChild(script);
+      }
     } else {
       initGsi();
     }
-  }, []);
+  }, [i18n.language]);
 
   const handleGoogleCredentialResponse = async (response: any) => {
     if (!response?.credential) return;
