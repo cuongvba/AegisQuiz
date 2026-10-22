@@ -24,6 +24,166 @@ namespace AegisQuiz.Infrastructure.Data.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("AegisQuiz.Domain.Entities.AegisCoinTransaction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("Amount")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("BalanceAfter")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ReferenceId")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("TransactionType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("WalletId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("WalletId");
+
+                    b.ToTable("AegisCoinTransactions");
+                });
+
+            modelBuilder.Entity("AegisQuiz.Domain.Entities.AegisCoinWallet", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("Balance")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("LastEarnedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("LifetimeEarned")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("LifetimeSpent")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("AegisCoinWallets");
+                });
+
+            modelBuilder.Entity("AegisQuiz.Domain.Entities.AiModelRegistry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("AvgLatencyMs")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("BenchmarkElo")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CognitiveArchetype")
+                        .HasColumnType("integer");
+
+                    b.Property<double>("CostInputPerMillion")
+                        .HasColumnType("double precision");
+
+                    b.Property<double>("CostOutputPerMillion")
+                        .HasColumnType("double precision");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("EndpointUrl")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsDefaultInArchetype")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("MaxContextTokens")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ModelCode")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ModelName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("ProtocolType")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ProviderCompany")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CognitiveArchetype");
+
+                    b.HasIndex("IsEnabled");
+
+                    b.HasIndex("ModelCode")
+                        .IsUnique();
+
+                    b.ToTable("AiModelRegistries");
+                });
+
             modelBuilder.Entity("AegisQuiz.Domain.Entities.BankTopic", b =>
                 {
                     b.Property<Guid>("Id")
@@ -116,6 +276,43 @@ namespace AegisQuiz.Infrastructure.Data.Migrations
                     b.ToTable("BankTopics");
                 });
 
+            modelBuilder.Entity("AegisQuiz.Domain.Entities.ConceptRelationship", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("RelationshipType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("SourceConceptCode")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("TargetConceptCode")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<double>("Weight")
+                        .HasColumnType("double precision");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("SourceConceptCode", "TargetConceptCode")
+                        .IsUnique();
+
+                    b.ToTable("ConceptRelationships");
+                });
+
             modelBuilder.Entity("AegisQuiz.Domain.Entities.DynamicDomain", b =>
                 {
                     b.Property<string>("Code")
@@ -169,7 +366,7 @@ namespace AegisQuiz.Infrastructure.Data.Migrations
                         {
                             Code = "EDUCATION",
                             ColorBadge = "#2563eb",
-                            CreatedAt = new DateTime(2026, 9, 12, 11, 22, 33, 215, DateTimeKind.Utc).AddTicks(7120),
+                            CreatedAt = new DateTime(2026, 10, 22, 0, 12, 24, 376, DateTimeKind.Utc).AddTicks(1196),
                             Description = "Khảo thí đại học, phổ thông, học thuật tổng quát",
                             DisplayOrder = 1,
                             Icon = "GraduationCap",
@@ -181,7 +378,7 @@ namespace AegisQuiz.Infrastructure.Data.Migrations
                         {
                             Code = "BANKING",
                             ColorBadge = "#059669",
-                            CreatedAt = new DateTime(2026, 9, 12, 11, 22, 33, 216, DateTimeKind.Utc).AddTicks(7615),
+                            CreatedAt = new DateTime(2026, 10, 22, 0, 12, 24, 376, DateTimeKind.Utc).AddTicks(3407),
                             Description = "Nghiệp vụ tín dụng, thanh toán, ngân quỹ, quản trị rủi ro",
                             DisplayOrder = 2,
                             Icon = "Landmark",
@@ -193,7 +390,7 @@ namespace AegisQuiz.Infrastructure.Data.Migrations
                         {
                             Code = "HEALTHCARE",
                             ColorBadge = "#dc2626",
-                            CreatedAt = new DateTime(2026, 9, 12, 11, 22, 33, 216, DateTimeKind.Utc).AddTicks(7680),
+                            CreatedAt = new DateTime(2026, 10, 22, 0, 12, 24, 376, DateTimeKind.Utc).AddTicks(3413),
                             Description = "Y học, dược lâm sàng, quy trình điều dưỡng, kiểm soát nhiễm khuẩn",
                             DisplayOrder = 3,
                             Icon = "HeartPulse",
@@ -205,7 +402,7 @@ namespace AegisQuiz.Infrastructure.Data.Migrations
                         {
                             Code = "HSE",
                             ColorBadge = "#d97706",
-                            CreatedAt = new DateTime(2026, 9, 12, 11, 22, 33, 216, DateTimeKind.Utc).AddTicks(7687),
+                            CreatedAt = new DateTime(2026, 10, 22, 0, 12, 24, 376, DateTimeKind.Utc).AddTicks(3415),
                             Description = "An toàn vệ sinh lao động, PCCC, quy chuẩn ISO 45001",
                             DisplayOrder = 4,
                             Icon = "HardHat",
@@ -217,7 +414,7 @@ namespace AegisQuiz.Infrastructure.Data.Migrations
                         {
                             Code = "GOV_DRIVING",
                             ColorBadge = "#7c3aed",
-                            CreatedAt = new DateTime(2026, 9, 12, 11, 22, 33, 216, DateTimeKind.Utc).AddTicks(7690),
+                            CreatedAt = new DateTime(2026, 10, 22, 0, 12, 24, 376, DateTimeKind.Utc).AddTicks(3416),
                             Description = "Bộ 600 câu GPLX Bộ GTVT, 60 câu điểm liệt, sa hình AI",
                             DisplayOrder = 5,
                             Icon = "Car",
@@ -229,7 +426,7 @@ namespace AegisQuiz.Infrastructure.Data.Migrations
                         {
                             Code = "IT_SECURITY",
                             ColorBadge = "#0284c7",
-                            CreatedAt = new DateTime(2026, 9, 12, 11, 22, 33, 216, DateTimeKind.Utc).AddTicks(7696),
+                            CreatedAt = new DateTime(2026, 10, 22, 0, 12, 24, 376, DateTimeKind.Utc).AddTicks(3417),
                             Description = "Bảo mật an ninh mạng, kiến trúc hệ thống, chứng chỉ CISSP/CompTIA",
                             DisplayOrder = 6,
                             Icon = "ShieldCheck",
@@ -241,7 +438,7 @@ namespace AegisQuiz.Infrastructure.Data.Migrations
                         {
                             Code = "GENERAL",
                             ColorBadge = "#4b5563",
-                            CreatedAt = new DateTime(2026, 9, 12, 11, 22, 33, 216, DateTimeKind.Utc).AddTicks(7700),
+                            CreatedAt = new DateTime(2026, 10, 22, 0, 12, 24, 376, DateTimeKind.Utc).AddTicks(3418),
                             Description = "Kiến thức đại cương, kỹ năng mềm, văn hóa doanh nghiệp",
                             DisplayOrder = 7,
                             Icon = "Layers",
@@ -249,6 +446,128 @@ namespace AegisQuiz.Infrastructure.Data.Migrations
                             IsSystemStandard = true,
                             Name = "Tổng hợp / Đại cương"
                         });
+                });
+
+            modelBuilder.Entity("AegisQuiz.Domain.Entities.EducatorPartnership", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("KarmaPoints")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("PayoutAccountHolder")
+                        .HasColumnType("text");
+
+                    b.Property<string>("PayoutBankAccount")
+                        .HasColumnType("text");
+
+                    b.Property<string>("PayoutBankName")
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("PendingPayoutBalance")
+                        .HasColumnType("numeric");
+
+                    b.Property<string>("ReferralCode")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("ReferredByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("RevenueShareRate")
+                        .HasColumnType("numeric");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("TotalEarnings")
+                        .HasColumnType("numeric");
+
+                    b.Property<DateTime>("TrialExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("EducatorPartnerships");
+                });
+
+            modelBuilder.Entity("AegisQuiz.Domain.Entities.ExamAuditLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ClientIp")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("CurrentHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Details")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("ExamId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("PreviousLogHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<long>("SequenceNumber")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Severity")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("TimestampUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UserAgent")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExamId");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("TimestampUtc");
+
+                    b.HasIndex("ExamId", "SequenceNumber")
+                        .IsUnique();
+
+                    b.HasIndex("ExamId", "UserId");
+
+                    b.ToTable("ExamAuditLogs");
                 });
 
             modelBuilder.Entity("AegisQuiz.Domain.Entities.ExamSession", b =>
@@ -310,6 +629,56 @@ namespace AegisQuiz.Infrastructure.Data.Migrations
                     b.HasIndex("ApplicantId", "Status");
 
                     b.ToTable("ExamSessions");
+                });
+
+            modelBuilder.Entity("AegisQuiz.Domain.Entities.KnowledgeConcept", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ConceptCode")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CurriculumReference")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("DifficultyRank")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("DomainCode")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.PrimitiveCollection<List<string>>("PrerequisiteCodes")
+                        .IsRequired()
+                        .HasColumnType("text[]");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ConceptCode")
+                        .IsUnique();
+
+                    b.HasIndex("DomainCode");
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("KnowledgeConcepts");
                 });
 
             modelBuilder.Entity("AegisQuiz.Domain.Entities.LearnerLeaderboardEntry", b =>
@@ -537,11 +906,54 @@ namespace AegisQuiz.Infrastructure.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("BankTopicId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CognitiveStatsJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ConflictReportJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("CreatedByAdminId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("CustomPersonaPrompt")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("DomainCode")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasColumnType("text");
+
+                    b.Property<long>("FileSizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid?>("OrgUnitId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("OriginalFileName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("PersonaName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("PersonaRole")
+                        .HasColumnType("integer");
 
                     b.Property<string>("SourcePdfUrl")
                         .IsRequired()
@@ -550,11 +962,32 @@ namespace AegisQuiz.Infrastructure.Data.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
+                    b.Property<string>("StoragePath")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int>("TotalPages")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("DomainCode");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("TenantId");
 
                     b.ToTable("Notebooks");
                 });
@@ -564,6 +997,9 @@ namespace AegisQuiz.Infrastructure.Data.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<int>("EndPage")
+                        .HasColumnType("integer");
 
                     b.PrimitiveCollection<List<Guid>>("GeneratedQuestionIds")
                         .IsRequired()
@@ -579,9 +1015,23 @@ namespace AegisQuiz.Infrastructure.Data.Migrations
                     b.Property<int>("OrderIndex")
                         .HasColumnType("integer");
 
+                    b.Property<string>("PinpointCoordinatesJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("QuestionCount")
+                        .HasColumnType("integer");
+
                     b.Property<string>("RawContent")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.PrimitiveCollection<List<Guid>>("SourceIds")
+                        .IsRequired()
+                        .HasColumnType("uuid[]");
+
+                    b.Property<int>("StartPage")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Summary")
                         .IsRequired()
@@ -595,7 +1045,108 @@ namespace AegisQuiz.Infrastructure.Data.Migrations
 
                     b.HasIndex("NotebookId");
 
+                    b.HasIndex("NotebookId", "OrderIndex");
+
                     b.ToTable("NotebookChapters");
+                });
+
+            modelBuilder.Entity("AegisQuiz.Domain.Entities.NotebookChatMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CitationsJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("NotebookId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("RoleName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Sender")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("NotebookId");
+
+                    b.ToTable("NotebookChatMessages");
+                });
+
+            modelBuilder.Entity("AegisQuiz.Domain.Entities.NotebookSource", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Authority")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ExtractedText")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<long>("FileSizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("MetadataJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("NotebookId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("OriginalFileName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("SourceUrl")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("StoragePath")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("TotalPages")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Authority");
+
+                    b.HasIndex("NotebookId");
+
+                    b.HasIndex("Type");
+
+                    b.ToTable("NotebookSources");
                 });
 
             modelBuilder.Entity("AegisQuiz.Domain.Entities.OrganizationUnit", b =>
@@ -613,6 +1164,9 @@ namespace AegisQuiz.Infrastructure.Data.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("DepthLevel")
+                        .HasColumnType("integer");
 
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("integer");
@@ -635,6 +1189,9 @@ namespace AegisQuiz.Infrastructure.Data.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<string>("PhoneNumber")
+                        .HasColumnType("text");
+
+                    b.Property<string>("TaxonomyCategory")
                         .HasColumnType("text");
 
                     b.Property<Guid>("TenantId")
@@ -852,6 +1409,9 @@ namespace AegisQuiz.Infrastructure.Data.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
                     b.Property<int>("Difficulty")
                         .HasColumnType("integer");
 
@@ -869,6 +1429,9 @@ namespace AegisQuiz.Infrastructure.Data.Migrations
                         .HasColumnType("boolean")
                         .HasJsonPropertyName("isCritical");
 
+                    b.Property<bool>("IsPublic")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("OptionType")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -884,8 +1447,8 @@ namespace AegisQuiz.Infrastructure.Data.Migrations
 
                     b.Property<string>("QuestionType")
                         .IsRequired()
-                        .HasMaxLength(13)
-                        .HasColumnType("character varying(13)")
+                        .HasMaxLength(21)
+                        .HasColumnType("character varying(21)")
                         .HasJsonPropertyName("questionType");
 
                     b.Property<string>("SubCategory")
@@ -960,6 +1523,244 @@ namespace AegisQuiz.Infrastructure.Data.Migrations
                     b.ToTable("QuestionContexts");
                 });
 
+            modelBuilder.Entity("AegisQuiz.Domain.Entities.QuestionNeuralState", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("AverageResponseMs")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<double>("Difficulty")
+                        .HasColumnType("double precision");
+
+                    b.Property<DateTime>("DueAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("ElapsedDays")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Lapses")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("LastRating")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("LastReviewAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("QuestionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Reps")
+                        .HasColumnType("integer");
+
+                    b.Property<double>("Retrievability")
+                        .HasColumnType("double precision");
+
+                    b.Property<int>("ScheduledDays")
+                        .HasColumnType("integer");
+
+                    b.Property<double>("Stability")
+                        .HasColumnType("double precision");
+
+                    b.Property<int>("State")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QuestionId");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("UserId", "DueAt");
+
+                    b.HasIndex("UserId", "QuestionId")
+                        .IsUnique();
+
+                    b.ToTable("QuestionNeuralStates");
+                });
+
+            modelBuilder.Entity("AegisQuiz.Domain.Entities.QuestionParsingRule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AnchorSpecJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("EvaluationSpecJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<long>("HitCount")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("InteractionSpecJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RuleCode")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("RuleName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Scope")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("SemanticsSpecJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsActive");
+
+                    b.HasIndex("Priority");
+
+                    b.HasIndex("TenantId", "RuleCode")
+                        .IsUnique();
+
+                    b.ToTable("QuestionParsingRules");
+                });
+
+            modelBuilder.Entity("AegisQuiz.Domain.Entities.SymposiumPromptTemplate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("Layer")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Locale")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("TargetKey")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("TemplateCode")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SymposiumPromptTemplates");
+                });
+
+            modelBuilder.Entity("AegisQuiz.Domain.Entities.SymposiumSession", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ConcludedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ConvenedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CoreProblemStatement")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("DialogueLogJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<double>("EpistemicConsensusIndex")
+                        .HasColumnType("double precision");
+
+                    b.Property<string>("FinalConsensusResolution")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("InitiatedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ParticipatingCouncilCodesJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("RubricScoresJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("TopicTitle")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SymposiumSessions");
+                });
+
             modelBuilder.Entity("AegisQuiz.Domain.Entities.Tenant", b =>
                 {
                     b.Property<Guid>("Id")
@@ -989,6 +1790,9 @@ namespace AegisQuiz.Infrastructure.Data.Migrations
                         .HasColumnType("text");
 
                     b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsCommunityHub")
                         .HasColumnType("boolean");
 
                     b.Property<string>("KeycloakRealmId")
@@ -1101,6 +1905,364 @@ namespace AegisQuiz.Infrastructure.Data.Migrations
                     b.ToTable("TenantDomainConfigs");
                 });
 
+            modelBuilder.Entity("AegisQuiz.Domain.Entities.TenantMembership", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("JoinedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("OrgUnitId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("RoleInTenant")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrgUnitId");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("UserId", "TenantId")
+                        .IsUnique();
+
+                    b.ToTable("TenantMemberships");
+                });
+
+            modelBuilder.Entity("AegisQuiz.Domain.Entities.UniversalAiCouncil", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("BenchmarkPrestigeElo")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Category")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CouncilCode")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DisciplineArea")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("EpistemicManifesto")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("MaterializedTaxonomyPath")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ReadinessMessage")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ReadinessStatus")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("ReadySeatsCount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("SpatioTemporalAffinity")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("TotalSeatsCount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("TriggerKeywordsJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("UniversalAiCouncils");
+                });
+
+            modelBuilder.Entity("AegisQuiz.Domain.Entities.UniversalCouncilSeat", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AlphaModelCode")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("AssignedModelCode")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("AssignmentRationale")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("CouncilId")
+                        .HasColumnType("uuid");
+
+                    b.Property<double>("DecisionWeight")
+                        .HasColumnType("double precision");
+
+                    b.Property<int>("IdealArchetype")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsReady")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("PersonaPromptDirective")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("PreferredModelCode")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("SeatTitle")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("SwarmModelCodesJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("SwarmPolicy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CouncilId");
+
+                    b.ToTable("UniversalCouncilSeats");
+                });
+
+            modelBuilder.Entity("AegisQuiz.Domain.Entities.UserAccount", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ActiveTenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AvatarUrl")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("FailedLoginAttempts")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsPremium")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsTwoFactorEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("LastLoginAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("LockoutEnd")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("OrgUnitId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("PasswordResetToken")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("PasswordResetTokenExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("text");
+
+                    b.Property<string>("RefreshToken")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("RefreshTokenExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("SubscriptionExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("SubscriptionTier")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("TwoFactorRecoveryCodes")
+                        .HasColumnType("text");
+
+                    b.Property<string>("TwoFactorSecret")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.HasIndex("OrgUnitId");
+
+                    b.HasIndex("Role");
+
+                    b.HasIndex("SubscriptionTier");
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("UserAccounts");
+                });
+
+            modelBuilder.Entity("AegisQuiz.Domain.Entities.UserAiKey", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CustomEndpoint")
+                        .HasColumnType("text");
+
+                    b.Property<string>("CustomModelName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("EncryptedApiKey")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<long>("FailedCallsCount")
+                        .HasColumnType("bigint");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("KeyFingerprint")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("KeyLabel")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("LastUsedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("MonthlyTokenQuota")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("ProtocolType")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ProviderCompany")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Scope")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("SuccessCallsCount")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("TokensUsedThisMonth")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("TotalCallsCount")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsActive");
+
+                    b.HasIndex("Scope");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UserAiKeys");
+                });
+
             modelBuilder.Entity("AegisQuiz.Domain.Entities.UserRole", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1178,6 +2340,13 @@ namespace AegisQuiz.Infrastructure.Data.Migrations
                     b.HasDiscriminator().HasValue("MULTI");
                 });
 
+            modelBuilder.Entity("AegisQuiz.Domain.Entities.MultiTrueFalseQuestion", b =>
+                {
+                    b.HasBaseType("AegisQuiz.Domain.Entities.QuestionBase");
+
+                    b.HasDiscriminator().HasValue("MULTI_TRUE_FALSE");
+                });
+
             modelBuilder.Entity("AegisQuiz.Domain.Entities.OrderingQuestion", b =>
                 {
                     b.HasBaseType("AegisQuiz.Domain.Entities.QuestionBase");
@@ -1204,6 +2373,28 @@ namespace AegisQuiz.Infrastructure.Data.Migrations
                     b.HasBaseType("AegisQuiz.Domain.Entities.QuestionBase");
 
                     b.HasDiscriminator().HasValue("TRUE_FALSE");
+                });
+
+            modelBuilder.Entity("AegisQuiz.Domain.Entities.AegisCoinTransaction", b =>
+                {
+                    b.HasOne("AegisQuiz.Domain.Entities.AegisCoinWallet", "Wallet")
+                        .WithMany()
+                        .HasForeignKey("WalletId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Wallet");
+                });
+
+            modelBuilder.Entity("AegisQuiz.Domain.Entities.AegisCoinWallet", b =>
+                {
+                    b.HasOne("AegisQuiz.Domain.Entities.UserAccount", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("AegisQuiz.Domain.Entities.BankTopic", b =>
@@ -1259,6 +2450,28 @@ namespace AegisQuiz.Infrastructure.Data.Migrations
                     b.Navigation("Notebook");
                 });
 
+            modelBuilder.Entity("AegisQuiz.Domain.Entities.NotebookChatMessage", b =>
+                {
+                    b.HasOne("AegisQuiz.Domain.Entities.Notebook", "Notebook")
+                        .WithMany("ChatMessages")
+                        .HasForeignKey("NotebookId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Notebook");
+                });
+
+            modelBuilder.Entity("AegisQuiz.Domain.Entities.NotebookSource", b =>
+                {
+                    b.HasOne("AegisQuiz.Domain.Entities.Notebook", "Notebook")
+                        .WithMany("Sources")
+                        .HasForeignKey("NotebookId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Notebook");
+                });
+
             modelBuilder.Entity("AegisQuiz.Domain.Entities.OrganizationUnit", b =>
                 {
                     b.HasOne("AegisQuiz.Domain.Entities.OrganizationUnit", "Parent")
@@ -1290,6 +2503,25 @@ namespace AegisQuiz.Infrastructure.Data.Migrations
                     b.Navigation("Context");
                 });
 
+            modelBuilder.Entity("AegisQuiz.Domain.Entities.QuestionNeuralState", b =>
+                {
+                    b.HasOne("AegisQuiz.Domain.Entities.QuestionBase", "Question")
+                        .WithMany()
+                        .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AegisQuiz.Domain.Entities.UserAccount", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Question");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("AegisQuiz.Domain.Entities.TenantDomainConfig", b =>
                 {
                     b.HasOne("AegisQuiz.Domain.Entities.DynamicDomain", "Domain")
@@ -1299,6 +2531,50 @@ namespace AegisQuiz.Infrastructure.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Domain");
+                });
+
+            modelBuilder.Entity("AegisQuiz.Domain.Entities.TenantMembership", b =>
+                {
+                    b.HasOne("AegisQuiz.Domain.Entities.OrganizationUnit", "OrgUnit")
+                        .WithMany()
+                        .HasForeignKey("OrgUnitId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("AegisQuiz.Domain.Entities.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AegisQuiz.Domain.Entities.UserAccount", "User")
+                        .WithMany("Memberships")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("OrgUnit");
+
+                    b.Navigation("Tenant");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("AegisQuiz.Domain.Entities.UniversalCouncilSeat", b =>
+                {
+                    b.HasOne("AegisQuiz.Domain.Entities.UniversalAiCouncil", null)
+                        .WithMany("Seats")
+                        .HasForeignKey("CouncilId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("AegisQuiz.Domain.Entities.UserAccount", b =>
+                {
+                    b.HasOne("AegisQuiz.Domain.Entities.OrganizationUnit", "OrgUnit")
+                        .WithMany()
+                        .HasForeignKey("OrgUnitId");
+
+                    b.Navigation("OrgUnit");
                 });
 
             modelBuilder.Entity("AegisQuiz.Domain.Entities.UserRole", b =>
@@ -1333,6 +2609,10 @@ namespace AegisQuiz.Infrastructure.Data.Migrations
             modelBuilder.Entity("AegisQuiz.Domain.Entities.Notebook", b =>
                 {
                     b.Navigation("Chapters");
+
+                    b.Navigation("ChatMessages");
+
+                    b.Navigation("Sources");
                 });
 
             modelBuilder.Entity("AegisQuiz.Domain.Entities.OrganizationUnit", b =>
@@ -1343,6 +2623,16 @@ namespace AegisQuiz.Infrastructure.Data.Migrations
             modelBuilder.Entity("AegisQuiz.Domain.Entities.QuestionContext", b =>
                 {
                     b.Navigation("Questions");
+                });
+
+            modelBuilder.Entity("AegisQuiz.Domain.Entities.UniversalAiCouncil", b =>
+                {
+                    b.Navigation("Seats");
+                });
+
+            modelBuilder.Entity("AegisQuiz.Domain.Entities.UserAccount", b =>
+                {
+                    b.Navigation("Memberships");
                 });
 #pragma warning restore 612, 618
         }
