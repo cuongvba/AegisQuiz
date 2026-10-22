@@ -40,29 +40,6 @@ export function resolveSmartRedirect(user: UserProfile | null | undefined, retur
     }
   }
 
-  // 2. Phân luồng mặc định theo Vai trò chức năng & Thuê bao
-  const role = user.role;
-
-  // Quản trị viên cấp cao
-  if (role === AppRole.SystemAdmin || role === AppRole.TenantAdmin) {
-    return '/admin';
-  }
-
-  // Quản lý nội dung & Giảng viên
-  if (role === AppRole.ContentManager || role === AppRole.Instructor) {
-    return '/admin/questions';
-  }
-
-  // Trưởng nhóm & Quản lý đơn vị
-  if (role === AppRole.TeamLeader || role === AppRole.OrgUnitManager) {
-    return '/team';
-  }
-
-  // Học viên VIP / Thuê bao nâng cao
-  if (user.isPremium || user.subscriptionTier === 'VIP' || user.subscriptionTier === 'ENTERPRISE') {
-    return '/practice';
-  }
-
-  // Học viên thông thường
-  return '/practice';
+  // 2. Mặc định sau khi đăng nhập: dẫn thẳng vào Không gian Bảng điều khiển (Dashboard)
+  return '/dashboard';
 }

@@ -30,22 +30,18 @@ export function LanguageSwitcher() {
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border transition-all duration-200
-                   text-xs font-black cursor-pointer select-none
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all duration-200
+                   text-xs font-mono font-bold cursor-pointer select-none
                    ${isOpen 
-                     ? 'border-cyan-500/60 bg-cyan-500/10 text-cyan-400 shadow-md shadow-cyan-500/10 ring-2 ring-cyan-500/20' 
-                     : 'border-slate-700/80 bg-slate-900/60 hover:bg-slate-800 text-slate-300 hover:text-white hover:border-slate-600'
+                     ? 'border-sky-500/60 bg-sky-500/10 text-sky-400 shadow-md shadow-sky-500/10 ring-2 ring-sky-500/20' 
+                     : 'border-slate-800 bg-slate-900/90 hover:bg-slate-800 text-sky-400 hover:text-sky-300 hover:border-slate-700'
                    }`}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
-        aria-label={`Ngôn ngữ hiện tại: ${currentLangObj.name}`}
+        aria-label={`Ngôn ngữ: ${currentLangObj.name}`}
       >
-        <span className="text-sm leading-none">{currentLangObj.flag}</span>
-        <span className="uppercase tracking-wider font-extrabold">{lang}</span>
-        <ChevronDown 
-          className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180 text-cyan-400' : ''}`} 
-          aria-hidden="true" 
-        />
+        <Globe size={13} className="text-sky-400 shrink-0" />
+        <span className="uppercase tracking-wider font-black">{lang}</span>
       </button>
 
       {/* Controlled Dropdown Menu */}

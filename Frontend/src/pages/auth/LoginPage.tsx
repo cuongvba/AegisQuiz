@@ -8,6 +8,7 @@ import { resolveSmartRedirect } from '@/shared/lib/smart-router';
 import { ForgotPasswordModal } from './ForgotPasswordModal';
 import { TwoFactorChallengeModal } from './TwoFactorChallengeModal';
 import { QrLoginCard } from './QrLoginCard';
+import { LanguageSwitcher } from '@/widgets/app-header/LanguageSwitcher';
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -280,6 +281,11 @@ export function LoginPage() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans select-none">
+      {/* Top Controls: Language Switcher */}
+      <div className="absolute top-5 right-6 z-30">
+        <LanguageSwitcher />
+      </div>
+
       {/* Dynamic Background Glows */}
       <div className="absolute top-1/4 left-1/4 w-[480px] h-[480px] bg-blue-600/15 rounded-full blur-[140px] pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 w-[480px] h-[480px] bg-purple-600/15 rounded-full blur-[140px] pointer-events-none" />
@@ -440,15 +446,6 @@ export function LoginPage() {
 
               <button
                 type="button"
-                onClick={handlePkiLogin}
-                disabled={pkiLoading || signLoading}
-                className="w-full py-2.5 bg-emerald-950/30 hover:bg-emerald-900/40 border border-emerald-500/30 text-emerald-400 font-bold rounded-xl transition-all active:scale-[0.98] text-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-              >
-                <Lock size={15} /> {pkiLoading || signLoading ? 'Đang giao tiếp thiết bị Token...' : 'Đăng nhập bằng USB Token (PKI)'}
-              </button>
-
-              <button
-                type="button"
                 onClick={handleKeycloakOidcLogin}
                 className="w-full py-2.5 bg-slate-950 hover:bg-slate-800/80 border border-slate-800 text-slate-300 font-bold rounded-xl transition-all active:scale-[0.98] text-xs flex items-center justify-center gap-2 cursor-pointer"
               >
@@ -465,13 +462,6 @@ export function LoginPage() {
                   Đang hoạt động
                 </span>
               </div>
-
-              {(pkiError || signError) && (
-                <div className="bg-red-950/40 border border-red-500/25 p-3 rounded-xl text-red-400 text-xs flex items-start gap-2">
-                  <ShieldAlert className="shrink-0 mt-0.5" size={14} />
-                  <p className="leading-relaxed">{pkiError || signError}</p>
-                </div>
-              )}
             </div>
           </>
         )}

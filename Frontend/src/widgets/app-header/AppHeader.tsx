@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { Bot } from 'lucide-react';
 import { NavMenu }              from './NavMenu';
 import { LanguageSwitcher }     from './LanguageSwitcher';
+import { WorkspaceDropdown }    from './WorkspaceDropdown';
 import { TenantBadge }          from './TenantBadge';
 import { UserProfileDropdown }  from './UserProfileDropdown';
 import { useTenant }            from '@/app/providers/TenantProvider';
@@ -60,9 +61,10 @@ export function AppHeader() {
         <NavMenu className="hidden md:flex items-center gap-2 flex-1 justify-center" />
 
         {/* ── Right Controls ── */}
-        <div className="flex items-center gap-3 flex-shrink-0">
+        <div className="flex items-center gap-2.5 flex-shrink-0">
           <LanguageSwitcher />
           <TenantBadge />
+          <WorkspaceDropdown />
           <UserProfileDropdown />
         </div>
 
