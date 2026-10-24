@@ -725,18 +725,17 @@ namespace AegisQuiz.Infrastructure.Services
                 var rawCode = match.Groups[1].Value.Trim().Trim('_');
                 if (!string.IsNullOrEmpty(rawCode))
                 {
-                    // Nếu là mã đề thi chuẩn (độ dài >= 3 chữ số như "0323", "101", "204") -> bảo toàn nguyên vẹn chuỗi số có số 0 ở đầu
-                    if (rawCode.Length >= 3)
+                    if (rawCode.StartsWith("DE_", StringComparison.OrdinalIgnoreCase))
                     {
-                        examCode = rawCode;
+                        examCode = rawCode.ToUpperInvariant();
                         return true;
                     }
-                    if (int.TryParse(rawCode, out int cNum))
+                    if (int.TryParse(rawCode, out int cNum) && rawCode.Length <= 2)
                     {
                         examCode = $"DE_{cNum:D2}";
                         return true;
                     }
-                    examCode = rawCode;
+                    examCode = $"DE_{rawCode}";
                     return true;
                 }
             }

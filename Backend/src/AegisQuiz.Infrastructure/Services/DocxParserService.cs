@@ -35,6 +35,7 @@ namespace AegisQuiz.Infrastructure.Services
         private static readonly Regex QuestionLikeCellPattern = new(@"^(?:Câu|Question|Item|Task|Bài|Bai)\s*\d+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex ExamLikeCellPattern = new(@"^(?:ĐỀ|D[E|Ê])\s*(?:SỐ\s*|THI\s*|ÔN\s*THI\s*)?(\d+)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex SectionLikeCellPattern = new(@"\b(?:PHẦN|PHAN)\s+[I|V|X]+\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex OptionLikeCellPattern = new(@"^\s*[\(\[]?[A-Da-d][\.\:\)\s\]]\s*\S", RegexOptions.Compiled);
         private static readonly Regex RelationshipIdPattern = new(@"(?:[a-zA-Z0-9_\-]+:)?(?:id|embed)=""([^""]+)""", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         private readonly ILogger<DocxParserService>? _logger;
@@ -218,11 +219,14 @@ namespace AegisQuiz.Infrastructure.Services
                     if (answerTableElements != null && answerTableElements.Contains(el)) return;
                     if (el.Descendants(W + "p").Any(p => MatrixSpecTablePattern.IsMatch(CellText(p)))) return; // bảng ma trận đặc tả — bỏ qua
 
-                    // Bảng chứa câu hỏi / tiêu đề đề / phân đoạn → duyệt từng ô như văn bản thường
+                    // Bảng chứa câu hỏi / tiêu đề đề / phân đoạn / phương án A-D → duyệt từng ô như văn bản thường
                     bool containsQuestionStructure = el.Descendants(W + "p").Any(p =>
                     {
                         var cell = CellText(p);
-                        return QuestionLikeCellPattern.IsMatch(cell) || ExamLikeCellPattern.IsMatch(cell) || SectionLikeCellPattern.IsMatch(cell);
+                        return QuestionLikeCellPattern.IsMatch(cell) 
+                            || ExamLikeCellPattern.IsMatch(cell) 
+                            || SectionLikeCellPattern.IsMatch(cell)
+                            || OptionLikeCellPattern.IsMatch(cell);
                     });
 
                     if (containsQuestionStructure)

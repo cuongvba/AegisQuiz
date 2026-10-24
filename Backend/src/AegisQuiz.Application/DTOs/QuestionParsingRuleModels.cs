@@ -245,7 +245,8 @@ namespace AegisQuiz.Application.DTOs
         public List<string> SingleChoiceExtractionPatterns { get; set; } = new()
         {
             @"(?:^|[\.\;\,\!\s]+)(?:Do\s*đó|Suy\s*ra|Vậy|Hence|Therefore|Par\s*conséquent|Folglich)?\s*(?:ta\s*)?(?:Chọn|Ch[oọ\?]n|Choose|Option|Select|Choisir)\s*(?:câu\s*|đáp\s*án\s*|phương\s*án\s*)?([A-G])\b",
-            @"(?:^|[\.\;\,\!\s]+)(?:Do\s*đó|Suy\s*ra|Vậy|Hence|Therefore)?\s*(?:ta\s*có\s*)?(?:đáp\s*án|dap\s*an|phương\s*án|answer|key|réponse)(?:\s*(?:đúng\s*)?là|\s*is|\s*=)?[\:\s]+([A-G])\b",
+            @"(?:^|[\.\;\,\!\s]+)(?:Do\s*đó|Suy\s*ra|Vậy|Hence|Therefore|🡪|->|=>|→)?\s*(?:ta\s*có\s*)?(?:đáp\s*án|dap\s*an|phương\s*án|answer|key|réponse)(?:\s*(?:đúng\s*)?là|\s*is|\s*=)?[\:\s]+([A-G])\b",
+            @"(?:^|[\s\(\[])([A-G])[\.\:\)]\s*[^A-G\n\r]*?[✅✔✓]",
             @"\blà\s+đáp\s*án\s+([A-G])\b",
             @"\b([A-G])\s*(?:là\s*đáp\s*án|đúng|is\s+the\s+(?:correct\s+)?answer|is\s+correct|est\s+la\s+bonne\s+réponse)\b",
             @"(?:故选|答案为|正确答案是|正确选项是)[\:\s]*([A-G])\b"

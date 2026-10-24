@@ -223,9 +223,15 @@ namespace AegisQuiz.Infrastructure.Services.Docx
                     continue; // Bỏ qua hoàn toàn dòng chỉ thị coi thi/thí sinh
                 }
 
-                // 0a2. Nhận diện dòng Đáp án inline ngay dưới câu hỏi trước khi kiểm tra chuyển Phase
+                // 0b. Nhận dạng Tiêu đề Phần Bảng Đáp án hoặc Lời giải tham khảo qua CIG
+                // Tiêu đề Phase (LỜI GIẢI THAM KHẢO, ĐÁP ÁN THAM KHẢO, BẢNG ĐÁP ÁN) có mức ưu tiên tài liệu cao nhất,
+                // đánh dấu kết thúc pha đề bài và bắt đầu pha lời giải/đáp án chi tiết.
+                bool isSolPhaseMatch = cig.TryMatchSolutionPhase(line);
+                bool isAnsTableMatch = cig.TryMatchAnswerTablePhase(line);
+
+                // 0a2. Nhận diện dòng Đáp án inline ngay dưới câu hỏi (chỉ khi KHÔNG PHẢI Tiêu đề Phase)
                 var cleanLinePre = Regex.Replace(line, @"^<[a-z0-9]+>", "", RegexOptions.IgnoreCase).Trim();
-                if (currentQuestion != null && !isSolutionPhase && (cig.IsAnswerLine(cleanLinePre, currentMatchedRule, out string inlineAnsPre) || LinguisticMatch(cig, LinguisticKeys.ChoiceAnswerLine, cleanLinePre).Success))
+                if (!isSolPhaseMatch && !isAnsTableMatch && currentQuestion != null && !isSolutionPhase && (cig.IsAnswerLine(cleanLinePre, currentMatchedRule, out string inlineAnsPre) || LinguisticMatch(cig, LinguisticKeys.ChoiceAnswerLine, cleanLinePre).Success))
                 {
                     if (string.IsNullOrEmpty(inlineAnsPre))
                     {
@@ -245,12 +251,6 @@ namespace AegisQuiz.Infrastructure.Services.Docx
                     }
                     continue;
                 }
-
-                // 0b. Nhận dạng Tiêu đề Phần Bảng Đáp án hoặc Lời giải tham khảo qua CIG
-                // Tiêu đề Phase (LỜI GIẢI THAM KHẢO, ĐÁP ÁN THAM KHẢO, BẢNG ĐÁP ÁN) có mức ưu tiên tài liệu cao nhất,
-                // đánh dấu kết thúc pha đề bài và bắt đầu pha lời giải/đáp án chi tiết.
-                bool isSolPhaseMatch = cig.TryMatchSolutionPhase(line);
-                bool isAnsTableMatch = cig.TryMatchAnswerTablePhase(line);
 
                 if (isSolPhaseMatch || isAnsTableMatch)
                 {

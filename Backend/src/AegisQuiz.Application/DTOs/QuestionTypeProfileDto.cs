@@ -89,7 +89,7 @@ namespace AegisQuiz.Application.DTOs
             // Dòng chứa từ khóa tiêu đề vĩ mô (không được coi là lời giải inline)
             [LinguisticKeys.MacroPhaseHint] = new()
             {
-                @"\b(?:CHI\s*TIẾT|THAM\s*KHẢO|VÀ\s*(?:BIỂU|THANG)?\s*ĐIỂM|PHẦN|PART|SECTION|BẢNG|TEIL|PARTIE)\b",
+                @"\b(?:CHI\s*TIẾT|THAM\s*KHẢO|VÀ\s*(?:BIỂU|THANG)?\s*ĐIỂM|VÀ\s*(?:LỜI\s*GIẢI|ĐÁP\s*ÁN)|PHẦN|PART|SECTION|BẢNG|TEIL|PARTIE)\b",
                 @"(?:详细|参考|部分)"
             },
             // Tiêu đề lời giải trần (không kèm nội dung)
