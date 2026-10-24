@@ -21,7 +21,8 @@ CREATE TABLE IF NOT EXISTS "QuestionContexts" (
 CREATE INDEX IF NOT EXISTS "IX_QuestionContexts_ContentHash" ON "QuestionContexts" ("ContentHash");
 CREATE INDEX IF NOT EXISTS "IX_QuestionContexts_TenantId" ON "QuestionContexts" ("TenantId");
 
--- 2. CẬP NHẬT CỘT TRONG BẢNG Questions (Kho câu hỏi)
+-- 2. CẬP NHẬT CỘT TRONG BẢNG Questions (Kho câu hỏi & Discriminator)
+ALTER TABLE IF EXISTS "Questions" ALTER COLUMN "QuestionType" TYPE text;
 ALTER TABLE IF EXISTS "Questions" ADD COLUMN IF NOT EXISTS "ContextId" uuid NULL;
 ALTER TABLE IF EXISTS "Questions" ADD COLUMN IF NOT EXISTS "DomainCode" text NULL;
 ALTER TABLE IF EXISTS "Questions" ADD COLUMN IF NOT EXISTS "SubCategory" text NULL;

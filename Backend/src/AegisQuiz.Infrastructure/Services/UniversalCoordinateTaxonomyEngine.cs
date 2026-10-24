@@ -436,19 +436,11 @@ namespace AegisQuiz.Infrastructure.Services
             var dynamicDomain = dynamicContext?.Domains?.FirstOrDefault(d => d.Code.Equals(res.DomainCode, StringComparison.OrdinalIgnoreCase));
             if (dynamicDomain != null)
             {
-                AddTag(tags, CleanToTag(dynamicDomain.Name));
-                AddTag(tags, CleanToTag(dynamicDomain.Code));
-                if (dynamicDomain.Synonyms != null)
-                {
-                    foreach (var syn in dynamicDomain.Synonyms.Take(3))
-                    {
-                        var cleanSyn = CleanToTag(syn);
-                        if (!string.IsNullOrWhiteSpace(cleanSyn) && cleanSyn.Length >= 2)
-                        {
-                            tags.Add(cleanSyn);
-                        }
-                    }
-                }
+                var dName = CleanToTag(dynamicDomain.Name);
+                if (IsValidSmartTag(dName)) tags.Add(dName);
+
+                var dCode = CleanToTag(dynamicDomain.Code);
+                if (IsValidSmartTag(dCode)) tags.Add(dCode);
             }
 
             if (dynamicContext?.CoordinatePresets != null)
@@ -462,14 +454,18 @@ namespace AegisQuiz.Infrastructure.Services
 
                     if (presetSelected)
                     {
-                        AddTag(tags, CleanToTag(preset.PresetCode));
-                        AddTag(tags, CleanToTag(preset.PresetLabel));
+                        var pCode = CleanToTag(preset.PresetCode);
+                        if (IsValidSmartTag(pCode)) tags.Add(pCode);
+
+                        var pLabel = CleanToTag(preset.PresetLabel);
+                        if (IsValidSmartTag(pLabel)) tags.Add(pLabel);
+
                         if (preset.Synonyms != null)
                         {
-                            foreach (var s in preset.Synonyms)
+                            foreach (var s in preset.Synonyms.Take(1))
                             {
                                 var cleanSyn = CleanToTag(s);
-                                if (!string.IsNullOrWhiteSpace(cleanSyn) && cleanSyn.Length >= 2)
+                                if (IsValidSmartTag(cleanSyn))
                                 {
                                     tags.Add(cleanSyn);
                                 }
@@ -493,13 +489,24 @@ namespace AegisQuiz.Infrastructure.Services
                 }
             }
 
-            if (!string.IsNullOrWhiteSpace(res.TargetLevel)) AddTag(tags, CleanToTag(res.TargetLevel));
+            if (!string.IsNullOrWhiteSpace(res.TargetLevel))
+            {
+                var lvl = CleanToTag(res.TargetLevel);
+                if (IsValidSmartTag(lvl)) tags.Add(lvl);
+            }
+
             if (!string.IsNullOrWhiteSpace(res.IssuingOrg))
             {
-                AddTag(tags, CleanToTag(res.IssuingOrg));
+                var org = CleanToTag(res.IssuingOrg);
+                if (IsValidSmartTag(org)) tags.Add(org);
                 if (res.IssuingOrg.Contains("Chi nhánh", StringComparison.OrdinalIgnoreCase)) tags.Add("chi-nhanh");
             }
-            if (!string.IsNullOrWhiteSpace(res.BenchmarkStandard)) AddTag(tags, CleanToTag(res.BenchmarkStandard));
+
+            if (!string.IsNullOrWhiteSpace(res.BenchmarkStandard))
+            {
+                var std = CleanToTag(res.BenchmarkStandard);
+                if (IsValidSmartTag(std)) tags.Add(std);
+            }
 
             if (!string.IsNullOrWhiteSpace(fileName))
             {
@@ -507,7 +514,7 @@ namespace AegisQuiz.Infrastructure.Services
                 if (lowerFile.Contains("tin dung") || lowerFile.Contains("tín dụng")) tags.Add("tin-dung");
             }
 
-            return tags.Where(t => !string.IsNullOrWhiteSpace(t) && t.Length >= 2).ToList();
+            return tags.Where(IsValidSmartTag).Take(12).ToList();
         }
 
         // ─────────────────────────────────────────────────────────────────────
@@ -618,6 +625,101 @@ namespace AegisQuiz.Infrastructure.Services
                 else if (char.IsWhiteSpace(c) || c == '-' || c == '_') sb.Append('-');
             }
             return Regex.Replace(sb.ToString(), "-+", "-").Trim('-');
+        }
+
+        private static readonly HashSet<string> BlacklistedTagStopWords = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "cau-hoi", "trac-nghiem", "tu-luan", "bai-tap", "de-thi", "kiem-tra", "dap-an",
+            "thi-sinh", "giam-thi", "can-bo-coi-thi", "thoi-gian", "so-bao-danh", "default", "general"
+        };
+
+        /// <summary>
+        /// Kiểm định thẻ thông minh có đạt chuẩn khảo thí Enterprise hay không:
+        /// - Độ dài: từ 2 đến 24 ký tự.
+        /// - Tối đa 3 dấu gạch nối (tối đa 4 từ đơn).
+        /// - Không thuộc danh sách từ dừng rác (stop-words).
+        /// </summary>
+        public static bool IsValidSmartTag(string? tag)
+        {
+            if (string.IsNullOrWhiteSpace(tag)) return false;
+            var t = tag.Trim().Trim('#');
+            if (t.Length < 2 || t.Length > 24) return false;
+
+            int hyphens = t.Count(c => c == '-');
+            if (hyphens > 3) return false;
+
+            if (BlacklistedTagStopWords.Contains(t)) return false;
+
+            return true;
+        }
+
+        /// <summary>
+        /// Trích xuất mã đề thi ngắn gọn (ví dụ "Đề 101" -> "de-101", "Mã đề DE_02" -> "de-02").
+        /// Loại bỏ các câu văn miêu tả đề thi dài (> 24 ký tự).
+        /// </summary>
+        public static string ExtractShortExamCode(string? examName)
+        {
+            if (string.IsNullOrWhiteSpace(examName)) return string.Empty;
+            var trimmed = examName.Trim();
+            if (trimmed.Equals("DEFAULT", StringComparison.OrdinalIgnoreCase)) return string.Empty;
+
+            var m = Regex.Match(trimmed, @"(?i)(?:MÃ\s*ĐỀ|ĐỀ\s*SỐ|ĐỀ|DE|EXAM|CODE)[\s\:\-\._]+([A-Z0-9_\-]+)\b");
+            if (m.Success)
+            {
+                var code = m.Groups[1].Value.Trim().Trim('_');
+                if (code.Length >= 1 && code.Length <= 10)
+                {
+                    return "de-" + code.ToLowerInvariant();
+                }
+            }
+
+            if (trimmed.Length <= 15) return trimmed;
+            return string.Empty;
+        }
+
+        /// <summary>
+        /// Trích xuất mã phân đoạn ngắn gọn (ví dụ "PHẦN I: Câu hỏi trắc nghiệm..." -> "phan-i").
+        /// Loại bỏ câu văn mô tả phân đoạn dài đằng sau.
+        /// </summary>
+        public static string ExtractShortSectionCode(string? sectionName)
+        {
+            if (string.IsNullOrWhiteSpace(sectionName)) return string.Empty;
+            var trimmed = sectionName.Trim();
+
+            var m = Regex.Match(trimmed, @"(?i)^(?:PHẦN|PHAN|PART|SECTION)\s*([0-9IVXABCD]+)\b");
+            if (m.Success)
+            {
+                return "phan-" + m.Groups[1].Value.ToLowerInvariant();
+            }
+
+            if (trimmed.Length <= 15) return trimmed;
+            return string.Empty;
+        }
+
+        /// <summary>
+        /// Cắt tỉa, loại bỏ trùng lặp và chuẩn hóa danh sách thẻ theo giới hạn tối đa (Cardinality Cap).
+        /// </summary>
+        public static void PruneAndNormalizeTags(List<string>? tags, int maxTags = 5)
+        {
+            if (tags == null || tags.Count == 0) return;
+
+            var normalized = new List<string>();
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var raw in tags)
+            {
+                if (string.IsNullOrWhiteSpace(raw)) continue;
+                var clean = CleanToTag(raw.TrimStart('#'));
+                if (!IsValidSmartTag(clean)) continue;
+
+                if (seen.Add(clean))
+                {
+                    normalized.Add(clean);
+                }
+            }
+
+            tags.Clear();
+            tags.AddRange(normalized.Take(maxTags));
         }
 
         public static string NormalizeToCodeSlug(string text)
@@ -789,8 +891,10 @@ namespace AegisQuiz.Infrastructure.Services
             {
                 if (!string.IsNullOrWhiteSpace(q.CategoryCode) && q.CategoryCode != "GENERAL")
                 {
-                    AddTagIfNotExists(q.Tags, CleanToTag(q.CategoryCode));
+                    var cleanCat = CleanToTag(q.CategoryCode);
+                    if (IsValidSmartTag(cleanCat)) AddTagIfNotExists(q.Tags, cleanCat);
                 }
+                PruneAndNormalizeTags(q.Tags, maxTags: 5);
                 return;
             }
 
@@ -834,10 +938,12 @@ namespace AegisQuiz.Infrastructure.Services
                 // Bỏ qua nếu payload không thể deserialize
             }
 
-            foreach (var t in sniffed.Tags)
+            foreach (var t in sniffed.Tags.Take(2))
             {
                 AddTagIfNotExists(q.Tags, t);
             }
+
+            PruneAndNormalizeTags(q.Tags, maxTags: 5);
         }
 
         /// <summary>
@@ -888,7 +994,7 @@ namespace AegisQuiz.Infrastructure.Services
                 q.OrgUnitName = q.IssuingOrg;
             }
 
-            foreach (var t in sniffed.Tags)
+            foreach (var t in sniffed.Tags.Take(2))
             {
                 AddTagIfNotExists(q.Tags, t);
             }
@@ -898,35 +1004,80 @@ namespace AegisQuiz.Infrastructure.Services
 
         /// <summary>
         /// Bổ sung các thẻ vi mô biến đổi theo từng câu hỏi (Phân đoạn, Chuyên đề con, Math/Image).
+        /// Áp dụng Syntax Guard khắt khe: độ dài <= 24 ký tự, tối đa 3 từ, không lấy cả câu văn dài.
         /// </summary>
         private static void EnrichItemDeltaTags(DocxImportPreviewDto q)
         {
-            if (!string.IsNullOrWhiteSpace(q.TopicCode) && q.TopicCode != "GENERAL")
+            var deltaTags = new List<string>();
+
+            // 1. Thẻ Môn học / Chủ đề vi mô: Chỉ thêm 1 slug chuẩn kebab-case ngắn gọn
+            if (!string.IsNullOrWhiteSpace(q.TopicCode) && q.TopicCode != "GENERAL" && q.TopicCode != "EDUCATION")
             {
-                AddTagIfNotExists(q.Tags, CleanToTag(q.TopicCode));
-                AddTagIfNotExists(q.Tags, NormalizeToCodeSlug(q.TopicCode).ToLowerInvariant());
+                var cleanTopic = CleanToTag(q.TopicCode);
+                if (IsValidSmartTag(cleanTopic))
+                {
+                    deltaTags.Add(cleanTopic);
+                }
             }
-            if (!string.IsNullOrWhiteSpace(q.SourceExamName) && q.SourceExamName != "DEFAULT")
+
+            // 2. Thẻ Mã đề thi (Chỉ khi là mã ngắn như "de-101", "de-01", "ma-de-1", KHÔNG lấy cả tiêu đề dài)
+            var shortExam = ExtractShortExamCode(q.SourceExamName);
+            if (!string.IsNullOrWhiteSpace(shortExam))
             {
-                AddTagIfNotExists(q.Tags, CleanToTag(q.SourceExamName));
-                AddTagIfNotExists(q.Tags, NormalizeToCodeSlug(q.SourceExamName).ToLowerInvariant());
+                var cleanExam = CleanToTag(shortExam);
+                if (IsValidSmartTag(cleanExam))
+                {
+                    deltaTags.Add(cleanExam);
+                }
             }
-            if (!string.IsNullOrWhiteSpace(q.SourceSectionName))
+
+            // 3. Thẻ Phân đoạn (Chỉ khi là phân đoạn ngắn gọn như "phan-i", "part-1", "phan-1", KHÔNG lấy cả câu miêu tả)
+            var shortSec = ExtractShortSectionCode(q.SourceSectionName);
+            if (!string.IsNullOrWhiteSpace(shortSec))
             {
-                AddTagIfNotExists(q.Tags, CleanToTag(q.SourceSectionName));
+                var cleanSec = CleanToTag(shortSec);
+                if (IsValidSmartTag(cleanSec))
+                {
+                    deltaTags.Add(cleanSec);
+                }
             }
+
+            // 4. Thẻ Chuyên mục con / Khái niệm vi mô (Ví dụ: "Hàm số", "Đạo hàm", "Hình chóp")
             if (!string.IsNullOrWhiteSpace(q.SubCategory))
             {
-                AddTagIfNotExists(q.Tags, CleanToTag(q.SubCategory));
+                var cleanSub = CleanToTag(q.SubCategory);
+                if (IsValidSmartTag(cleanSub))
+                {
+                    deltaTags.Add(cleanSub);
+                }
             }
+
+            // 5. Cờ đặc tính kỹ thuật vi mô
             if (!string.IsNullOrWhiteSpace(q.ContentType) && q.ContentType == "image")
             {
-                AddTagIfNotExists(q.Tags, "has-image");
+                deltaTags.Add("has-image");
             }
-            if (!string.IsNullOrWhiteSpace(q.Content) && (q.Content.Contains("$") || q.Content.Contains(@"\frac") || q.Content.Contains(@"\sqrt")))
+            if (!string.IsNullOrWhiteSpace(q.Content) && (q.Content.Contains("$") || q.Content.Contains(@"\frac") || q.Content.Contains(@"\sqrt") || q.Content.Contains(@"\int") || q.Content.Contains(@"\sum")))
             {
-                AddTagIfNotExists(q.Tags, "has-math");
+                deltaTags.Add("has-math");
             }
+
+            // Ưu tiên đưa các thẻ vi mô đặc thù của câu hỏi lên đầu, kế thừa các thẻ vĩ mô từ đề thi ở phía sau
+            var combined = new List<string>(deltaTags);
+            if (q.Tags != null && q.Tags.Count > 0)
+            {
+                foreach (var t in q.Tags)
+                {
+                    if (!combined.Contains(t, StringComparer.OrdinalIgnoreCase))
+                    {
+                        combined.Add(t);
+                    }
+                }
+            }
+            q.Tags = combined;
+
+            // 6. Cắt tỉa (Pruning & Cardinality Cap): Chuẩn hóa và giới hạn tối đa 6 tags tinh túy nhất
+            PruneAndNormalizeTags(q.Tags, maxTags: 6);
         }
 
         /// <summary>
@@ -1031,7 +1182,7 @@ namespace AegisQuiz.Infrastructure.Services
                     q.Tags ??= new List<string>();
                     if (fallbackSniffed?.Tags != null)
                     {
-                        foreach (var t in fallbackSniffed.Tags)
+                        foreach (var t in fallbackSniffed.Tags.Take(2))
                         {
                             AddTagIfNotExists(q.Tags, t);
                         }
@@ -1071,6 +1222,8 @@ namespace AegisQuiz.Infrastructure.Services
                             }
                         }
                     }
+
+                    PruneAndNormalizeTags(q.Tags, maxTags: 5);
                 }
             }
         }

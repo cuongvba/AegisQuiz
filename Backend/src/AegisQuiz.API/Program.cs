@@ -521,7 +521,8 @@ using (var scope = app.Services.CreateScope())
                     ALTER TABLE IF EXISTS ""BankTopics"" ADD COLUMN IF NOT EXISTS ""AllowedTenantIds"" text[] NOT NULL DEFAULT '{{}}';
                     ALTER TABLE IF EXISTS ""BankTopics"" ADD COLUMN IF NOT EXISTS ""TenantId"" uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000';
                     
-                    -- 2. BẢNG Questions: Đảm bảo đầy đủ toạ độ tri thức
+                    -- 2. BẢNG Questions: Đảm bảo đầy đủ toạ độ tri thức & nới rộng discriminator
+                    ALTER TABLE IF EXISTS ""Questions"" ALTER COLUMN ""QuestionType"" TYPE text;
                     ALTER TABLE IF EXISTS ""Questions"" ADD COLUMN IF NOT EXISTS ""ContextId"" uuid NULL;
                     ALTER TABLE IF EXISTS ""Questions"" ADD COLUMN IF NOT EXISTS ""DomainCode"" text NOT NULL DEFAULT 'EDUCATION';
                     ALTER TABLE IF EXISTS ""Questions"" ADD COLUMN IF NOT EXISTS ""IsCritical"" boolean NOT NULL DEFAULT false;

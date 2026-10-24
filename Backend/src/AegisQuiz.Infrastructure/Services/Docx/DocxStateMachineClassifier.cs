@@ -734,7 +734,7 @@ namespace AegisQuiz.Infrastructure.Services.Docx
                         OrgUnitName = headerTaxonomy.IssuingOrg != null && headerTaxonomy.IssuingOrg.Contains("Trường", StringComparison.OrdinalIgnoreCase) ? headerTaxonomy.IssuingOrg : null,
                         BenchmarkYear = headerTaxonomy.BenchmarkYear ?? 2026,
                         BenchmarkStandard = headerTaxonomy.BenchmarkStandard,
-                        Tags = new List<string>(headerTaxonomy.Tags)
+                        Tags = new List<string>(headerTaxonomy.Tags.Take(2))
                     };
 
                     if (sameLineOptions.Count > 0)

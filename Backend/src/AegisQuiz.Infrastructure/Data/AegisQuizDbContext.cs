@@ -193,6 +193,7 @@ namespace AegisQuiz.Infrastructure.Data
                 if (Database.IsNpgsql())
                 {
                     entity.Property(q => q.Payload).HasColumnType("jsonb");
+                    entity.Property(q => q.QuestionType).HasColumnType("text");
                     entity.Property(q => q.CorrectOption).HasColumnType("text");
                     entity.PrimitiveCollection(q => q.Options).HasColumnType("text[]");
                     entity.PrimitiveCollection(q => q.Tags).HasColumnType("text[]");
