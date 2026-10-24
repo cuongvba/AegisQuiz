@@ -505,6 +505,32 @@ using (var scope = app.Services.CreateScope())
                 log.LogInformation("[AegisQuiz] EF migration notice: {Message}", exMigrate.Message);
             }
 
+            // [BƯỚC 1B: ĐỒNG BỘ TOÀN DIỆN CẤU TRÚC DATABASE THEO LOCAL CONTAINER (37 BẢNG, 493 CỘT)]
+            try
+            {
+                var infraAssembly = typeof(AegisQuiz.Infrastructure.Data.AegisQuizDbContext).Assembly;
+                var resourceName = infraAssembly.GetManifestResourceNames()
+                    .FirstOrDefault(n => n.EndsWith("SyncLiveDatabaseStruct.sql", StringComparison.OrdinalIgnoreCase));
+                if (!string.IsNullOrEmpty(resourceName))
+                {
+                    using var stream = infraAssembly.GetManifestResourceStream(resourceName);
+                    if (stream != null)
+                    {
+                        using var reader = new StreamReader(stream);
+                        var syncSql = reader.ReadToEnd();
+                        if (!string.IsNullOrWhiteSpace(syncSql))
+                        {
+                            db.Database.ExecuteSqlRaw(syncSql);
+                            log.LogInformation("[AegisQuiz] Comprehensive Live Database Schema Sync (37 tables, 493 columns) applied successfully.");
+                        }
+                    }
+                }
+            }
+            catch (Exception exSync)
+            {
+                log.LogWarning(exSync, "[AegisQuiz] Embedded comprehensive schema sync notice: {Message}", exSync.Message);
+            }
+
             // [BƯỚC 2: AUTO-HEALING DDL] Đảm bảo 100% các cột mới (DepthLevel, MaterializedPath,...) và bảng mới luôn tồn tại
             try
             {

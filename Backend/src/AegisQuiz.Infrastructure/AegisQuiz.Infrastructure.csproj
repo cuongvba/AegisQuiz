@@ -12,6 +12,7 @@
     <None Update="Config\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <EmbeddedResource Include="Data\SyncLiveDatabaseStruct.sql" />
   </ItemGroup>
   <ItemGroup>
     <!-- Database -->
