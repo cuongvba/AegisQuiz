@@ -719,11 +719,26 @@ namespace AegisQuiz.Infrastructure.Services
         {
             examCode = null;
             if (string.IsNullOrWhiteSpace(line)) return false;
-            var match = Regex.Match(line, @"(?i)(?:Mã\s*đề(?:\s*thi)?|Đề(?:\s*thi)?\s*số|Exam\s*Code|Test\s*Code)[\:\s\-]*(\d+)", RegexOptions.IgnoreCase);
-            if (match.Success && int.TryParse(match.Groups[1].Value, out int cNum))
+            var match = Regex.Match(line, @"(?i)(?:Mã\s*đề(?:\s*thi)?|Đề(?:\s*thi)?\s*số|Exam\s*Code|Test\s*Code)[\:\s\-]*([A-Za-z0-9_\-]+)", RegexOptions.IgnoreCase);
+            if (match.Success)
             {
-                examCode = $"DE_{cNum:D2}";
-                return true;
+                var rawCode = match.Groups[1].Value.Trim().Trim('_');
+                if (!string.IsNullOrEmpty(rawCode))
+                {
+                    // Nếu là mã đề thi chuẩn (độ dài >= 3 chữ số như "0323", "101", "204") -> bảo toàn nguyên vẹn chuỗi số có số 0 ở đầu
+                    if (rawCode.Length >= 3)
+                    {
+                        examCode = rawCode;
+                        return true;
+                    }
+                    if (int.TryParse(rawCode, out int cNum))
+                    {
+                        examCode = $"DE_{cNum:D2}";
+                        return true;
+                    }
+                    examCode = rawCode;
+                    return true;
+                }
             }
             return false;
         }

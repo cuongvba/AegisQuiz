@@ -104,8 +104,8 @@ namespace AegisQuiz.Application.DTOs
                 new() { DomainCode = "EDUCATION", CoordinateType = "TARGET_LEVEL", PresetCode = "GRADE_11", PresetLabel = "Lớp 11", Synonyms = new() { "lớp 11", "lop 11", "k11", "khối 11" } },
                 new() { DomainCode = "EDUCATION", CoordinateType = "TARGET_LEVEL", PresetCode = "GRADE_10", PresetLabel = "Lớp 10", Synonyms = new() { "lớp 10", "lop 10", "k10", "khối 10", "tuyển sinh 10", "tuyển sinh vào lớp 10" } },
                 new() { DomainCode = "EDUCATION", CoordinateType = "BENCHMARK_STANDARD", PresetCode = "GDPT_2018", PresetLabel = "Chương trình GDPT 2018", Synonyms = new() { "gdpt 2018", "gdpt", "chương trình mới", "sgk mới" } },
-                new() { DomainCode = "EDUCATION", CoordinateType = "ASSESSMENT_PURPOSE", PresetCode = "THPT_NATIONAL", PresetLabel = "Kỳ thi Tốt nghiệp THPT Quốc Gia", Synonyms = new() { "tốt nghiệp thpt", "thpt quốc gia", "thi đại học" } },
-                new() { DomainCode = "EDUCATION", CoordinateType = "ISSUING_ORG", PresetCode = "BO_GIAO_DUC", PresetLabel = "Bộ Giáo dục và Đào tạo", Synonyms = new() { "bộ giáo dục", "bộ giáo dục và đào tạo", "bo giao duc", "bộ gd&đt", "bgd&dt" } },
+                new() { DomainCode = "EDUCATION", CoordinateType = "ASSESSMENT_PURPOSE", PresetCode = "THPT_NATIONAL", PresetLabel = "Kỳ thi Tốt nghiệp THPT Quốc Gia", Synonyms = new() { "tốt nghiệp thpt", "thpt quốc gia", "thi đại học", "tốt nghiệp trung học phổ thông", "kỳ thi tốt nghiệp trung học phổ thông", "kỳ thi tốt nghiệp thpt", "thi tốt nghiệp thpt" } },
+                new() { DomainCode = "EDUCATION", CoordinateType = "ISSUING_ORG", PresetCode = "BO_GIAO_DUC", PresetLabel = "Bộ Giáo dục và Đào tạo", Synonyms = new() { "bộ giáo dục", "bộ giáo dục và đào tạo", "bo giao duc", "bộ gd&đt", "bgd&dt", "bgddt" } },
                 new() { DomainCode = "EDUCATION", CoordinateType = "ISSUING_ORG", PresetCode = "AMSTERDAM", PresetLabel = "THPT Chuyên Hà Nội - Amsterdam", Synonyms = new() { "chuyên amsterdam", "amsterdam" } },
 
                 // GOV_DRIVING

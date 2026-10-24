@@ -89,11 +89,8 @@ namespace AegisQuiz.Infrastructure.Services
                               $"{string.Join(" ", (sampleReferences ?? Enumerable.Empty<string>()).Take(15).Select(SanitizeSample))}";
 
             result.BenchmarkYear = DetectYear(bannerList, fileName, sheetName);
-            result.TargetLevel = DetectTargetLevel(bannerList, fileName, sheetName, combinedAll, dynamicContext);
-            result.AssessmentPurpose = DetectAssessmentPurpose(bannerList, fileName, sheetName, combinedAll, dynamicContext);
-            result.IssuingOrg = DetectIssuingOrg(bannerList, fileName, combinedAll, dynamicContext);
 
-            // Nhận diện Môn thi / Chủ đề chính từ Header Đề thi (Exam Envelope)
+            // 1. [SSoT Precedence] Nhận diện Môn thi / Chủ đề chính từ Header Đề thi (Exam Envelope) TRƯỚC TIÊN
             result.TopicCode = DetectTopicFromHeader(bannerList, fileName, sheetName, dynamicContext);
             if (!string.IsNullOrEmpty(result.TopicCode) && result.TopicCode != "GENERAL")
             {
@@ -109,8 +106,13 @@ namespace AegisQuiz.Infrastructure.Services
 
             if (string.IsNullOrWhiteSpace(result.DomainCode) || result.DomainCode == "GENERAL")
             {
-                result.DomainCode = DetectDomain(combinedAll, result.TargetLevel, result.AssessmentPurpose, result.IssuingOrg, dynamicContext);
+                result.DomainCode = DetectDomain(combinedAll, null, null, null, dynamicContext);
             }
+
+            // 2. [Domain-Isolated Sniffing] Nhận diện Cấp bậc, Kỳ thi và Đơn vị ban hành ĐƯỢC CÔ LẬP THEO DOMAIN
+            result.TargetLevel = DetectTargetLevel(bannerList, fileName, sheetName, combinedAll, dynamicContext, result.DomainCode);
+            result.AssessmentPurpose = DetectAssessmentPurpose(bannerList, fileName, sheetName, combinedAll, dynamicContext, result.DomainCode);
+            result.IssuingOrg = DetectIssuingOrg(bannerList, fileName, combinedAll, dynamicContext, result.DomainCode);
 
             result.BenchmarkStandard = DetectStandard(combinedAll, result.DomainCode, result.AssessmentPurpose, result.BenchmarkYear, dynamicContext);
             result.Tags = GenerateSmartTags(result, fileName, sheetName, dynamicContext);
@@ -231,9 +233,9 @@ namespace AegisQuiz.Infrastructure.Services
         // Trục 2: Vị trí / Cấp bậc / Khối lớp
         // ─────────────────────────────────────────────────────────────────────
 
-        private static string? DetectTargetLevel(List<string> banners, string? fileName, string? sheetName, string combinedAll, DynamicDomainContext? dynamicContext)
+        private static string? DetectTargetLevel(List<string> banners, string? fileName, string? sheetName, string combinedAll, DynamicDomainContext? dynamicContext, string? domainCode = null)
         {
-            var preset = MatchPreset(dynamicContext, "TARGET_LEVEL", combinedAll);
+            var preset = MatchPreset(dynamicContext, "TARGET_LEVEL", combinedAll, domainCode);
             if (preset != null) return preset;
 
             foreach (var banner in banners)
@@ -257,9 +259,9 @@ namespace AegisQuiz.Infrastructure.Services
         // Trục 3: Mục đích sát hạch / Loại kỳ thi
         // ─────────────────────────────────────────────────────────────────────
 
-        private static string? DetectAssessmentPurpose(List<string> banners, string? fileName, string? sheetName, string combinedAll, DynamicDomainContext? dynamicContext)
+        private static string? DetectAssessmentPurpose(List<string> banners, string? fileName, string? sheetName, string combinedAll, DynamicDomainContext? dynamicContext, string? domainCode = null)
         {
-            var preset = MatchPreset(dynamicContext, "ASSESSMENT_PURPOSE", combinedAll);
+            var preset = MatchPreset(dynamicContext, "ASSESSMENT_PURPOSE", combinedAll, domainCode);
             if (preset != null) return preset;
 
             foreach (var banner in banners)
@@ -280,9 +282,9 @@ namespace AegisQuiz.Infrastructure.Services
         // Trục 4: Đơn vị / Cơ quan ban hành
         // ─────────────────────────────────────────────────────────────────────
 
-        private static string? DetectIssuingOrg(List<string> banners, string? fileName, string combinedAll, DynamicDomainContext? dynamicContext)
+        private static string? DetectIssuingOrg(List<string> banners, string? fileName, string combinedAll, DynamicDomainContext? dynamicContext, string? domainCode = null)
         {
-            var preset = MatchPreset(dynamicContext, "ISSUING_ORG", combinedAll);
+            var preset = MatchPreset(dynamicContext, "ISSUING_ORG", combinedAll, domainCode);
             if (preset != null)
             {
                 if (Regex.IsMatch(combinedAll, @"\bchi\s+nhánh\b", RegexOptions.IgnoreCase) && !preset.Contains("Chi nhánh", StringComparison.OrdinalIgnoreCase))
@@ -540,12 +542,23 @@ namespace AegisQuiz.Infrastructure.Services
             return cleaned.Length > MaxSampleChars ? cleaned.Substring(0, MaxSampleChars) : cleaned;
         }
 
-        /// <summary>Tìm preset của Tenant theo loại tọa độ có nhãn hoặc từ đồng nghĩa xuất hiện trong văn bản.</summary>
-        private static string? MatchPreset(DynamicDomainContext? dynamicContext, string coordinateType, string combinedAll)
+        /// <summary>Tìm preset của Tenant theo loại tọa độ có nhãn hoặc từ đồng nghĩa xuất hiện trong văn bản (cô lập theo Domain).</summary>
+        private static string? MatchPreset(DynamicDomainContext? dynamicContext, string coordinateType, string combinedAll, string? domainCode = null)
         {
             if (dynamicContext?.CoordinatePresets == null || dynamicContext.CoordinatePresets.Count == 0) return null;
 
-            foreach (var preset in dynamicContext.CoordinatePresets.Where(p => p.CoordinateType.Equals(coordinateType, StringComparison.OrdinalIgnoreCase)))
+            var candidates = dynamicContext.CoordinatePresets
+                .Where(p => p.CoordinateType.Equals(coordinateType, StringComparison.OrdinalIgnoreCase));
+
+            if (!string.IsNullOrWhiteSpace(domainCode) && domainCode != "GENERAL")
+            {
+                candidates = candidates.Where(p =>
+                    string.IsNullOrWhiteSpace(p.DomainCode)
+                    || p.DomainCode.Equals("GENERAL", StringComparison.OrdinalIgnoreCase)
+                    || p.DomainCode.Equals(domainCode, StringComparison.OrdinalIgnoreCase));
+            }
+
+            foreach (var preset in candidates)
             {
                 if (PresetMentioned(preset, combinedAll)) return preset.PresetLabel;
             }
@@ -554,8 +567,23 @@ namespace AegisQuiz.Infrastructure.Services
 
         private static bool PresetMentioned(TenantCoordinatePresetDto preset, string combinedAll)
         {
-            if (!string.IsNullOrWhiteSpace(preset.PresetLabel) && combinedAll.Contains(preset.PresetLabel, StringComparison.OrdinalIgnoreCase)) return true;
-            return preset.Synonyms.Any(s => !string.IsNullOrWhiteSpace(s) && combinedAll.Contains(s, StringComparison.OrdinalIgnoreCase));
+            if (!string.IsNullOrWhiteSpace(preset.PresetLabel) && IsSafeWordOrPhraseMatch(preset.PresetLabel, combinedAll)) return true;
+            return preset.Synonyms.Any(s => !string.IsNullOrWhiteSpace(s) && IsSafeWordOrPhraseMatch(s, combinedAll));
+        }
+
+        /// <summary>
+        /// So khớp chuỗi an toàn: Đối với các từ viết tắt / từ ngắn (&lt;= 4 ký tự như 'aml', 'nhno', 'vcb', 'thpt'),
+        /// bắt buộc phải khớp theo ranh giới từ (\b) để tránh nhận diện nhầm các công thức hóa học hay ký hiệu con.
+        /// </summary>
+        private static bool IsSafeWordOrPhraseMatch(string candidate, string source)
+        {
+            if (string.IsNullOrWhiteSpace(candidate) || string.IsNullOrWhiteSpace(source)) return false;
+            var trimmed = candidate.Trim();
+            if (trimmed.Length <= 4)
+            {
+                return Regex.IsMatch(source, $@"(?i)\b{Regex.Escape(trimmed)}\b");
+            }
+            return source.Contains(trimmed, StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>Cụm từ xuất hiện trong văn bản gốc (không phân biệt hoa/thường) hoặc trong dạng slug đã bỏ dấu.</summary>
@@ -671,6 +699,12 @@ namespace AegisQuiz.Infrastructure.Services
                 {
                     return "de-" + code.ToLowerInvariant();
                 }
+            }
+
+            // Nếu examName đã là mã số thuần túy (ví dụ "0323", "101", "01")
+            if (Regex.IsMatch(trimmed, @"^\d{2,6}$"))
+            {
+                return "de-" + trimmed.ToLowerInvariant();
             }
 
             if (trimmed.Length <= 15) return trimmed;

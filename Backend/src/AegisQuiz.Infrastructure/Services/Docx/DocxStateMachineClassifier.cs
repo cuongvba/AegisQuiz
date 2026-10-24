@@ -153,8 +153,8 @@ namespace AegisQuiz.Infrastructure.Services.Docx
                 if (string.IsNullOrEmpty(line)) continue;
                 LastDebugLogs.Add($"[LINE] '{line}'");
 
-                // 00. Bỏ qua dòng/bảng Header thông tin thí sinh, số báo danh, thời gian làm bài nếu chưa vào câu hỏi đầu tiên
-                if (currentQuestion == null && cig.IsStudentInfoLine(line))
+                // 00. Bỏ qua dòng/bảng Header thông tin thí sinh, số báo danh, thời gian làm bài, mã đề thi nếu chưa vào câu hỏi đầu tiên
+                if (currentQuestion == null && (cig.IsStudentInfoLine(line) || cig.TryExtractExamCode(line, out _)))
                 {
                     if (cig.TryExtractExamCode(line, out var cCode) && !string.IsNullOrEmpty(cCode))
                     {

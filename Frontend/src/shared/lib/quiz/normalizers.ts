@@ -406,6 +406,12 @@ export function normalizeQuestion(data: unknown, idx: number): LearnerQuestion {
     issuingOrg:          String(pickFirst(source, payload, ['issuingOrg', 'issuing_org', 'sourceSchool', 'sourceOrg', 'source_org']) ?? '') || undefined,
     benchmarkYear:       Number(pickFirst(source, payload, ['benchmarkYear', 'benchmark_year', 'year']) ?? 0) || undefined,
     benchmarkStandard:   String(pickFirst(source, payload, ['benchmarkStandard', 'benchmark_standard', 'standard']) ?? '') || undefined,
+    // Dấu vết Xuất xứ Đề thi (Provenance Stamp)
+    sourceFileName:      String(pickFirst(source, payload, ['sourceFileName', 'source_file_name', 'sourceFile', 'source_file']) ?? '') || undefined,
+    sourceExamName:      String(pickFirst(source, payload, ['sourceExamName', 'source_exam_name', 'examTitleInFile', 'sourceExam', 'source_exam']) ?? '') || undefined,
+    sourceSectionName:   String(pickFirst(source, payload, ['sourceSectionName', 'source_section_name', 'sectionInFile', 'sourceSection', 'source_section']) ?? '') || undefined,
+    sourceQuestionNo:    String(pickFirst(source, payload, ['sourceQuestionNo', 'source_question_no', 'originalQuestionNo', 'original_question_no']) ?? '') || undefined,
+    sourceRowIndex:      Number(pickFirst(source, payload, ['sourceRowIndex', 'source_row_index', 'rowIndex', 'row_index']) ?? 0) || undefined,
     // Ownership & Attribution metadata
     creatorId:           String(pickFirst(source, payload, ['creatorId', 'creator_id', 'authorId', 'author_id', 'userId']) ?? '') || undefined,
     creatorName:         String(pickFirst(source, payload, ['creatorName', 'creator_name', 'authorName', 'author_name', 'author']) ?? '') || undefined,

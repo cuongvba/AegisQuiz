@@ -44,6 +44,12 @@ export interface LearnerQuestion {
   issuingOrg?: string;
   benchmarkYear?: number;
   benchmarkStandard?: string;
+  // Dấu vết Xuất xứ Đề thi (Provenance Stamp)
+  sourceFileName?: string;
+  sourceExamName?: string;
+  sourceSectionName?: string;
+  sourceQuestionNo?: string;
+  sourceRowIndex?: number;
   // Ownership & Contribution metadata (Task: TeamLeader Contribution & Ownership)
   creatorId?: string;
   creatorName?: string;
