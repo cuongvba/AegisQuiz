@@ -494,6 +494,48 @@ using (var scope = app.Services.CreateScope())
     {
         if (db.Database.IsNpgsql())
         {
+            // [BƯỚC 0: CRITICAL ISOLATED RESILIENCE DDL - BẢO ĐẢM NỚI RỘNG DISCRIMINATOR THÀNH TEXT]
+            string[] emergencyDdlList = new[]
+            {
+                @"ALTER TABLE IF EXISTS ""Questions"" ALTER COLUMN ""QuestionType"" TYPE text;",
+                @"ALTER TABLE IF EXISTS ""Questions"" ALTER COLUMN ""CategoryCode"" TYPE text;",
+                @"ALTER TABLE IF EXISTS ""Questions"" ALTER COLUMN ""CorrectOption"" TYPE text;",
+                @"ALTER TABLE IF EXISTS ""Questions"" ALTER COLUMN ""ContentType"" TYPE text;",
+                @"ALTER TABLE IF EXISTS ""Questions"" ALTER COLUMN ""OptionType"" TYPE text;",
+                @"ALTER TABLE IF EXISTS ""Questions"" ALTER COLUMN ""DomainCode"" TYPE text;",
+                @"ALTER TABLE IF EXISTS ""Questions"" ALTER COLUMN ""TargetLevel"" TYPE text;",
+                @"ALTER TABLE IF EXISTS ""Questions"" ALTER COLUMN ""AssessmentPurpose"" TYPE text;",
+                @"ALTER TABLE IF EXISTS ""Questions"" ALTER COLUMN ""IssuingOrg"" TYPE text;",
+                @"ALTER TABLE IF EXISTS ""Questions"" ALTER COLUMN ""BenchmarkStandard"" TYPE text;",
+                @"ALTER TABLE IF EXISTS ""Questions"" ALTER COLUMN ""CreatedBy"" TYPE text;",
+                @"ALTER TABLE IF EXISTS ""Questions"" ALTER COLUMN ""SubCategory"" TYPE text;",
+                @"ALTER TABLE IF EXISTS ""Questions"" ADD COLUMN IF NOT EXISTS ""DomainCode"" text NOT NULL DEFAULT 'EDUCATION';",
+                @"ALTER TABLE IF EXISTS ""Questions"" ADD COLUMN IF NOT EXISTS ""Tags"" text[] NOT NULL DEFAULT '{}';",
+                @"ALTER TABLE IF EXISTS ""Questions"" ADD COLUMN IF NOT EXISTS ""ContextId"" uuid NULL;",
+                @"ALTER TABLE IF EXISTS ""Questions"" ADD COLUMN IF NOT EXISTS ""IsCritical"" boolean NOT NULL DEFAULT false;",
+                @"ALTER TABLE IF EXISTS ""Questions"" ADD COLUMN IF NOT EXISTS ""SubCategory"" text NULL;",
+                @"ALTER TABLE IF EXISTS ""Questions"" ADD COLUMN IF NOT EXISTS ""IsPublic"" boolean NOT NULL DEFAULT false;",
+                @"ALTER TABLE IF EXISTS ""Questions"" ADD COLUMN IF NOT EXISTS ""TenantId"" uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000';",
+                @"ALTER TABLE IF EXISTS ""BankTopics"" ALTER COLUMN ""Code"" TYPE text;",
+                @"ALTER TABLE IF EXISTS ""BankTopics"" ADD COLUMN IF NOT EXISTS ""DepthLevel"" integer NOT NULL DEFAULT 0;",
+                @"ALTER TABLE IF EXISTS ""BankTopics"" ADD COLUMN IF NOT EXISTS ""MaterializedPath"" text NULL;",
+                @"ALTER TABLE IF EXISTS ""BankTopics"" ADD COLUMN IF NOT EXISTS ""Scope"" text NOT NULL DEFAULT 'COMMUNITY';",
+                @"ALTER TABLE IF EXISTS ""BankTopics"" ADD COLUMN IF NOT EXISTS ""DomainCode"" text NOT NULL DEFAULT 'GENERAL';",
+                @"ALTER TABLE IF EXISTS ""BankTopics"" ADD COLUMN IF NOT EXISTS ""AllowedTenantIds"" text[] NOT NULL DEFAULT '{}';"
+            };
+
+            foreach (var ddl in emergencyDdlList)
+            {
+                try
+                {
+                    db.Database.ExecuteSqlRaw(ddl);
+                }
+                catch (Exception exItem)
+                {
+                    log.LogWarning("[AegisQuiz] Emergency DDL notice for '{Ddl}': {Message}", ddl, exItem.Message);
+                }
+            }
+
             // [BƯỚC 1: TIẾN HÀNH MIGRATIONS TRƯỚC CHO DB MỚI]
             try
             {

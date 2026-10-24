@@ -4,9 +4,9 @@
 -- 100% Idempotent: Can be run multiple times without data loss or error
 -- ============================================================================
 
--- BẬT CÁC EXTENSION CẦN THIẾT
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+-- BẬT CÁC EXTENSION CẦN THIẾT (Bỏ qua nếu không có quyền superuser)
+-- CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- ----------------------------------------------------------------------------
 -- 1. AUTO-HEAL COLUMNS: ĐỒNG BỘ TẤT CẢ CÁC CỘT CHO 37 BẢNG THỰC THỂ

@@ -1357,6 +1357,18 @@ namespace AegisQuiz.API.Controllers
 
                 if (toSave.Count > 0)
                 {
+                    if (_db.Database.IsNpgsql())
+                    {
+                        try
+                        {
+                            await _db.Database.ExecuteSqlRawAsync(@"ALTER TABLE IF EXISTS ""Questions"" ALTER COLUMN ""QuestionType"" TYPE text;");
+                        }
+                        catch
+                        {
+                            // Bỏ qua nếu đã là text hoặc không có quyền DDL
+                        }
+                    }
+
                     _db.Questions.AddRange(toSave);
                 }
                 await _db.SaveChangesAsync();
@@ -1374,11 +1386,6 @@ namespace AegisQuiz.API.Controllers
             {
                 if (transaction != null) await transaction.RollbackAsync();
 
-                // [P1 Fix] Loại bỏ pattern "bắt lỗi bằng so khớp chuỗi rồi tự ALTER TABLE +
-                // tự đệ quy gọi lại chính mình" — dễ che giấu lỗi thật và có nguy cơ đệ quy
-                // vô hạn nếu nguyên nhân không phải do thiếu cột. Việc tự-chữa-lành schema
-                // nay tập trung duy nhất ở khởi động ứng dụng (Program.cs) và endpoint quản
-                // trị thủ công [SystemMaintenanceController] — không còn lặp lại ở đây.
                 var innerMsg = ex.InnerException?.Message;
                 var detailedMsg = string.IsNullOrWhiteSpace(innerMsg) ? ex.Message : $"{ex.Message} -> {innerMsg}";
                 return StatusCode(500, new { message = $"Lỗi lưu câu hỏi: {detailedMsg}" });
