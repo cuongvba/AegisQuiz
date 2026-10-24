@@ -108,8 +108,10 @@ namespace AegisQuiz.UnitTests
             Assert.NotNull(results[0].ContextContent);
             Assert.Contains("Ocean plastic pollution", results[0].ContextContent);
 
-            // Câu 2 phải được ngắt context sạch sẽ bởi Instruction Directive
-            Assert.Null(results[1].ContextContent);
+            // Câu 2 phải được ngắt sạch bài đọc cũ (Ocean plastic) và nhận chỉ thị làm Phần ẩn / Context của riêng nó
+            Assert.NotNull(results[1].ContextContent);
+            Assert.DoesNotContain("Ocean plastic pollution", results[1].ContextContent);
+            Assert.Contains("underlined part differs", results[1].ContextContent);
         }
 
         [Fact]

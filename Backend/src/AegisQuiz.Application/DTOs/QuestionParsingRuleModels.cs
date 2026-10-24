@@ -129,12 +129,17 @@ namespace AegisQuiz.Application.DTOs
         public bool AutoTerminateOnNextSection { get; set; } = true;
 
         /// <summary>
-        /// Danh sách các mẫu chỉ thị chuyển dạng bài (Instruction Directives) để tự động ngắt bài đọc hiểu cũ.
-        /// Ví dụ: "Mark the letter...", "Choose the word...", "Read the following passage..."
+        /// Danh sách các mẫu chỉ thị chuyển dạng bài / chỉ dẫn làm bài (Instruction Directives) đóng vai trò là Phần ẩn của đề.
+        /// Ví dụ: "Choose the word...", "Choose the best option...", "Odd one out", "Read the following sign...", "Put the sentences..."
         /// </summary>
         public List<string> InstructionDirectivePatterns { get; set; } = new()
         {
-            @"^(?:Mark\s+the\s+letter|Choose\s+the\s+letter|Choose\s+the\s+word|Read\s+the\s+following\s+(?:passage|text|announcement|advertisement|leaflet)|Đọc\s+(?:đoạn\s+văn|bài\s+đọc))\b"
+            @"^(?:Mark\s+the\s+letter|Choose\s+the\s+letter|Choose\s+the\s+word|Choose\s+the\s+best\s+option|Choose\s+the\s+correct\s+answer|Circle\s+the\s+letter|Find\s+the\s+word|Pick\s+(?:out\s+)?the\s+word)\b",
+            @"^(?:Read\s+the\s+following\s+(?:passage|text|announcement|advertisement|leaflet|sign|notice|dialogue|conversation)|Read\s+and\s+complete|Đọc\s+(?:đoạn\s+văn|bài\s+đọc|thông\s+báo))\b",
+            @"^(?:Odd\s+one\s+out|Find\s+the\s+odd\s+one\s+out)\b",
+            @"^(?:Put\s+the\s+sentences|Arrange\s+the\s+sentences|Order\s+the\s+sentences)\b",
+            @"^(?:Supply\s+the\s+correct\s+form|Rewrite\s+(?:each\s+of\s+)?the\s+following|Combine\s+the\s+sentences)\b",
+            @"^(?:(?:Four|Three|Five|\d+)\s+[^\n\r]*?have\s+been\s+removed)\b"
         };
 
         // Aliases

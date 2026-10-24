@@ -1455,7 +1455,11 @@ namespace AegisQuiz.Infrastructure.Services
 
             if (string.IsNullOrWhiteSpace(currentQuestion.Content))
             {
-                currentQuestion.Content = $"Chọn phương án đúng nhất điền vào vị trí ({currentQuestion.SourceQuestionNo}):";
+                currentQuestion.Content = !string.IsNullOrWhiteSpace(currentQuestion.SourceSectionName) && currentQuestion.SourceSectionName != "SINGLE" && currentQuestion.SourceSectionName != "MULTI"
+                    ? currentQuestion.SourceSectionName
+                    : (!string.IsNullOrWhiteSpace(currentQuestion.ContextContent) && currentQuestion.ContextContent.Length <= 250
+                        ? currentQuestion.ContextContent
+                        : $"Chọn phương án đúng nhất điền vào vị trí ({currentQuestion.SourceQuestionNo}):");
             }
 
             if (IsCriticalQuestion(currentQuestion.Content, matchedRule))

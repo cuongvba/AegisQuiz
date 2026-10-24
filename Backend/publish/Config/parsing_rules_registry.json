@@ -1014,7 +1014,12 @@
         "readingPassageStartRegex": "^(?:Read\\s+(?:the\\s+)?(?:following\\s+)?passage|Read\\s+the\\s+following\\s+text|Read\\s+the\\s+announcement|Đọc\\s+đoạn\\s+văn\\s+sau)",
         "readingPassageRangeRegex": "\\b(?:questions?|from)\\s*(\\d+)\\s*(?:to|through)\\s*(\\d+)\\b",
         "instructionDirectivePatterns": [
-          "^(?:Mark\\s+the\\s+letter|Choose\\s+the\\s+letter|Choose\\s+the\\s+word|Read\\s+the\\s+following\\s+(?:passage|text|announcement|advertisement|leaflet)|Đọc\\s+(?:đoạn\\s+văn|bài\\s+đọc))\\b"
+          "^(?:Mark\\s+the\\s+letter|Choose\\s+the\\s+letter|Choose\\s+the\\s+word|Choose\\s+the\\s+best\\s+option|Choose\\s+the\\s+correct\\s+answer|Circle\\s+the\\s+letter|Find\\s+the\\s+word|Pick\\s+(?:out\\s+)?the\\s+word)\\b",
+          "^(?:Read\\s+the\\s+following\\s+(?:passage|text|announcement|advertisement|leaflet|sign|notice|dialogue|conversation)|Read\\s+and\\s+complete|Đọc\\s+(?:đoạn\\s+văn|bài\\s+đọc|thông\\s+báo))\\b",
+          "^(?:Odd\\s+one\\s+out|Find\\s+the\\s+odd\\s+one\\s+out)\\b",
+          "^(?:Put\\s+the\\s+sentences|Arrange\\s+the\\s+sentences|Order\\s+the\\s+sentences)\\b",
+          "^(?:Supply\\s+the\\s+correct\\s+form|Rewrite\\s+(?:each\\s+of\\s+)?the\\s+following|Combine\\s+the\\s+sentences)\\b",
+          "^(?:(?:Four|Three|Five|\\d+)\\s+[^\\n\\r]*?have\\s+been\\s+removed)\\b"
         ]
       },
       "interactionSpec": {

@@ -193,7 +193,7 @@ namespace AegisQuiz.Infrastructure.Services
         // Body traversal: paragraphs, tables, content controls
         // ─────────────────────────────────────────────────────────────────────
 
-        private static List<string> ExtractParagraphTokens(XDocument doc, Dictionary<string, string> relsMap, Dictionary<string, byte[]> mediaDict, HashSet<XElement>? answerTableElements = null)
+        internal static List<string> ExtractParagraphTokens(XDocument doc, Dictionary<string, string> relsMap, Dictionary<string, byte[]> mediaDict, HashSet<XElement>? answerTableElements = null)
         {
             var paragraphs = new List<string>();
             var body = doc.Descendants(W + "body").FirstOrDefault();

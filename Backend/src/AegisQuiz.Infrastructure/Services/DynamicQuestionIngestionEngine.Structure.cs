@@ -35,7 +35,7 @@ namespace AegisQuiz.Infrastructure.Services
         private const string BuiltInTopicHeadingPattern = @"(?i)^(?:[\t\s|•\-–—;]*)(?:BÀI\s*THI\s*(?:MÔN)?|MÔN\s*THI|MÔN|HỌC\s*PHẦN|CHỦ\s*ĐỀ|CHƯƠNG|LĨNH\s*VỰC|MÃ\s*CĐ|TOPIC|SUBJECT|COURSE|MODULE)[\.\:\s\-]+([^\n\r\t|;]+)";
         private const string BuiltInSolutionPhasePattern = @"^(?:(?:PHẦN|PART|SECTION)\s+[IVXLCDM\d]+[\.\:\-\s]+)?(?:ĐÁP\s*ÁN\s*(?:VÀ|&)?\s*(?:LỜI\s*GIẢI|HƯỚNG\s*DẪN\s*(?:CHẤM|GIẢI))|HƯỚNG\s*DẪN\s*(?:CHẤM|GIẢI)\s*(?:VÀ|&)?\s*(?:BIỂU|THANG|ĐÁP)?\s*(?:ĐIỂM|ÁN)?|BIỂU\s*ĐIỂM\s*(?:VÀ|&)?\s*ĐÁP\s*ÁN|THANG\s*ĐIỂM\s*(?:VÀ|&)?\s*HƯỚNG\s*DẪN|(?:LỜI\s*GIẢI|HƯỚNG\s*DẪN\s*GIẢI)\s+(?:CHI\s*TIẾT|THAM\s*KHẢO|CÁC\s*ĐỀ|ĐỀ\s*THI)|SOLUTIONS?|EXPLANATIONS?|MARK\s*SCHEME)(?:\s+(?:THAM\s*KHẢO|CHI\s*TIẾT|DETAILS?|APPENDIX|THI))?[.\:\s\-]*$";
         private const string BuiltInAnswerPhasePattern = @"^(?:(?:PHẦN|PART|SECTION)\s+[IVXLCDM\d]+[\.\:\-\s]+)?(?:BẢNG\s*ĐÁP\s*ÁN(?:\s*TRẮC\s*NGHIỆM)?|ĐÁP\s*ÁN|D[\.\?\s]*P\s*[\.\?\s]*N|ANSWER\s*KEY|KEY|ANSWERS?)\s*(?:TRẮC\s*NGHIỆM|THAM\s*KHẢO|CHI\s*TIẾT)?[.\:\s\-]*$";
-        private const string BuiltInPassageStartPattern = @"^(?:Read\s+(?:the\s+)?(?:following\s+)?(?:passage|advertisement|leaflet|text|article|announcement)|Đọc\s+(?:đoạn\s+văn|bài\s+đọc|thông\s+báo|tờ\s+rơi)\s+sau|(?:Sử\s*dụng|Dựa\s*(?:vào|trên)|Cho|Dùng)\s+(?:các\s+)?(?:thông\s*tin|ngữ\s*liệu|đoạn\s*văn|bài\s*đọc|dữ\s*kiện|bảng|hình)(?:\s+(?:cho|dưới\s*đây|sau))?.*?(?:trả\s*lời|làm\s*bài|cho)|(?:Mark|Choose)\s+the\s+letter.*(?:fits?\s+each|fill.*blank|arrangement|cohesive|coherent|exchange|meaningful|conversation|pronunciation|stress))[\s\S]*";
+        private const string BuiltInPassageStartPattern = @"^(?:Read\s+(?:the\s+)?(?:following\s+)?(?:passage|advertisement|leaflet|text|article|announcement|sign|notice|dialogue|conversation)|Read\s+(?:and\s+)?complete.*?(?:passage|blank)|Đọc\s+(?:đoạn\s+văn|bài\s+đọc|thông\s+báo|tờ\s+rơi|biển\s*báo)\s+sau|(?:Sử\s*dụng|Dựa\s*(?:vào|trên)|Cho|Dùng)\s+(?:các\s+)?(?:thông\s*tin|ngữ\s*liệu|đoạn\s*văn|bài\s*đọc|dữ\s*kiện|bảng|hình)(?:\s+(?:cho|dưới\s*đây|sau))?.*?(?:trả\s*lời|làm\s*bài|cho)|(?:Mark|Choose)\s+the\s+letter.*(?:fits?\s+each|fill.*blank|arrangement|cohesive|coherent|exchange|meaningful|conversation|pronunciation|stress|correction|differently)|(?:Four|Three|Five|\d+)\s+(?:phrases|sentences|words)\s+have\s+been\s+removed)[\s\S]*";
         private const string BuiltInPassageRangePattern = @"\b(?:from|từ\s+(?:các\s+)?câu(?:\s+số)?|(?:các\s+)?(?:questions?|câu)(?:\s+số)?)\s*(?:from\s+)?(\d+)\s*(?:to|đến|through|[-–—])\s*(\d+)\b";
         private const string BuiltInEndOfExamPattern = @"^(?:[\-\–\—_*\=.\s]*\b(?:HẾT|HET|THE\s*END|END\s*OF\s*(?:TEST|EXAM|PAPER)|HẾT\s+ĐỀ\s+THI)\b[\-\–\—_*\=.\s]*)$";
         private const string BuiltInProctorPattern = @"(?i)(?:Cán\s*bộ\s*coi\s*thi|Giám\s*thị|Giám\s*khảo)\s+không\s+giải\s+thích(?:\s+gì)?\s+thêm|Thí\s*sinh\s+không\s+được\s+sử\s+dụng\s+tài\s+liệu|Họ\s*(?:và)?\s*tên\s+thí\s*sinh[\.\:\s_]+Số\s*báo\s*danh";
@@ -126,8 +126,14 @@ namespace AegisQuiz.Infrastructure.Services
             sectionKey = string.Empty;
             if (string.IsNullOrWhiteSpace(line)) return false;
 
+            var text = line.Trim();
+            if (text.Length > 120 && !text.StartsWith("PHẦN", StringComparison.OrdinalIgnoreCase) && !text.StartsWith("PART", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
             // 1. Khớp theo từ điển cấu trúc của tài liệu (Ưu tiên số 1 - cấu hình nạp từ registry JSON hoặc CSDL)
-            if (TryMatchSectionMapping(line, _structureDictionary.SectionMarkers, out sectionKey)) return true;
+            if (TryMatchSectionMapping(text, _structureDictionary.SectionMarkers, out sectionKey)) return true;
 
             // 2. Khớp theo LifecycleSpec của từng quy tắc CIG đang kích hoạt
             foreach (var rule in SnapshotRules())

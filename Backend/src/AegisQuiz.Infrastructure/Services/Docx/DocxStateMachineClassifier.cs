@@ -44,6 +44,7 @@ namespace AegisQuiz.Infrastructure.Services.Docx
             string? currentSubCategory = null;
             bool inExplanation = false;
             string? currentReadingPassage = null;
+            string? currentInstructionDirective = null;
             int passageStartQ = 0;
             int passageEndQ = int.MaxValue;
             bool isSolutionPhase = false;
@@ -63,7 +64,13 @@ namespace AegisQuiz.Infrastructure.Services.Docx
                 .ToList();
             if (instructionDirectivePatterns.Count == 0)
             {
-                instructionDirectivePatterns.Add(@"^(?:Mark\s+the\s+letter|Choose\s+the\s+letter|Choose\s+the\s+word|Read\s+the\s+following\s+(?:passage|text|announcement|advertisement|leaflet)|Đọc\s+(?:đoạn\s+văn|bài\s+đọc)|(?:Sử\s*dụng|Dựa\s*(?:vào|trên)|Cho|Dùng)\s+(?:các\s+)?(?:thông\s*tin|ngữ\s*liệu|dữ\s*kiện|đoạn\s*văn))\b");
+                instructionDirectivePatterns.Add(@"^(?:Mark\s+the\s+letter|Choose\s+the\s+letter|Choose\s+the\s+word|Choose\s+the\s+best\s+option|Choose\s+the\s+correct\s+answer|Circle\s+the\s+letter|Find\s+the\s+word|Pick\s+(?:out\s+)?the\s+word)\b");
+                instructionDirectivePatterns.Add(@"^(?:Read\s+the\s+following\s+(?:passage|text|announcement|advertisement|leaflet|sign|notice|dialogue|conversation)|Read\s+and\s+complete|Đọc\s+(?:đoạn\s+văn|bài\s+đọc|thông\s+báo))\b");
+                instructionDirectivePatterns.Add(@"^(?:Odd\s+one\s+out|Find\s+the\s+odd\s+one\s+out)\b");
+                instructionDirectivePatterns.Add(@"^(?:Put\s+the\s+sentences|Arrange\s+the\s+sentences|Order\s+the\s+sentences)\b");
+                instructionDirectivePatterns.Add(@"^(?:Supply\s+the\s+correct\s+form|Rewrite\s+(?:each\s+of\s+)?the\s+following|Combine\s+the\s+sentences)\b");
+                instructionDirectivePatterns.Add(@"^(?:(?:Four|Three|Five|\d+)\s+[^\n\r]*?have\s+been\s+removed)\b");
+                instructionDirectivePatterns.Add(@"^(?:(?:Sử\s*dụng|Dựa\s*(?:vào|trên)|Cho|Dùng)\s+(?:các\s+)?(?:thông\s*tin|ngữ\s*liệu|dữ\s*kiện|đoạn\s*văn))\b");
             }
 
             // [Zero-Hardcode End of Exam & Proctor Sentinels] Nạp mẫu kết thúc đề và chỉ thị coi thi từ Rule CIG & StructureDictionary
@@ -187,6 +194,7 @@ namespace AegisQuiz.Infrastructure.Services.Docx
                     currentExamCode = targetExamCode;
                     currentSection = "SINGLE";
                     currentSectionTitle = null;
+                    currentInstructionDirective = null;
                     inExplanation = false;
                     currentReadingPassage = null;
                     passageStartQ = 0;
@@ -211,6 +219,7 @@ namespace AegisQuiz.Infrastructure.Services.Docx
                     finalizeCurrentQuestion();
                     inExplanation = false;
                     currentReadingPassage = null;
+                    currentInstructionDirective = null;
                     passageStartQ = 0;
                     passageEndQ = 0;
                     continue;
@@ -409,6 +418,8 @@ namespace AegisQuiz.Infrastructure.Services.Docx
                 if (!isQuestionLine && !isExplanationLine && cig.TryParsePassageContextPrompt(line, out int ctxStartQ, out int ctxEndQ, out string ctxPromptTitle))
                 {
                     finalizeCurrentQuestion();
+                    currentInstructionDirective = line.Trim();
+                    currentSectionTitle = line.Trim();
                     currentReadingPassage = line;
                     passageStartQ = ctxStartQ;
                     passageEndQ = ctxEndQ > 0 ? ctxEndQ : int.MaxValue;
@@ -421,6 +432,8 @@ namespace AegisQuiz.Infrastructure.Services.Docx
                 if (cig.TryMatchReadingPassage(line, out int pStart, out int pEnd))
                 {
                     finalizeCurrentQuestion();
+                    currentInstructionDirective = line.Trim();
+                    currentSectionTitle = line.Trim();
                     currentReadingPassage = line;
                     inExplanation = false;
                     passageStartQ = pStart;
@@ -429,8 +442,8 @@ namespace AegisQuiz.Infrastructure.Services.Docx
                     continue;
                 }
 
-                // 2a. Nhận dạng chỉ dẫn làm bài (Instruction Directive: "Mark the letter...", "Choose the word...")
-                // Khi chuyển sang dạng bài tập mới: nếu chỉ dẫn có phạm vi câu hỏi (from X to Y) thì lưu làm Stimulus Context; nếu không thì reset context
+                // 2a. Nhận dạng chỉ dẫn làm bài (Instruction Directive: "Mark the letter...", "Choose the word...", "Odd one out"...)
+                // [Implicit Section & Sticky Directive Context] Các chỉ thị là một phần ẩn của đề và được đưa vào context
                 bool isInstructionDirective = instructionDirectivePatterns.Any(p => Regex.IsMatch(line, p, RegexOptions.IgnoreCase));
                 if (!isQuestionLine && !isExplanationLine && isInstructionDirective)
                 {
@@ -456,25 +469,24 @@ namespace AegisQuiz.Infrastructure.Services.Docx
                         }
                     }
 
+                    finalizeCurrentQuestion();
+                    currentInstructionDirective = line.Trim();
+                    currentSectionTitle = line.Trim();
+                    currentReadingPassage = line.Trim();
+                    inExplanation = false;
+                    if (currentTopicCode == "GENERAL") currentTopicCode = "TIENG_ANH";
+
                     if (hasRange)
                     {
-                        finalizeCurrentQuestion();
-                        currentReadingPassage = line;
                         passageStartQ = dirStart;
                         passageEndQ = dirEnd > 0 ? dirEnd : int.MaxValue;
-                        inExplanation = false;
-                        if (currentTopicCode == "GENERAL") currentTopicCode = "TIENG_ANH";
-                        continue;
                     }
-
-                    if (currentQuestion == null || currentQuestionPendingLines.Count > 0 || !string.IsNullOrWhiteSpace(currentQuestion.Content))
+                    else
                     {
-                        finalizeCurrentQuestion();
-                        currentReadingPassage = null;
-                        passageStartQ = 0;
-                        passageEndQ = 0;
-                        continue;
+                        passageStartQ = currentQuestionNumber > 0 ? currentQuestionNumber + 1 : 1;
+                        passageEndQ = int.MaxValue;
                     }
+                    continue;
                 }
 
                 // 2b. Đọc tiếp nội dung đoạn văn đọc hiểu nếu đang ở trạng thái đọc bài và chưa gặp câu hỏi mới
@@ -628,7 +640,9 @@ namespace AegisQuiz.Infrastructure.Services.Docx
 
                     if (string.IsNullOrWhiteSpace(questionBody))
                     {
-                        questionBody = $"Chọn phương án đúng nhất điền vào vị trí ({currentQuestionNumber}):";
+                        questionBody = !string.IsNullOrWhiteSpace(currentInstructionDirective)
+                            ? currentInstructionDirective
+                            : $"Chọn phương án đúng nhất điền vào vị trí ({currentQuestionNumber}):";
                     }
 
                     string? attachedContextId = null;
@@ -641,7 +655,9 @@ namespace AegisQuiz.Infrastructure.Services.Docx
                         attachedContextId = $"CTX_{currentExamCode}_{passageStartQ}";
                         attachedContextTitle = passageEndQ < int.MaxValue && passageEndQ > passageStartQ
                             ? $"Bài đọc hiểu (Câu {passageStartQ} - {passageEndQ})"
-                            : $"Bài đọc hiểu (Từ câu {passageStartQ})";
+                            : (currentReadingPassage.Contains('\n') 
+                                ? $"Bài đọc hiểu (Từ câu {passageStartQ})" 
+                                : (!string.IsNullOrWhiteSpace(currentInstructionDirective) ? "Chỉ dẫn làm bài" : $"Bài đọc hiểu (Từ câu {passageStartQ})"));
                         attachedContextContent = currentReadingPassage.Trim();
                     }
                     else

@@ -40,6 +40,37 @@ namespace AegisQuiz.UnitTests
         }
 
         [Fact]
+        public void ParseBo10DeTiengAnh7_ExamineDirectives()
+        {
+            var filePath = @"D:\Cuong\DuAn\DETHI\THCS\LOP7\Bo-10-de-on-tap-giua-ky-1-Tieng-Anh-7-nam-25-26-co-dap-an.docx";
+            if (!File.Exists(filePath))
+            {
+                _output.WriteLine("File not found, skipping.");
+                return;
+            }
+
+            using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            var results = DocxParserService.ParseRichDocxStream(fs);
+
+            Assert.NotEmpty(results);
+            Assert.True(results.Count >= 250, $"Expected >= 250 questions, got {results.Count}");
+
+            var q1 = results.FirstOrDefault(q => q.SourceExamName == "DE_01" && q.SourceQuestionNo == "1");
+            Assert.NotNull(q1);
+            Assert.Contains("pronounced differently", q1.SourceSectionName, StringComparison.OrdinalIgnoreCase);
+            Assert.False(string.IsNullOrWhiteSpace(q1.ContextContent));
+            Assert.Equal("Chỉ dẫn làm bài", q1.ContextTitle);
+
+            var q13 = results.FirstOrDefault(q => q.SourceExamName == "DE_01" && q.SourceQuestionNo == "13");
+            Assert.NotNull(q13);
+            Assert.Contains("Odd one out", q13.SourceSectionName, StringComparison.OrdinalIgnoreCase);
+            Assert.False(string.IsNullOrWhiteSpace(q13.ContextContent));
+
+            int withContext = results.Count(q => !string.IsNullOrWhiteSpace(q.ContextContent));
+            Assert.True(withContext >= 200, $"Expected >= 200 questions with context, got {withContext}");
+        }
+
+        [Fact]
         public void ParseMath10_Probability_ShouldExtractQuestionsAndFormulas()
         {
             var filePath = Path.Combine(ThcsDir, "thuvienhoclieu.com-50-cau-trac-nghiem-bai-27-Thuc-hanh-tinh-xac-suat-theo-dinh-nghia-co-dien-Lop-10.docx");
